@@ -45,9 +45,37 @@ endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdTargets.cmake")
 
+# Sanitizers and the fuzz target (DESIGN_POLICY.md §13), for the lane that
+# builds this library on its own: .github/workflows/parser-sanitizers.yml.
+# Directory-scoped, so they instrument this library, its tests and its fuzz
+# target and nothing a composed build adds elsewhere.
+set(MMDPMX_SANITIZERS "" CACHE STRING
+    "Sanitizers for mmdPmx and its tests, e.g. \"address;undefined\" (Clang or GCC)")
+option(MMDPMX_BUILD_FUZZER "Build the mmdPmx_fuzz libFuzzer target (Clang only)" OFF)
+if(MMDPMX_SANITIZERS)
+    list(JOIN MMDPMX_SANITIZERS "," _mmd_pmx_sanitize)
+    add_compile_options(-fsanitize=${_mmd_pmx_sanitize} -fno-sanitize-recover=all
+                        -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=${_mmd_pmx_sanitize})
+endif()
+if(MMDPMX_BUILD_FUZZER)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "MMDPMX_BUILD_FUZZER needs Clang's libFuzzer")
+    endif()
+    # The coverage hooks fuzzer-no-link compiles into every target here are
+    # defined by the sanitizer runtime; without one the tests do not link.
+    if(NOT MMDPMX_SANITIZERS)
+        message(FATAL_ERROR
+            "MMDPMX_BUILD_FUZZER needs MMDPMX_SANITIZERS (at least \"address\")")
+    endif()
+    add_compile_options(-fsanitize=fuzzer-no-link)
+endif()
+
 add_library(mmdPmx STATIC
     src/Diagnostic.cpp
-    src/Reader.cpp)
+    src/Document.cpp
+    src/Reader.cpp
+    src/Text.cpp)
 add_library(mmdPmx::mmdPmx ALIAS mmdPmx)
 set_target_properties(mmdPmx PROPERTIES
     EXPORT_NAME mmdPmx
@@ -93,4 +121,7 @@ install(FILES
 if(MMDPMX_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+if(MMDPMX_BUILD_FUZZER)
+    add_subdirectory(fuzz)
 endif()

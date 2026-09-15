@@ -1,16 +1,35 @@
 # SPDX-License-Identifier: Apache-2.0
 
-add_executable(mmdPmx_tests
+# Each suite checks with `assert()`, which NDEBUG compiles away -- and Release
+# is the default build type -- so NDEBUG is undefined for these targets only.
+# They see the library's private headers, to test the decoders and the
+# diagnostic list directly.
+function(_mmd_pmx_test target)
+    add_executable(${target} ${ARGN})
+    target_link_libraries(${target} PRIVATE mmdPmx::mmdPmx)
+    target_include_directories(${target} PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../src"
+        "${CMAKE_CURRENT_SOURCE_DIR}")
+    usdmmd_target_defaults(${target})
+    target_compile_options(${target}
+        PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/UNDEBUG,-UNDEBUG>)
+endfunction()
+
+_mmd_pmx_test(mmdPmx_tests
+    PmxSamples.cpp
     test_diagnostic.cpp
+    test_text.cpp
     test_reader.cpp
     test_main.cpp)
-target_link_libraries(mmdPmx_tests PRIVATE mmdPmx::mmdPmx)
-usdmmd_target_defaults(mmdPmx_tests)
-# The suite checks with `assert()`, which NDEBUG compiles away -- and Release is
-# the default build type -- so NDEBUG is undefined for this target only.
-target_compile_options(mmdPmx_tests
-    PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/UNDEBUG,-UNDEBUG>)
 add_test(NAME mmdPmx_unit COMMAND mmdPmx_tests)
+
+# Every byte of the sample models overwritten and read back
+# (test_robustness.cpp): a deterministic cousin of the fuzz target.
+_mmd_pmx_test(mmdPmx_robustness_tests
+    PmxSamples.cpp
+    test_robustness.cpp
+    test_robustness_main.cpp)
+add_test(NAME mmdPmx_robustness COMMAND mmdPmx_robustness_tests)
 
 # The link line exactly as CMake resolved it, for the boundary check below:
 # WORKSPACE.md §2.1 allows mmdPmx no edge at all.
