@@ -1,10 +1,13 @@
 # Stage contract
 
-> Status: **proposed**, stage-contract version **1**. No code authors this
-> stage yet. Each section becomes binding when the Phase that first authors it
-> lands with a fixture (Phase numbers are
-> [DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)); until then it may be
-> corrected here without a version bump.
+> Status: **proposed**, stage-contract version **1**. Each section becomes
+> binding when the Phase that first authors it lands with a fixture (Phase
+> numbers are [DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)); until then
+> it may be corrected here without a version bump. The Phase 0 importer
+> authors §2, the stage metadata and `/Asset` of §4 (as an `Xform`: it reads
+> no bone table yet), and `mmd:stageContractVersion`, `mmd:sourceFormat`,
+> `mmd:sourceVersion` and `mmd:diagnostics` of §5, with fixtures; nothing
+> else here is authored yet.
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
 > stage metadata, prim hierarchy, types, names, the coordinate conversion, and
@@ -46,6 +49,11 @@ consumer can ignore.
 - **Provenance of a prim is `customData`** on that prim: `mmd:sourceName`,
   `mmd:sourceEnglishName`, `mmd:sourceIndex`. Provenance is for tools and
   debugging; nothing should need it to render or evaluate.
+- **A `customData` key written `mmd:x` is a USD key path**, as it is in
+  `usd-vrm-plugins`: it is stored as key `x` in an `mmd` sub-dictionary
+  (`customData = { dictionary mmd = { … } }` in `.usda`) and read with
+  `GetCustomDataByKey("mmd:x")`. `customData["mmd:x"]` in this document means
+  that key path.
 - **Provenance of an element that is not a prim** — a joint, a vertex — is a
   parallel array attribute on the prim that owns the elements
   (`mmd:bone:sourceName` on the Skeleton, for example).
@@ -130,7 +138,7 @@ On `/Asset`:
 | `mmd:sourceEnglishName` | `string` | English model name, as decoded |
 | `mmd:sourceComment` | `string` | comment, as decoded |
 | `mmd:sourceEnglishComment` | `string` | English comment, as decoded |
-| `mmd:diagnostics` | `string[]` | every recoverable diagnostic raised while importing, as `CODE: message`, in emission order ([DIAGNOSTICS.md](../reference/DIAGNOSTICS.md#4-surfacing)) |
+| `mmd:diagnostics` | `string[]` | every recoverable diagnostic raised while importing, as `CODE: message`, in emission order ([DIAGNOSTICS.md](../reference/DIAGNOSTICS.md#4-surfacing)); not authored when there are none |
 
 The original file is never embedded. Per-object provenance is the source index
 plus source names (§3).

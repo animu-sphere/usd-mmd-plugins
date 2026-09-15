@@ -1,0 +1,48 @@
+# OpenStrata plugin bundle manifest.
+# A plugin is a self-describing bundle, not a bare shared library: this file is
+# the contract `ost plugin inspect|build|doctor|test` resolve against.
+manifest:
+  schema: openstrata.plugin/v1alpha1
+plugin:
+  name: usdMmdFileFormat
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.0.0
+  kind: usd-fileformat
+license: Apache-2.0
+runtime:
+  # The one OpenUSD release this bundle supports; cmake/UsdMmdOpenUsd.cmake
+  # enforces the same pin at configure time for builds that never see ost
+  # (docs/architecture/DEPENDENCIES.md §1).
+  openusd: "==26.08"
+  # Source bundles inherit the resolved runtime ABI, so one manifest serves
+  # Windows (msvc143), macOS (libcxx) and Linux (libstdcxx).
+  cxx_abi: inherit
+provides:
+  - usd-fileformat:pmx
+requires:
+  capabilities: [usd-stage-read]
+  # The PMX syntax parser, a plain library (libs/mmdPmx). ost validates this
+  # edge against libs/mmdPmx/openstrata.library.yaml, builds the library into
+  # the workspace prefix before configuring this bundle, and stages it into
+  # the package (WORKSPACE.md §2.1, §2.3).
+  libraries:
+    - id: mmdPmx
+      version: ">=0.0,<0.1"
+usd:
+  # Where this bundle's plugInfo.json lives, relative to the bundle root.
+  plug_info: plugin/resources/usdMmdFileFormat/plugInfo.json
+# Written by the workspace's fixture generator (tests/fixtures/
+# generate_fixtures.py); tests/fixtures/fixtures.json here says what each one
+# must do, and tests/integration/ asserts the stage contract over them. They
+# live in the bundle because ost accepts no fixture path outside it.
+tests:
+  smoke:
+    - tests/fixtures/minimal.pmx
+    - tests/fixtures/minimal-2.1-utf8.pmx
+    - tests/fixtures/unknown-globals.pmx
+  roundtrip:
+    - tests/fixtures/minimal.pmx
+  negative:
+    - tests/fixtures/malformed/bad-signature.pmx
+    - tests/fixtures/malformed/unsupported-version.pmx
+    - tests/fixtures/malformed/truncated-header.pmx

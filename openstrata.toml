@@ -1,0 +1,22 @@
+[project]
+name = "usd-mmd-plugins"
+# Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+version = "0.0.0"
+
+[requires]
+platform = "cy2026"
+profile = "usd"
+
+# The member set, declared rather than discovered. Every member is named in
+# full, so adding one is a visible edit here -- after WORKSPACE.md §1 has
+# admitted the identity -- rather than a side effect of creating a directory.
+[workspace]
+members = [
+  "plugins/usdMmdFileFormat",
+  "libs/mmdPmx",
+]
+# The aggregate product: every bundle and tool that ships. A library ships as
+# a dependency of the bundle that links it, never as a member of its own.
+release_members = [
+  "usdMmdFileFormat",
+]

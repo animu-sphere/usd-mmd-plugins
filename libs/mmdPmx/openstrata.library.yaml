@@ -1,0 +1,32 @@
+# OpenStrata plain-library descriptor.
+#
+# mmdPmx is a plain static CMake library, deliberately NOT a plugin bundle: no
+# plugInfo.json, no registration, no OpenUSD dependency
+# (docs/architecture/WORKSPACE.md §1, §2). This descriptor gives it a workspace
+# identity, so the file-format bundle can declare the edge as
+# `requires.libraries: [{id: mmdPmx, ...}]` and ost can build and install it
+# into the workspace prefix before configuring the bundle.
+schema: openstrata.library/v1alpha1
+library:
+  id: mmdPmx
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.0.0
+cmake:
+  # The find_package() name and the imported target consumers link against.
+  package: mmdPmx
+  target: mmdPmx::mmdPmx
+# Built and installed on its own, and shipped inside the product as a
+# dependency of the file-format bundle.
+package:
+  standalone: true
+  aggregate_member: true
+# What the installed package promises a consumer (docs/architecture/
+# PACKAGE_CONTRACT.md). `ost library verify-consumer` builds a consumer that
+# includes the header and names the symbol, against the installed prefix only.
+package_contract:
+  package_name: mmdPmx
+  exported_targets: [mmdPmx::mmdPmx]
+  public_headers: [include/mmdPmx/**]
+  consumer:
+    include: mmdPmx/Reader.h
+    symbol: mmd::pmx::Read

@@ -3,12 +3,13 @@
 OpenUSD plugins for [MikuMikuDance](https://sites.google.com/view/vpvp/) (MMD)
 assets: PMX models first, VMD motion later.
 
-> **Status: design stage.** This repository currently contains documentation
-> only — the design, the stage contract, and the workspace contract that the
-> first code will be written against. Nothing described below is implemented
-> yet; the [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the
-> only page that says what is, and today it says nothing is. The next milestone
-> is [Phase 0, the workspace skeleton](docs/roadmap/current.md).
+> **Status: workspace skeleton.** `Usd.Stage.Open("model.pmx")` works, and
+> authors an empty `/Asset` with the stage metadata: the plugin registers
+> `.pmx` and reads the PMX header, and nothing else yet. Most of what is
+> described below is still design; the
+> [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the only page
+> that says what is implemented. The current milestone is
+> [Phase 0](docs/roadmap/current.md); the PMX parser is Phase 1.
 
 `usd-mmd-plugins` is the MMD sibling of
 [`usd-vrm-plugins`](https://github.com/animu-sphere/usd-vrm-plugins): the
@@ -33,15 +34,15 @@ or morphs, simulates physics, performs toon shading, or plays motion — those
 belong to runtimes and renderers that read the stage. The same bytes always
 produce the same stage.
 
-## Planned components
+## Components
 
-| Component | Kind | Role |
-| --- | --- | --- |
-| `mmdPmx` | plain C++ library | PMX 2.0/2.1 syntax, text decoding, validation — no OpenUSD |
-| `mmdModel` | plain C++ library | canonical MMD semantics and the single source → USD coordinate conversion — no OpenUSD |
-| `usdMmdFileFormat` | OpenUSD `SdfFileFormat` bundle | `.pmx` → a USD stage |
-| `mmd_inspect` | CLI | what a PMX contains, without USD |
-| `motionVmd` | plain C++ library (later) | VMD syntax, extraction-ready for the shared motion architecture |
+| Component | Kind | Role | State |
+| --- | --- | --- | --- |
+| `mmdPmx` | plain C++ library | PMX 2.0/2.1 syntax, text decoding, validation — no OpenUSD | reads the header |
+| `mmdModel` | plain C++ library | canonical MMD semantics and the single source → USD coordinate conversion — no OpenUSD | Phase 2 |
+| `usdMmdFileFormat` | OpenUSD `SdfFileFormat` bundle | `.pmx` → a USD stage | registers `.pmx`, authors `/Asset` |
+| `mmd_inspect` | CLI | what a PMX contains, without USD | Phase 1 |
+| `motionVmd` | plain C++ library | VMD syntax, extraction-ready for the shared motion architecture | Phase 7 |
 
 `mmdSchema` exists only if an MMD API schema passes the
 [admission test](docs/design/DESIGN_POLICY.md#6-the-schema-admission-test); the
@@ -66,19 +67,29 @@ paths, and Japanese texture filenames resolve. The full contract is
 
 ## Building
 
-Not yet: there is nothing to build until Phase 0. When there is, the workspace
-builds both with [OpenStrata](https://github.com/animu-sphere/open-strata)
-(`ost`) and with plain CMake against an OpenUSD 26.x install, as
-`usd-vrm-plugins` does ([WORKSPACE.md §5](docs/architecture/WORKSPACE.md#5-build-modes)).
-A building guide arrives with the first build, written from commands that have
-been run.
+The workspace builds both with
+[OpenStrata](https://github.com/animu-sphere/open-strata) (`ost`) and with
+plain CMake, against OpenUSD 26.08 exactly
+([WORKSPACE.md §5](docs/architecture/WORKSPACE.md#5-build-modes)):
+
+```powershell
+$env:USD_INSTALL_ROOT = "<OpenUSD 26.08 install>"
+cmake --preset windows-msvc
+cmake --build --preset windows-release
+ctest --preset windows-release
+```
+
+or `ost build` and `ost test`. [docs/guides/building.md](docs/guides/building.md)
+has the full set — the bundle on its own, packaging, and the
+installed-consumer lane — every command in it run.
 
 ## Documentation
 
 | | |
 | --- | --- |
 | [docs/design/](docs/design/) | What the importer authors and why — start with [DESIGN_POLICY.md](docs/design/DESIGN_POLICY.md) |
-| [docs/architecture/](docs/architecture/) | The binding workspace contract and external dependencies |
+| [docs/architecture/](docs/architecture/) | The binding workspace contract, external dependencies, and installed packages |
+| [docs/guides/](docs/guides/) | How to build, test and package |
 | [docs/reference/](docs/reference/) | What is implemented, diagnostics, and where each PMX field lands |
 | [docs/roadmap/](docs/roadmap/) | What is planned next (incomplete work only) |
 | [docs/contributing/](docs/contributing/) | How the documentation is maintained |

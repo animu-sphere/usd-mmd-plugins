@@ -5,26 +5,59 @@ a tool reports carries a **stable code** with a **fixed severity**. The code is
 the contract; the message is human-readable detail and may change at any time.
 Tests assert codes, never prose.
 
-Status (2026-09-15): **no code emits any of these yet.** Every code below is
-*reserved* by a design document, which is where its meaning is fixed. When
-Phase 1 lands, the catalog moves into code and this page is generated from it,
-as `usd-vrm-plugins` does for its own diagnostics.
+Status (2026-09-15): the record below is code, and the Phase 0 header reader
+**emits** seven codes — each marked *emitted* in §5. Every other code is
+*reserved* by a design document, which is where its meaning is fixed. A code
+joins [libs/mmdPmx/include/mmdPmx/Codes.h](../../libs/mmdPmx/include/mmdPmx/Codes.h)
+(or its component's equivalent) with the code that raises it; when the Phase 1
+parser lands, this page is generated from those declarations, as
+`usd-vrm-plugins` does for its own diagnostics.
 
 ## 1. The record
 
+Declared in
+[libs/mmdPmx/include/mmdPmx/Diagnostic.h](../../libs/mmdPmx/include/mmdPmx/Diagnostic.h),
+the lowest library, so the canonical model and the importer carry a parser
+diagnostic unchanged:
+
 ```cpp
+namespace mmd {
+struct Location {
+    std::optional<std::uint64_t> byteOffset;
+    std::string table;                    // "bones", "materials"; empty if none
+    std::optional<std::uint64_t> index;   // element index within `table`
+    std::string field;                    // "texture", "globals[3]"; empty if whole element
+};
+
+struct Code {                  // declared once per code, as `inline constexpr`
+    std::string_view id;       // "MMD_PMX_TRUNCATED_BUFFER"
+    Severity severity;         // fixed per code (§2)
+};
+
 struct Diagnostic {
-    std::string code;          // "MMD_PMX_TRUNCATED_BUFFER"
+    std::string code;          // the contract; tests assert this
     Severity    severity;      // fixed per code (§2)
     std::string message;       // human-readable, not part of the contract
-    Location    location;      // byte offset and/or table + index, when known
+    Location    location;      // where, when known
     bool        recoverable;   // false exactly when severity is fatal
 };
+
+Diagnostic MakeDiagnostic(const Code&, std::string message, Location = {});
+std::string FormatDiagnostic(const Diagnostic&);  // "CODE: message (location)"
+}
 ```
 
-`Location` names what a reader needs to find the problem: a byte offset for
-syntax errors, a table and index (`bones[12]`, `materials[3].texture`) for
-semantic ones, and both when both are known.
+A diagnostic is built only from a declared `Code`, so a call site cannot
+choose a severity. `Location` names what a reader needs to find the problem: a
+byte offset for syntax errors, a table element (`bones[12]`,
+`materials[3].texture`) for semantic ones, and both when both are known —
+formatted as `materials[3].texture at byte 1234`.
+
+`Result<T>`
+([Result.h](../../libs/mmdPmx/include/mmdPmx/Result.h)) carries either a value
+and the recoverable diagnostics raised while producing it, or the fatal
+diagnostic that prevented one together with the recoverable ones raised
+before it.
 
 ## 2. Severity
 
@@ -61,7 +94,9 @@ severity. An event that needs a different severity gets a new code.
 - **Fatal:** `SdfFileFormat::Read` returns false and posts a runtime error whose
   text begins with the code.
 - **Recoverable:** each is recorded, in emission order, on the stage as
-  `/Asset.customData["mmd:diagnostics"]` (`string[]`, `CODE: message`)
+  `/Asset.customData["mmd:diagnostics"]` (`string[]`, `CODE: message`, with
+  the location in parentheses when known; the key is authored only when the
+  list is non-empty)
   ([STAGE_CONTRACT.md §5](../design/STAGE_CONTRACT.md#5-model-metadata-and-provenance)),
   and `error` and `warning` are also posted as warnings. A diagnostic raised
   once per import (the SDEF approximation, weight normalization) carries a count
@@ -74,18 +109,19 @@ severity. An event that needs a different severity gets a new code.
 ## 5. Reserved catalog
 
 "Raised by" is the component that detects the event. "Defined in" is the
-design section that fixes its meaning.
+design section that fixes its meaning. *emitted* marks a code the current code
+raises; every other code is reserved.
 
 ### 5.1 PMX syntax
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_PMX_BAD_SIGNATURE` | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| `MMD_PMX_UNSUPPORTED_VERSION` | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| `MMD_PMX_INVALID_GLOBALS` | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| `MMD_PMX_UNKNOWN_GLOBALS` | warning | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| `MMD_PMX_INVALID_INDEX_SIZE` | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| `MMD_PMX_TRUNCATED_BUFFER` | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
+| `MMD_PMX_BAD_SIGNATURE` *emitted* | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| `MMD_PMX_UNSUPPORTED_VERSION` *emitted* | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| `MMD_PMX_INVALID_GLOBALS` *emitted* | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| `MMD_PMX_UNKNOWN_GLOBALS` *emitted* | warning | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| `MMD_PMX_INVALID_INDEX_SIZE` *emitted* | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| `MMD_PMX_TRUNCATED_BUFFER` *emitted* (header) | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
 | `MMD_PMX_COUNT_EXCEEDS_BUFFER` | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
 | `MMD_PMX_TRAILING_BYTES` | warning | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
 | `MMD_PMX_INVALID_DEFORM_TYPE` | fatal | `mmdPmx` | [PMX §5](../design/PMX_CONTRACT.md#5-vertices-and-deform) |
@@ -100,7 +136,7 @@ design section that fixes its meaning.
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_TEXT_INVALID_ENCODING_FLAG` | fatal | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
+| `MMD_TEXT_INVALID_ENCODING_FLAG` *emitted* | fatal | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_INVALID_UTF8` | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_INVALID_UTF16` | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_TRAILING_NUL` | info | `mmdModel` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |

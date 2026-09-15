@@ -1,0 +1,14 @@
+# PMX fixtures are binary: never apply text/EOL conversion. A PMX string is a
+# length-prefixed byte run, so a single converted byte moves every offset after
+# it and the file no longer parses.
+*.pmx binary
+
+# The fixture manifest is compared byte for byte with what the generator writes
+# (`generate_fixtures.py --check`), and the generator writes '\n'.
+fixtures.json text eol=lf
+
+# USDA goldens and fixtures check out with LF everywhere. A CRLF smudge changes
+# the *content* of a multi-line (triple-quoted) string -- the \r becomes part of
+# the parsed value -- so a Windows checkout would flatten to different bytes
+# than the committed golden (usd-vrm-plugins, PR #42).
+*.usda text eol=lf

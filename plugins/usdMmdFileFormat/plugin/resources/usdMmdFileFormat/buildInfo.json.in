@@ -1,0 +1,9 @@
+{
+    "schema": 1,
+    "projectVersion": "@_mmd_plugin_version@",
+    "gitCommit": "@_mmd_git_commit@",
+    "openusdVersion": "@USDMMD_OPENUSD_RELEASE@",
+    "compiler": "@CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@",
+    "platform": "@CMAKE_SYSTEM_NAME@-@CMAKE_SYSTEM_PROCESSOR@",
+    "stageContractVersion": @_mmd_stage_contract_version@
+}

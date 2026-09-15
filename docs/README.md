@@ -4,18 +4,19 @@ Documentation is organized by responsibility: each category answers one class
 of question. The layout is the one `usd-vrm-plugins`, `open-strata` and
 `hydra-merlin` use, so the repositories read the same way.
 
-**The repository contains no code yet (2026-09-15).** Everything in `design/`
-is intended behavior; [reference/](reference/) is the only place that says
-what is implemented, and today it says nothing is.
+**The tree holds the Phase 0 workspace skeleton (2026-09-15):** `.pmx` opens
+as a stage with the Phase 0 metadata, and nothing beyond the PMX header is
+parsed yet. Everything else in `design/` is intended behavior;
+[reference/](reference/) is the only place that says what is implemented.
 
 | Category | Answers | Start here |
 | --- | --- | --- |
-| [architecture/](architecture/) | How the workspace is structured: component identities, dependency directions, build modes, external dependencies. | [WORKSPACE.md](architecture/WORKSPACE.md) · [DEPENDENCIES.md](architecture/DEPENDENCIES.md) |
+| [architecture/](architecture/) | How the workspace is structured: component identities, dependency directions, build modes, external dependencies, installed packages. | [WORKSPACE.md](architecture/WORKSPACE.md) · [DEPENDENCIES.md](architecture/DEPENDENCIES.md) · [PACKAGE_CONTRACT.md](architecture/PACKAGE_CONTRACT.md) |
 | [design/](design/) | What the importer authors and why. | [DESIGN_POLICY.md](design/DESIGN_POLICY.md) |
+| [guides/](guides/) | How to accomplish a task, with commands that have been run. | [building.md](guides/building.md) |
 | [reference/](reference/) | Facts about the current tree: what is supported, which diagnostics exist, where each PMX field lands. | [CAPABILITY_MATRIX.md](reference/CAPABILITY_MATRIX.md) · [DIAGNOSTICS.md](reference/DIAGNOSTICS.md) · [SOURCE_MAPPING.md](reference/SOURCE_MAPPING.md) |
 | [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
 | [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
-| `guides/` | How to accomplish a task. | added with Phase 0's first build |
 | `releases/` | Immutable per-version release records. | added with the first release |
 | `reports/` | Dated evidence from real runs. | added with the first report |
 
