@@ -16,7 +16,7 @@ struct TexturePath {
     std::string assetPath;
     /// True when the path is refused (§7.2): absolute, drive-qualified, UNC,
     /// carrying a URI scheme, escaping the model's directory, or holding a
-    /// U+0000 before its end.
+    /// control character (C0, DEL, C1) other than trailing U+0000 padding.
     bool unsafe = false;
 };
 

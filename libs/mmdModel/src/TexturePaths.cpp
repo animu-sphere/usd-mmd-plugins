@@ -33,23 +33,45 @@ StartsWithScheme(std::string_view path)
     return false;
 }
 
+/// A control character: C0 (U+0000-U+001F), DEL (U+007F) or C1
+/// (U+0080-U+009F). No portable filename holds one, and SdfAssetPath refuses
+/// a path that does -- it would author `@@`. The text is valid UTF-8, so C1 is
+/// exactly a 0xC2 lead byte followed by 0x80-0x9F.
+bool
+HasControlCharacter(std::string_view text)
+{
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        const auto c = static_cast<unsigned char>(text[i]);
+        if (c < 0x20 || c == 0x7F) {
+            return true;
+        }
+        if (c == 0xC2 && i + 1 < text.size()) {
+            const auto next = static_cast<unsigned char>(text[i + 1]);
+            if (next >= 0x80 && next <= 0x9F) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 }  // namespace
 
 TexturePath
 NormalizeTexturePath(std::string_view source)
 {
     TexturePath result;
-    // Trailing U+0000 is padding some writers add; anywhere else it is not a
-    // character any filesystem accepts in a name.
+    // Trailing U+0000 is padding some writers add; any other control
+    // character, U+0000 included, is not one a filename can hold.
     std::string_view text = source;
     while (!text.empty() && text.back() == '\0') {
         text.remove_suffix(1);
     }
-    std::string path(text);
-    if (path.find('\0') != std::string::npos) {
+    if (HasControlCharacter(text)) {
         result.unsafe = true;
         return result;
     }
+    std::string path(text);
     for (char& c : path) {
         if (c == '\\') {
             c = '/';

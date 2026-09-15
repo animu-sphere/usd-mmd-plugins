@@ -34,8 +34,8 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   ASCII identifiers with case-insensitive collision handling, orders joints
   parents-first (repairing self-parents and cycles), normalizes weights,
   derives material face ranges, and normalizes texture paths, refusing ones
-  that are absolute, drive- or scheme-qualified, or leave the model's
-  directory. It emits eight catalogued codes (`MMD_TEXT_TRAILING_NUL`,
+  that are absolute, drive- or scheme-qualified, leave the model's
+  directory, or hold a control character. It emits eight catalogued codes (`MMD_TEXT_TRAILING_NUL`,
   `MMD_PATH_UNSAFE_TEXTURE_PATH`, `MMD_SKEL_INVALID_PARENT`,
   `MMD_SKEL_PARENT_CYCLE`, `MMD_SKEL_JOINTS_REORDERED`,
   `MMD_SKEL_WEIGHTS_NORMALIZED`, `MMD_SKEL_ZERO_WEIGHTS`,

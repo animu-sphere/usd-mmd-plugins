@@ -1454,10 +1454,12 @@
       "morphs": 6,
       "rigidBodies": 2,
       "softBodies": 0,
-      "textures": 4,
+      "textures": 6,
       "vertices": 6
     },
     "diagnostics": [
+      "MMD_PATH_UNSAFE_TEXTURE_PATH",
+      "MMD_PATH_UNSAFE_TEXTURE_PATH",
       "MMD_PATH_UNSAFE_TEXTURE_PATH",
       "MMD_PATH_UNSAFE_TEXTURE_PATH",
       "MMD_PATH_UNSAFE_TEXTURE_PATH",
@@ -1467,7 +1469,7 @@
     "modelName": "サンプル2.0",
     "opens": true,
     "parserDiagnostics": [],
-    "purpose": "texture paths that leave the model's directory, name a drive, are absolute, and carry a scheme",
+    "purpose": "texture paths that leave the model's directory, name a drive, are absolute, carry a scheme, and hold a C0 and a C1 control character",
     "sourceVersion": "2.0",
     "stage": {
       "jointOfSourceBone": [
@@ -1562,10 +1564,20 @@
           "name": "肌",
           "sourceIndex": 1,
           "textures": {
+            "sphereTexture": {
+              "asset": null,
+              "resolves": false,
+              "source": "sph\\光\t沢.sph"
+            },
             "texture": {
               "asset": null,
               "resolves": false,
               "source": "C:\\tex\\肌.png"
+            },
+            "toonTexture": {
+              "asset": null,
+              "resolves": false,
+              "source": "toon\\.bmp"
             }
           }
         }

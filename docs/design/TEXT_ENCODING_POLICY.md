@@ -201,8 +201,11 @@ configuration.
 
 A path is **unsafe** when, after normalization, it is absolute (`/…`),
 drive-qualified (`C:…`), UNC (`//server/…`), carries a URI scheme
-(`scheme:…`), escapes the PMX's directory (a leading `..`), or holds a U+0000
-before its end, which no filesystem accepts in a name. An unsafe path
+(`scheme:…`), escapes the PMX's directory (a leading `..`), or holds a
+control character — C0 (U+0000–U+001F, other than the trailing padding §7.1
+drops), DEL (U+007F) or C1 (U+0080–U+009F). No portable filename holds a
+control character, and `SdfAssetPath` refuses a path that does: authored,
+it would become the empty asset path `@@`. An unsafe path
 is not dereferenced: no `SdfAssetPath` is authored for it, the slot stays empty
 in every realization, the source string is still preserved, and
 `MMD_PATH_UNSAFE_TEXTURE_PATH` (warning) is raised, once per texture-table

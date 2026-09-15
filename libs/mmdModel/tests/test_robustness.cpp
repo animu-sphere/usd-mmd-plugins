@@ -89,7 +89,8 @@ std::string
 WildPath(Random& r)
 {
     static const std::vector<std::string> pieces{"tex", "髪.png", "..", ".", "/", "\\", "C:",
-        "http:", "a", "b.bmp", "//", std::string("\0", 1), " ", "~"};
+        "http:", "a", "b.bmp", "//", std::string("\0", 1), " ", "~", "\t", "\x7F",
+        "\xC2\x85", "\xC2\xA0"};
     std::string path;
     const std::size_t n = r.Below(6);
     for (std::size_t i = 0; i < n; ++i) {
@@ -339,9 +340,19 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
             continue;
         }
         if (p.rfind("./", 0) != 0 || p.find('\\') != std::string::npos
-            || p.find("//") != std::string::npos || p.find(std::string("\0", 1)) != std::string::npos
-            || p == "./.." || p.rfind("./../", 0) == 0 || p.find("/./") != std::string::npos) {
+            || p.find("//") != std::string::npos || p == "./.." || p.rfind("./../", 0) == 0
+            || p.find("/./") != std::string::npos) {
             return "an authored texture path is not normalized: " + p;
+        }
+        // No control character: SdfAssetPath would refuse the path.
+        for (std::size_t k = 0; k < p.size(); ++k) {
+            const auto c = static_cast<unsigned char>(p[k]);
+            const bool c1 = c == 0xC2 && k + 1 < p.size()
+                && static_cast<unsigned char>(p[k + 1]) >= 0x80
+                && static_cast<unsigned char>(p[k + 1]) <= 0x9F;
+            if (c < 0x20 || c == 0x7F || c1) {
+                return "an authored texture path holds a control character";
+            }
         }
     }
     return {};

@@ -60,5 +60,20 @@ TestTexturePaths()
     ExpectUnsafe("..\\toon\\toon01.bmp");
     ExpectUnsafe("a/../../b.png");
     ExpectUnsafe("..");
+
+    // A control character anywhere but trailing U+0000 padding: C0, DEL, C1.
+    // SdfAssetPath refuses each, so a "safe" one would author `@@`.
     ExpectUnsafe(std::string("a\0b.png", 7));
+    ExpectUnsafe("tex/a\tb.png");
+    ExpectUnsafe("tex/a\nb.png");
+    ExpectUnsafe("tex/\x1F.png");
+    ExpectUnsafe("tex/a\x7F.png");
+    ExpectUnsafe("tex/\xC2\x85.png");  // U+0085, NEXT LINE
+    ExpectUnsafe("tex/\xC2\x80.png");  // U+0080
+    ExpectUnsafe("tex/\xC2\x9F.png");  // U+009F
+    ExpectUnsafe(std::string("a\tb.png\0", 8));
+    // The characters around C1 are not controls.
+    ExpectPath("tex/\xC2\xA0.png", "./tex/\xC2\xA0.png");  // U+00A0
+    ExpectPath("tex/\xC2\xA9.png", "./tex/\xC2\xA9.png");  // U+00A9
+    ExpectPath("tex/~ $.png", "./tex/~ $.png");
 }

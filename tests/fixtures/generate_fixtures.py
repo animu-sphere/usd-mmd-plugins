@@ -625,7 +625,7 @@ def asset_path(source) -> str | None:
     if not isinstance(source, str):
         return None
     text = source.rstrip("\0")
-    if "\0" in text:
+    if re.search(r"[\x00-\x1f\x7f-\x9f]", text):  # a control character: C0, DEL, C1
         return None
     path = text.replace("\\", "/")
     if path.startswith("/") or re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", path):
@@ -821,7 +821,10 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
                                               [0.0, 0.0, 0.0, 0.0])
     unsafe = sample_model(2.0, UTF16LE, 1, 0)
     unsafe["textures"] = ["..\\toon\\共有.bmp", "C:\\tex\\肌.png", "/tex/光沢.sph",
-                          "http://example.com/トゥーン.bmp"]
+                          "http://example.com/トゥーン.bmp", "sph\\光\t沢.sph",
+                          "toon\\\u0085.bmp"]
+    unsafe["materials"][1]["sphereTexture"] = 4  # a C0 control, a tab
+    unsafe["materials"][1]["toon"] = ("texture", 5)  # a C1 control, U+0085
     boneless = sample_model(2.0, UTF16LE, 1, 0)
     boneless["bones"] = []
     boneless["morphs"] = []
@@ -852,8 +855,9 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
             importer=sdef),
         "recoverable/unsafe-texture-paths.pmx": opens(
             unsafe, "texture paths that leave the model's directory, name a "
-            "drive, are absolute, and carry a scheme",
-            canonical=["MMD_PATH_UNSAFE_TEXTURE_PATH"] * 4, importer=sdef),
+            "drive, are absolute, carry a scheme, and hold a C0 and a C1 "
+            "control character",
+            canonical=["MMD_PATH_UNSAFE_TEXTURE_PATH"] * 6, importer=sdef),
         "recoverable/no-bones.pmx": opens(
             boneless, "a mesh and a material, and no bones: /Asset is an Xform "
             "and the mesh is unskinned",
