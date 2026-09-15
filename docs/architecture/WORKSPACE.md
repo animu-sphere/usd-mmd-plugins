@@ -7,9 +7,11 @@ and the invariants every change preserves. **A structural change that
 contradicts this document changes this document first, in its own pull
 request** — never through a README, a roadmap entry, or code.
 
-Status (2026-09-15): contract adopted; **no component exists yet**. The
-repository holds documentation only. Every identity below is *reserved* until
-the Phase that creates it lands (Phases are
+Status (2026-09-15): contract adopted. The Phase 0 workspace exists:
+`mmdPmx` (a scaffold that reads the PMX header) and `usdMmdFileFormat` (which
+registers `.pmx` and authors the Phase 0 stage), built by `ost` and by plain
+CMake. Every other identity below is *reserved* until the Phase that creates
+it lands (Phases are
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)), and its row then
 records that.
 
@@ -28,9 +30,9 @@ The smallest tree that delivers the first substantial release
 
 | Identity | Kind | Directory | Manifest | Role | Created in | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| `mmdPmx` | plain static CMake library | `libs/mmdPmx/` | `openstrata.library.yaml` | PMX syntax: header, text decoding, every table, structural validation, syntax diagnostics. No OpenUSD. | Phase 0 (scaffold), Phase 1 (parser) | reserved |
+| `mmdPmx` | plain static CMake library | `libs/mmdPmx/` | `openstrata.library.yaml` | PMX syntax: header, text decoding, every table, structural validation, syntax diagnostics. No OpenUSD. | Phase 0 (scaffold), Phase 1 (parser) | exists — header only |
 | `mmdModel` | plain static CMake library | `libs/mmdModel/` | `openstrata.library.yaml` | Canonical MMD semantics: identities, basis conversion, joint order, deform, morphs, materials, control and physics descriptions, provenance. No OpenUSD. | Phase 2 | reserved |
-| `usdMmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdMmdFileFormat/` | `openstrata.plugin.yaml` | `.pmx` `SdfFileFormat`: registration, read path, USD authoring, source → USD diagnostics. | Phase 0 | reserved |
+| `usdMmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdMmdFileFormat/` | `openstrata.plugin.yaml` | `.pmx` `SdfFileFormat`: registration, read path, USD authoring, source → USD diagnostics. | Phase 0 | exists — Phase 0 stage |
 | `mmd_inspect` | CLI executable | `tools/mmdInspect/` | `openstrata.tool.yaml` | Reports what a PMX contains, without USD. | Phase 1 | reserved |
 
 ### 1.2 Later, only when their responsibility is real
@@ -108,41 +110,62 @@ guard:
   includes (`pxr/`, a physics SDK, a sibling's private headers), as
   `usd-vrm-plugins`' `check_boundaries.py` scripts do.
 
-All three run in CI from the Phase that creates the component.
+All three run in CI from the Phase that creates the component. For `mmdPmx`
+they are: the graph cell of [openstrata.ci.yaml](../../openstrata.ci.yaml);
+`mmdPmx_boundaries`, which runs
+[scripts/check_library_boundaries.py](../../scripts/check_library_boundaries.py)
+over the library's sources, over its link line as CMake resolved it (it must
+be empty), and over a test executable that links `mmdPmx` alone (it must
+import no OpenUSD library — a static archive has no import table of its own,
+so a forbidden edge shows up in what links it); and
+`mmdPmx_boundaries_selftest`, which proves each rule still rejects what it
+must. The script takes the library's name and allowed edges as arguments, so
+`mmdModel` reuses it rather than copying it (§7).
 
 ## 3. Directory layout
 
 ```text
 usd-mmd-plugins/
-├─ .github/workflows/          CI: generated from openstrata.ci.yaml, plus hand-written docs checks
-├─ cmake/                      Dependencies.cmake, UsdMmdOpenUsd.cmake (the OpenUSD pin)
+├─ .github/workflows/          ost-source-ci.yml (generated from openstrata.ci.yaml), docs-check.yml (hand-written)
+├─ cmake/                      UsdMmdOpenUsd.cmake (the OpenUSD pin), UsdMmdTargets.cmake (per-target
+│                              Windows flags, the UTF-8 code-page manifest helper), utf8-code-page.manifest
 ├─ docs/                       see docs/README.md
 ├─ libs/
-│  ├─ mmdPmx/                  include/ src/ tests/ CMakeLists.txt openstrata.library.yaml
-│  └─ mmdModel/                include/ src/ tests/ CMakeLists.txt openstrata.library.yaml
+│  ├─ mmdPmx/                  include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
+│  └─ mmdModel/                (Phase 2)
 ├─ plugins/
 │  └─ usdMmdFileFormat/
-│     ├─ plugin/resources/usdMmdFileFormat/   plugInfo.json.in, buildInfo.json.in
-│     ├─ src/                  UsdMmdFileFormat.cpp, usd/UsdMmdAuthorer.cpp, util/
-│     ├─ tests/
+│     ├─ plugin/resources/usdMmdFileFormat/   plugInfo.json(.in), buildInfo.json.in
+│     ├─ src/                  UsdMmdFileFormat.cpp, usd/UsdMmdAuthorer.cpp
+│     ├─ tests/fixtures/       the generated PMX fixtures, fixtures.json, the L5 golden
 │     ├─ CMakeLists.txt
 │     └─ openstrata.plugin.yaml
 ├─ tools/
-│  └─ mmdInspect/
+│  └─ mmdInspect/              (Phase 1)
 ├─ tests/
-│  ├─ baseline/                golden USDA for compact, stable contracts
-│  ├─ fixtures/                generated PMX fixtures and their generator
-│  ├─ integration/             stage-open and cross-component tests
-│  └─ installed_consumer/      a project outside the tree that consumes installed packages
-├─ scripts/
-├─ third_party/                vendored code, each with its license (DEPENDENCIES.md §4)
+│  ├─ fixtures/                generate_fixtures.py, the one author of every PMX byte
+│  ├─ integration/             stage-open and Unicode-path tests
+│  └─ installed_consumer/      a project consumed from outside the tree
+├─ scripts/                    check_library_boundaries.py, check_installed_consumer.py, check_docs.py
 ├─ CMakeLists.txt  CMakePresets.json
 ├─ VERSION  CHANGELOG.md  LICENSE  THIRD_PARTY_NOTICES.md  README.md
 ├─ openstrata.toml  openstrata.ci.yaml
 ```
 
+`tests/baseline/` (compact goldens) and `third_party/` (vendored code,
+[DEPENDENCIES.md §4](DEPENDENCIES.md#4-third-party-code)) are created with
+their first content.
+
 A component's own unit tests live in that component's `tests/`; the root
-`tests/` holds only what spans components.
+`tests/` holds only what spans components. **Fixtures are the one exception to
+where things live, and the reason is measured:** `ost` refuses a bundle
+manifest's `tests.smoke` path that leaves the bundle
+(`INVALID_CONFIG … escapes the bundle with '..'`), so the fixtures the
+importer's verification pyramid opens are committed inside
+`plugins/usdMmdFileFormat/tests/fixtures/`. Their generator stays workspace
+tooling at `tests/fixtures/`, and any other component's tests write what they
+need with it (`generate_fixtures.py --out <scratch>`) instead of reading the
+bundle's copies.
 
 ## 4. Manifests, versioning and build metadata
 
@@ -191,11 +214,12 @@ cmake --build build --config Release
 ctest --test-dir build -C Release
 ```
 
-These are the intended commands; none has been run, because nothing exists to
-build. The [guides](../README.md) that document how to build are written with
-Phase 0 and only from commands that have been run.
+Both have been run; [guides/building.md](../guides/building.md) records the
+exact commands, including the presets in `CMakePresets.json`.
 
-- The root `CMakeLists.txt` composes every component for development.
+- The root `CMakeLists.txt` composes every component for development. It
+  adds `mmdPmx` before resolving OpenUSD, so nothing the library configures
+  can see pxr.
 - Once a component is packaged, each bundle also builds **standalone**
   against the installed packages of its dependencies
   (`find_package(mmdPmx CONFIG REQUIRED)`). No consumer reaches into a
@@ -206,24 +230,27 @@ Phase 0 and only from commands that have been run.
   ([TEXT_ENCODING_POLICY.md §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere)).
 
 What each installed package promises a consumer — its `find_package` name,
-target, header root and required packages — is written down when the first
-package exists, in a `PACKAGE_CONTRACT.md` beside this document, as
-`usd-vrm-plugins` does.
+target, header root and required packages — is
+[PACKAGE_CONTRACT.md](PACKAGE_CONTRACT.md).
 
 ## 6. Tests
 
-| Layer | Where | Proves |
-| --- | --- | --- |
-| unit | `libs/*/tests/`, `plugins/*/tests/` | each transition — bytes → document, document → canonical, canonical → USD — in isolation |
-| integration | `tests/integration/` | `Usd.Stage.Open("*.pmx")` through the registered plugin, against the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist) |
-| baseline | `tests/baseline/` | compact goldens do not change silently |
-| installed consumer | `tests/installed_consumer/` | installed packages work from a clean prefix outside the repository |
-| fuzz | parser entry points | malformed input never crashes or over-reads |
+| Layer | Where | Proves | Exists |
+| --- | --- | --- | --- |
+| unit | `libs/*/tests/`, `plugins/*/tests/` | each transition — bytes → document, document → canonical, canonical → USD — in isolation | `mmdPmx_unit` |
+| boundary | `libs/*/tests/` | §2.3's link-line and include gates | `mmdPmx_boundaries` |
+| fixtures | `tests/fixtures/` | the committed fixtures are exactly what the generator writes | `workspace_fixtures` |
+| integration | `tests/integration/` | `Usd.Stage.Open("*.pmx")` through the registered plugin, against the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist), and under a non-ASCII directory | `usdMmdFileFormat_stage_open`, `usdMmdFileFormat_unicode_paths` |
+| pyramid | the bundle manifest's `tests:` | `ost plugin test` L0–L5, from the build tree and from the package | — (`ost`) |
+| baseline | `tests/baseline/` | compact goldens do not change silently | the L5 golden of `minimal.pmx` |
+| installed consumer | `tests/installed_consumer/` | installed packages work from a clean prefix outside the repository | `workspace_installed_consumer` |
+| fuzz | parser entry points | malformed input never crashes or over-reads | Phase 1 |
 
 Fixtures are generated by committed code, never copied from distributed
 models ([DESIGN_POLICY.md §13](../design/DESIGN_POLICY.md#13-testing-policy)).
 Binary fixtures are marked `binary` and USDA goldens `eol=lf` in
-`.gitattributes`, for the reason `usd-vrm-plugins` records there.
+`.gitattributes`, for the reason `usd-vrm-plugins` records there, and so is
+`fixtures.json`, which `workspace_fixtures` compares byte for byte.
 
 ## 7. Invariants
 

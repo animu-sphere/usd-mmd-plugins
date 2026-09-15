@@ -1,7 +1,8 @@
 # usd-mmd-plugins — design policy
 
-> Status: **accepted** as the project's design policy, 2026-09-15. No code
-> exists yet; every behavior described here is intended, and
+> Status: **accepted** as the project's design policy, 2026-09-15. Only the
+> Phase 0 workspace skeleton is implemented; every other behavior described
+> here is intended, and
 > [reference/CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md) is the
 > only document that says what is implemented.
 >
@@ -174,9 +175,12 @@ public:
 ```
 
 `Result<T>` carries either a value and its recoverable diagnostics, or the
-fatal diagnostic that prevented one. Its exact shape is fixed with the first
-parser code (Phase 1), and the diagnostic record is fixed in
-[reference/DIAGNOSTICS.md](../reference/DIAGNOSTICS.md).
+fatal diagnostic that prevented one. Both it and the diagnostic record exist
+since the Phase 0 scaffold and are described in
+[reference/DIAGNOSTICS.md §1](../reference/DIAGNOSTICS.md#1-the-record).
+`ReadFile` is not implemented: the importer reads through `Ar` and hands the
+parser bytes, and a path-taking entry point arrives with its first caller
+(`mmd_inspect`, Phase 1).
 
 Signatures above are the intended public boundary, not a frozen ABI; §15 lists
 what *is* frozen.

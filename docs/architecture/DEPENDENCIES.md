@@ -4,18 +4,19 @@ What `usd-mmd-plugins` builds against, what it refuses to depend on, and the
 test a new dependency has to pass. Edges *between* this repository's own
 components are [WORKSPACE.md §2](WORKSPACE.md#2-dependency-directions)'s.
 
-Status (2026-09-15): nothing is built yet. The versions below are targets, and
-each becomes a fact — enforced at configure time — with Phase 0.
+Status (2026-09-15): the Phase 0 decisions are closed, and every value below
+is what the workspace builds with. The OpenUSD pin is enforced at configure
+time.
 
 ## 1. OpenUSD
 
 | | |
 | --- | --- |
-| Target | OpenUSD **26.x** |
-| Pin | an exact release, enforced by `cmake/UsdMmdOpenUsd.cmake` for `ost` and plain-CMake builds alike; expected to be the release the rest of the ecosystem pins (26.08 in `usd-vrm-plugins`), because `usd-avatar-runtime` composes every plugin into one OpenUSD process |
+| Pin | OpenUSD **26.08**, exactly (`PXR_VERSION` 2608), enforced by [cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake) for `ost` and plain-CMake builds alike and declared as `runtime.openusd: "==26.08"` in the bundle manifest; the release the rest of the ecosystem pins (`usd-vrm-plugins` too), because `usd-avatar-runtime` composes every plugin into one OpenUSD process |
 | Used by | `usdMmdFileFormat` (and later `mmdSchema`, `usdVmdFileFormat`) only |
-| Modules | `tf`, `vt`, `gf`, `ar`, `sdf`, `usd`, `usdGeom`, `usdSkel`, `usdShade`, `kind`; `usdPhysics` from Phase 6 |
-| Not used | OpenExec, Hydra, `usdImaging` — nothing is evaluated or rendered here |
+| Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `kind`; `usdSkel` and `usdShade` join in Phases 2–4, `usdPhysics` in Phase 6 |
+| Not used | OpenExec, Hydra, `usdImaging` — nothing is evaluated or rendered here, so unlike `usd-vrm-plugins`' pin module this one probes for no OpenExec |
+| CI runtimes | the OpenUSD 26.08 leaves of OpenStrata's runtime matrix, the same digests `usd-vrm-plugins` pins ([openstrata.ci.yaml](../../openstrata.ci.yaml)) |
 
 The pin is exact rather than a range for the same reason as in
 `usd-vrm-plugins`: a plugin built against one OpenUSD release is not loadable
@@ -31,12 +32,12 @@ calls the MaterialX library. The MaterialX document version it declares
 | | |
 | --- | --- |
 | Language | C++20 (the public parser API takes `std::span`) |
-| Build | CMake, with `CMakePresets.json`; the same minimum version as `usd-vrm-plugins`, fixed in Phase 0 |
+| Build | CMake **3.22** or later, the minimum `usd-vrm-plugins` declares; `CMakePresets.json` for the plain-CMake path |
 | Compilers | MSVC on Windows, Clang on macOS (arm64), GCC on Linux — the three hosted lanes `usd-vrm-plugins` runs |
-| Windows flags | `/utf-8`, `NOMINMAX` ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
-| Python | Python 3 with the OpenUSD bindings, for stage tests and tooling |
-| OpenStrata | `ost`, at the version `usd-vrm-plugins` uses when Phase 0 starts |
-| Unit-test framework | chosen in Phase 0 to match `usd-vrm-plugins` |
+| Windows flags | `/utf-8`, `NOMINMAX`, applied by `usdmmd_target_defaults()` in [cmake/UsdMmdTargets.cmake](../../cmake/UsdMmdTargets.cmake) ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
+| Python | the Python OpenUSD was built against — 3.13 for the 26.08 runtimes — for stage tests and tooling. The root project finds the interpreter *after* OpenUSD, so it inherits the one `pxrConfig.cmake` names |
+| OpenStrata | `ost` **0.22.10**, pinned in `openstrata.ci.yaml` |
+| Unit-test framework | **none**, as in `usd-vrm-plugins`: each suite is a plain executable that checks with `assert()`, compiled with `NDEBUG` undefined so Release builds still check, and registered with CTest |
 
 ## 3. Refused dependencies
 

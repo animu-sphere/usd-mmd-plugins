@@ -4,11 +4,17 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-15 the repository contains no code**, so every *current* status
-is `—` (nothing implemented). The *intended* column is the claim the design
-makes for the first substantial release
+**As of 2026-09-15 the tree holds the Phase 0 workspace skeleton:** `.pmx` is
+registered, the PMX header is read and validated, and the stage metadata and
+`/Asset` are authored. Every other *current* status is `—` (nothing
+implemented). The *intended* column is the claim the design makes for the
+first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
 it is listed so reviewers can see the target, and it is not a support claim.
+
+The fixtures behind the current claims are in
+[plugins/usdMmdFileFormat/tests/fixtures/](../../plugins/usdMmdFileFormat/tests/fixtures/),
+and `fixtures.json` there says what each must do.
 
 ## Status vocabulary
 
@@ -27,14 +33,15 @@ Never "supported" merely because code parses the bytes.
 
 | Capability | Current | Intended | Phase | Contract |
 | --- | :---: | --- | :---: | --- |
-| `.pmx` registration, `Usd.Stage.Open` | — | supported | 0 | [STAGE §1](../design/STAGE_CONTRACT.md#1-scope) |
-| PMX 2.0 | — | supported | 1 | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| PMX 2.1 | — | supported | 1 | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| `.pmx` registration, `Usd.Stage.Open` | supported | supported | 0 | [STAGE §1](../design/STAGE_CONTRACT.md#1-scope) |
+| Non-ASCII file paths (read through `Ar`) | supported | supported | 0 | [TEXT §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere) |
+| PMX 2.0 | — (header only) | supported | 1 | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| PMX 2.1 | — (header only) | supported | 1 | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
 | UTF-8 text | — | supported | 1 | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | UTF-16LE text | — | supported | 1 | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
-| Index widths 1 / 2 / 4 | — | supported | 1 | [PMX §4](../design/PMX_CONTRACT.md#4-indices) |
-| Malformed-input rejection | — | supported | 1 | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
-| Stage metadata (`/Asset`, Y-up, meters, contract version) | — | supported | 0, 2 | [STAGE §2](../design/STAGE_CONTRACT.md#2-contract-version), [§4](../design/STAGE_CONTRACT.md#4-prim-hierarchy) |
+| Index widths 1 / 2 / 4 | — (validated, not yet used) | supported | 1 | [PMX §4](../design/PMX_CONTRACT.md#4-indices) |
+| Malformed-input rejection | — (header only) | supported | 1 | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
+| Stage metadata (`/Asset`, Y-up, meters, contract version) | supported | supported | 0, 2 | [STAGE §2](../design/STAGE_CONTRACT.md#2-contract-version), [§4](../design/STAGE_CONTRACT.md#4-prim-hierarchy) |
 | Mesh: points, faces, normals | — | supported | 2 | [STAGE §8](../design/STAGE_CONTRACT.md#8-geometry) |
 | Primary UV (`primvars:st`) | — | supported | 2 | [STAGE §8.3](../design/STAGE_CONTRACT.md#83-uvs) |
 | Additional UV 1–4 | — | preserved | 2 | [STAGE §8.3](../design/STAGE_CONTRACT.md#83-uvs) |

@@ -11,7 +11,7 @@ Legend: 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The next milestone — Phase 0, the workspace skeleton — broken into tasks and pull requests. |
+| [current.md](current.md) | The current milestone — Phase 0, the workspace skeleton — and what remains of it. |
 
 ## One sequence
 
@@ -27,7 +27,7 @@ in.** No other document states a version for a Phase.
 
 | Phase | Scope | Status | Release |
 | --- | --- | --- | --- |
-| 0 | workspace skeleton | ⬜ next | unassigned |
+| 0 | workspace skeleton | 🚧 awaiting CI | unassigned |
 | 1 | PMX structural parser | ⬜ | unassigned |
 | 2 | canonical stage | ⬜ | unassigned |
 | 3 | material triad | ⬜ | unassigned |
@@ -46,9 +46,12 @@ Phases get releases of their own is decided here when Phase 0 is done.
 Where things stand, as of 2026-09-15:
 
 - The documentation baseline exists: the design policy, five focused design
-  contracts, the workspace contract, and reference pages that state — truthfully
-  — that nothing is implemented.
-- There is no code, no build, and no CI.
+  contracts, the workspace contract, and reference pages that state what is
+  implemented.
+- The Phase 0 workspace skeleton is implemented: `.pmx` opens as a stage with
+  the Phase 0 metadata, through `ost` and plain CMake and from an installed
+  prefix, on Windows. CI is written (`openstrata.ci.yaml`, `docs-check.yml`)
+  and has not run yet.
 - Five places where the design departs from the 2026-09-15 implementation
   policy are listed in
   [DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy).
@@ -63,7 +66,6 @@ schedules them.
 
 | Id | Question | Owner | Blocks |
 | --- | --- | --- | --- |
-| — | Exact OpenUSD pin, CMake minimum, unit-test framework | [DEPENDENCIES.md](../architecture/DEPENDENCIES.md) | Phase 0 |
 | PMX-O3 | Globals count above 8 in the wild | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | Phase 1 (non-blocking) |
 | STAGE-O1 | Unit scale (`0.08` m per MMD unit) | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 2 |
 | STAGE-O2 | Mesh prim name, one-mesh rule | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 2 |
