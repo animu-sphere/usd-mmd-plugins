@@ -4,12 +4,13 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-15 the tree holds Phases 0–2:** `.pmx` is registered, every
+**As of 2026-09-16 the tree holds Phases 0–3 in progress:** `.pmx` is registered, every
 table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
 by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
 canonical stage — mesh, UVs, material prims and subsets, skeleton and
-skinning. Materials have no shading network yet (Phase 3), and morphs,
-control and physics semantics are not authored. The *intended* column is the
+skinning. Phase 3 adds MMD material semantics plus unlit-compatible preview
+and MaterialX graphs; morphs, control and physics semantics are not authored.
+The *intended* column is the
 claim the design makes for the first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
 it is listed so reviewers can see the target, and it is not a support claim.

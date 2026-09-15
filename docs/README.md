@@ -4,13 +4,14 @@ Documentation is organized by responsibility: each category answers one class
 of question. The layout is the one `usd-vrm-plugins`, `open-strata` and
 `hydra-merlin` use, so the repositories read the same way.
 
-**The tree holds Phases 0–2 (2026-09-15):** the PMX structural parser reads
+**The tree holds Phases 0–3 in progress (2026-09-16):** the PMX structural parser reads
 every table of a PMX 2.0 or 2.1 file, `mmd_inspect` reports on it, and `.pmx`
 opens as the canonical stage — mesh, UVs, material prims and subsets,
-skeleton and skinning, Y-up, in meters. Materials have no shading network
-yet, and morphs, control and physics semantics are not authored. Everything
-else in `design/` is intended behavior; [reference/](reference/) is the only
-place that says what is implemented.
+skeleton and skinning, Y-up, in meters. Phase 3 adds canonical MMD material
+semantics and unlit-compatible `preview` and `mtlx` realizations. Morphs,
+control and physics semantics are not authored. Everything else in `design/`
+is intended behavior; [reference/](reference/) is the only place that says
+what is implemented.
 
 | Category | Answers | Start here |
 | --- | --- | --- |

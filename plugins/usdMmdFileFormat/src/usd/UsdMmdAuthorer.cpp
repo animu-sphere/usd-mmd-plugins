@@ -29,13 +29,17 @@
 #include "pxr/usd/usdGeom/xform.h"
 #include "pxr/usd/usdShade/material.h"
 #include "pxr/usd/usdShade/materialBindingAPI.h"
+#include "pxr/usd/usdShade/nodeGraph.h"
+#include "pxr/usd/usdShade/shader.h"
 #include "pxr/usd/usdShade/tokens.h"
 #include "pxr/usd/usdSkel/bindingAPI.h"
 #include "pxr/usd/usdSkel/root.h"
 #include "pxr/usd/usdSkel/skeleton.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -103,6 +107,46 @@ SetVertexPrimvar(const UsdGeomPrimvarsAPI& primvars, const char* name,
     const SdfValueTypeName& type, const VtValue& value)
 {
     primvars.CreatePrimvar(TfToken(name), type, UsdGeomTokens->vertex).Set(value);
+}
+
+float
+SpecularPowerToRoughness(float power)
+{
+    if (!std::isfinite(power) || power < 0.0f) {
+        power = 0.0f;
+    }
+    const float alpha = std::sqrt(2.0f / (power + 2.0f));
+    return std::clamp(std::sqrt(alpha), 0.05f, 1.0f);
+}
+
+const char*
+SphereModeName(mmd::SphereMode mode)
+{
+    switch (mode) {
+    case mmd::SphereMode::Multiply:
+        return "multiply";
+    case mmd::SphereMode::Add:
+        return "add";
+    case mmd::SphereMode::SubTexture:
+        return "subTexture";
+    case mmd::SphereMode::Disabled:
+    default:
+        return "disabled";
+    }
+}
+
+const char*
+ToonSourceName(mmd::ToonSource source)
+{
+    switch (source) {
+    case mmd::ToonSource::Individual:
+        return "individual";
+    case mmd::ToonSource::Shared:
+        return "shared";
+    case mmd::ToonSource::None:
+    default:
+        return "none";
+    }
 }
 
 class Authorer {
@@ -235,25 +279,227 @@ private:
         return mesh;
     }
 
+    UsdShadeShader _Shader(const SdfPath& graphPath, const char* name, const char* id)
+    {
+        UsdShadeShader shader =
+            UsdShadeShader::Define(_stage, graphPath.AppendChild(TfToken(name)));
+        shader.CreateIdAttr(VtValue(TfToken(id)));
+        return shader;
+    }
+
+    const mmd::Texture* _TextureWithAsset(std::int32_t index) const
+    {
+        if (index == mmd::kNone || index < 0
+            || static_cast<std::size_t>(index) >= _doc.textures.size()) {
+            return nullptr;
+        }
+        const mmd::Texture& texture = _doc.textures[static_cast<std::size_t>(index)];
+        return texture.assetPath.empty() ? nullptr : &texture;
+    }
+
+    void _MaterialSemantics(const UsdPrim& prim, const mmd::Material& m)
+    {
+        SetCustom(prim, "mmd:material:diffuseColor", SdfValueTypeNames->Color4f,
+            VtValue(GfVec4f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2],
+                m.diffuseColor[3])),
+            SdfVariabilityUniform);
+        SetCustom(prim, "mmd:material:specularColor", SdfValueTypeNames->Color3f,
+            VtValue(GfVec3f(m.specularColor[0], m.specularColor[1], m.specularColor[2])),
+            SdfVariabilityUniform);
+        SetCustom(prim, "mmd:material:specularPower", SdfValueTypeNames->Float,
+            VtValue(m.specularPower), SdfVariabilityUniform);
+        SetCustom(prim, "mmd:material:ambientColor", SdfValueTypeNames->Color3f,
+            VtValue(GfVec3f(m.ambientColor[0], m.ambientColor[1], m.ambientColor[2])),
+            SdfVariabilityUniform);
+
+        const auto boolean = [&](const char* name, bool value) {
+            SetCustom(prim, name, SdfValueTypeNames->Bool, VtValue(value),
+                SdfVariabilityUniform);
+        };
+        boolean("mmd:material:doubleSided", m.doubleSided);
+        boolean("mmd:material:groundShadow", m.groundShadow);
+        boolean("mmd:material:castSelfShadow", m.castSelfShadow);
+        boolean("mmd:material:receiveSelfShadow", m.receiveSelfShadow);
+        boolean("mmd:material:drawEdge", m.drawEdge);
+        boolean("mmd:material:vertexColor", m.vertexColor);
+        boolean("mmd:material:drawPoints", m.drawPoints);
+        boolean("mmd:material:drawLines", m.drawLines);
+
+        SetCustom(prim, "mmd:material:edgeColor", SdfValueTypeNames->Color4f,
+            VtValue(GfVec4f(m.edgeColor[0], m.edgeColor[1], m.edgeColor[2], m.edgeColor[3])),
+            SdfVariabilityUniform);
+        SetCustom(prim, "mmd:material:edgeSize", SdfValueTypeNames->Float,
+            VtValue(m.edgeSize), SdfVariabilityUniform);
+        SetCustom(prim, "mmd:material:sphereMode", SdfValueTypeNames->Token,
+            VtValue(TfToken(SphereModeName(m.sphereMode))), SdfVariabilityUniform);
+        SetCustom(prim, "mmd:material:toonSource", SdfValueTypeNames->Token,
+            VtValue(TfToken(ToonSourceName(m.toonSource))), SdfVariabilityUniform);
+        if (m.toonSource == mmd::ToonSource::Shared) {
+            SetCustom(prim, "mmd:material:sharedToonIndex", SdfValueTypeNames->Int,
+                VtValue(m.sharedToonIndex), SdfVariabilityUniform);
+        }
+    }
+
+    void _AuthorPreview(UsdShadeMaterial material, const mmd::Material& m)
+    {
+        const SdfPath graphPath = material.GetPath().AppendChild(TfToken("preview"));
+        UsdShadeNodeGraph graph = UsdShadeNodeGraph::Define(_stage, graphPath);
+        UsdShadeShader surface = _Shader(graphPath, "surface", "UsdPreviewSurface");
+        surface.CreateInput(TfToken("diffuseColor"), SdfValueTypeNames->Color3f)
+            .Set(GfVec3f(0.0f));
+        surface.CreateInput(TfToken("emissiveColor"), SdfValueTypeNames->Color3f)
+            .Set(GfVec3f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2]));
+        surface.CreateInput(TfToken("opacity"), SdfValueTypeNames->Float)
+            .Set(m.diffuseColor[3]);
+        surface.CreateInput(TfToken("useSpecularWorkflow"), SdfValueTypeNames->Int).Set(0);
+        surface.CreateInput(TfToken("metallic"), SdfValueTypeNames->Float).Set(0.0f);
+        surface.CreateInput(TfToken("roughness"), SdfValueTypeNames->Float).Set(1.0f);
+
+        const mmd::Texture* texture = _TextureWithAsset(m.texture);
+        if (texture) {
+            UsdShadeShader stReader =
+                _Shader(graphPath, "stReader", "UsdPrimvarReader_float2");
+            stReader.CreateInput(TfToken("varname"), SdfValueTypeNames->String)
+                .Set(std::string("st"));
+            const UsdShadeOutput st =
+                stReader.CreateOutput(TfToken("result"), SdfValueTypeNames->Float2);
+
+            UsdShadeShader image = _Shader(graphPath, "baseTexture", "UsdUVTexture");
+            UsdShadeInput file = image.CreateInput(TfToken("file"), SdfValueTypeNames->Asset);
+            file.Set(SdfAssetPath(texture->assetPath));
+            file.GetAttr().SetColorSpace(TfToken("sRGB"));
+            image.CreateInput(TfToken("st"), SdfValueTypeNames->Float2).ConnectToSource(st);
+            image.CreateInput(TfToken("wrapS"), SdfValueTypeNames->Token)
+                .Set(TfToken("repeat"));
+            image.CreateInput(TfToken("wrapT"), SdfValueTypeNames->Token)
+                .Set(TfToken("repeat"));
+            image.CreateInput(TfToken("sourceColorSpace"), SdfValueTypeNames->Token)
+                .Set(TfToken("sRGB"));
+            image.CreateInput(TfToken("scale"), SdfValueTypeNames->Float4)
+                .Set(GfVec4f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2],
+                    m.diffuseColor[3]));
+            const UsdShadeOutput rgb =
+                image.CreateOutput(TfToken("rgb"), SdfValueTypeNames->Float3);
+            const UsdShadeOutput alpha =
+                image.CreateOutput(TfToken("a"), SdfValueTypeNames->Float);
+            surface.GetInput(TfToken("emissiveColor")).ConnectToSource(rgb);
+            surface.GetInput(TfToken("opacity")).ConnectToSource(alpha);
+        }
+
+        const UsdShadeOutput shaderOut =
+            surface.CreateOutput(TfToken("surface"), SdfValueTypeNames->Token);
+        const UsdShadeOutput graphOut =
+            graph.CreateOutput(TfToken("surface"), SdfValueTypeNames->Token);
+        graphOut.ConnectToSource(shaderOut);
+        material.CreateSurfaceOutput().ConnectToSource(graphOut);
+    }
+
+    void _AuthorMtlx(UsdShadeMaterial material, const mmd::Material& m)
+    {
+        const SdfPath graphPath = material.GetPath().AppendChild(TfToken("mtlx"));
+        UsdShadeNodeGraph graph = UsdShadeNodeGraph::Define(_stage, graphPath);
+        UsdShadeShader surface =
+            _Shader(graphPath, "surface", "ND_gltf_pbr_surfaceshader");
+        surface.CreateInput(TfToken("base_color"), SdfValueTypeNames->Color3f)
+            .Set(GfVec3f(0.0f));
+        surface.CreateInput(TfToken("metallic"), SdfValueTypeNames->Float).Set(0.0f);
+        surface.CreateInput(TfToken("roughness"), SdfValueTypeNames->Float).Set(1.0f);
+        surface.CreateInput(TfToken("specular"), SdfValueTypeNames->Float).Set(0.0f);
+        surface.CreateInput(TfToken("emissive"), SdfValueTypeNames->Color3f)
+            .Set(GfVec3f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2]));
+        surface.CreateInput(TfToken("ior"), SdfValueTypeNames->Float).Set(1.5f);
+
+        const mmd::Texture* texture = _TextureWithAsset(m.texture);
+        const bool hasTexture = m.texture != mmd::kNone;
+        const int alphaMode = hasTexture || m.diffuseColor[3] < 1.0f ? 2 : 0;
+        surface.CreateInput(TfToken("alpha_mode"), SdfValueTypeNames->Int).Set(alphaMode);
+        surface.CreateInput(TfToken("alpha"), SdfValueTypeNames->Float)
+            .Set(m.diffuseColor[3]);
+
+        if (texture) {
+            UsdShadeShader st = _Shader(graphPath, "st", "ND_texcoord_vector2");
+            st.CreateInput(TfToken("index"), SdfValueTypeNames->Int).Set(0);
+            const UsdShadeOutput stOut =
+                st.CreateOutput(TfToken("out"), SdfValueTypeNames->Float2);
+
+            UsdShadeShader image = _Shader(graphPath, "baseTexture", "ND_image_color4");
+            UsdShadeInput file = image.CreateInput(TfToken("file"), SdfValueTypeNames->Asset);
+            file.Set(SdfAssetPath(texture->assetPath));
+            file.GetAttr().SetColorSpace(TfToken("srgb_texture"));
+            image.CreateInput(TfToken("default"), SdfValueTypeNames->Color4f)
+                .Set(GfVec4f(0.0f, 0.0f, 0.0f, 1.0f));
+            image.CreateInput(TfToken("texcoord"), SdfValueTypeNames->Float2)
+                .ConnectToSource(stOut);
+            image.CreateInput(TfToken("uaddressmode"), SdfValueTypeNames->String)
+                .Set(std::string("periodic"));
+            image.CreateInput(TfToken("vaddressmode"), SdfValueTypeNames->String)
+                .Set(std::string("periodic"));
+
+            UsdShadeShader factor = _Shader(graphPath, "baseColorFactor",
+                "ND_multiply_color4");
+            factor.CreateInput(TfToken("in1"), SdfValueTypeNames->Color4f)
+                .ConnectToSource(image.CreateOutput(TfToken("out"), SdfValueTypeNames->Color4f));
+            factor.CreateInput(TfToken("in2"), SdfValueTypeNames->Color4f)
+                .Set(GfVec4f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2],
+                    m.diffuseColor[3]));
+
+            UsdShadeShader split =
+                _Shader(graphPath, "baseColorSplit", "ND_separate4_color4");
+            split.CreateInput(TfToken("in"), SdfValueTypeNames->Color4f)
+                .ConnectToSource(factor.CreateOutput(TfToken("out"), SdfValueTypeNames->Color4f));
+            const UsdShadeOutput r = split.CreateOutput(TfToken("outr"), SdfValueTypeNames->Float);
+            const UsdShadeOutput g = split.CreateOutput(TfToken("outg"), SdfValueTypeNames->Float);
+            const UsdShadeOutput b = split.CreateOutput(TfToken("outb"), SdfValueTypeNames->Float);
+            const UsdShadeOutput a = split.CreateOutput(TfToken("outa"), SdfValueTypeNames->Float);
+
+            UsdShadeShader rgb = _Shader(graphPath, "baseColorRgb",
+                "ND_combine3_color3");
+            rgb.CreateInput(TfToken("in1"), SdfValueTypeNames->Float).ConnectToSource(r);
+            rgb.CreateInput(TfToken("in2"), SdfValueTypeNames->Float).ConnectToSource(g);
+            rgb.CreateInput(TfToken("in3"), SdfValueTypeNames->Float).ConnectToSource(b);
+            surface.GetInput(TfToken("emissive"))
+                .ConnectToSource(rgb.CreateOutput(TfToken("out"), SdfValueTypeNames->Color3f));
+            surface.GetInput(TfToken("alpha")).ConnectToSource(a);
+        }
+
+        const UsdShadeOutput shaderOut =
+            surface.CreateOutput(TfToken("surface"), SdfValueTypeNames->Token);
+        const UsdShadeOutput graphOut =
+            graph.CreateOutput(TfToken("surface"), SdfValueTypeNames->Token);
+        graphOut.ConnectToSource(shaderOut);
+        material.CreateSurfaceOutput(TfToken("mtlx")).ConnectToSource(graphOut);
+
+        if (material.GetPrim().ApplyAPI(TfToken("MaterialXConfigAPI"))) {
+            material.GetPrim()
+                .CreateAttribute(TfToken("config:mtlx:version"), SdfValueTypeNames->String,
+                    /*custom=*/false, SdfVariabilityUniform)
+                .Set(std::string("1.39"));
+        }
+    }
+
     /// One UsdShadeMaterial per PMX material, in material-table order, with
-    /// its provenance and the semantics the stage carries so far
-    /// (STAGE_CONTRACT.md §10, MATERIAL_POLICY.md §4).
+    /// canonical semantics and the two portable realization graphs.
     void _Materials()
     {
         for (const mmd::Material& m : _doc.materials) {
             const SdfPath path = kMtlPath.AppendChild(TfToken(m.name.stableId));
-            const UsdPrim prim = UsdShadeMaterial::Define(_stage, path).GetPrim();
+            const UsdShadeMaterial material = UsdShadeMaterial::Define(_stage, path);
+            const UsdPrim prim = material.GetPrim();
             prim.SetCustomDataByKey(kSourceNameKey, VtValue(m.name.source));
             prim.SetCustomDataByKey(kSourceEnglishNameKey, VtValue(m.name.english));
             prim.SetCustomDataByKey(kSourceIndexKey, VtValue(static_cast<int>(m.sourceIndex)));
+            prim.SetCustomDataByKey(TfToken("mmd:sourceMemo"), VtValue(m.memo));
 
-            SetCustom(prim, "mmd:material:doubleSided", SdfValueTypeNames->Bool,
-                VtValue(m.doubleSided), SdfVariabilityUniform);
+            _MaterialSemantics(prim, m);
             _TextureSlot(prim, m.texture, "mmd:material:texture", kSourceTexturePathKey);
             _TextureSlot(prim, m.sphereTexture, "mmd:material:sphereTexture",
                 kSourceSphereTexturePathKey);
-            _TextureSlot(prim, m.toonTexture, "mmd:material:toonTexture",
-                kSourceToonTexturePathKey);
+            if (m.toonSource == mmd::ToonSource::Individual) {
+                _TextureSlot(prim, m.toonTexture, "mmd:material:toonTexture",
+                    kSourceToonTexturePathKey);
+            }
+            _AuthorPreview(material, m);
+            _AuthorMtlx(material, m);
         }
     }
 

@@ -26,8 +26,13 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   and its texture slots; and `/Asset/skel/Skeleton` in canonical joint order,
   with bind and rest transforms, per-joint source names, and BDEF1/2/4
   skinning — SDEF as linear blending with C/R0/R1 preserved, QDEF
-  unverified. Model names and comments join `/Asset`'s `customData`. No
-  shading network yet: that is Phase 3.
+  unverified. Model names and comments join `/Asset`'s `customData`.
+- **Phase 3 material triad.** Canonical materials now retain diffuse, specular,
+  ambient, edge, draw flags, sphere modes and toon ramp variants. Every
+  material authors VRM-like unlit `preview` and MaterialX `mtlx` graphs;
+  MMD-specific semantics remain on the material prim for an MMD-aware
+  renderer. Unsafe texture paths remain provenance-only, and alpha mode uses
+  the source texture-slot contract without decoding image pixels.
 - **`mmdModel`** (`libs/mmdModel/`), a plain static library with no OpenUSD:
   `mmd::Canonicalize(const pmx::Document&)` applies the one source-to-USD
   conversion (right-handed, facing +Z, 0.08 m per MMD unit), assigns stable

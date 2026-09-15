@@ -93,11 +93,20 @@ SampleDocument()
     doc.textures = {"tex\\髪.png", "tex/肌.png", "sph\\光沢.sph", "..\\toon\\共有.bmp"};
     doc.materials = {MakeMaterial("髪", "hair", 3), MakeMaterial("肌", "skin", 6)};
     doc.materials[0].flags = pmx::MaterialFlag::NoCulling | pmx::MaterialFlag::DrawsEdge;
+    doc.materials[0].diffuse = {0.1f, 0.2f, 0.3f, 0.4f};
+    doc.materials[0].specular = {0.5f, 0.6f, 0.7f};
+    doc.materials[0].specularPower = 32.0f;
+    doc.materials[0].ambient = {0.8f, 0.7f, 0.6f};
+    doc.materials[0].edgeColor = {0.9f, 0.8f, 0.7f, 0.6f};
+    doc.materials[0].edgeSize = 1.25f;
+    doc.materials[0].sphereMode = 3;
+    doc.materials[0].memo = "hair memo";
     doc.materials[0].texture = 0;
     doc.materials[0].sphereTexture = 2;
     doc.materials[0].toonReference = pmx::ToonReference::Texture;
     doc.materials[0].toonTexture = 3;
     doc.materials[1].texture = 1;
+    doc.materials[1].sphereMode = 1;
     doc.materials[1].toonReference = pmx::ToonReference::Shared;
     doc.materials[1].sharedToon = 1;
     doc.bones = {
@@ -299,13 +308,43 @@ TestMaterials()
     const Material& hair = c.materials[0];
     assert(hair.name.stableId == "hair" && hair.name.source == "髪");
     assert(hair.firstFace == 0 && hair.faceCount == 1);
+    assert((hair.diffuseColor == Float4{0.1f, 0.2f, 0.3f, 0.4f}));
+    assert((hair.specularColor == Float3{0.5f, 0.6f, 0.7f}));
+    assert(hair.specularPower == 32.0f);
+    assert((hair.ambientColor == Float3{0.8f, 0.7f, 0.6f}));
     assert(hair.doubleSided);
+    assert(!hair.groundShadow && !hair.castSelfShadow && !hair.receiveSelfShadow);
+    assert(hair.drawEdge && !hair.vertexColor && !hair.drawPoints && !hair.drawLines);
+    assert((hair.edgeColor == Float4{0.9f, 0.8f, 0.7f, 0.6f}));
+    assert(hair.edgeSize == 1.25f);
     assert(hair.texture == 0 && hair.sphereTexture == 2 && hair.toonTexture == 3);
+    assert(hair.sphereMode == SphereMode::SubTexture);
+    assert(hair.toonSource == ToonSource::Individual && hair.sharedToonIndex == kNone);
+    assert(hair.memo == "hair memo");
     const Material& skin = c.materials[1];
     assert(skin.sourceIndex == 1 && skin.firstFace == 1 && skin.faceCount == 2);
     assert(!skin.doubleSided);
     assert(skin.texture == 1 && skin.sphereTexture == kNone);
+    assert(skin.sphereMode == SphereMode::Multiply);
+    assert(skin.toonSource == ToonSource::Shared && skin.sharedToonIndex == 1);
     assert(skin.toonTexture == kNone);  // a shared toon slot is no texture
+
+    pmx::Document invalid = SampleDocument();
+    invalid.textures.pop_back();
+    invalid.materials[0].toonTexture = pmx::kNoIndex;
+    invalid.materials[0].sphereMode = 4;
+    const CanonicalDocument repaired =
+        ExpectCanonical(invalid, {"MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE"});
+    assert(repaired.materials[0].sphereMode == SphereMode::Disabled);
+
+    pmx::Document invalidToon = SampleDocument();
+    invalidToon.textures.pop_back();
+    invalidToon.materials[0].toonTexture = pmx::kNoIndex;
+    invalidToon.materials[1].sharedToon = 10;
+    const CanonicalDocument repairedToon =
+        ExpectCanonical(invalidToon, {"MMD_MATERIAL_UNSUPPORTED_TOON_SLOT"});
+    assert(repairedToon.materials[1].toonSource == ToonSource::None);
+    assert(repairedToon.materials[1].sharedToonIndex == kNone);
 
     // Short: the tail is unbound and the subsets no longer partition.
     pmx::Document doc = SampleDocument();

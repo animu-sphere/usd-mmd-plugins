@@ -196,7 +196,9 @@ Decisions:
   **one** canonical `ToonRamp` semantic with two variants — `individual`
   (a texture reference) and `shared` (slot 0–9, which MMD resolves to
   `toon01.bmp`–`toon10.bmp` in its own data folder). Consumers read one
-  semantic; the variant is data
+  semantic; the variant is data. A shared slot outside 0–9 is
+  `MMD_MATERIAL_UNSUPPORTED_TOON_SLOT` (recoverable) and the canonical ramp
+  is absent
   ([MATERIAL_POLICY.md §7](MATERIAL_POLICY.md#7-toon-ramps)).
 - **Sphere mode** outside `0`–`3` is `MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE`
   (recoverable, sphere disabled).

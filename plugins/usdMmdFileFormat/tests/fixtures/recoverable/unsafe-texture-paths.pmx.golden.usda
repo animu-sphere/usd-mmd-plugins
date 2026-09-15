@@ -94,10 +94,12 @@ not a distributed model"""
     def Scope "mtl"
     {
         def Material "hair" (
+            apiSchemas = ["MaterialXConfigAPI"]
             customData = {
                 dictionary mmd = {
                     string sourceEnglishName = "hair"
                     int sourceIndex = 0
+                    string sourceMemo = ""
                     string sourceName = "髪"
                     string sourceSphereTexturePath = "/tex/光沢.sph"
                     string sourceTexturePath = "..\\toon\\共有.bmp"
@@ -106,14 +108,70 @@ not a distributed model"""
             }
         )
         {
+            string config:mtlx:version = "1.39"
+            custom uniform color3f mmd:material:ambientColor = (0.4, 0.4, 0.4)
+            custom uniform bool mmd:material:castSelfShadow = 0
+            custom uniform color4f mmd:material:diffuseColor = (0.8, 0.8, 0.8, 1)
             custom uniform bool mmd:material:doubleSided = 1
+            custom uniform bool mmd:material:drawEdge = 1
+            custom uniform bool mmd:material:drawLines = 0
+            custom uniform bool mmd:material:drawPoints = 0
+            custom uniform color4f mmd:material:edgeColor = (0, 0, 0, 1)
+            custom uniform float mmd:material:edgeSize = 1
+            custom uniform bool mmd:material:groundShadow = 0
+            custom uniform bool mmd:material:receiveSelfShadow = 0
+            custom uniform color3f mmd:material:specularColor = (0.1, 0.1, 0.1)
+            custom uniform float mmd:material:specularPower = 8
+            custom uniform token mmd:material:sphereMode = "add"
+            custom uniform token mmd:material:toonSource = "individual"
+            custom uniform bool mmd:material:vertexColor = 0
+            token outputs:mtlx:surface.connect = </Asset/mtl/hair/mtlx.outputs:surface>
+            token outputs:surface.connect = </Asset/mtl/hair/preview.outputs:surface>
+
+            def NodeGraph "preview"
+            {
+                token outputs:surface.connect = </Asset/mtl/hair/preview/surface.outputs:surface>
+
+                def Shader "surface"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor = (0, 0, 0)
+                    color3f inputs:emissiveColor = (0.8, 0.8, 0.8)
+                    float inputs:metallic = 0
+                    float inputs:opacity = 1
+                    float inputs:roughness = 1
+                    int inputs:useSpecularWorkflow = 0
+                    token outputs:surface
+                }
+            }
+
+            def NodeGraph "mtlx"
+            {
+                token outputs:surface.connect = </Asset/mtl/hair/mtlx/surface.outputs:surface>
+
+                def Shader "surface"
+                {
+                    uniform token info:id = "ND_gltf_pbr_surfaceshader"
+                    float inputs:alpha = 1
+                    int inputs:alpha_mode = 2
+                    color3f inputs:base_color = (0, 0, 0)
+                    color3f inputs:emissive = (0.8, 0.8, 0.8)
+                    float inputs:ior = 1.5
+                    float inputs:metallic = 0
+                    float inputs:roughness = 1
+                    float inputs:specular = 0
+                    token outputs:surface
+                }
+            }
         }
 
         def Material "skin" (
+            apiSchemas = ["MaterialXConfigAPI"]
             customData = {
                 dictionary mmd = {
                     string sourceEnglishName = "skin"
                     int sourceIndex = 1
+                    string sourceMemo = ""
                     string sourceName = "肌"
                     string sourceSphereTexturePath = "sph\\光\t沢.sph"
                     string sourceTexturePath = "C:\\tex\\肌.png"
@@ -122,7 +180,61 @@ not a distributed model"""
             }
         )
         {
+            string config:mtlx:version = "1.39"
+            custom uniform color3f mmd:material:ambientColor = (0.4, 0.4, 0.4)
+            custom uniform bool mmd:material:castSelfShadow = 1
+            custom uniform color4f mmd:material:diffuseColor = (0.8, 0.8, 0.8, 1)
             custom uniform bool mmd:material:doubleSided = 0
+            custom uniform bool mmd:material:drawEdge = 0
+            custom uniform bool mmd:material:drawLines = 0
+            custom uniform bool mmd:material:drawPoints = 0
+            custom uniform color4f mmd:material:edgeColor = (0, 0, 0, 1)
+            custom uniform float mmd:material:edgeSize = 1
+            custom uniform bool mmd:material:groundShadow = 1
+            custom uniform bool mmd:material:receiveSelfShadow = 1
+            custom uniform color3f mmd:material:specularColor = (0.1, 0.1, 0.1)
+            custom uniform float mmd:material:specularPower = 8
+            custom uniform token mmd:material:sphereMode = "disabled"
+            custom uniform token mmd:material:toonSource = "individual"
+            custom uniform bool mmd:material:vertexColor = 0
+            token outputs:mtlx:surface.connect = </Asset/mtl/skin/mtlx.outputs:surface>
+            token outputs:surface.connect = </Asset/mtl/skin/preview.outputs:surface>
+
+            def NodeGraph "preview"
+            {
+                token outputs:surface.connect = </Asset/mtl/skin/preview/surface.outputs:surface>
+
+                def Shader "surface"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor = (0, 0, 0)
+                    color3f inputs:emissiveColor = (0.8, 0.8, 0.8)
+                    float inputs:metallic = 0
+                    float inputs:opacity = 1
+                    float inputs:roughness = 1
+                    int inputs:useSpecularWorkflow = 0
+                    token outputs:surface
+                }
+            }
+
+            def NodeGraph "mtlx"
+            {
+                token outputs:surface.connect = </Asset/mtl/skin/mtlx/surface.outputs:surface>
+
+                def Shader "surface"
+                {
+                    uniform token info:id = "ND_gltf_pbr_surfaceshader"
+                    float inputs:alpha = 1
+                    int inputs:alpha_mode = 2
+                    color3f inputs:base_color = (0, 0, 0)
+                    color3f inputs:emissive = (0.8, 0.8, 0.8)
+                    float inputs:ior = 1.5
+                    float inputs:metallic = 0
+                    float inputs:roughness = 1
+                    float inputs:specular = 0
+                    token outputs:surface
+                }
+            }
         }
     }
 

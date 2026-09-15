@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The current milestone — Phase 2, the canonical stage — and what remains of it. |
+| [current.md](current.md) | The current milestone — Phase 3, the material triad — and what remains of it. |
 
 ## One sequence
 
@@ -29,8 +29,8 @@ in.** No other document states a version for a Phase.
 | --- | --- | --- | --- |
 | 0 | workspace skeleton | ✅ done | unassigned |
 | 1 | PMX structural parser | ✅ done | unassigned |
-| 2 | canonical stage | 🚧 awaiting CI | unassigned |
-| 3 | material triad | ⬜ | unassigned |
+| 2 | canonical stage | ✅ done | unassigned |
+| 3 | material triad | 🚧 in progress | unassigned |
 | 4 | morphs | ⬜ | unassigned |
 | 5 | control semantics | ⬜ | unassigned |
 | 6 | physics preservation | ⬜ | unassigned |
@@ -44,7 +44,7 @@ the one that meets
 Phases get releases of their own is decided here; Phases 0 and 1 are done and
 the question is still open.
 
-Where things stand, as of 2026-09-15:
+Where things stand, as of 2026-09-16:
 
 - The documentation baseline exists: the design policy, five focused design
   contracts, the workspace contract, and reference pages that state what is
@@ -55,15 +55,22 @@ Where things stand, as of 2026-09-15:
 - Phase 1, the PMX structural parser, is done: every table of PMX 2.0 and 2.1
   is parsed, `mmd_inspect` reports on it, and CI is green on every cell,
   including the parser's sanitizer and fuzzing lane.
-- Phase 2, the canonical stage, is implemented and verified on Windows, and
-  its sanitizer build on Linux (GCC): `mmdModel` canonicalizes, and the
+- Phase 2, the canonical stage, is complete: `mmdModel` canonicalizes, the
   importer authors the mesh, material prims and subsets, skeleton and
-  skinning. Its first CI run is what remains ([current.md](current.md)).
+  skinning, and the workspace, standalone, sanitizer and documentation lanes
+  cover the implementation.
 - Of the five places where the design departs from the 2026-09-15
   implementation policy
   ([DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy)),
   four are authored with fixtures and binding; the material graphs of the
-  fifth are Phase 3's.
+  fifth are now implemented as the Phase 3 material triad: canonical MMD
+  semantics, a VRM-like unlit `UsdPreviewSurface` fallback, and an unlit
+  MaterialX `gltf_pbr` path. MMD-specific sphere, toon, edge and source
+  values remain on the material prim for an MMD-aware consumer.
+- Phase 3 is the current milestone. Its portable realizations and canonical
+  semantics are implemented; remaining work is the final CI/golden pass,
+  visual quality review across real models, and a future MMD-aware renderer
+  for sphere, toon and edge realization.
 
 ## Open decisions
 
@@ -74,9 +81,9 @@ schedules them.
 | Id | Question | Owner | Blocks |
 | --- | --- | --- | --- |
 | PMX-O3 | Globals count above 8 in the wild | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | nothing (non-blocking) |
-| MAT-O1 | Roughness from specular power | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | Phase 3 |
-| MAT-O2 | Alpha mode without decoding images | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | Phase 3 |
-| MAT-O3 | Missing individual toon texture | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | Phase 3 |
+| MAT-O1 | Roughness from specular power | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
+| MAT-O2 | Alpha mode without decoding images | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
+| MAT-O3 | Missing individual toon texture | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
 | STAGE-O4 | Encoding of non-vertex morph semantics | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 4 |
 | STAGE-O6 | Rig and physics prim shapes | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phases 5, 6 |
 | PMX-O1 | Euler order of rigid-body and joint rotations | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | Phase 6 |
