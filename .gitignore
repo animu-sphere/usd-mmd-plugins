@@ -11,8 +11,10 @@ strata.lock
 /.ost-ci/
 /.ost-ci-home/
 
-# Built plugin libraries are staged into each bundle's lib/ by the build.
+# Built plugin libraries are staged into each bundle's lib/ by the build, and
+# tools into their own bin/.
 /plugins/*/lib/
+/tools/*/bin/
 
 # Generated into bundle resources by the build: plugInfo.json names this
 # platform's library suffix, and buildInfo.json varies per commit, toolchain

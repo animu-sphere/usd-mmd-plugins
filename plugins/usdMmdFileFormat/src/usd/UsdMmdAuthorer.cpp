@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "usd/UsdMmdAuthorer.h"
 
+#include "usd/UsdMmdCodes.h"
+
 #include "pxr/base/tf/token.h"
 #include "pxr/base/vt/array.h"
 #include "pxr/base/vt/value.h"
@@ -50,9 +52,9 @@ UsdMmdAuthorer::WriteToString(
     UsdGeomSetStageUpAxis(stage, UsdGeomTokens->y);
     UsdGeomSetStageMetersPerUnit(stage, UsdGeomLinearUnits::meters);
 
-    // /Asset (STAGE_CONTRACT.md §4). A model with no bones -- every model in
-    // Phase 0, which reads no bone table -- authors /Asset as an Xform; from
-    // Phase 2 a model with bones makes it the UsdSkelRoot.
+    // /Asset (STAGE_CONTRACT.md §4), an Xform. Nothing is authored beneath it
+    // until Phase 2, which makes /Asset the UsdSkelRoot of a model with bones
+    // when it authors the skeleton and the meshes it skins.
     const UsdGeomXform asset = UsdGeomXform::Define(stage, SdfPath("/Asset"));
     if (!asset) {
         return false;
@@ -66,6 +68,19 @@ UsdMmdAuthorer::WriteToString(
     assetPrim.SetCustomDataByKey(kSourceFormatKey, VtValue(std::string("PMX")));
     assetPrim.SetCustomDataByKey(kSourceVersionKey,
         VtValue(std::string(mmd::pmx::ToString(document.header.version))));
+
+    // What the parser read and this stage does not author, said once per
+    // import (PMX_CONTRACT.md §12). Rigid bodies and joints are Phase 6's and
+    // raise nothing yet: they are reserved, not refused.
+    if (!document.softBodies.empty()) {
+        mmd::Location where;
+        where.table = "softBodies";
+        const std::size_t n = document.softBodies.size();
+        diagnostics->push_back(mmd::MakeDiagnostic(codes::PhysicsSoftBodyUnsupported,
+            (n == 1 ? std::string("1 soft body is") : std::to_string(n) + " soft bodies are")
+                + " read and not authored; no stage contract carries soft bodies",
+            std::move(where)));
+    }
 
     // Every recoverable diagnostic, in emission order, as "CODE: message".
     // The key is authored only when there is something to record.

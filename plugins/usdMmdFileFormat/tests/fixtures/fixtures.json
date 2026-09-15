@@ -4,10 +4,75 @@
     "opens": false,
     "purpose": "a signature that is not \"PMX \""
   },
+  "malformed/count-exceeds-buffer.pmx": {
+    "fatal": "MMD_PMX_COUNT_EXCEEDS_BUFFER",
+    "opens": false,
+    "purpose": "a vertex count no file of this size can hold"
+  },
+  "malformed/face-count-not-triangles.pmx": {
+    "fatal": "MMD_PMX_FACE_COUNT_NOT_TRIANGLES",
+    "opens": false,
+    "purpose": "8 face indices"
+  },
+  "malformed/face-index-out-of-range.pmx": {
+    "fatal": "MMD_PMX_FACE_INDEX_OUT_OF_RANGE",
+    "opens": false,
+    "purpose": "a face that draws vertex 6 of 6"
+  },
+  "malformed/flip-morph-in-2.0.pmx": {
+    "fatal": "MMD_PMX_INVALID_MORPH_TYPE",
+    "opens": false,
+    "purpose": "a flip morph in a PMX 2.0 file"
+  },
+  "malformed/invalid-deform-type.pmx": {
+    "fatal": "MMD_PMX_INVALID_DEFORM_TYPE",
+    "opens": false,
+    "purpose": "deform type 5"
+  },
+  "malformed/invalid-frame-element.pmx": {
+    "fatal": "MMD_PMX_INVALID_LAYOUT_FLAG",
+    "opens": false,
+    "purpose": "a display-frame element of kind 2"
+  },
+  "malformed/invalid-morph-type.pmx": {
+    "fatal": "MMD_PMX_INVALID_MORPH_TYPE",
+    "opens": false,
+    "purpose": "morph type 11"
+  },
+  "malformed/invalid-toon-reference.pmx": {
+    "fatal": "MMD_PMX_INVALID_LAYOUT_FLAG",
+    "opens": false,
+    "purpose": "a toon reference of 2"
+  },
+  "malformed/material-faces-exceed-table.pmx": {
+    "fatal": "MMD_PMX_MATERIAL_FACES_EXCEED_TABLE",
+    "opens": false,
+    "purpose": "the materials draw 12 of 9 face indices"
+  },
+  "malformed/negative-count.pmx": {
+    "fatal": "MMD_PMX_COUNT_EXCEEDS_BUFFER",
+    "opens": false,
+    "purpose": "a texture count of -1"
+  },
+  "malformed/qdef-in-2.0.pmx": {
+    "fatal": "MMD_PMX_INVALID_DEFORM_TYPE",
+    "opens": false,
+    "purpose": "a QDEF vertex in a PMX 2.0 file"
+  },
+  "malformed/text-length-exceeds-buffer.pmx": {
+    "fatal": "MMD_PMX_COUNT_EXCEEDS_BUFFER",
+    "opens": false,
+    "purpose": "a material name longer than the rest of the file"
+  },
   "malformed/truncated-header.pmx": {
     "fatal": "MMD_PMX_TRUNCATED_BUFFER",
     "opens": false,
     "purpose": "the file ends inside the globals"
+  },
+  "malformed/truncated-inside-vertex.pmx": {
+    "fatal": "MMD_PMX_TRUNCATED_BUFFER",
+    "opens": false,
+    "purpose": "the file ends inside a BDEF4 vertex's weights"
   },
   "malformed/unsupported-version.pmx": {
     "fatal": "MMD_PMX_UNSUPPORTED_VERSION",
@@ -15,22 +80,255 @@
     "purpose": "version 3.0"
   },
   "minimal-2.1-utf8.pmx": {
+    "counts": {
+      "bones": 0,
+      "displayFrames": 0,
+      "faces": 0,
+      "joints": 0,
+      "materials": 0,
+      "morphs": 0,
+      "rigidBodies": 0,
+      "softBodies": 0,
+      "textures": 0,
+      "vertices": 0
+    },
     "diagnostics": [],
+    "modelName": "minimal",
     "opens": true,
+    "parserDiagnostics": [],
     "purpose": "PMX 2.1, UTF-8, every table empty",
     "sourceVersion": "2.1"
   },
   "minimal.pmx": {
+    "counts": {
+      "bones": 0,
+      "displayFrames": 0,
+      "faces": 0,
+      "joints": 0,
+      "materials": 0,
+      "morphs": 0,
+      "rigidBodies": 0,
+      "softBodies": 0,
+      "textures": 0,
+      "vertices": 0
+    },
     "diagnostics": [],
+    "modelName": "minimal",
     "opens": true,
+    "parserDiagnostics": [],
     "purpose": "PMX 2.0, UTF-16LE, every table empty",
     "sourceVersion": "2.0"
   },
+  "recoverable/index-out-of-range.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE"
+    ],
+    "purpose": "a weighted deform of no bone, a missing texture, a missing parent: each read as none",
+    "sourceVersion": "2.0"
+  },
+  "recoverable/invalid-utf16-name.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_TEXT_INVALID_UTF16"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [
+      "MMD_TEXT_INVALID_UTF16"
+    ],
+    "purpose": "a bone's English name of odd byte length: read as empty",
+    "sourceVersion": "2.0"
+  },
+  "recoverable/invalid-utf8-name.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_TEXT_INVALID_UTF8"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [
+      "MMD_TEXT_INVALID_UTF8"
+    ],
+    "purpose": "a material name that is not valid UTF-8: read as empty",
+    "sourceVersion": "2.0"
+  },
+  "recoverable/material-faces-short.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_PMX_MATERIAL_FACES_SHORT"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [
+      "MMD_PMX_MATERIAL_FACES_SHORT"
+    ],
+    "purpose": "the materials draw 6 of the 9 face indices",
+    "sourceVersion": "2.0"
+  },
+  "recoverable/trailing-bytes.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 8,
+      "rigidBodies": 2,
+      "softBodies": 1,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_PMX_TRAILING_BYTES",
+      "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"
+    ],
+    "modelName": "サンプル2.1",
+    "opens": true,
+    "parserDiagnostics": [
+      "MMD_PMX_TRAILING_BYTES"
+    ],
+    "purpose": "16 bytes after the soft-body table",
+    "sourceVersion": "2.1"
+  },
+  "sample-2.0-utf16.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "PMX 2.0, UTF-16LE, index width 1: every table and every 2.0 record variant, Japanese names",
+    "sourceVersion": "2.0"
+  },
+  "sample-2.1-utf16-wide.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 8,
+      "rigidBodies": 2,
+      "softBodies": 1,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"
+    ],
+    "modelName": "サンプル2.1",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "PMX 2.1, UTF-16LE, index width 4, four additional vec4",
+    "sourceVersion": "2.1"
+  },
+  "sample-2.1-utf8.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 8,
+      "rigidBodies": 2,
+      "softBodies": 1,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"
+    ],
+    "modelName": "サンプル2.1",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "PMX 2.1, UTF-8, index width 2, two additional vec4: QDEF, flip and impulse morphs, a soft body",
+    "sourceVersion": "2.1"
+  },
   "unknown-globals.pmx": {
+    "counts": {
+      "bones": 0,
+      "displayFrames": 0,
+      "faces": 0,
+      "joints": 0,
+      "materials": 0,
+      "morphs": 0,
+      "rigidBodies": 0,
+      "softBodies": 0,
+      "textures": 0,
+      "vertices": 0
+    },
     "diagnostics": [
       "MMD_PMX_UNKNOWN_GLOBALS"
     ],
+    "modelName": "minimal",
     "opens": true,
+    "parserDiagnostics": [
+      "MMD_PMX_UNKNOWN_GLOBALS"
+    ],
     "purpose": "nine globals: the ninth is preserved and warned about",
     "sourceVersion": "2.0"
   }

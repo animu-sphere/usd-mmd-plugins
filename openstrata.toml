@@ -14,9 +14,11 @@ profile = "usd"
 members = [
   "plugins/usdMmdFileFormat",
   "libs/mmdPmx",
+  "tools/mmdInspect",
 ]
 # The aggregate product: every bundle and tool that ships. A library ships as
 # a dependency of the bundle that links it, never as a member of its own.
 release_members = [
   "usdMmdFileFormat",
+  "mmd_inspect",
 ]
