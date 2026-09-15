@@ -1,8 +1,11 @@
 # Text, identifier and path policy
 
-> Status: §2–§4 are **binding**: the Phase 1 parser decodes text as they
+> Status: **binding**. §2–§4 since Phase 1: the parser decodes text as they
 > say, with fixtures, and `mmd_inspect` and the importer read paths as §4
-> says. §5–§7 are **proposed** until Phase 2 (identifiers, texture paths). It fixes how PMX text is decoded, how a source
+> says. §5–§7 since Phase 2: the canonical model forms identifiers and
+> normalizes texture paths as they say, and the stage tests prove Japanese
+> names survive and Japanese texture filenames resolve. §9 is PMD's and VMD's,
+> neither of which exists yet. It fixes how PMX text is decoded, how a source
 > name relates to a USD identifier, how collisions are resolved, and how a
 > texture string becomes an `SdfAssetPath`. Japanese names and Japanese
 > filenames are the ordinary case here, not an edge case. Section numbers are
@@ -180,10 +183,15 @@ The decoded source string is preserved verbatim as provenance
 [MATERIAL_POLICY.md §4.2](MATERIAL_POLICY.md#42-provenance)), whatever happens
 next. The authored path is a normalized **logical** path:
 
+- trailing U+0000 padding is dropped, as it is from display names (§3), but
+  silently: the verbatim path is the provenance;
 - `\` becomes `/`, and repeated `/` collapse;
 - `.` segments are removed, and `x/..` pairs are resolved lexically;
 - case is kept; Unicode is not normalized; nothing is renamed;
 - the result is authored anchored to the PMX layer: `@./tex/髪.png@`.
+
+A path that normalizes to nothing (the empty string, `.`, `a/..`) names no
+file: no asset path is authored for it, and nothing is reported.
 
 The `./` prefix matters: `ArDefaultResolver` treats a relative path without it
 as a search path, which would make resolution depend on the resolver's search
@@ -193,16 +201,17 @@ configuration.
 
 A path is **unsafe** when, after normalization, it is absolute (`/…`),
 drive-qualified (`C:…`), UNC (`//server/…`), carries a URI scheme
-(`scheme:…`), or escapes the PMX's directory (a leading `..`). An unsafe path
+(`scheme:…`), escapes the PMX's directory (a leading `..`), or holds a U+0000
+before its end, which no filesystem accepts in a name. An unsafe path
 is not dereferenced: no `SdfAssetPath` is authored for it, the slot stays empty
 in every realization, the source string is still preserved, and
-`MMD_PATH_UNSAFE_TEXTURE_PATH` (warning) is raised. The reader keeps the fact;
-the resolver policy refuses to follow it.
+`MMD_PATH_UNSAFE_TEXTURE_PATH` (warning) is raised, once per texture-table
+entry. The reader keeps the fact; the resolver policy refuses to follow it.
 
-Whether a model directory's parent should ever be reachable — some
-distributions share a `../toon/` folder between models — is TEXT-O1. The
-default is no, and a later opt-in would be a file-format argument, never a
-silent default.
+A model directory's parent is never reachable — some distributions share a
+`../toon/` folder between models, and their paths are refused like any other
+escape (TEXT-O1, decided in Phase 2). A later opt-in would be a file-format
+argument, never a silent default.
 
 ### 7.3 No filesystem access while authoring
 
@@ -259,7 +268,11 @@ middle of a two-byte character. That policy stays out of `mmdPmx` entirely:
 
 ## 10. Open questions
 
-| Id | Question | Proposed answer | Resolve by |
+None is open.
+
+Resolved:
+
+| Id | Question | Decision | Resolved |
 | --- | --- | --- | --- |
-| TEXT-O1 | May a texture path escape the model directory? | no by default; an explicit file-format argument later if needed | Phase 2 |
-| TEXT-O2 | The 64-character identifier cap | keep; collisions after truncation use §6.1 step 3 | Phase 2 |
+| TEXT-O1 | May a texture path escape the model directory? | no; an explicit file-format argument later if a consumer needs it (§7.2) | Phase 2, 2026-09-15 |
+| TEXT-O2 | The 64-character identifier cap | kept; collisions after truncation use §6.1 step 3 | Phase 2, 2026-09-15 |

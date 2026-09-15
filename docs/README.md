@@ -4,22 +4,24 @@ Documentation is organized by responsibility: each category answers one class
 of question. The layout is the one `usd-vrm-plugins`, `open-strata` and
 `hydra-merlin` use, so the repositories read the same way.
 
-**The tree holds Phases 0 and 1 (2026-09-15):** the PMX structural parser
-reads every table of a PMX 2.0 or 2.1 file, `mmd_inspect` reports on it, and
-`.pmx` opens as a stage with the Phase 0 metadata — nothing is authored from
-the tables yet. Everything else in `design/` is intended behavior;
-[reference/](reference/) is the only place that says what is implemented.
+**The tree holds Phases 0–2 (2026-09-15):** the PMX structural parser reads
+every table of a PMX 2.0 or 2.1 file, `mmd_inspect` reports on it, and `.pmx`
+opens as the canonical stage — mesh, UVs, material prims and subsets,
+skeleton and skinning, Y-up, in meters. Materials have no shading network
+yet, and morphs, control and physics semantics are not authored. Everything
+else in `design/` is intended behavior; [reference/](reference/) is the only
+place that says what is implemented.
 
 | Category | Answers | Start here |
 | --- | --- | --- |
 | [architecture/](architecture/) | How the workspace is structured: component identities, dependency directions, build modes, external dependencies, installed packages. | [WORKSPACE.md](architecture/WORKSPACE.md) · [DEPENDENCIES.md](architecture/DEPENDENCIES.md) · [PACKAGE_CONTRACT.md](architecture/PACKAGE_CONTRACT.md) |
 | [design/](design/) | What the importer authors and why. | [DESIGN_POLICY.md](design/DESIGN_POLICY.md) |
-| [guides/](guides/) | How to accomplish a task, with commands that have been run. | [building.md](guides/building.md) · [inspecting.md](guides/inspecting.md) |
+| [guides/](guides/) | How to accomplish a task, with commands that have been run. | [building.md](guides/building.md) · [opening.md](guides/opening.md) · [inspecting.md](guides/inspecting.md) |
 | [reference/](reference/) | Facts about the current tree: what is supported, which diagnostics exist, where each PMX field lands. | [CAPABILITY_MATRIX.md](reference/CAPABILITY_MATRIX.md) · [DIAGNOSTICS.md](reference/DIAGNOSTICS.md) · [SOURCE_MAPPING.md](reference/SOURCE_MAPPING.md) |
 | [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
 | [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
 | `releases/` | Immutable per-version release records. | added with the first release |
-| `reports/` | Dated evidence from real runs. | added with the first report |
+| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) |
 
 ## Canonical documents
 

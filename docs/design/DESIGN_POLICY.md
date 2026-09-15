@@ -1,8 +1,8 @@
 # usd-mmd-plugins — design policy
 
-> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0
-> and 1 are implemented — the workspace skeleton and the PMX structural
-> parser; every other behavior described here is intended, and
+> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–2
+> are implemented — the workspace skeleton, the PMX structural parser, and the
+> canonical stage; every other behavior described here is intended, and
 > [reference/CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md) is the
 > only document that says what is implemented.
 >
@@ -220,17 +220,19 @@ on `mmdPmx` (canonicalization takes a `pmx::Document`) and, like `mmdPmx`, on
 ```cpp
 namespace mmd {
 struct CanonicalDocument {
-    Metadata metadata;
-    std::vector<MeshPrimitive> meshes;
+    Metadata metadata;                  // provenance of the model
+    std::vector<Texture> textures;      // verbatim and normalized paths
+    Mesh mesh;                          // contract v1 has one
     std::vector<Material> materials;
-    Skeleton skeleton;
-    std::vector<Morph> morphs;
-    std::vector<RigidBody> rigidBodies;
-    std::vector<Joint> joints;
-    SourceProvenance source;
+    Skeleton skeleton;                  // canonical joint order
+    // Phases 4-6: morphs, control semantics, rigid bodies and joints.
 };
 }
 ```
+
+That is the document as of Phase 2
+([libs/mmdModel/include/mmdModel/CanonicalDocument.h](../../libs/mmdModel/include/mmdModel/CanonicalDocument.h));
+each later Phase adds what it authors.
 
 ### 5.3 `mmdMaterial` — deferred
 
@@ -552,12 +554,12 @@ in `usd-avatar-runtime`. `usd-mmd-plugins` stays a format adapter.
 The 2026-09-15 implementation policy is the origin of this document. Where the
 focused documents had to be more precise than it, they depart from it in the
 following places, each for a stated reason. Each departure is `proposed` until
-the Phase that first authors it lands with a fixture.
+the Phase that first authors it lands with a fixture, and binding from then.
 
-| Implementation policy | Here | Why |
-| --- | --- | --- |
-| §6.1, §6.8 — `/Asset` is a `UsdGeomXform`; `/Asset/rig/SkelRoot/Skeleton` | `/Asset` is the `UsdSkelRoot` when the model has bones; the skeleton is `/Asset/skel/Skeleton` | `UsdSkel` only skins geometry beneath a `SkelRoot`, so meshes under `/Asset/geo` would not deform under `/Asset/rig/SkelRoot`. The `skel`/`rig` split is `usd-vrm-plugins`' layout and matches §7.3's own deformation/control split ([STAGE_CONTRACT.md §4.1](STAGE_CONTRACT.md#41-why-asset-is-the-skelroot)). |
-| §10 — a `native` child under each material | Native semantics are attributes on the `UsdShadeMaterial` itself | A child graph reads as a third realization; the material prim is where identity and semantics already live in the VRM material policy ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). |
-| §27 — `customLayerData.mmdSchemaContractVersion` | `/Asset.customData.mmd:stageContractVersion` | Layer metadata is not composed, so it is lost once the asset is referenced; `/Asset` customData travels with the reference, and matches `vrm:schemaContractVersion` ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)). |
-| §19 — `mmdModel` may or may not depend on `mmdPmx`; OpenUSD unspecified | `mmdModel → mmdPmx`; no OpenUSD in either | §26's `Canonicalize(const pmx::Document&)` settles the first; the second keeps canonical MMD usable by non-USD tools ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)). |
-| §15.2 — stable-ID precedence includes transliteration and recognized roles | Contract v1 uses the English name or an index fallback only | Both a transliteration table and a role table would become part of the stage ABI; they stay open until a consumer needs them ([TEXT_ENCODING_POLICY.md §6](TEXT_ENCODING_POLICY.md#6-stable-identifiers)). |
+| Implementation policy | Here | Why | Status |
+| --- | --- | --- | --- |
+| §6.1, §6.8 — `/Asset` is a `UsdGeomXform`; `/Asset/rig/SkelRoot/Skeleton` | `/Asset` is the `UsdSkelRoot` when the model has bones; the skeleton is `/Asset/skel/Skeleton` | `UsdSkel` only skins geometry beneath a `SkelRoot`, so meshes under `/Asset/geo` would not deform under `/Asset/rig/SkelRoot`. The `skel`/`rig` split is `usd-vrm-plugins`' layout and matches §7.3's own deformation/control split ([STAGE_CONTRACT.md §4.1](STAGE_CONTRACT.md#41-why-asset-is-the-skelroot)). | binding (Phase 2) |
+| §10 — a `native` child under each material | Native semantics are attributes on the `UsdShadeMaterial` itself | A child graph reads as a third realization; the material prim is where identity and semantics already live in the VRM material policy ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding for the attributes Phase 2 authors; the graphs are Phase 3's |
+| §27 — `customLayerData.mmdSchemaContractVersion` | `/Asset.customData.mmd:stageContractVersion` | Layer metadata is not composed, so it is lost once the asset is referenced; `/Asset` customData travels with the reference, and matches `vrm:schemaContractVersion` ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)). | binding (Phase 0) |
+| §19 — `mmdModel` may or may not depend on `mmdPmx`; OpenUSD unspecified | `mmdModel → mmdPmx`; no OpenUSD in either | §26's `Canonicalize(const pmx::Document&)` settles the first; the second keeps canonical MMD usable by non-USD tools ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)). | binding (Phase 2) |
+| §15.2 — stable-ID precedence includes transliteration and recognized roles | Contract v1 uses the English name or an index fallback only | Both a transliteration table and a role table would become part of the stage ABI; they stay open until a consumer needs them ([TEXT_ENCODING_POLICY.md §6](TEXT_ENCODING_POLICY.md#6-stable-identifiers)). | binding (Phase 2) |

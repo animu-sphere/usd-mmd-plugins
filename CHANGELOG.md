@@ -16,6 +16,54 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Added
 
+- **Phase 2 canonical stage.** `Usd.Stage.Open("model.pmx")` now authors the
+  model: `/Asset` as the `UsdSkelRoot` of a model with bones (an `Xform`
+  without), `/Asset/geo/Mesh` with points, reversed-winding triangles,
+  normals, `primvars:st`, the additional vec4 channels and edge scale as
+  `primvars:mmd:*`, and `doubleSided` when any drawn material is no-cull;
+  one `UsdShadeMaterial` per PMX material under `/Asset/mtl`, bound through
+  a `materialBind` subset, with its provenance, `mmd:material:doubleSided`
+  and its texture slots; and `/Asset/skel/Skeleton` in canonical joint order,
+  with bind and rest transforms, per-joint source names, and BDEF1/2/4
+  skinning — SDEF as linear blending with C/R0/R1 preserved, QDEF
+  unverified. Model names and comments join `/Asset`'s `customData`. No
+  shading network yet: that is Phase 3.
+- **`mmdModel`** (`libs/mmdModel/`), a plain static library with no OpenUSD:
+  `mmd::Canonicalize(const pmx::Document&)` applies the one source-to-USD
+  conversion (right-handed, facing +Z, 0.08 m per MMD unit), assigns stable
+  ASCII identifiers with case-insensitive collision handling, orders joints
+  parents-first (repairing self-parents and cycles), normalizes weights,
+  derives material face ranges, and normalizes texture paths, refusing ones
+  that are absolute, drive- or scheme-qualified, or leave the model's
+  directory. It emits eight catalogued codes (`MMD_TEXT_TRAILING_NUL`,
+  `MMD_PATH_UNSAFE_TEXTURE_PATH`, `MMD_SKEL_INVALID_PARENT`,
+  `MMD_SKEL_PARENT_CYCLE`, `MMD_SKEL_JOINTS_REORDERED`,
+  `MMD_SKEL_WEIGHTS_NORMALIZED`, `MMD_SKEL_ZERO_WEIGHTS`,
+  `MMD_USD_IDENTIFIER_COLLISION`); the importer adds
+  `MMD_SKEL_SDEF_APPROXIMATED` and `MMD_SKEL_QDEF_APPROXIMATED`. Installed as
+  its own CMake package, shipped inside the plugin.
+- `mmdPmx/DiagnosticList.h` is public, so the parser and the canonical model
+  bound their diagnostics with one implementation.
+- Fixtures: six new ones — joints reordered, identifiers (padding, fallback,
+  collisions), a parent cycle, weights to normalize, unsafe texture paths, a
+  model without bones — 33 in all, with the one-pixel texture files the
+  samples name; `fixtures.json` now states, for each fixture that opens, what
+  its stage must hold, computed by the generator from the design documents'
+  rules. A second L5 golden, of the whole canonical stage.
+- Tests: `mmdModel` unit tests, a robustness suite of 20,000 generated
+  documents canonicalized twice, and its boundary check; the stage checks
+  assert every fixture's identifiers, joint paths, bind translations,
+  subsets, texture paths and their resolution, a vertex through the
+  conversion, UsdSkel's binding, and every validator OpenUSD registers; the
+  Unicode-path test copies the texture files too; the installed-consumer
+  lane builds against `mmdModel` and canonicalizes every fixture.
+- CI: `parser-sanitizers.yml` also builds `mmdModel` against an instrumented
+  `mmdPmx` and runs its tests under ASan and UBSan.
+- Documentation: the opening guide; the first report, on distributed models
+  imported locally; STAGE-O1, -O2, -O3, -O5 and TEXT-O1, -O2 resolved as
+  proposed; the stage, text and PMX contracts' Phase 2 sections marked
+  binding; architecture, reference and roadmap pages updated to Phase 2.
+
 - **Phase 1 PMX structural parser.** `mmd::pmx::Read` reads every table of
   PMX 2.0 and 2.1 into a `pmx::Document` of source facts — vertices with every
   deform type (QDEF in 2.1), faces, textures, materials with both toon
@@ -89,3 +137,9 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   0–8 sequence, the open-decision register, and the Phase 0 plan; and the
   documentation guidelines. No code.
 - Apache-2.0 `LICENSE`.
+
+### Changed
+
+- Every GCC and Clang target compiles with `-ffp-contract=off`, so no
+  floating-point expression is fused into an FMA and the same bytes author
+  the same stage on every platform.

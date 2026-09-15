@@ -1,15 +1,17 @@
 # Stage contract
 
-> Status: **proposed**, stage-contract version **1**. Each section becomes
-> binding when the Phase that first authors it lands with a fixture (Phase
-> numbers are [DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)); until then
-> it may be corrected here without a version bump. The importer authors §2,
-> the stage metadata and `/Asset` of §4, and `mmd:stageContractVersion`,
-> `mmd:sourceFormat`, `mmd:sourceVersion` and `mmd:diagnostics` of §5, with
-> fixtures. Since Phase 1 it parses every PMX table, so every recoverable
-> parser diagnostic reaches `mmd:diagnostics`; it still authors nothing
-> beneath `/Asset`, which is therefore an `Xform` even for a model with bones
-> until Phase 2 authors the skeleton. Nothing else here is authored yet.
+> Status: stage-contract version **1**. Each section becomes binding when the
+> Phase that first authors it lands with a fixture (Phase numbers are
+> [DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)); until then it may be
+> corrected here without a version bump. **Binding** since Phase 2: §2–§10
+> as far as they describe `/Asset`, `geo`, `mtl` and `skel` — the stage
+> metadata and every key of §5, the coordinate conversion, identifiers, the
+> mesh with its UVs, per-vertex data and material subsets, double-sidedness,
+> the skeleton, joint provenance, skinning and weight normalization, and the
+> material prims with the part of their semantics §10 names — and the §14
+> checklist, which the integration tests assert on every fixture.
+> **Proposed**: §11 (Phase 4), §12 (Phase 5), §13 (Phase 6), and the
+> materials' shading networks (Phase 3).
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
 > stage metadata, prim hierarchy, types, names, the coordinate conversion, and
@@ -166,7 +168,7 @@ face the same way on a stage.
 ### 6.2 Unit scale
 
 ```text
-s = 0.08 meters per MMD unit        (proposed — STAGE-O1)
+s = 0.08 meters per MMD unit        (STAGE-O1, decided in Phase 2)
 ```
 
 MMD has no declared unit. The de facto convention across MMD tooling is that one
@@ -176,6 +178,13 @@ stage is authored in meters (`metersPerUnit = 1`, frozen by
 length is multiplied by `s` during canonicalization, and the source unit is
 never expressed through `metersPerUnit`. The value of `s` is part of the
 contract: changing it after release bumps §2.
+
+A value authored as `float` (points, SDEF parameters) is converted in double
+and rounded to `float` once; a value authored as `double` (a joint's
+translation) is converted in double from the source floats and never passes
+through `float`. The mirror of a zero is `+0`, never `−0`. Canonicalization is
+compiled without floating-point contraction, so the same bytes author the same
+stage on every platform.
 
 ### 6.3 Conversion functions
 
@@ -228,8 +237,8 @@ Canonical order for prims is source-table order, except joints (§9.1).
 
 A PMX holds one vertex table and one index table, partitioned into
 per-material face ranges. Contract v1 authors that as **one** `UsdGeomMesh`,
-`/Asset/geo/Mesh` (STAGE-O2), with one `UsdGeomSubset` per material that owns at
-least one face:
+`/Asset/geo/Mesh` (STAGE-O2, decided in Phase 2), whenever the vertex table is
+not empty, with one `UsdGeomSubset` per material that owns at least one face:
 
 ```text
 /Asset/geo/Mesh                     UsdGeomMesh
@@ -283,7 +292,7 @@ Channels the header does not declare are not authored.
 | --- | --- | --- | --- |
 | `primvars:mmd:edgeScale` | `float[]` | always | PMX per-vertex edge (outline) scale |
 | `primvars:mmd:deformType` | `int[]` | always, with bones | 0 BDEF1, 1 BDEF2, 2 BDEF4, 3 SDEF, 4 QDEF |
-| `primvars:mmd:sdefC`, `sdefR0`, `sdefR1` | `point3f[]` | any vertex is SDEF | SDEF parameters, converted per §6.3; zero for non-SDEF vertices |
+| `primvars:mmd:sdefC`, `sdefR0`, `sdefR1` | `point3f[]` | with bones, when any vertex is SDEF | SDEF parameters, converted per §6.3; zero for non-SDEF vertices |
 
 PMX has no generic vertex color. If a later source provides colors with
 matching semantics, they go to `primvars:displayColor` / `displayOpacity`.
@@ -292,12 +301,15 @@ matching semantics, they go to `primvars:displayColor` / `displayOpacity`.
 
 PMX culls per material (drawing flag `0x01`, no-cull); `UsdGeomMesh.doubleSided`
 is per mesh. The mesh is authored `doubleSided = true` when **any** material
-disables culling, which is the common case for hair, skirts and accessories and
-avoids holes in generic viewers; single-sided materials then render their back
-faces too, which is usually invisible on closed surfaces. The per-material flag
-is preserved exactly as `mmd:material:doubleSided`
+that draws at least one face disables culling, which is the common case for
+hair, skirts and accessories and avoids holes in generic viewers; single-sided
+materials then render their back faces too, which is usually invisible on
+closed surfaces. Otherwise `doubleSided` is not authored, and USD's fallback
+(`false`) applies. The per-material flag is preserved exactly as
+`mmd:material:doubleSided`
 ([MATERIAL_POLICY.md §4](MATERIAL_POLICY.md#4-canonical-material-semantics)),
-and the capability matrix calls this *approximated* (STAGE-O3).
+and the capability matrix calls this *approximated* (STAGE-O3, decided in
+Phase 2).
 
 ## 9. Skeleton and skinning
 
@@ -311,9 +323,13 @@ unique for a given bone table, equals the source order whenever the source is
 already valid, and raises `MMD_SKEL_JOINTS_REORDERED` (info) when it is not.
 
 - A parent index out of range, or a bone that is its own parent, makes that
-  bone a root: `MMD_SKEL_INVALID_PARENT`.
+  bone a root: `MMD_SKEL_INVALID_PARENT`. The parser has already read an
+  out-of-range parent as none and reported it
+  ([PMX_CONTRACT.md §4](PMX_CONTRACT.md#4-indices)), so from a file this
+  code means a bone that is its own parent.
 - A parent cycle is broken by making the lowest-source-index bone in the cycle a
-  root: `MMD_SKEL_PARENT_CYCLE`.
+  root: `MMD_SKEL_PARENT_CYCLE`. Both repairs happen before the order is
+  computed, self-parents first.
 
 Joint indices everywhere on the stage (skinning, morphs, rig) refer to the
 canonical order. The source index of each joint stays recoverable (§9.3).
@@ -330,7 +346,9 @@ canonical order. The source index of each joint stays recoverable (§9.3).
 Joint paths are built from stable identifiers of each bone's ancestors, never
 from display names. PMX bones carry a position and no orientation; MMD poses
 bones in a world-aligned frame, so every joint's rest and bind rotation is the
-identity. Local axes, fixed axes and bone tails are control or display
+identity. A rest translation is the source offset from the parent's position,
+taken from the source floats and converted once (§6.2), so it is exact rather
+than a difference of two converted positions. Local axes, fixed axes and bone tails are control or display
 semantics, preserved under `/Asset/rig` (Phase 5), not joint orientations.
 
 ### 9.3 Joint provenance
@@ -372,7 +390,23 @@ rescales a vertex whose weights sum to a positive value other than 1 (beyond a
 tolerance of `1e-5`), raising one `MMD_SKEL_WEIGHTS_NORMALIZED` (info) with the
 count of affected vertices. A vertex whose weights sum to 0 is bound fully to its
 first bone, raising `MMD_SKEL_ZERO_WEIGHTS` (warning). Negative weights are
-clamped to 0 before either rule (STAGE-O5).
+clamped to 0 before either rule (STAGE-O5, decided in Phase 2).
+
+Precisely, per vertex and in this order:
+
+1. The influences are those the deform type stores (BDEF2's and SDEF's second
+   weight is `1 − weight₁`).
+2. An influence whose bone names nothing is dropped, whatever its weight — the
+   parser reported the weighted ones
+   ([PMX_CONTRACT.md §5](PMX_CONTRACT.md#5-vertices-and-deform)). The rest keep
+   their stored order, weight-0 ones included.
+3. A negative or non-finite weight becomes 0.
+4. If the weights sum to 0, the vertex is bound fully to the first stored bone
+   that names a bone, or to joint 0 when none does. Otherwise, a sum beyond the
+   tolerance is rescaled to 1; a sum within it is kept as stored.
+
+Both diagnostics are raised once per import, located at the first affected
+vertex.
 
 ## 10. Materials
 
@@ -381,6 +415,15 @@ material-table order, carrying the MMD source semantics as `mmd:material:*`
 attributes and two realization graphs, `preview` and `mtlx`. Bindings target
 the material prim, never a node inside it. Fully specified in
 [MATERIAL_POLICY.md](MATERIAL_POLICY.md).
+
+Since Phase 2 each material carries its provenance (`mmd:sourceName`,
+`mmd:sourceEnglishName`, `mmd:sourceIndex`, and the verbatim path of each
+texture slot that names a texture), `mmd:material:doubleSided`, and the three
+texture slots — `mmd:material:texture`, `sphereTexture`, and `toonTexture`
+for an individual toon ramp — each authored only when its path is safe. The
+rest of MATERIAL_POLICY.md §4 and both realization graphs arrive in Phase 3;
+until then a material has no surface output, and a generic renderer draws it
+with its fallback.
 
 The material-table index is also MMD's **draw order**, which alpha-blended
 MMD rendering depends on; it is preserved as `mmd:sourceIndex` and consumers
@@ -466,9 +509,14 @@ is.
 
 | Id | Question | Proposed answer | Resolve by |
 | --- | --- | --- | --- |
-| STAGE-O1 | Unit scale `s` | `0.08` m per MMD unit (§6.2) | Phase 2 |
-| STAGE-O2 | Mesh prim name and the one-mesh rule | `/Asset/geo/Mesh`, one mesh (§8.1) | Phase 2 |
-| STAGE-O3 | Double-sidedness | mesh double-sided if any material is no-cull (§8.5) | Phase 2 |
 | STAGE-O4 | Encoding of non-vertex morph semantics | typeless prims with `mmd:morph:*` attributes and relationships (§11) | Phase 4 |
-| STAGE-O5 | Weight normalization tolerance and zero-weight rule | §9.5 | Phase 2 |
 | STAGE-O6 | Rig and physics prim shapes | decided under the schema admission test | Phases 5, 6 |
+
+Resolved:
+
+| Id | Question | Decision | Resolved |
+| --- | --- | --- | --- |
+| STAGE-O1 | Unit scale `s` | `0.08` m per MMD unit (§6.2). Locally held distributed character models import 1.57–1.71 m tall. | Phase 2, 2026-09-15 |
+| STAGE-O2 | Mesh prim name and the one-mesh rule | `/Asset/geo/Mesh`, one mesh (§8.1) | Phase 2, 2026-09-15 |
+| STAGE-O3 | Double-sidedness | the mesh is double-sided if any material that draws a face is no-cull (§8.5) | Phase 2, 2026-09-15 |
+| STAGE-O5 | Weight normalization tolerance and zero-weight rule | `1e-5`; zero weights bind to the first bone that names one (§9.5) | Phase 2, 2026-09-15 |

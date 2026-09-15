@@ -3,14 +3,14 @@
 OpenUSD plugins for [MikuMikuDance](https://sites.google.com/view/vpvp/) (MMD)
 assets: PMX models first, VMD motion later.
 
-> **Status: PMX parser.** Every table of a PMX 2.0 or 2.1 file is parsed and
-> validated, and `mmd_inspect` reports what a file contains.
-> `Usd.Stage.Open("model.pmx")` works, and authors an empty `/Asset` with the
-> stage metadata and the parser's diagnostics: geometry, materials and the
-> skeleton are Phase 2. Most of what is described below is still design; the
-> [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the only page
-> that says what is implemented, and [the roadmap](docs/roadmap/current.md)
-> what comes next.
+> **Status: canonical stage.** `Usd.Stage.Open("model.pmx")` authors the
+> model's mesh, UVs, material prims and subsets, skeleton and skinning — Y-up,
+> in meters, Japanese names preserved beside ASCII identifiers, Japanese
+> texture filenames resolving — and `mmd_inspect` reports what a file
+> contains. Materials have no shading network yet (Phase 3), and morphs are
+> Phase 4. The [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the
+> only page that says what is implemented, and
+> [the roadmap](docs/roadmap/current.md) what comes next.
 
 `usd-mmd-plugins` is the MMD sibling of
 [`usd-vrm-plugins`](https://github.com/animu-sphere/usd-vrm-plugins): the
@@ -40,8 +40,8 @@ produce the same stage.
 | Component | Kind | Role | State |
 | --- | --- | --- | --- |
 | `mmdPmx` | plain C++ library | PMX 2.0/2.1 syntax, text decoding, validation — no OpenUSD | reads every table |
-| `mmdModel` | plain C++ library | canonical MMD semantics and the single source → USD coordinate conversion — no OpenUSD | Phase 2 |
-| `usdMmdFileFormat` | OpenUSD `SdfFileFormat` bundle | `.pmx` → a USD stage | registers `.pmx`, authors `/Asset` |
+| `mmdModel` | plain C++ library | canonical MMD semantics and the single source → USD coordinate conversion — no OpenUSD | identifiers, joint order, skinning, mesh, textures |
+| `usdMmdFileFormat` | OpenUSD `SdfFileFormat` bundle | `.pmx` → a USD stage | authors `geo`, `mtl`, `skel` ([guide](docs/guides/opening.md)) |
 | `mmd_inspect` | CLI | what a PMX contains, without USD | exists ([guide](docs/guides/inspecting.md)) |
 | `motionVmd` | plain C++ library | VMD syntax, extraction-ready for the shared motion architecture | Phase 7 |
 
@@ -90,7 +90,7 @@ installed-consumer lane — every command in it run.
 | --- | --- |
 | [docs/design/](docs/design/) | What the importer authors and why — start with [DESIGN_POLICY.md](docs/design/DESIGN_POLICY.md) |
 | [docs/architecture/](docs/architecture/) | The binding workspace contract, external dependencies, and installed packages |
-| [docs/guides/](docs/guides/) | How to build, test and package, and how to inspect a PMX |
+| [docs/guides/](docs/guides/) | How to build, test and package, how to open a PMX as a stage, and how to inspect one |
 | [docs/reference/](docs/reference/) | What is implemented, diagnostics, and where each PMX field lands |
 | [docs/roadmap/](docs/roadmap/) | What is planned next (incomplete work only) |
 | [docs/contributing/](docs/contributing/) | How the documentation is maintained |

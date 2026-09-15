@@ -6,11 +6,14 @@ the contract; the message is human-readable detail and may change at any time.
 Tests assert codes, never prose.
 
 Status (2026-09-15): the record below is code, and every code marked
-*emitted* in §5 is raised by the current tree — the Phase 1 parser raises all
-of its PMX-syntax and text-decoding codes, and the importer the soft-body one.
-Every other code is *reserved* by a design document, which is where its
-meaning is fixed. A code joins its component's declarations —
+*emitted* in §5 is raised by the current tree — the parser raises all of its
+PMX-syntax and text-decoding codes, the canonical model (Phase 2) its
+identifier, path, skeleton and weight codes, and the importer its skinning
+and soft-body ones. Every other code is *reserved* by a design document,
+which is where its meaning is fixed. A code joins its component's
+declarations —
 [libs/mmdPmx/include/mmdPmx/Codes.h](../../libs/mmdPmx/include/mmdPmx/Codes.h),
+[libs/mmdModel/include/mmdModel/Codes.h](../../libs/mmdModel/include/mmdModel/Codes.h),
 [plugins/usdMmdFileFormat/src/usd/UsdMmdCodes.h](../../plugins/usdMmdFileFormat/src/usd/UsdMmdCodes.h)
 — with the code that raises it, and
 [scripts/check_docs.py](../../scripts/check_docs.py) fails when those
@@ -106,12 +109,16 @@ severity. An event that needs a different severity gets a new code.
   and `error` and `warning` are also posted as warnings. A diagnostic raised
   once per import (the SDEF approximation, weight normalization) carries a count
   rather than repeating per element.
+- **Ordered by stage.** The list records the parser's diagnostics, then the
+  canonical model's, then the importer's, each in the order it raised them.
 - **Bounded.** One code is recorded at most 16 times per table; the rest of its
   occurrences in that table are counted, and reported once, after everything
   else, as that code with the table as its location and the number not listed
   as its message. A malformed file can otherwise raise one diagnostic per
   vertex, and each recorded diagnostic is a string on the stage. Every element
-  is still repaired as its section says, listed or not.
+  is still repaired as its section says, listed or not. The parser and the
+  canonical model bound their lists with the same
+  [`mmd::DiagnosticList`](../../libs/mmdPmx/include/mmdPmx/DiagnosticList.h).
 - **Tools** (`mmd_inspect`) print every diagnostic and set their exit status by
   the most severe one.
 - **Validation** codes are raised by checks over an already-imported stage, not
@@ -152,27 +159,27 @@ raises; every other code is reserved.
 | `MMD_TEXT_INVALID_ENCODING_FLAG` *emitted* | fatal | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_INVALID_UTF8` *emitted* | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_INVALID_UTF16` *emitted* | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
-| `MMD_TEXT_TRAILING_NUL` | info | `mmdModel` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
+| `MMD_TEXT_TRAILING_NUL` *emitted* | info | `mmdModel` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_TRUNCATED_CP932` | info | `motionVmd` | [MOTION §4](../design/MOTION_CONTRACT.md#4-text) |
 
 ### 5.3 Paths
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_PATH_UNSAFE_TEXTURE_PATH` | warning | `mmdModel` | [TEXT §7.2](../design/TEXT_ENCODING_POLICY.md#72-unsafe-paths) |
+| `MMD_PATH_UNSAFE_TEXTURE_PATH` *emitted* | warning | `mmdModel` | [TEXT §7.2](../design/TEXT_ENCODING_POLICY.md#72-unsafe-paths) |
 | `MMD_PATH_TEXTURE_NOT_FOUND` | warning | validation | [TEXT §7.3](../design/TEXT_ENCODING_POLICY.md#73-no-filesystem-access-while-authoring) |
 
 ### 5.4 Skeleton and skinning
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_SKEL_INVALID_PARENT` | error | `mmdModel` | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
-| `MMD_SKEL_PARENT_CYCLE` | error | `mmdModel` | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
-| `MMD_SKEL_JOINTS_REORDERED` | info | `mmdModel` | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
-| `MMD_SKEL_WEIGHTS_NORMALIZED` | info | `mmdModel` | [STAGE §9.5](../design/STAGE_CONTRACT.md#95-weight-normalization) |
-| `MMD_SKEL_ZERO_WEIGHTS` | warning | `mmdModel` | [STAGE §9.5](../design/STAGE_CONTRACT.md#95-weight-normalization) |
-| `MMD_SKEL_SDEF_APPROXIMATED` | warning | `usdMmdFileFormat` | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
-| `MMD_SKEL_QDEF_APPROXIMATED` | warning | `usdMmdFileFormat` | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
+| `MMD_SKEL_INVALID_PARENT` *emitted* | error | `mmdModel` | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
+| `MMD_SKEL_PARENT_CYCLE` *emitted* | error | `mmdModel` | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
+| `MMD_SKEL_JOINTS_REORDERED` *emitted* | info | `mmdModel` | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
+| `MMD_SKEL_WEIGHTS_NORMALIZED` *emitted* | info | `mmdModel` | [STAGE §9.5](../design/STAGE_CONTRACT.md#95-weight-normalization) |
+| `MMD_SKEL_ZERO_WEIGHTS` *emitted* | warning | `mmdModel` | [STAGE §9.5](../design/STAGE_CONTRACT.md#95-weight-normalization) |
+| `MMD_SKEL_SDEF_APPROXIMATED` *emitted* | warning | `usdMmdFileFormat` | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
+| `MMD_SKEL_QDEF_APPROXIMATED` *emitted* | warning | `usdMmdFileFormat` | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
 
 ### 5.5 Morphs, materials, physics
 
@@ -196,7 +203,7 @@ raises; every other code is reserved.
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_USD_IDENTIFIER_COLLISION` | info | `mmdModel` | [TEXT §6.1](../design/TEXT_ENCODING_POLICY.md#61-algorithm-contract-v1) |
+| `MMD_USD_IDENTIFIER_COLLISION` *emitted* | info | `mmdModel` | [TEXT §6.1](../design/TEXT_ENCODING_POLICY.md#61-algorithm-contract-v1) |
 
 Validation codes for the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist)
 (default prim, up axis, unit, skel binding, material binding) are added with the

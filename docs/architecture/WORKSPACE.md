@@ -7,11 +7,12 @@ and the invariants every change preserves. **A structural change that
 contradicts this document changes this document first, in its own pull
 request** — never through a README, a roadmap entry, or code.
 
-Status (2026-09-15): contract adopted. Phases 0 and 1 exist: `mmdPmx`
-(the PMX structural parser: every table of 2.0 and 2.1), `mmd_inspect` (which
-reports on a PMX through it), and `usdMmdFileFormat` (which registers `.pmx`
-and authors the Phase 0 stage), built by `ost` and by plain CMake. Every other identity below is *reserved* until the Phase that creates
-it lands (Phases are
+Status (2026-09-15): contract adopted. Phases 0–2 exist: `mmdPmx` (the PMX
+structural parser: every table of 2.0 and 2.1), `mmdModel` (the canonical
+model), `mmd_inspect` (which reports on a PMX through the parser), and
+`usdMmdFileFormat` (which registers `.pmx` and authors the canonical stage),
+built by `ost` and by plain CMake. Every other identity below is *reserved*
+until the Phase that creates it lands (Phases are
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)), and its row then
 records that.
 
@@ -31,8 +32,8 @@ The smallest tree that delivers the first substantial release
 | Identity | Kind | Directory | Manifest | Role | Created in | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `mmdPmx` | plain static CMake library | `libs/mmdPmx/` | `openstrata.library.yaml` | PMX syntax: header, text decoding, every table, structural validation, syntax diagnostics. No OpenUSD. | Phase 0 (scaffold), Phase 1 (parser) | exists — every table |
-| `mmdModel` | plain static CMake library | `libs/mmdModel/` | `openstrata.library.yaml` | Canonical MMD semantics: identities, basis conversion, joint order, deform, morphs, materials, control and physics descriptions, provenance. No OpenUSD. | Phase 2 | reserved |
-| `usdMmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdMmdFileFormat/` | `openstrata.plugin.yaml` | `.pmx` `SdfFileFormat`: registration, read path, USD authoring, source → USD diagnostics. | Phase 0 | exists — Phase 0 stage |
+| `mmdModel` | plain static CMake library | `libs/mmdModel/` | `openstrata.library.yaml` | Canonical MMD semantics: identities, basis conversion, joint order, deform, morphs, materials, control and physics descriptions, provenance. No OpenUSD. | Phase 2 | exists — what the Phase 2 stage authors |
+| `usdMmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdMmdFileFormat/` | `openstrata.plugin.yaml` | `.pmx` `SdfFileFormat`: registration, read path, USD authoring, source → USD diagnostics. | Phase 0 | exists — the canonical stage |
 | `mmd_inspect` | CLI executable | `tools/mmdInspect/` | `openstrata.tool.yaml` | Reports what a PMX contains, without USD. | Phase 1 | exists |
 
 ### 1.2 Later, only when their responsibility is real
@@ -120,10 +121,10 @@ import no OpenUSD library — a static archive has no import table of its own,
 so a forbidden edge shows up in what links it); and
 `mmdPmx_boundaries_selftest`, which proves each rule still rejects what it
 must. The script takes the component's name and allowed edges as arguments,
-so other components reuse it rather than copying it (§7): `mmd_inspect_boundaries`
-runs it over `tools/mmdInspect` with `mmdPmx::mmdPmx` as the one allowed edge,
-and `mmdModel` will do the same. The tool is added to the root build before
-OpenUSD is resolved, as `mmdPmx` is.
+so other components reuse it rather than copying it (§7): `mmdModel_boundaries`
+runs it over `libs/mmdModel` and `mmd_inspect_boundaries` over
+`tools/mmdInspect`, each with `mmdPmx::mmdPmx` as the one allowed edge. Both
+are added to the root build before OpenUSD is resolved, as `mmdPmx` is.
 
 ## 3. Directory layout
 
@@ -132,17 +133,17 @@ usd-mmd-plugins/
 ├─ .github/workflows/          ost-source-ci.yml (generated from openstrata.ci.yaml); hand-written:
 │                              docs-check.yml, parser-sanitizers.yml
 ├─ cmake/                      UsdMmdOpenUsd.cmake (the OpenUSD pin), UsdMmdTargets.cmake (per-target
-│                              Windows flags, the UTF-8 code-page manifest helper), utf8-code-page.manifest
+│                              compile flags, the UTF-8 code-page manifest helper), utf8-code-page.manifest
 ├─ docs/                       see docs/README.md
 ├─ libs/
 │  ├─ mmdPmx/                  include/ src/ tests/ fuzz/ cmake/ CMakeLists.txt openstrata.library.yaml
-│  └─ mmdModel/                (Phase 2)
+│  └─ mmdModel/                include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
 ├─ plugins/
 │  └─ usdMmdFileFormat/
 │     ├─ plugin/resources/usdMmdFileFormat/   plugInfo.json.in, buildInfo.json.in (the build writes both .json)
 │     ├─ cmake/                WriteBuildInfo.cmake (the build-time buildInfo.json stamp)
 │     ├─ src/                  UsdMmdFileFormat.cpp, usd/UsdMmdAuthorer.cpp
-│     ├─ tests/fixtures/       the generated PMX fixtures, fixtures.json, the L5 golden
+│     ├─ tests/fixtures/       the generated PMX fixtures and texture files, fixtures.json, the L5 goldens
 │     ├─ CMakeLists.txt
 │     └─ openstrata.plugin.yaml
 ├─ tools/
@@ -246,16 +247,16 @@ target, header root and required packages — is
 
 | Layer | Where | Proves | Exists |
 | --- | --- | --- | --- |
-| unit | `libs/*/tests/`, `plugins/*/tests/` | each transition — bytes → document, document → canonical, canonical → USD — in isolation | `mmdPmx_unit` |
-| robustness | `libs/mmdPmx/tests/` | every byte of the sample models overwritten, and every prefix read: no crash, no fatal diagnostic reported as recoverable, no document that breaks its invariants | `mmdPmx_robustness` |
-| boundary | `libs/*/tests/`, `tools/*/tests/` | §2.3's link-line and include gates | `mmdPmx_boundaries`, `mmd_inspect_boundaries` |
+| unit | `libs/*/tests/`, `plugins/*/tests/` | each transition — bytes → document, document → canonical, canonical → USD — in isolation | `mmdPmx_unit`, `mmdModel_unit` |
+| robustness | `libs/*/tests/` | the parser: every byte of the sample models overwritten, and every prefix read — no crash, no fatal diagnostic reported as recoverable, no document that breaks its invariants. The canonical model: thousands of generated documents within the parser's invariants, each canonicalized twice — no crash, the same bits both times, every promise of `CanonicalDocument.h` kept | `mmdPmx_robustness`, `mmdModel_robustness` |
+| boundary | `libs/*/tests/`, `tools/*/tests/` | §2.3's link-line and include gates | `mmdPmx_boundaries`, `mmdModel_boundaries`, `mmd_inspect_boundaries` |
 | tool | `tools/*/tests/` | each tool against the generated fixtures, from an ASCII and a non-ASCII directory | `mmd_inspect_fixtures` |
-| fixtures | `tests/fixtures/` | the committed fixtures are exactly what the generator writes | `workspace_fixtures` |
-| integration | `tests/integration/` | `Usd.Stage.Open("*.pmx")` through the registered plugin, against the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist), and under a non-ASCII directory | `usdMmdFileFormat_stage_open`, `usdMmdFileFormat_unicode_paths` |
+| fixtures | `tests/fixtures/` | the committed fixtures and texture files are exactly what the generator writes | `workspace_fixtures` |
+| integration | `tests/integration/` | `Usd.Stage.Open("*.pmx")` through the registered plugin, against the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist) and the stage `fixtures.json` states for each fixture, and under a non-ASCII directory | `usdMmdFileFormat_stage_open`, `usdMmdFileFormat_unicode_paths`, `usdMmdFileFormat_notice_listeners` |
 | pyramid | the bundle manifest's `tests:` | `ost plugin test` L0–L5, from the build tree and from the package | — (`ost`) |
-| baseline | `tests/baseline/` | compact goldens do not change silently | the L5 golden of `minimal.pmx` |
+| baseline | the bundle's `tests/fixtures/` | compact goldens do not change silently | the L5 goldens of `minimal.pmx` and `recoverable/unsafe-texture-paths.pmx` |
 | installed consumer | `tests/installed_consumer/` | installed packages work from a clean prefix outside the repository | `workspace_installed_consumer` |
-| fuzz | `libs/mmdPmx/fuzz/` | malformed input never crashes or over-reads, under ASan and UBSan | `mmdPmx_fuzz` in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml), which also runs the unit and robustness tests instrumented |
+| fuzz | `libs/mmdPmx/fuzz/` | malformed input never crashes or over-reads, under ASan and UBSan | `mmdPmx_fuzz` in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml), which also runs both libraries' unit and robustness tests instrumented |
 
 Fixtures are generated by committed code, never copied from distributed
 models ([DESIGN_POLICY.md §13](../design/DESIGN_POLICY.md#13-testing-policy)).

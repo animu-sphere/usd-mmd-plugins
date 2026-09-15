@@ -1,8 +1,14 @@
 # PMX contract
 
 > Status: §1–§13 and §15 are **binding** for the syntax layer: the Phase 1
-> parser (`mmdPmx`) implements them, with fixtures. §14 and every "Canonical"
-> column are **proposed** until `mmdModel` exists (Phase 2). This document
+> parser (`mmdPmx`) implements them, with fixtures. §14 steps 1–5 and 8, the
+> texture references of step 6, and the "Canonical" column of §5 (vertices
+> and deform), are **binding** since
+> Phase 2, where `mmdModel` implements them for what the stage authors: the
+> model's metadata, textures, vertices, faces, materials' face ranges and
+> texture slots, and bones' names, positions and parents. The rest of the
+> "Canonical" columns and §14 step 7 (morphs, control, physics) stay
+> **proposed** until the Phase that authors each. This document
 > fixes how PMX 2.0 and 2.1 bytes are read and what each source concept
 > becomes in the canonical model. It records *decisions*; the byte layout
 > below is a summary for orientation, and the parser's fixtures —
@@ -363,7 +369,15 @@ What `Canonicalize(const pmx::Document&)` does, in order:
 8. **Provenance.** Keep source indices and decoded names for every element.
 
 It never reads a file, never touches OpenUSD, and never evaluates anything.
-The same `pmx::Document` always produces the same `CanonicalDocument`.
+The same `pmx::Document` always produces the same `CanonicalDocument`, bit for
+bit, and nothing in a document the parser accepted is fatal to it: every
+repair is a recoverable diagnostic.
+
+Each step covers only the tables the stage authors so far: step 1 names
+materials and bones; step 6 normalizes texture references, and toon ramps and
+sphere modes with Phase 3; step 7 is empty until Phase 4. An element kind joins
+identity and provenance with the Phase that authors it, so no diagnostic is
+raised about something the stage does not contain.
 
 ## 15. Fatal versus recoverable
 
