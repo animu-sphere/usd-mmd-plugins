@@ -10,7 +10,11 @@
 def Xform "Asset" (
     customData = {
         dictionary mmd = {
+            string sourceComment = ""
+            string sourceEnglishComment = ""
+            string sourceEnglishName = "minimal"
             string sourceFormat = "PMX"
+            string sourceName = "minimal"
             string sourceVersion = "2.0"
             int stageContractVersion = 1
         }

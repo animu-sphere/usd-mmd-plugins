@@ -6,9 +6,10 @@ decisions behind each row are in [PMX_CONTRACT.md](../design/PMX_CONTRACT.md)
 [MATERIAL_POLICY.md](../design/MATERIAL_POLICY.md) (canonical → USD); when
 this table disagrees with them, they win and this table is the bug.
 
-Status (2026-09-15): **every row is intended; none is implemented.** The Phase
-column says when a row is expected to become true;
-[CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) says when it has.
+Status (2026-09-15): **rows of Phases 0–2 are implemented; the rest are
+intended.** The Phase column says when a row became true or is expected to;
+[CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) says which claims a fixture
+backs.
 
 Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 `/Asset/skel/Skeleton`, `Mtl` is `/Asset/mtl/<materialId>`, `Morph` is
@@ -42,7 +43,7 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 
 | PMX field | USD | Phase |
 | --- | --- | :---: |
-| texture path | `SdfAssetPath` `@./<normalized>@` on the using material's slot, or none if unsafe; verbatim string in the material's customData | 2, 3 |
+| texture path | `SdfAssetPath` `@./<normalized>@` on the using material's slot, or none if unsafe; verbatim string in the material's customData | 2 |
 
 ## Materials
 
@@ -55,12 +56,15 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 | specular | `Mtl.mmd:material:specularColor` | 3 |
 | specular power | `Mtl.mmd:material:specularPower`; `roughness` in both realizations | 3 |
 | ambient | `Mtl.mmd:material:ambientColor` | 3 |
-| flag `0x01` | `Mtl.mmd:material:doubleSided`; `Mesh.doubleSided` if any | 2, 3 |
+| flag `0x01` | `Mtl.mmd:material:doubleSided`; `Mesh.doubleSided` if any material that draws a face has it | 2 |
 | flags `0x02`–`0x80` | `Mtl.mmd:material:groundShadow` … `drawLines` | 3 |
 | edge color / size | `Mtl.mmd:material:edgeColor` / `edgeSize` | 3 |
-| texture | `Mtl.mmd:material:texture`; base texture node in both realizations | 3 |
-| sphere texture / mode | `Mtl.mmd:material:sphereTexture` / `sphereMode` | 3 |
-| toon reference + value | `Mtl.mmd:material:toonSource` + `toonTexture` or `sharedToonIndex` | 3 |
+| texture | `Mtl.mmd:material:texture` and customData `mmd:sourceTexturePath` | 2 |
+| texture | base texture node in both realizations | 3 |
+| sphere texture | `Mtl.mmd:material:sphereTexture` and customData `mmd:sourceSphereTexturePath` | 2 |
+| sphere mode | `Mtl.mmd:material:sphereMode` | 3 |
+| toon reference: a texture | `Mtl.mmd:material:toonTexture` and customData `mmd:sourceToonTexturePath` | 2 |
+| toon reference + value | `Mtl.mmd:material:toonSource`; `sharedToonIndex` for a shared slot | 3 |
 | memo | `Mtl` customData `mmd:sourceMemo` | 3 |
 
 ## Bones

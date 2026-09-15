@@ -3,6 +3,7 @@
 
 #include "usd/UsdMmdAuthorer.h"
 
+#include <mmdModel/Canonicalize.h>
 #include <mmdPmx/Diagnostic.h>
 #include <mmdPmx/Reader.h>
 
@@ -79,8 +80,9 @@ UsdMmdFileFormat::Read(
     const std::string& resolvedPath,
     bool metadataOnly) const
 {
-    // The stage is small until Phase 2 and authored in one pass after it, so
-    // there is no cheaper metadata-only path to take.
+    // The stage is authored in one pass from the canonical model, and its
+    // metadata is known only once the whole file is parsed, so there is no
+    // cheaper metadata-only path to take.
     (void)metadataOnly;
 
     const std::shared_ptr<ArAsset> asset = OpenAsset(resolvedPath);
@@ -119,6 +121,20 @@ UsdMmdFileFormat::Read(
         return false;
     }
 
+    // The source facts made canonical (DESIGN_POLICY.md §4): the one basis
+    // conversion, identifiers, the joint order, normalized skinning. Nothing
+    // in a document the parser accepted is fatal here.
+    auto canonical = mmd::Canonicalize(parsed.value());
+    const std::size_t parserDiagnostics = diagnostics.size();
+    diagnostics.insert(diagnostics.end(), canonical.diagnostics().begin(),
+        canonical.diagnostics().end());
+    postWarnings(diagnostics, parserDiagnostics);
+    if (!canonical.ok()) {
+        TF_RUNTIME_ERROR("%s [%s]", mmd::FormatDiagnostic(*canonical.fatal()).c_str(),
+            resolvedPath.c_str());
+        return false;
+    }
+
     // SdfLayer::Reload reads file formats under an outer SdfChangeBlock, and a
     // UsdStage authored on the calling thread cannot observe the prims it
     // authors until that block closes. Authoring on another thread keeps the
@@ -130,11 +146,11 @@ UsdMmdFileFormat::Read(
     // does -- so the wait releases the GIL, or the two threads wait on each
     // other forever (tests/integration/test_notice_listeners.py). It does
     // nothing when this thread does not hold the GIL.
-    const std::size_t parserDiagnostics = diagnostics.size();
+    const std::size_t modelDiagnostics = diagnostics.size();
     std::string usda;
     const usdmmd::UsdMmdAuthorer authorer;
     auto task = std::async(std::launch::async, [&]() {
-        return authorer.WriteToString(parsed.value(), &diagnostics, &usda);
+        return authorer.WriteToString(canonical.value(), &diagnostics, &usda);
     });
     bool authored = false;
     {
@@ -146,7 +162,7 @@ UsdMmdFileFormat::Read(
             resolvedPath.c_str());
         return false;
     }
-    postWarnings(diagnostics, parserDiagnostics);
+    postWarnings(diagnostics, modelDiagnostics);
 
     const SdfFileFormatConstPtr usdaFormat = SdfFileFormat::FindByExtension("usda");
     const SdfLayerRefPtr generated =

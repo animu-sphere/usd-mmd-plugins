@@ -1,0 +1,38 @@
+# OpenStrata plain-library descriptor.
+#
+# mmdModel is the canonical MMD model: the single source-to-USD basis
+# conversion, stable identifiers, the canonical joint order, normalized
+# skinning and provenance (docs/design/DESIGN_POLICY.md §5.2). A plain static
+# CMake library, NOT a plugin bundle: no plugInfo.json, no registration, no
+# OpenUSD dependency (docs/architecture/WORKSPACE.md §1, §2).
+#
+# One edge, and the only one permitted: mmdModel -> mmdPmx, fixed by
+# Canonicalize(const pmx::Document&) (WORKSPACE.md §2.1).
+schema: openstrata.library/v1alpha1
+library:
+  id: mmdModel
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.0.0
+requires:
+  libraries:
+    - id: mmdPmx
+      version: ">=0.0,<0.1"
+cmake:
+  # The find_package() name and the imported target consumers link against.
+  package: mmdModel
+  target: mmdModel::mmdModel
+# Built and installed on its own, and shipped inside the product as a
+# dependency of the file-format bundle.
+package:
+  standalone: true
+  aggregate_member: true
+# What the installed package promises a consumer (docs/architecture/
+# PACKAGE_CONTRACT.md). `ost library verify-consumer` builds a consumer that
+# includes the header and names the symbol, against the installed prefix only.
+package_contract:
+  package_name: mmdModel
+  exported_targets: [mmdModel::mmdModel]
+  public_headers: [include/mmdModel/**]
+  consumer:
+    include: mmdModel/Canonicalize.h
+    symbol: mmd::Canonicalize

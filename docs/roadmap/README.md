@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The current milestone — Phase 1, the PMX structural parser — and what remains of it. |
+| [current.md](current.md) | The current milestone — Phase 2, the canonical stage — and what remains of it. |
 
 ## One sequence
 
@@ -28,8 +28,8 @@ in.** No other document states a version for a Phase.
 | Phase | Scope | Status | Release |
 | --- | --- | --- | --- |
 | 0 | workspace skeleton | ✅ done | unassigned |
-| 1 | PMX structural parser | 🚧 awaiting CI | unassigned |
-| 2 | canonical stage | ⬜ | unassigned |
+| 1 | PMX structural parser | ✅ done | unassigned |
+| 2 | canonical stage | 🚧 awaiting CI | unassigned |
 | 3 | material triad | ⬜ | unassigned |
 | 4 | morphs | ⬜ | unassigned |
 | 5 | control semantics | ⬜ | unassigned |
@@ -41,26 +41,29 @@ No release number is assigned yet. The first release that claims PMX import is
 the one that meets
 [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
 — Phases 0–4 plus the preservation parts of 5 and 6 it names. Whether earlier
-Phases get releases of their own is decided here; Phase 0 is done and the
-question is still open.
+Phases get releases of their own is decided here; Phases 0 and 1 are done and
+the question is still open.
 
 Where things stand, as of 2026-09-15:
 
 - The documentation baseline exists: the design policy, five focused design
   contracts, the workspace contract, and reference pages that state what is
   implemented.
-- Phase 0, the workspace skeleton, is done: `.pmx` opens as a stage with the
-  Phase 0 metadata, through `ost` and plain CMake and from an installed
-  prefix, green in CI on Windows, macOS and Linux.
-- Phase 1, the PMX structural parser, is implemented and verified on Windows,
-  and its sanitizer build on Linux (GCC): every table of PMX 2.0 and 2.1 is
-  parsed, and `mmd_inspect` reports on it. Its first CI run, including the new
-  `parser-sanitizers.yml`, is what remains ([current.md](current.md)).
-- Five places where the design departs from the 2026-09-15 implementation
-  policy are listed in
-  [DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy).
-  Each stays `proposed` until the Phase that first authors it lands with a
-  fixture.
+- Phase 0, the workspace skeleton, is done: `.pmx` opens as a stage through
+  `ost` and plain CMake and from an installed prefix, green in CI on Windows,
+  macOS and Linux.
+- Phase 1, the PMX structural parser, is done: every table of PMX 2.0 and 2.1
+  is parsed, `mmd_inspect` reports on it, and CI is green on every cell,
+  including the parser's sanitizer and fuzzing lane.
+- Phase 2, the canonical stage, is implemented and verified on Windows, and
+  its sanitizer build on Linux (GCC): `mmdModel` canonicalizes, and the
+  importer authors the mesh, material prims and subsets, skeleton and
+  skinning. Its first CI run is what remains ([current.md](current.md)).
+- Of the five places where the design departs from the 2026-09-15
+  implementation policy
+  ([DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy)),
+  four are authored with fixtures and binding; the material graphs of the
+  fifth are Phase 3's.
 
 ## Open decisions
 
@@ -70,13 +73,7 @@ schedules them.
 
 | Id | Question | Owner | Blocks |
 | --- | --- | --- | --- |
-| PMX-O3 | Globals count above 8 in the wild | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | Phase 1 (non-blocking) |
-| STAGE-O1 | Unit scale (`0.08` m per MMD unit) | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 2 |
-| STAGE-O2 | Mesh prim name, one-mesh rule | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 2 |
-| STAGE-O3 | Double-sidedness rule | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 2 |
-| STAGE-O5 | Weight normalization tolerance, zero weights | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 2 |
-| TEXT-O1 | Texture paths escaping the model directory | [TEXT §10](../design/TEXT_ENCODING_POLICY.md#10-open-questions) | Phase 2 |
-| TEXT-O2 | Identifier length cap | [TEXT §10](../design/TEXT_ENCODING_POLICY.md#10-open-questions) | Phase 2 |
+| PMX-O3 | Globals count above 8 in the wild | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | nothing (non-blocking) |
 | MAT-O1 | Roughness from specular power | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | Phase 3 |
 | MAT-O2 | Alpha mode without decoding images | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | Phase 3 |
 | MAT-O3 | Missing individual toon texture | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | Phase 3 |

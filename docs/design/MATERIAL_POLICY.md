@@ -1,6 +1,10 @@
 # Material policy
 
-> Status: **proposed**; authored from Phase 3. It fixes how a PMX material
+> Status: **proposed**; authored from Phase 3, except what Phase 2 already
+> authors with fixtures — one `UsdShadeMaterial` per PMX material at its
+> §3 path, bound by its subset; `mmd:material:doubleSided` and the three
+> texture slots of §4.1; and the provenance of §4.2 but `mmd:sourceMemo` —
+> which is binding. It fixes how a PMX material
 > becomes a `UsdShadeMaterial`: the hierarchy, the canonical MMD semantics, and
 > the two portable realizations. It follows the shape of `usd-vrm-plugins`'
 > material architecture policy so that one renderer can read both families,
@@ -88,7 +92,7 @@ later can declare the same names without changing the stage.
 | `mmd:material:specularColor` | `color3f` | specular |
 | `mmd:material:specularPower` | `float` | specular power |
 | `mmd:material:ambientColor` | `color3f` | ambient |
-| `mmd:material:doubleSided` | `bool` | flag `0x01` |
+| `mmd:material:doubleSided` | `uniform bool` | flag `0x01` |
 | `mmd:material:groundShadow` | `bool` | flag `0x02` |
 | `mmd:material:castSelfShadow` | `bool` | flag `0x04` |
 | `mmd:material:receiveSelfShadow` | `bool` | flag `0x08` |

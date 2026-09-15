@@ -46,12 +46,15 @@ bundle's `plugInfo.json` expects it, and `mmd_inspect` into
 | `mmdPmx_robustness` | every byte of the sample models overwritten, and every prefix read: no crash, and no document that breaks its invariants |
 | `mmdPmx_boundaries` | `mmdPmx`'s sources include no OpenUSD, its link line is empty, and a binary linking it imports no OpenUSD library |
 | `mmdPmx_boundaries_selftest` | the boundary check's own rules reject what they must |
+| `mmdModel_unit` | canonicalization over documents stated as data — the basis conversion, identifiers, joint order and its repairs, weight normalization, texture paths, face ranges — and the diagnostic each repair raises |
+| `mmdModel_robustness` | 20,000 generated documents with wild parents, weights, names and paths, each canonicalized twice: no crash, the same bits both times, every promise of `CanonicalDocument.h` kept |
+| `mmdModel_boundaries` | `mmdModel`'s sources include no OpenUSD, it links `mmdPmx` and nothing else, and a binary linking it imports no OpenUSD library |
 | `mmd_inspect_fixtures` | `mmd_inspect` reads every generated fixture as `fixtures.json` says, from an ASCII and a non-ASCII directory |
 | `mmd_inspect_boundaries` | `mmd_inspect` links `mmdPmx` and nothing else, and imports no OpenUSD library |
-| `workspace_fixtures` | the committed fixtures are exactly what the generator writes |
+| `workspace_fixtures` | the committed fixtures and texture files are exactly what the generator writes |
 | `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees; the diagnostic catalog matches the declared codes |
-| `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says |
-| `usdMmdFileFormat_unicode_paths` | the same opens under `ユニコード-é/`, from a Python host |
+| `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says; each stage that opens holds what `fixtures.json` says it must — identifiers, joint paths, bind translations, material subsets, texture asset paths and whether they resolve, a vertex through the conversion — passes the stage checklist, and passes every validator OpenUSD registers |
+| `usdMmdFileFormat_unicode_paths` | the same, with the fixture directory and its texture files copied under `ユニコード-é/`, from a Python host |
 | `usdMmdFileFormat_notice_listeners` | every Python entry point that reaches the importer (`Usd.Stage.Open`, `Sdf.Layer.Reload`, `Sdf.Layer.OpenAsAnonymous`) returns while a global Python notice listener is registered |
 | `workspace_installed_consumer` | the installed-consumer lane (below) |
 
@@ -104,14 +107,21 @@ its `buildInfo.json`, and `ost plugin package` then refuses with
 `PLUGIN_PACKAGE_OUTPUT_MISMATCH`, because the file no longer matches the last
 managed bundle build.
 
-The library on its own, including a consumer `ost` generates from the
-[package contract](../architecture/PACKAGE_CONTRACT.md):
+Each library on its own, including a consumer `ost` generates from the
+[package contract](../architecture/PACKAGE_CONTRACT.md) — for `mmdModel`,
+`ost` builds and installs `mmdPmx` first, as its manifest requires:
 
 ```powershell
 ost library build libs/mmdPmx
 ost library test libs/mmdPmx
 ost library verify-consumer libs/mmdPmx
+ost library build libs/mmdModel
+ost library test libs/mmdModel
+ost library verify-consumer libs/mmdModel
 ```
+
+[opening.md](opening.md) shows what to do with the stage once the plugin is
+built.
 
 ## Sanitizers
 
@@ -124,6 +134,16 @@ repository root:
 cmake -S libs/mmdPmx -B ~/mmd-sanitize -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo       -DMMDPMX_SANITIZERS="address;undefined" -DMMDPMX_BUILD_TESTS=ON
 cmake --build ~/mmd-sanitize
 ctest --test-dir ~/mmd-sanitize --output-on-failure
+```
+
+`mmdModel` builds on its own against an installed `mmdPmx`, so the
+instrumented parser is installed into a prefix first:
+
+```sh
+cmake --install ~/mmd-sanitize --prefix ~/mmd-san-prefix
+cmake -S libs/mmdModel -B ~/mmd-san-model -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo       -DMMDMODEL_SANITIZERS="address;undefined" -DMMDMODEL_BUILD_TESTS=ON       -DCMAKE_PREFIX_PATH=~/mmd-san-prefix
+cmake --build ~/mmd-san-model
+ctest --test-dir ~/mmd-san-model --output-on-failure
 ```
 
 The fuzz target needs Clang's libFuzzer: `-DMMDPMX_BUILD_FUZZER=ON` with
@@ -148,9 +168,12 @@ the prefix's. `ctest` runs it as
 Every PMX fixture is written by
 [tests/fixtures/generate_fixtures.py](../../tests/fixtures/generate_fixtures.py)
 into `plugins/usdMmdFileFormat/tests/fixtures/`: models that use every table
-and record variant, recoverable ones that open with a recorded diagnostic
-(`recoverable/`), and fatal ones (`malformed/`). `fixtures.json` beside them
-says what each must do. After changing the generator:
+and record variant, ones that exercise each canonical repair, recoverable ones
+that open with a recorded diagnostic (`recoverable/`), and fatal ones
+(`malformed/`) — with the one-pixel texture files the sample models name, in
+`tex/`, `sph/` and `toon/`. `fixtures.json` beside them says what each must
+do, and for each one that opens, what its stage must hold. After changing the
+generator:
 
 ```powershell
 python tests/fixtures/generate_fixtures.py
@@ -159,14 +182,20 @@ python tests/fixtures/generate_fixtures.py --check
 
 and commit the result; `workspace_fixtures` fails until the two agree.
 
-The L5 golden, `minimal.pmx.golden.usda`, is the importer's output rather than
-the generator's. Regenerate it through the plugin's runtime session:
+The two L5 goldens, `minimal.pmx.golden.usda` and
+`recoverable/unsafe-texture-paths.pmx.golden.usda`, are the importer's output
+rather than the generator's. Regenerate each through the plugin's runtime
+session:
 
 ```powershell
 ost plugin run plugins\usdMmdFileFormat -- usdcat --flatten plugins\usdMmdFileFormat\tests\fixtures\minimal.pmx --out plugins\usdMmdFileFormat\tests\fixtures\minimal.pmx.golden.usda
+ost plugin run plugins\usdMmdFileFormat -- usdcat --flatten plugins\usdMmdFileFormat\tests\fixtures\recoverable\unsafe-texture-paths.pmx --out plugins\usdMmdFileFormat\tests\fixtures\recoverable\unsafe-texture-paths.pmx.golden.usda
 ```
 
 `usdcat --flatten` writes the absolute path of the file into the stage's
-`doc`. Replace it with the bundle-relative `tests/fixtures/minimal.pmx` before
-committing: `ost` ignores that line when it compares, and a committed file
-never carries a machine-local path.
+`doc`. Replace it with the bundle-relative path (`tests/fixtures/minimal.pmx`,
+`tests/fixtures/recoverable/unsafe-texture-paths.pmx`) before committing:
+`ost` ignores that line when it compares, and a committed file never carries a
+machine-local path. Flattening also makes every asset path absolute, which is
+why the second golden is of the fixture whose texture paths are all refused:
+its stage has none.

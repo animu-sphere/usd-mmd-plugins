@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
+//
+// The bounded list every component collects its recoverable diagnostics in
+// (docs/reference/DIAGNOSTICS.md §4). It lives beside the record, in the lowest
+// library, so the parser and the canonical model bound their diagnostics the
+// same way rather than each keeping a copy (docs/architecture/WORKSPACE.md §7).
 #pragma once
 
 #include "mmdPmx/Diagnostic.h"
@@ -8,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace mmd::pmx::detail {
+namespace mmd {
 
 /// Recoverable diagnostics in emission order, bounded: one code is recorded at
 /// most kLimit times per table, and the rest of that code's occurrences there
@@ -19,7 +24,7 @@ class DiagnosticList {
 public:
     static constexpr std::size_t kLimit = 16;
 
-    void Add(const Code& code, std::string message, Location location)
+    void Add(const Code& code, std::string message, Location location = {})
     {
         Tally& tally = _Find(code, location.table);
         if (++tally.seen <= kLimit) {
@@ -66,4 +71,4 @@ private:
     std::vector<Diagnostic> _list;
 };
 
-}  // namespace mmd::pmx::detail
+}  // namespace mmd

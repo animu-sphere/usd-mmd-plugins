@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+# The one edge (docs/architecture/WORKSPACE.md §2.1). A composed build that
+# already has the target does not resolve it twice.
+if(NOT TARGET mmdPmx::mmdPmx)
+    find_dependency(mmdPmx CONFIG)
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/mmdModelTargets.cmake")
+check_required_components(mmdModel)
