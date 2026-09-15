@@ -10,8 +10,9 @@
 > the skeleton, joint provenance, skinning and weight normalization, and the
 > material prims with the part of their semantics §10 names — and the §14
 > checklist, which the integration tests assert on every fixture.
-> **Proposed**: §11 (Phase 4), §12 (Phase 5), §13 (Phase 6), and the
-> materials' shading networks (Phase 3).
+> **Proposed**: §11 (Phase 4), §12 (Phase 5), and §13 (Phase 6). The material
+> semantics and `preview`/`mtlx` graph boundaries are binding from Phase 3;
+> their interior shader node names remain realization-local.
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
 > stage metadata, prim hierarchy, types, names, the coordinate conversion, and
@@ -416,14 +417,14 @@ attributes and two realization graphs, `preview` and `mtlx`. Bindings target
 the material prim, never a node inside it. Fully specified in
 [MATERIAL_POLICY.md](MATERIAL_POLICY.md).
 
-Since Phase 2 each material carries its provenance (`mmd:sourceName`,
+Each material carries its provenance (`mmd:sourceName`,
 `mmd:sourceEnglishName`, `mmd:sourceIndex`, and the verbatim path of each
 texture slot that names a texture), `mmd:material:doubleSided`, and the three
 texture slots — `mmd:material:texture`, `sphereTexture`, and `toonTexture`
 for an individual toon ramp — each authored only when its path is safe. The
-rest of MATERIAL_POLICY.md §4 and both realization graphs arrive in Phase 3;
-until then a material has no surface output, and a generic renderer draws it
-with its fallback.
+full MMD semantics are authored as `mmd:material:*` attributes, and both
+portable realization graphs are present from Phase 3 as specified by
+MATERIAL_POLICY.md.
 
 The material-table index is also MMD's **draw order**, which alpha-blended
 MMD rendering depends on; it is preserved as `mmd:sourceIndex` and consumers

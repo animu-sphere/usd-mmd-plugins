@@ -60,9 +60,9 @@ has none — the same environment renders a stage with Storm:
 python "$usd\bin\usdrecord" --imageWidth 600 model.pmx model.png
 ```
 
-Materials have no shading network until Phase 3, so a model renders in the
-renderer's fallback grey: geometry, normals and the skinned rest pose, not its
-colors.
+Phase 3 authors VRM-like unlit `preview` and MaterialX `mtlx` material graphs,
+so the portable display path carries source colors through emission while MMD
+specific sphere, toon, edge and other semantics remain on the material prim.
 
 ## What to look at
 

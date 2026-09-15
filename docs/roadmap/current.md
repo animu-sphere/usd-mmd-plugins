@@ -9,7 +9,9 @@ order, normalized skinning, face ranges and normalized texture paths — and
 the importer authors it: `/Asset` as the `UsdSkelRoot`, the mesh with its UVs
 and per-vertex data under `geo`, one material prim per PMX material under
 `mtl`, bound through `materialBind` subsets, and the skeleton under `skel`.
-Materials have no shading network yet — that is Phase 3, the material triad.
+Phase 3 additionally authors the full canonical MMD material semantics and
+the unlit-compatible `preview` and `mtlx` realization graphs; sphere, toon,
+edge and other MMD-specific values remain declarative on the material prim.
 
 ## Outcome
 
@@ -47,9 +49,9 @@ What exists is recorded in [WORKSPACE.md](../architecture/WORKSPACE.md),
   `mmdModel` steps have not run in CI yet. macOS and Linux have not built
   this Phase at all, and `-ffp-contract=off` is what makes their stages
   byte-identical — the one golden both compare against is the test of it.
-- ⬜ Once CI is green: this page replaced by the Phase 3 plan, and the
-  roadmap's status table updated. Phase 3 needs MAT-O1, -O2 and -O3 answered
-  first ([open decisions](README.md#open-decisions)).
+- ⬜ Once CI is green: this page is replaced by the next incomplete phase
+  plan. The Phase 3 material decisions MAT-O1, -O2 and -O3 are recorded as
+  resolved in [MATERIAL_POLICY.md](../design/MATERIAL_POLICY.md#13-open-questions).
 
 ## Completion criteria
 

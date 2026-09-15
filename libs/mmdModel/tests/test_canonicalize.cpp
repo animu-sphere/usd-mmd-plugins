@@ -337,6 +337,15 @@ TestMaterials()
         ExpectCanonical(invalid, {"MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE"});
     assert(repaired.materials[0].sphereMode == SphereMode::Disabled);
 
+    pmx::Document invalidToon = SampleDocument();
+    invalidToon.textures.pop_back();
+    invalidToon.materials[0].toonTexture = pmx::kNoIndex;
+    invalidToon.materials[1].sharedToon = 10;
+    const CanonicalDocument repairedToon =
+        ExpectCanonical(invalidToon, {"MMD_MATERIAL_UNSUPPORTED_TOON_SLOT"});
+    assert(repairedToon.materials[1].toonSource == ToonSource::None);
+    assert(repairedToon.materials[1].sharedToonIndex == kNone);
+
     // Short: the tail is unbound and the subsets no longer partition.
     pmx::Document doc = SampleDocument();
     doc.materials[1].faceCount = 3;

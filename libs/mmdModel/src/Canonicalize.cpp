@@ -430,8 +430,15 @@ private:
                 m.toonTexture = texture(source.toonTexture);
                 m.toonSource = m.toonTexture == kNone ? ToonSource::None : ToonSource::Individual;
             } else {
-                m.toonSource = ToonSource::Shared;
-                m.sharedToonIndex = static_cast<std::int32_t>(source.sharedToon);
+                if (source.sharedToon <= 9) {
+                    m.toonSource = ToonSource::Shared;
+                    m.sharedToonIndex = static_cast<std::int32_t>(source.sharedToon);
+                } else {
+                    _diagnostics.Add(codes::MaterialUnsupportedToonSlot,
+                        "shared toon slot " + std::to_string(source.sharedToon)
+                            + " is outside 0-9 and is treated as absent",
+                        At("materials", i, "sharedToon"));
+                }
             }
             m.memo = source.memo;
             // A material that draws nothing makes no face double-sided.
