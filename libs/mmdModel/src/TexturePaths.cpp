@@ -55,7 +55,7 @@ HasControlCharacter(std::string_view text)
     return false;
 }
 
-}  // namespace
+} // namespace
 
 TexturePath
 NormalizeTexturePath(std::string_view source)
@@ -104,7 +104,7 @@ NormalizeTexturePath(std::string_view source)
         segments.push_back(segment);
     }
     if (!segments.empty() && segments.front() == "..") {
-        result.unsafe = true;  // it escapes the model's directory (TEXT-O1)
+        result.unsafe = true; // it escapes the model's directory (TEXT-O1)
         return result;
     }
     if (segments.empty()) {
@@ -118,4 +118,4 @@ NormalizeTexturePath(std::string_view source)
     return result;
 }
 
-}  // namespace mmd::detail
+} // namespace mmd::detail

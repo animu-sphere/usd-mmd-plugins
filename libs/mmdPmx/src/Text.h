@@ -28,4 +28,4 @@ std::optional<DecodeError> DecodeUtf8(std::span<const std::byte> bytes, std::str
 /// and every surrogate paired. On failure `out` is empty.
 std::optional<DecodeError> DecodeUtf16Le(std::span<const std::byte> bytes, std::string& out);
 
-}  // namespace mmd::pmx::detail
+} // namespace mmd::pmx::detail

@@ -68,7 +68,7 @@ TestRotationsAndTexCoords()
     assert(tri[0] == 4 && tri[1] == 6 && tri[2] == 5);
 }
 
-}  // namespace
+} // namespace
 
 void
 TestBasis()

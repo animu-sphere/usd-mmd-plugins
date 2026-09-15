@@ -15,14 +15,12 @@ namespace {
 void
 TestSeverityFollowsCode()
 {
-    const mmd::Diagnostic fatal =
-        mmd::MakeDiagnostic(mmd::codes::PmxTruncatedBuffer, "short");
+    const mmd::Diagnostic fatal = mmd::MakeDiagnostic(mmd::codes::PmxTruncatedBuffer, "short");
     assert(fatal.code == "MMD_PMX_TRUNCATED_BUFFER");
     assert(fatal.severity == mmd::Severity::Fatal);
     assert(!fatal.recoverable);
 
-    const mmd::Diagnostic warning =
-        mmd::MakeDiagnostic(mmd::codes::PmxUnknownGlobals, "extra");
+    const mmd::Diagnostic warning = mmd::MakeDiagnostic(mmd::codes::PmxUnknownGlobals, "extra");
     assert(warning.severity == mmd::Severity::Warning);
     assert(warning.recoverable);
 }
@@ -52,22 +50,19 @@ TestFormat()
     mmd::Location location;
     location.byteOffset = 4;
     const mmd::Diagnostic d = mmd::MakeDiagnostic(
-        mmd::codes::PmxUnsupportedVersion, "PMX version 3 is not 2.0 or 2.1",
-        location);
-    assert(mmd::FormatDiagnostic(d)
-           == "MMD_PMX_UNSUPPORTED_VERSION: PMX version 3 is not 2.0 or 2.1 "
-              "(byte 4)");
+        mmd::codes::PmxUnsupportedVersion, "PMX version 3 is not 2.0 or 2.1", location);
+    assert(mmd::FormatDiagnostic(d) ==
+           "MMD_PMX_UNSUPPORTED_VERSION: PMX version 3 is not 2.0 or 2.1 "
+           "(byte 4)");
 
-    const mmd::Diagnostic bare =
-        mmd::MakeDiagnostic(mmd::codes::PmxUnknownGlobals, "extra");
+    const mmd::Diagnostic bare = mmd::MakeDiagnostic(mmd::codes::PmxUnknownGlobals, "extra");
     assert(mmd::FormatDiagnostic(bare) == "MMD_PMX_UNKNOWN_GLOBALS: extra");
 }
 
 void
 TestResult()
 {
-    const mmd::Diagnostic warning =
-        mmd::MakeDiagnostic(mmd::codes::PmxUnknownGlobals, "extra");
+    const mmd::Diagnostic warning = mmd::MakeDiagnostic(mmd::codes::PmxUnknownGlobals, "extra");
 
     const auto success = mmd::Result<int>::Success(7, {warning});
     assert(success.ok());
@@ -128,7 +123,7 @@ TestDiagnosticList()
     assert(summary.message == "5 more in vertices are not listed");
 }
 
-}  // namespace
+} // namespace
 
 void
 TestDiagnostic()

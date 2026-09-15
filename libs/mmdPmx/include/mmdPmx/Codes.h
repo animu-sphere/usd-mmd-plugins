@@ -23,7 +23,8 @@ inline constexpr Code PmxTrailingBytes{"MMD_PMX_TRAILING_BYTES", Severity::Warni
 inline constexpr Code PmxInvalidDeformType{"MMD_PMX_INVALID_DEFORM_TYPE", Severity::Fatal};
 inline constexpr Code PmxFaceCountNotTriangles{"MMD_PMX_FACE_COUNT_NOT_TRIANGLES", Severity::Fatal};
 inline constexpr Code PmxFaceIndexOutOfRange{"MMD_PMX_FACE_INDEX_OUT_OF_RANGE", Severity::Fatal};
-inline constexpr Code PmxMaterialFacesExceedTable{"MMD_PMX_MATERIAL_FACES_EXCEED_TABLE", Severity::Fatal};
+inline constexpr Code PmxMaterialFacesExceedTable{"MMD_PMX_MATERIAL_FACES_EXCEED_TABLE",
+                                                  Severity::Fatal};
 inline constexpr Code PmxMaterialFacesShort{"MMD_PMX_MATERIAL_FACES_SHORT", Severity::Error};
 inline constexpr Code PmxInvalidMorphType{"MMD_PMX_INVALID_MORPH_TYPE", Severity::Fatal};
 inline constexpr Code PmxInvalidLayoutFlag{"MMD_PMX_INVALID_LAYOUT_FLAG", Severity::Fatal};
@@ -35,4 +36,4 @@ inline constexpr Code TextInvalidEncodingFlag{"MMD_TEXT_INVALID_ENCODING_FLAG", 
 inline constexpr Code TextInvalidUtf8{"MMD_TEXT_INVALID_UTF8", Severity::Error};
 inline constexpr Code TextInvalidUtf16{"MMD_TEXT_INVALID_UTF16", Severity::Error};
 
-}  // namespace mmd::codes
+} // namespace mmd::codes

@@ -32,7 +32,7 @@ PrintUsage(std::FILE* to)
                "  --json      one JSON object with every element, for scripts\n"
                "  --elements  list every element of every table (text report)\n"
                "exit status: 0 read, 1 read with errors, 2 not read, 3 usage\n",
-        to);
+               to);
 }
 
 /// The report is UTF-8, and so is `argv` (the executable's manifest makes the
@@ -73,7 +73,7 @@ Write(const std::string& text)
     std::fwrite(text.data(), 1, text.size(), stdout);
 }
 
-}  // namespace
+} // namespace
 
 int
 main(int argc, char** argv)
@@ -109,8 +109,7 @@ main(int argc, char** argv)
     const auto result = mmd::pmx::ReadFile(std::filesystem::path(utf8));
 
     const Utf8Console console;
-    Write(json ? mmdinspect::JsonReport(result)
-               : mmdinspect::TextReport(file, result, options));
+    Write(json ? mmdinspect::JsonReport(result) : mmdinspect::TextReport(file, result, options));
     std::fflush(stdout);
     return mmdinspect::ExitStatus(result);
 }

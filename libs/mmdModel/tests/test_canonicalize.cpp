@@ -37,7 +37,8 @@ MakeVertex(float x, pmx::Deform deform)
 }
 
 pmx::Deform
-MakeDeform(pmx::DeformType type, std::array<std::int32_t, 4> bones, std::array<float, 4> weights = {})
+MakeDeform(pmx::DeformType type, std::array<std::int32_t, 4> bones,
+           std::array<float, 4> weights = {})
 {
     pmx::Deform d;
     d.type = type;
@@ -145,7 +146,7 @@ TestMetadata()
     assert(c.metadata.sourceVersion == "2.1");
     assert(c.metadata.name == "サンプル");
     assert(c.metadata.englishName == "Sample");
-    assert(c.metadata.comment == "コメント\r\n");  // comments are verbatim
+    assert(c.metadata.comment == "コメント\r\n"); // comments are verbatim
     assert(c.metadata.softBodyCount == 1);
 }
 
@@ -161,14 +162,14 @@ TestMesh()
     assert((mesh.normals[1] == Float3{0.0f, 0.0f, 1.0f}));
     assert(mesh.st[2][0] == 0.25f && mesh.st[2][1] == 0.75f);
     assert(mesh.additionalUvCount == 1);
-    assert((mesh.additionalUv[0][4] == Float4{4.0f, 1.0f, 2.0f, 3.0f}));  // raw
+    assert((mesh.additionalUv[0][4] == Float4{4.0f, 1.0f, 2.0f, 3.0f})); // raw
     assert(mesh.additionalUv[1].empty());
     assert(mesh.edgeScale[5] == 5.5f);
     // Winding reversed, triangle by triangle.
     assert((mesh.faceVertexIndices == std::vector<std::int32_t>{0, 2, 1, 2, 4, 3, 3, 5, 4}));
     assert(mesh.FaceCount() == 3);
     assert(mesh.materialsCoverFaces);
-    assert(mesh.doubleSided);  // material 0 disables culling
+    assert(mesh.doubleSided); // material 0 disables culling
 }
 
 void
@@ -176,14 +177,14 @@ TestSkinning()
 {
     const CanonicalDocument c = ExpectCanonical(SampleDocument(), {"MMD_PATH_UNSAFE_TEXTURE_PATH"});
     const Mesh& mesh = c.mesh;
-    assert(mesh.influencesPerVertex == 4);  // BDEF4 and QDEF are present
+    assert(mesh.influencesPerVertex == 4); // BDEF4 and QDEF are present
     const auto joints = [&](std::size_t v) {
         return std::vector<std::int32_t>(mesh.jointIndices.begin() + 4 * v,
-            mesh.jointIndices.begin() + 4 * v + 4);
+                                         mesh.jointIndices.begin() + 4 * v + 4);
     };
     const auto weights = [&](std::size_t v) {
         return std::vector<float>(mesh.jointWeights.begin() + 4 * v,
-            mesh.jointWeights.begin() + 4 * v + 4);
+                                  mesh.jointWeights.begin() + 4 * v + 4);
     };
     // BDEF1: one influence, padded with weight 0 on joint 0.
     assert((joints(0) == std::vector<std::int32_t>{0, 0, 0, 0}));
@@ -198,9 +199,12 @@ TestSkinning()
     assert((joints(5) == std::vector<std::int32_t>{2, 0, 0, 0}));
     assert((weights(5) == std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f}));
 
-    assert((mesh.deformTypes == std::vector<DeformType>{DeformType::Bdef1, DeformType::Bdef2,
-                                    DeformType::Bdef4, DeformType::Sdef, DeformType::Qdef,
-                                    DeformType::Bdef2}));
+    assert((mesh.deformTypes == std::vector<DeformType>{DeformType::Bdef1,
+                                                        DeformType::Bdef2,
+                                                        DeformType::Bdef4,
+                                                        DeformType::Sdef,
+                                                        DeformType::Qdef,
+                                                        DeformType::Bdef2}));
     assert(mesh.sdefVertexCount == 1 && mesh.qdefVertexCount == 1);
     // SDEF parameters are points: converted, and zero for other vertices.
     assert(mesh.sdefC.size() == 6);
@@ -233,8 +237,8 @@ TestSkeleton()
     // parents and the skinning -- follows the canonical order.
     pmx::Document doc = SampleDocument();
     doc.bones[1].parent = 3;
-    const CanonicalDocument r = ExpectCanonical(doc,
-        {"MMD_SKEL_JOINTS_REORDERED", "MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    const CanonicalDocument r =
+        ExpectCanonical(doc, {"MMD_SKEL_JOINTS_REORDERED", "MMD_PATH_UNSAFE_TEXTURE_PATH"});
     assert((r.skeleton.jointOfSourceBone == std::vector<std::int32_t>{0, 2, 3, 1}));
     assert(r.skeleton.bones[1].sourceIndex == 3);
     assert(r.skeleton.bones[2].jointPath == "center/LeftWrist_IK/LeftArm");
@@ -264,9 +268,9 @@ TestWeights()
     const CanonicalDocument c =
         ExpectCanonical(doc, {"MMD_SKEL_WEIGHTS_NORMALIZED", "MMD_SKEL_ZERO_WEIGHTS"});
     const Mesh& mesh = c.mesh;
-    assert(mesh.jointWeights[8] == 0.5f && mesh.jointWeights[9] == 0.25f
-        && mesh.jointWeights[10] == 0.25f && mesh.jointWeights[11] == 0.0f);
-    assert(mesh.jointIndices[11] == 3);  // kept, at weight 0
+    assert(mesh.jointWeights[8] == 0.5f && mesh.jointWeights[9] == 0.25f &&
+           mesh.jointWeights[10] == 0.25f && mesh.jointWeights[11] == 0.0f);
+    assert(mesh.jointIndices[11] == 3); // kept, at weight 0
     assert(mesh.jointIndices[16] == 3 && mesh.jointWeights[16] == 1.0f);
     assert(mesh.jointWeights[17] == 0.0f);
     assert(mesh.jointIndices[20] == 2 && mesh.jointWeights[20] == 1.0f);
@@ -302,8 +306,8 @@ TestMaterials()
     assert(c.textures.size() == 4);
     assert(c.textures[0].sourcePath == "tex\\髪.png");
     assert(c.textures[0].assetPath == "./tex/髪.png");
-    assert(c.textures[3].sourcePath == "..\\toon\\共有.bmp");  // kept as provenance
-    assert(c.textures[3].assetPath.empty());                // and not followed
+    assert(c.textures[3].sourcePath == "..\\toon\\共有.bmp"); // kept as provenance
+    assert(c.textures[3].assetPath.empty());                  // and not followed
 
     const Material& hair = c.materials[0];
     assert(hair.name.stableId == "hair" && hair.name.source == "髪");
@@ -327,7 +331,7 @@ TestMaterials()
     assert(skin.texture == 1 && skin.sphereTexture == kNone);
     assert(skin.sphereMode == SphereMode::Multiply);
     assert(skin.toonSource == ToonSource::Shared && skin.sharedToonIndex == 1);
-    assert(skin.toonTexture == kNone);  // a shared toon slot is no texture
+    assert(skin.toonTexture == kNone); // a shared toon slot is no texture
 
     pmx::Document invalid = SampleDocument();
     invalid.textures.pop_back();
@@ -368,10 +372,10 @@ TestNames()
     doc.materials[0].toonTexture = pmx::kNoIndex;
     doc.model.name = std::string("サンプル\0\0", 14);
     doc.bones[1].englishName = "";       // falls back to its index
-    doc.bones[2].englishName = "Center";  // collides with bone 0, ignoring case
+    doc.bones[2].englishName = "Center"; // collides with bone 0, ignoring case
     doc.materials[1].name = std::string("肌\0", 4);
-    const CanonicalDocument c = ExpectCanonical(doc,
-        {"MMD_TEXT_TRAILING_NUL", "MMD_TEXT_TRAILING_NUL", "MMD_USD_IDENTIFIER_COLLISION"});
+    const CanonicalDocument c = ExpectCanonical(
+        doc, {"MMD_TEXT_TRAILING_NUL", "MMD_TEXT_TRAILING_NUL", "MMD_USD_IDENTIFIER_COLLISION"});
     assert(c.metadata.name == "サンプル");
     assert(c.materials[1].name.source == "肌");
     assert(c.skeleton.bones[1].name.stableId == "bone_0001");
@@ -408,7 +412,7 @@ TestDeterminism()
     assert(Canonicalize(doc).value() == Canonicalize(doc).value());
 }
 
-}  // namespace
+} // namespace
 
 void
 TestCanonicalize()

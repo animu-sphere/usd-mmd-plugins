@@ -74,8 +74,8 @@ TestRepairs()
     // Out of range, which the parser never leaves but the function handles.
     order = OrderJoints({5, -7}, list);
     assert((order.parents == Parents{-1, -1}));
-    assert(Codes(list) == (std::vector<std::string>{"MMD_SKEL_INVALID_PARENT",
-                              "MMD_SKEL_INVALID_PARENT"}));
+    assert(Codes(list) ==
+           (std::vector<std::string>{"MMD_SKEL_INVALID_PARENT", "MMD_SKEL_INVALID_PARENT"}));
 
     // A cycle 3 -> 1 -> 2 -> 3 is broken at its lowest index, 1, wherever the
     // walk entered it; bone 4 hangs off the cycle.
@@ -92,11 +92,11 @@ TestRepairs()
     order = OrderJoints({1, 0, 3, 2}, list);
     assert((order.parents == Parents{-1, 0, -1, 2}));
     assert((order.order == Order{0, 1, 2, 3}));
-    assert(Codes(list) == (std::vector<std::string>{"MMD_SKEL_PARENT_CYCLE",
-                              "MMD_SKEL_PARENT_CYCLE"}));
+    assert(Codes(list) ==
+           (std::vector<std::string>{"MMD_SKEL_PARENT_CYCLE", "MMD_SKEL_PARENT_CYCLE"}));
 }
 
-}  // namespace
+} // namespace
 
 void
 TestSkeleton()

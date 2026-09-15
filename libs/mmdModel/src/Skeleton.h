@@ -26,7 +26,6 @@ struct JointOrder {
 /// that repeatedly emits the lowest-source-index bone whose parent has been
 /// emitted: the source order whenever every parent already precedes its
 /// children, and MMD_SKEL_JOINTS_REORDERED when not.
-JointOrder OrderJoints(const std::vector<std::int32_t>& sourceParents,
-    DiagnosticList& diagnostics);
+JointOrder OrderJoints(const std::vector<std::int32_t>& sourceParents, DiagnosticList& diagnostics);
 
-}  // namespace mmd::detail
+} // namespace mmd::detail

@@ -25,7 +25,7 @@ Scaled(float v)
     return static_cast<float>(static_cast<double>(v) * kMetersPerUnit) + 0.0f;
 }
 
-}  // namespace
+} // namespace
 
 Float3
 Point(const Float3& source)
@@ -42,8 +42,9 @@ Displacement(const Float3& source)
 Double3
 PointD(const Double3& source)
 {
-    return {source[0] * kMetersPerUnit + 0.0, source[1] * kMetersPerUnit + 0.0,
-        -(source[2] * kMetersPerUnit) + 0.0};
+    return {source[0] * kMetersPerUnit + 0.0,
+            source[1] * kMetersPerUnit + 0.0,
+            -(source[2] * kMetersPerUnit) + 0.0};
 }
 
 Float3
@@ -56,8 +57,9 @@ Direction(const Float3& source)
     if (!(length > 0.0) || !std::isfinite(length)) {
         return {source[0] + 0.0f, source[1] + 0.0f, Mirror(source[2])};
     }
-    return {static_cast<float>(x / length) + 0.0f, static_cast<float>(y / length) + 0.0f,
-        static_cast<float>(z / length) + 0.0f};
+    return {static_cast<float>(x / length) + 0.0f,
+            static_cast<float>(y / length) + 0.0f,
+            static_cast<float>(z / length) + 0.0f};
 }
 
 Float4
@@ -78,4 +80,4 @@ Triangle(std::int32_t i0, std::int32_t i1, std::int32_t i2)
     return {i0, i2, i1};
 }
 
-}  // namespace mmd::basis
+} // namespace mmd::basis

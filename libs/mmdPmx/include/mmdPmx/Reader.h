@@ -31,4 +31,4 @@ Result<Document> Read(std::span<const std::byte> bytes);
 /// char8_t. The file-format plugin does not call this -- it reads through Ar.
 Result<Document> ReadFile(const std::filesystem::path& path);
 
-}  // namespace mmd::pmx
+} // namespace mmd::pmx

@@ -22,7 +22,7 @@ BoneAt(std::size_t index, const char* field)
     return where;
 }
 
-}  // namespace
+} // namespace
 
 JointOrder
 OrderJoints(const std::vector<std::int32_t>& sourceParents, DiagnosticList& diagnostics)
@@ -42,10 +42,11 @@ OrderJoints(const std::vector<std::int32_t>& sourceParents, DiagnosticList& diag
         }
         if (p < 0 || static_cast<std::size_t>(p) >= n || static_cast<std::size_t>(p) == i) {
             diagnostics.Add(codes::SkelInvalidParent,
-                static_cast<std::size_t>(p) == i
-                    ? std::string("the bone is its own parent; it is made a root")
-                    : "parent " + std::to_string(p) + " names no bone; the bone is made a root",
-                BoneAt(i, "parent"));
+                            static_cast<std::size_t>(p) == i
+                                ? std::string("the bone is its own parent; it is made a root")
+                                : "parent " + std::to_string(p) +
+                                      " names no bone; the bone is made a root",
+                            BoneAt(i, "parent"));
             parents[i] = -1;
         }
     }
@@ -66,12 +67,13 @@ OrderJoints(const std::vector<std::int32_t>& sourceParents, DiagnosticList& diag
             current = parents[static_cast<std::size_t>(current)];
         }
         if (current != -1 && state[static_cast<std::size_t>(current)] == kOnWalk) {
-            const auto entry = std::find(walk.begin(), walk.end(),
-                static_cast<std::size_t>(current));
+            const auto entry =
+                std::find(walk.begin(), walk.end(), static_cast<std::size_t>(current));
             const std::size_t lowest = *std::min_element(entry, walk.end());
-            diagnostics.Add(codes::SkelParentCycle,
-                "a cycle of " + std::to_string(walk.end() - entry)
-                    + " bones through their parents; this one, the lowest-indexed, is made a root",
+            diagnostics.Add(
+                codes::SkelParentCycle,
+                "a cycle of " + std::to_string(walk.end() - entry) +
+                    " bones through their parents; this one, the lowest-indexed, is made a root",
                 BoneAt(lowest, "parent"));
             parents[lowest] = -1;
         }
@@ -109,11 +111,11 @@ OrderJoints(const std::vector<std::int32_t>& sourceParents, DiagnosticList& diag
         Location where;
         where.table = "bones";
         diagnostics.Add(codes::SkelJointsReordered,
-            "a bone precedes its parent in the bone table; " + std::to_string(moved)
-                + " of " + std::to_string(n) + " joints are in a different position",
-            std::move(where));
+                        "a bone precedes its parent in the bone table; " + std::to_string(moved) +
+                            " of " + std::to_string(n) + " joints are in a different position",
+                        std::move(where));
     }
     return result;
 }
 
-}  // namespace mmd::detail
+} // namespace mmd::detail

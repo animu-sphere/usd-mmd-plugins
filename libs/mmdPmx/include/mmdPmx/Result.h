@@ -17,8 +17,7 @@ namespace mmd {
 /// A failure keeps the recoverable diagnostics raised before the fatal one, so
 /// a tool can report everything it saw. `diagnostics()` never contains a fatal
 /// diagnostic; `fatal()` is the only place one appears.
-template <class T>
-class Result {
+template <class T> class Result {
 public:
     static Result Success(T value, std::vector<Diagnostic> diagnostics = {})
     {
@@ -71,4 +70,4 @@ private:
     std::vector<Diagnostic> _diagnostics;
 };
 
-}  // namespace mmd
+} // namespace mmd

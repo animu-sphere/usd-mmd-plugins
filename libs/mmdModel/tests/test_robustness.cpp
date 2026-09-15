@@ -43,8 +43,7 @@ public:
     std::size_t Below(std::size_t n) { return n == 0 ? 0 : static_cast<std::size_t>(Next() % n); }
     bool OneIn(std::size_t n) { return Below(n) == 0; }
 
-    template <class T>
-    const T& Pick(const std::vector<T>& values)
+    template <class T> const T& Pick(const std::vector<T>& values)
     {
         return values[Below(values.size())];
     }
@@ -56,9 +55,18 @@ private:
 float
 WildFloat(Random& r)
 {
-    static const std::vector<float> special{0.0f, -0.0f, 1.0f, -1.0f, 0.5f, 1e-30f, 1e30f,
-        -1e30f, std::numeric_limits<float>::max(), std::numeric_limits<float>::infinity(),
-        -std::numeric_limits<float>::infinity(), std::numeric_limits<float>::quiet_NaN()};
+    static const std::vector<float> special{0.0f,
+                                            -0.0f,
+                                            1.0f,
+                                            -1.0f,
+                                            0.5f,
+                                            1e-30f,
+                                            1e30f,
+                                            -1e30f,
+                                            std::numeric_limits<float>::max(),
+                                            std::numeric_limits<float>::infinity(),
+                                            -std::numeric_limits<float>::infinity(),
+                                            std::numeric_limits<float>::quiet_NaN()};
     if (r.OneIn(4)) {
         return r.Pick(special);
     }
@@ -74,9 +82,25 @@ WildVec3(Random& r)
 std::string
 WildName(Random& r)
 {
-    static const std::vector<std::string> pieces{"", "a", "Z", "9", "_", " ", "-", "ab",
-        "左腕", "ＩＫ", "・", std::string("\0", 1), "Arm", "arm", "ARM", "bone_0001",
-        "material_0000", "x_1", std::string(70, 'q')};
+    static const std::vector<std::string> pieces{"",
+                                                 "a",
+                                                 "Z",
+                                                 "9",
+                                                 "_",
+                                                 " ",
+                                                 "-",
+                                                 "ab",
+                                                 "左腕",
+                                                 "ＩＫ",
+                                                 "・",
+                                                 std::string("\0", 1),
+                                                 "Arm",
+                                                 "arm",
+                                                 "ARM",
+                                                 "bone_0001",
+                                                 "material_0000",
+                                                 "x_1",
+                                                 std::string(70, 'q')};
     std::string name;
     const std::size_t n = r.Below(4);
     for (std::size_t i = 0; i < n; ++i) {
@@ -88,9 +112,24 @@ WildName(Random& r)
 std::string
 WildPath(Random& r)
 {
-    static const std::vector<std::string> pieces{"tex", "髪.png", "..", ".", "/", "\\", "C:",
-        "http:", "a", "b.bmp", "//", std::string("\0", 1), " ", "~", "\t", "\x7F",
-        "\xC2\x85", "\xC2\xA0"};
+    static const std::vector<std::string> pieces{"tex",
+                                                 "髪.png",
+                                                 "..",
+                                                 ".",
+                                                 "/",
+                                                 "\\",
+                                                 "C:",
+                                                 "http:",
+                                                 "a",
+                                                 "b.bmp",
+                                                 "//",
+                                                 std::string("\0", 1),
+                                                 " ",
+                                                 "~",
+                                                 "\t",
+                                                 "\x7F",
+                                                 "\xC2\x85",
+                                                 "\xC2\xA0"};
     std::string path;
     const std::size_t n = r.Below(6);
     for (std::size_t i = 0; i < n; ++i) {
@@ -190,8 +229,8 @@ IsIdentifier(const std::string& id)
         return false;
     }
     for (char c : id) {
-        const bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')
-            || c == '_';
+        const bool ok =
+            (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
         if (!ok) {
             return false;
         }
@@ -234,7 +273,8 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
         if (c.skeleton.jointOfSourceBone[bone.sourceIndex] != static_cast<std::int32_t>(j)) {
             return "jointOfSourceBone disagrees with the order";
         }
-        if (bone.parent != mmd::kNone && (bone.parent < 0 || bone.parent >= static_cast<std::int32_t>(j))) {
+        if (bone.parent != mmd::kNone &&
+            (bone.parent < 0 || bone.parent >= static_cast<std::int32_t>(j))) {
             return "a joint's parent does not precede it";
         }
         if (!IsIdentifier(bone.name.stableId) || !ids.insert(Lower(bone.name.stableId)).second) {
@@ -243,18 +283,19 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
         if (!paths.insert(bone.jointPath).second) {
             return "two joints share a path";
         }
-        const std::string expected = bone.parent == mmd::kNone
-            ? bone.name.stableId
-            : c.skeleton.bones[static_cast<std::size_t>(bone.parent)].jointPath + "/"
-                + bone.name.stableId;
+        const std::string expected =
+            bone.parent == mmd::kNone
+                ? bone.name.stableId
+                : c.skeleton.bones[static_cast<std::size_t>(bone.parent)].jointPath + "/" +
+                      bone.name.stableId;
         if (bone.jointPath != expected) {
             return "a joint path is not its parent's path and its identifier";
         }
     }
 
     // Mesh: every array sized to the vertices, faces in range.
-    if (mesh.points.size() != nv || mesh.normals.size() != nv || mesh.st.size() != nv
-        || mesh.edgeScale.size() != nv) {
+    if (mesh.points.size() != nv || mesh.normals.size() != nv || mesh.st.size() != nv ||
+        mesh.edgeScale.size() != nv) {
         return "a per-vertex array is not sized to the vertices";
     }
     for (std::size_t k = 0; k < 4; ++k) {
@@ -278,8 +319,8 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
             return "a model without bones is skinned";
         }
     } else if (nv > 0) {
-        if ((n != 1 && n != 2 && n != 4) || mesh.jointIndices.size() != nv * n
-            || mesh.jointWeights.size() != nv * n || mesh.deformTypes.size() != nv) {
+        if ((n != 1 && n != 2 && n != 4) || mesh.jointIndices.size() != nv * n ||
+            mesh.jointWeights.size() != nv * n || mesh.deformTypes.size() != nv) {
             return "the skinning arrays are not N per vertex";
         }
         for (std::size_t v = 0; v < nv; ++v) {
@@ -339,17 +380,17 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
         if (p.empty()) {
             continue;
         }
-        if (p.rfind("./", 0) != 0 || p.find('\\') != std::string::npos
-            || p.find("//") != std::string::npos || p == "./.." || p.rfind("./../", 0) == 0
-            || p.find("/./") != std::string::npos) {
+        if (p.rfind("./", 0) != 0 || p.find('\\') != std::string::npos ||
+            p.find("//") != std::string::npos || p == "./.." || p.rfind("./../", 0) == 0 ||
+            p.find("/./") != std::string::npos) {
             return "an authored texture path is not normalized: " + p;
         }
         // No control character: SdfAssetPath would refuse the path.
         for (std::size_t k = 0; k < p.size(); ++k) {
             const auto c = static_cast<unsigned char>(p[k]);
-            const bool c1 = c == 0xC2 && k + 1 < p.size()
-                && static_cast<unsigned char>(p[k + 1]) >= 0x80
-                && static_cast<unsigned char>(p[k + 1]) <= 0x9F;
+            const bool c1 = c == 0xC2 && k + 1 < p.size() &&
+                            static_cast<unsigned char>(p[k + 1]) >= 0x80 &&
+                            static_cast<unsigned char>(p[k + 1]) <= 0x9F;
             if (c < 0x20 || c == 0x7F || c1) {
                 return "an authored texture path holds a control character";
             }
@@ -383,16 +424,21 @@ public:
         Raw(m.sdefC);
         Raw(m.sdefR0);
         Raw(m.sdefR1);
-        Add(std::to_string(m.influencesPerVertex), m.doubleSided ? "d" : "s",
+        Add(std::to_string(m.influencesPerVertex),
+            m.doubleSided ? "d" : "s",
             m.materialsCoverFaces ? "p" : "n");
         for (const mmd::Material& mat : c.materials) {
-            Add(mat.name.source, mat.name.english, mat.name.stableId,
-                std::to_string(mat.firstFace) + "," + std::to_string(mat.faceCount) + ","
-                    + std::to_string(mat.texture) + "," + std::to_string(mat.sphereTexture) + ","
-                    + std::to_string(mat.toonTexture));
+            Add(mat.name.source,
+                mat.name.english,
+                mat.name.stableId,
+                std::to_string(mat.firstFace) + "," + std::to_string(mat.faceCount) + "," +
+                    std::to_string(mat.texture) + "," + std::to_string(mat.sphereTexture) + "," +
+                    std::to_string(mat.toonTexture));
         }
         for (const mmd::Bone& b : c.skeleton.bones) {
-            Add(b.name.source, b.jointPath, std::to_string(b.sourceIndex),
+            Add(b.name.source,
+                b.jointPath,
+                std::to_string(b.sourceIndex),
                 std::to_string(b.parent));
             Raw(std::vector<mmd::Double3>{b.position, b.localTranslation});
         }
@@ -401,14 +447,12 @@ public:
     bool operator==(const Fingerprint&) const = default;
 
 private:
-    template <class... Strings>
-    void Add(const Strings&... strings)
+    template <class... Strings> void Add(const Strings&... strings)
     {
         ((_bytes += std::string(strings) + '\x1F'), ...);
     }
 
-    template <class T>
-    void Raw(const std::vector<T>& values)
+    template <class T> void Raw(const std::vector<T>& values)
     {
         const char* data = reinterpret_cast<const char*>(values.data());
         _bytes.append(data, values.size() * sizeof(T));
@@ -418,12 +462,12 @@ private:
     std::string _bytes;
 };
 
-}  // namespace
+} // namespace
 
 int
 main()
 {
-    Random random(0x6D6D644D6F64656Cull);  // "mmdModel"
+    Random random(0x6D6D644D6F64656Cull); // "mmdModel"
     constexpr std::size_t kDocuments = 20000;
     std::size_t diagnostics = 0;
     for (std::size_t i = 0; i < kDocuments; ++i) {

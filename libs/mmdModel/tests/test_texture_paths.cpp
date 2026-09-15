@@ -26,7 +26,7 @@ ExpectUnsafe(const std::string& source)
     assert(result.assetPath.empty());
 }
 
-}  // namespace
+} // namespace
 
 void
 TestTexturePaths()
@@ -68,12 +68,12 @@ TestTexturePaths()
     ExpectUnsafe("tex/a\nb.png");
     ExpectUnsafe("tex/\x1F.png");
     ExpectUnsafe("tex/a\x7F.png");
-    ExpectUnsafe("tex/\xC2\x85.png");  // U+0085, NEXT LINE
-    ExpectUnsafe("tex/\xC2\x80.png");  // U+0080
-    ExpectUnsafe("tex/\xC2\x9F.png");  // U+009F
+    ExpectUnsafe("tex/\xC2\x85.png"); // U+0085, NEXT LINE
+    ExpectUnsafe("tex/\xC2\x80.png"); // U+0080
+    ExpectUnsafe("tex/\xC2\x9F.png"); // U+009F
     ExpectUnsafe(std::string("a\tb.png\0", 8));
     // The characters around C1 are not controls.
-    ExpectPath("tex/\xC2\xA0.png", "./tex/\xC2\xA0.png");  // U+00A0
-    ExpectPath("tex/\xC2\xA9.png", "./tex/\xC2\xA9.png");  // U+00A9
+    ExpectPath("tex/\xC2\xA0.png", "./tex/\xC2\xA0.png"); // U+00A0
+    ExpectPath("tex/\xC2\xA9.png", "./tex/\xC2\xA9.png"); // U+00A9
     ExpectPath("tex/~ $.png", "./tex/~ $.png");
 }

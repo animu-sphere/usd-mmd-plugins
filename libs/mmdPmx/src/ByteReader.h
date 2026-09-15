@@ -47,8 +47,8 @@ public:
         if (!b) {
             return std::nullopt;
         }
-        return static_cast<std::uint16_t>(std::to_integer<std::uint16_t>((*b)[0])
-            | (std::to_integer<std::uint16_t>((*b)[1]) << 8));
+        return static_cast<std::uint16_t>(std::to_integer<std::uint16_t>((*b)[0]) |
+                                          (std::to_integer<std::uint16_t>((*b)[1]) << 8));
     }
 
     std::optional<std::uint32_t> U32()
@@ -57,10 +57,10 @@ public:
         if (!b) {
             return std::nullopt;
         }
-        return std::to_integer<std::uint32_t>((*b)[0])
-            | (std::to_integer<std::uint32_t>((*b)[1]) << 8)
-            | (std::to_integer<std::uint32_t>((*b)[2]) << 16)
-            | (std::to_integer<std::uint32_t>((*b)[3]) << 24);
+        return std::to_integer<std::uint32_t>((*b)[0]) |
+               (std::to_integer<std::uint32_t>((*b)[1]) << 8) |
+               (std::to_integer<std::uint32_t>((*b)[2]) << 16) |
+               (std::to_integer<std::uint32_t>((*b)[3]) << 24);
     }
 
     // Two's complement, which C++20 guarantees for the conversion.
@@ -98,4 +98,4 @@ private:
     std::size_t _offset = 0;
 };
 
-}  // namespace mmd::pmx::detail
+} // namespace mmd::pmx::detail

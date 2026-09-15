@@ -45,14 +45,11 @@ OpenAsset(const std::string& resolvedPath)
     return ArGetResolver().OpenAsset(ArResolvedPath(resolvedPath));
 }
 
-}  // namespace
+} // namespace
 
 UsdMmdFileFormat::UsdMmdFileFormat()
-    : SdfFileFormat(
-          UsdMmdFileFormatTokens->Id,
-          UsdMmdFileFormatTokens->Version,
-          UsdMmdFileFormatTokens->Target,
-          UsdMmdFileFormatTokens->Extension)
+    : SdfFileFormat(UsdMmdFileFormatTokens->Id, UsdMmdFileFormatTokens->Version,
+                    UsdMmdFileFormatTokens->Target, UsdMmdFileFormatTokens->Extension)
 {
 }
 
@@ -70,15 +67,12 @@ UsdMmdFileFormat::CanRead(const std::string& file) const
     }
     constexpr std::array<char, 4> kSignature{'P', 'M', 'X', ' '};
     std::array<char, 4> signature{};
-    return asset->Read(signature.data(), signature.size(), 0) == signature.size()
-        && signature == kSignature;
+    return asset->Read(signature.data(), signature.size(), 0) == signature.size() &&
+           signature == kSignature;
 }
 
 bool
-UsdMmdFileFormat::Read(
-    SdfLayer* layer,
-    const std::string& resolvedPath,
-    bool metadataOnly) const
+UsdMmdFileFormat::Read(SdfLayer* layer, const std::string& resolvedPath, bool metadataOnly) const
 {
     // The stage is authored in one pass from the canonical model, and its
     // metadata is known only once the whole file is parsed, so there is no
@@ -116,8 +110,8 @@ UsdMmdFileFormat::Read(
     postWarnings(diagnostics, 0);
 
     if (!parsed.ok()) {
-        TF_RUNTIME_ERROR("%s [%s]", mmd::FormatDiagnostic(*parsed.fatal()).c_str(),
-            resolvedPath.c_str());
+        TF_RUNTIME_ERROR(
+            "%s [%s]", mmd::FormatDiagnostic(*parsed.fatal()).c_str(), resolvedPath.c_str());
         return false;
     }
 
@@ -126,12 +120,12 @@ UsdMmdFileFormat::Read(
     // in a document the parser accepted is fatal here.
     auto canonical = mmd::Canonicalize(parsed.value());
     const std::size_t parserDiagnostics = diagnostics.size();
-    diagnostics.insert(diagnostics.end(), canonical.diagnostics().begin(),
-        canonical.diagnostics().end());
+    diagnostics.insert(
+        diagnostics.end(), canonical.diagnostics().begin(), canonical.diagnostics().end());
     postWarnings(diagnostics, parserDiagnostics);
     if (!canonical.ok()) {
-        TF_RUNTIME_ERROR("%s [%s]", mmd::FormatDiagnostic(*canonical.fatal()).c_str(),
-            resolvedPath.c_str());
+        TF_RUNTIME_ERROR(
+            "%s [%s]", mmd::FormatDiagnostic(*canonical.fatal()).c_str(), resolvedPath.c_str());
         return false;
     }
 
@@ -158,8 +152,7 @@ UsdMmdFileFormat::Read(
         authored = task.get();
     }
     if (!authored) {
-        TF_RUNTIME_ERROR("usdMmdFileFormat: failed to author USD for '%s'",
-            resolvedPath.c_str());
+        TF_RUNTIME_ERROR("usdMmdFileFormat: failed to author USD for '%s'", resolvedPath.c_str());
         return false;
     }
     postWarnings(diagnostics, modelDiagnostics);
@@ -169,7 +162,7 @@ UsdMmdFileFormat::Read(
         SdfLayer::CreateAnonymous("usdMmdFileFormat.generated.usda", usdaFormat);
     if (!generated || !generated->ImportFromString(usda)) {
         TF_RUNTIME_ERROR("usdMmdFileFormat: the USD authored for '%s' could not be parsed",
-            resolvedPath.c_str());
+                         resolvedPath.c_str());
         return false;
     }
 
@@ -178,10 +171,8 @@ UsdMmdFileFormat::Read(
 }
 
 bool
-UsdMmdFileFormat::WriteToString(
-    const SdfLayer& layer,
-    std::string* str,
-    const std::string& comment) const
+UsdMmdFileFormat::WriteToString(const SdfLayer& layer, std::string* str,
+                                const std::string& comment) const
 {
     // Nothing writes PMX (DESIGN_POLICY.md §2.4); an imported layer is written
     // out as usda, which is what `usdcat` over a .pmx prints.

@@ -12,13 +12,13 @@
 namespace usdmmd::codes {
 
 // Skinning -- docs/design/STAGE_CONTRACT.md §9.4.
-inline constexpr mmd::Code SkelSdefApproximated{
-    "MMD_SKEL_SDEF_APPROXIMATED", mmd::Severity::Warning};
-inline constexpr mmd::Code SkelQdefApproximated{
-    "MMD_SKEL_QDEF_APPROXIMATED", mmd::Severity::Warning};
+inline constexpr mmd::Code SkelSdefApproximated{"MMD_SKEL_SDEF_APPROXIMATED",
+                                                mmd::Severity::Warning};
+inline constexpr mmd::Code SkelQdefApproximated{"MMD_SKEL_QDEF_APPROXIMATED",
+                                                mmd::Severity::Warning};
 
 // Physics -- docs/design/PMX_CONTRACT.md §12.
-inline constexpr mmd::Code PhysicsSoftBodyUnsupported{
-    "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED", mmd::Severity::Warning};
+inline constexpr mmd::Code PhysicsSoftBodyUnsupported{"MMD_PHYSICS_SOFT_BODY_UNSUPPORTED",
+                                                      mmd::Severity::Warning};
 
-}  // namespace usdmmd::codes
+} // namespace usdmmd::codes

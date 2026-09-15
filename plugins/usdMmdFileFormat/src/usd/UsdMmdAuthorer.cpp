@@ -95,16 +95,16 @@ ToVtArray(const std::vector<Source>& values)
 
 /// A custom `mmd:`-namespaced attribute (STAGE_CONTRACT.md §3).
 void
-SetCustom(const UsdPrim& prim, const char* name, const SdfValueTypeName& type,
-    const VtValue& value, SdfVariability variability = SdfVariabilityVarying)
+SetCustom(const UsdPrim& prim, const char* name, const SdfValueTypeName& type, const VtValue& value,
+          SdfVariability variability = SdfVariabilityVarying)
 {
     prim.CreateAttribute(TfToken(name), type, /*custom=*/true, variability).Set(value);
 }
 
 /// A vertex-interpolated primvar in the `mmd:` namespace (STAGE_CONTRACT.md §3).
 void
-SetVertexPrimvar(const UsdGeomPrimvarsAPI& primvars, const char* name,
-    const SdfValueTypeName& type, const VtValue& value)
+SetVertexPrimvar(const UsdGeomPrimvarsAPI& primvars, const char* name, const SdfValueTypeName& type,
+                 const VtValue& value)
 {
     primvars.CreatePrimvar(TfToken(name), type, UsdGeomTokens->vertex).Set(value);
 }
@@ -241,15 +241,19 @@ private:
         mesh.SetNormalsInterpolation(UsdGeomTokens->vertex);
 
         const UsdGeomPrimvarsAPI primvars(mesh);
-        SetVertexPrimvar(primvars, "st", SdfValueTypeNames->TexCoord2fArray,
-            VtValue(ToVtArray<GfVec2f>(m.st)));
+        SetVertexPrimvar(
+            primvars, "st", SdfValueTypeNames->TexCoord2fArray, VtValue(ToVtArray<GfVec2f>(m.st)));
         for (std::size_t k = 0; k < m.additionalUvCount; ++k) {
             const std::string name = "mmd:uv" + std::to_string(k + 1);
-            SetVertexPrimvar(primvars, name.c_str(), SdfValueTypeNames->Float4Array,
-                VtValue(ToVtArray<GfVec4f>(m.additionalUv[k])));
+            SetVertexPrimvar(primvars,
+                             name.c_str(),
+                             SdfValueTypeNames->Float4Array,
+                             VtValue(ToVtArray<GfVec4f>(m.additionalUv[k])));
         }
-        SetVertexPrimvar(primvars, "mmd:edgeScale", SdfValueTypeNames->FloatArray,
-            VtValue(ToVtArray<float>(m.edgeScale)));
+        SetVertexPrimvar(primvars,
+                         "mmd:edgeScale",
+                         SdfValueTypeNames->FloatArray,
+                         VtValue(ToVtArray<float>(m.edgeScale)));
 
         if (m.influencesPerVertex > 0) {
             const UsdSkelBindingAPI binding = UsdSkelBindingAPI::Apply(mesh.GetPrim());
@@ -265,15 +269,21 @@ private:
             for (mmd::DeformType type : m.deformTypes) {
                 deformTypes.push_back(static_cast<int>(type));
             }
-            SetVertexPrimvar(primvars, "mmd:deformType", SdfValueTypeNames->IntArray,
-                VtValue(deformTypes));
+            SetVertexPrimvar(
+                primvars, "mmd:deformType", SdfValueTypeNames->IntArray, VtValue(deformTypes));
             if (!m.sdefC.empty()) {
-                SetVertexPrimvar(primvars, "mmd:sdefC", SdfValueTypeNames->Point3fArray,
-                    VtValue(ToVtArray<GfVec3f>(m.sdefC)));
-                SetVertexPrimvar(primvars, "mmd:sdefR0", SdfValueTypeNames->Point3fArray,
-                    VtValue(ToVtArray<GfVec3f>(m.sdefR0)));
-                SetVertexPrimvar(primvars, "mmd:sdefR1", SdfValueTypeNames->Point3fArray,
-                    VtValue(ToVtArray<GfVec3f>(m.sdefR1)));
+                SetVertexPrimvar(primvars,
+                                 "mmd:sdefC",
+                                 SdfValueTypeNames->Point3fArray,
+                                 VtValue(ToVtArray<GfVec3f>(m.sdefC)));
+                SetVertexPrimvar(primvars,
+                                 "mmd:sdefR0",
+                                 SdfValueTypeNames->Point3fArray,
+                                 VtValue(ToVtArray<GfVec3f>(m.sdefR0)));
+                SetVertexPrimvar(primvars,
+                                 "mmd:sdefR1",
+                                 SdfValueTypeNames->Point3fArray,
+                                 VtValue(ToVtArray<GfVec3f>(m.sdefR1)));
             }
         }
         return mesh;
@@ -289,8 +299,8 @@ private:
 
     const mmd::Texture* _TextureWithAsset(std::int32_t index) const
     {
-        if (index == mmd::kNone || index < 0
-            || static_cast<std::size_t>(index) >= _doc.textures.size()) {
+        if (index == mmd::kNone || index < 0 ||
+            static_cast<std::size_t>(index) >= _doc.textures.size()) {
             return nullptr;
         }
         const mmd::Texture& texture = _doc.textures[static_cast<std::size_t>(index)];
@@ -299,22 +309,30 @@ private:
 
     void _MaterialSemantics(const UsdPrim& prim, const mmd::Material& m)
     {
-        SetCustom(prim, "mmd:material:diffuseColor", SdfValueTypeNames->Color4f,
-            VtValue(GfVec4f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2],
-                m.diffuseColor[3])),
-            SdfVariabilityUniform);
-        SetCustom(prim, "mmd:material:specularColor", SdfValueTypeNames->Color3f,
-            VtValue(GfVec3f(m.specularColor[0], m.specularColor[1], m.specularColor[2])),
-            SdfVariabilityUniform);
-        SetCustom(prim, "mmd:material:specularPower", SdfValueTypeNames->Float,
-            VtValue(m.specularPower), SdfVariabilityUniform);
-        SetCustom(prim, "mmd:material:ambientColor", SdfValueTypeNames->Color3f,
-            VtValue(GfVec3f(m.ambientColor[0], m.ambientColor[1], m.ambientColor[2])),
-            SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:diffuseColor",
+                  SdfValueTypeNames->Color4f,
+                  VtValue(GfVec4f(
+                      m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2], m.diffuseColor[3])),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:specularColor",
+                  SdfValueTypeNames->Color3f,
+                  VtValue(GfVec3f(m.specularColor[0], m.specularColor[1], m.specularColor[2])),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:specularPower",
+                  SdfValueTypeNames->Float,
+                  VtValue(m.specularPower),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:ambientColor",
+                  SdfValueTypeNames->Color3f,
+                  VtValue(GfVec3f(m.ambientColor[0], m.ambientColor[1], m.ambientColor[2])),
+                  SdfVariabilityUniform);
 
         const auto boolean = [&](const char* name, bool value) {
-            SetCustom(prim, name, SdfValueTypeNames->Bool, VtValue(value),
-                SdfVariabilityUniform);
+            SetCustom(prim, name, SdfValueTypeNames->Bool, VtValue(value), SdfVariabilityUniform);
         };
         boolean("mmd:material:doubleSided", m.doubleSided);
         boolean("mmd:material:groundShadow", m.groundShadow);
@@ -325,18 +343,32 @@ private:
         boolean("mmd:material:drawPoints", m.drawPoints);
         boolean("mmd:material:drawLines", m.drawLines);
 
-        SetCustom(prim, "mmd:material:edgeColor", SdfValueTypeNames->Color4f,
-            VtValue(GfVec4f(m.edgeColor[0], m.edgeColor[1], m.edgeColor[2], m.edgeColor[3])),
-            SdfVariabilityUniform);
-        SetCustom(prim, "mmd:material:edgeSize", SdfValueTypeNames->Float,
-            VtValue(m.edgeSize), SdfVariabilityUniform);
-        SetCustom(prim, "mmd:material:sphereMode", SdfValueTypeNames->Token,
-            VtValue(TfToken(SphereModeName(m.sphereMode))), SdfVariabilityUniform);
-        SetCustom(prim, "mmd:material:toonSource", SdfValueTypeNames->Token,
-            VtValue(TfToken(ToonSourceName(m.toonSource))), SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:edgeColor",
+                  SdfValueTypeNames->Color4f,
+                  VtValue(GfVec4f(m.edgeColor[0], m.edgeColor[1], m.edgeColor[2], m.edgeColor[3])),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:edgeSize",
+                  SdfValueTypeNames->Float,
+                  VtValue(m.edgeSize),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:sphereMode",
+                  SdfValueTypeNames->Token,
+                  VtValue(TfToken(SphereModeName(m.sphereMode))),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:material:toonSource",
+                  SdfValueTypeNames->Token,
+                  VtValue(TfToken(ToonSourceName(m.toonSource))),
+                  SdfVariabilityUniform);
         if (m.toonSource == mmd::ToonSource::Shared) {
-            SetCustom(prim, "mmd:material:sharedToonIndex", SdfValueTypeNames->Int,
-                VtValue(m.sharedToonIndex), SdfVariabilityUniform);
+            SetCustom(prim,
+                      "mmd:material:sharedToonIndex",
+                      SdfValueTypeNames->Int,
+                      VtValue(m.sharedToonIndex),
+                      SdfVariabilityUniform);
         }
     }
 
@@ -345,20 +377,17 @@ private:
         const SdfPath graphPath = material.GetPath().AppendChild(TfToken("preview"));
         UsdShadeNodeGraph graph = UsdShadeNodeGraph::Define(_stage, graphPath);
         UsdShadeShader surface = _Shader(graphPath, "surface", "UsdPreviewSurface");
-        surface.CreateInput(TfToken("diffuseColor"), SdfValueTypeNames->Color3f)
-            .Set(GfVec3f(0.0f));
+        surface.CreateInput(TfToken("diffuseColor"), SdfValueTypeNames->Color3f).Set(GfVec3f(0.0f));
         surface.CreateInput(TfToken("emissiveColor"), SdfValueTypeNames->Color3f)
             .Set(GfVec3f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2]));
-        surface.CreateInput(TfToken("opacity"), SdfValueTypeNames->Float)
-            .Set(m.diffuseColor[3]);
+        surface.CreateInput(TfToken("opacity"), SdfValueTypeNames->Float).Set(m.diffuseColor[3]);
         surface.CreateInput(TfToken("useSpecularWorkflow"), SdfValueTypeNames->Int).Set(0);
         surface.CreateInput(TfToken("metallic"), SdfValueTypeNames->Float).Set(0.0f);
         surface.CreateInput(TfToken("roughness"), SdfValueTypeNames->Float).Set(1.0f);
 
         const mmd::Texture* texture = _TextureWithAsset(m.texture);
         if (texture) {
-            UsdShadeShader stReader =
-                _Shader(graphPath, "stReader", "UsdPrimvarReader_float2");
+            UsdShadeShader stReader = _Shader(graphPath, "stReader", "UsdPrimvarReader_float2");
             stReader.CreateInput(TfToken("varname"), SdfValueTypeNames->String)
                 .Set(std::string("st"));
             const UsdShadeOutput st =
@@ -369,19 +398,16 @@ private:
             file.Set(SdfAssetPath(texture->assetPath));
             file.GetAttr().SetColorSpace(TfToken("sRGB"));
             image.CreateInput(TfToken("st"), SdfValueTypeNames->Float2).ConnectToSource(st);
-            image.CreateInput(TfToken("wrapS"), SdfValueTypeNames->Token)
-                .Set(TfToken("repeat"));
-            image.CreateInput(TfToken("wrapT"), SdfValueTypeNames->Token)
-                .Set(TfToken("repeat"));
+            image.CreateInput(TfToken("wrapS"), SdfValueTypeNames->Token).Set(TfToken("repeat"));
+            image.CreateInput(TfToken("wrapT"), SdfValueTypeNames->Token).Set(TfToken("repeat"));
             image.CreateInput(TfToken("sourceColorSpace"), SdfValueTypeNames->Token)
                 .Set(TfToken("sRGB"));
             image.CreateInput(TfToken("scale"), SdfValueTypeNames->Float4)
-                .Set(GfVec4f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2],
-                    m.diffuseColor[3]));
+                .Set(GfVec4f(
+                    m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2], m.diffuseColor[3]));
             const UsdShadeOutput rgb =
                 image.CreateOutput(TfToken("rgb"), SdfValueTypeNames->Float3);
-            const UsdShadeOutput alpha =
-                image.CreateOutput(TfToken("a"), SdfValueTypeNames->Float);
+            const UsdShadeOutput alpha = image.CreateOutput(TfToken("a"), SdfValueTypeNames->Float);
             surface.GetInput(TfToken("emissiveColor")).ConnectToSource(rgb);
             surface.GetInput(TfToken("opacity")).ConnectToSource(alpha);
         }
@@ -398,10 +424,8 @@ private:
     {
         const SdfPath graphPath = material.GetPath().AppendChild(TfToken("mtlx"));
         UsdShadeNodeGraph graph = UsdShadeNodeGraph::Define(_stage, graphPath);
-        UsdShadeShader surface =
-            _Shader(graphPath, "surface", "ND_gltf_pbr_surfaceshader");
-        surface.CreateInput(TfToken("base_color"), SdfValueTypeNames->Color3f)
-            .Set(GfVec3f(0.0f));
+        UsdShadeShader surface = _Shader(graphPath, "surface", "ND_gltf_pbr_surfaceshader");
+        surface.CreateInput(TfToken("base_color"), SdfValueTypeNames->Color3f).Set(GfVec3f(0.0f));
         surface.CreateInput(TfToken("metallic"), SdfValueTypeNames->Float).Set(0.0f);
         surface.CreateInput(TfToken("roughness"), SdfValueTypeNames->Float).Set(1.0f);
         surface.CreateInput(TfToken("specular"), SdfValueTypeNames->Float).Set(0.0f);
@@ -413,14 +437,12 @@ private:
         const bool hasTexture = m.texture != mmd::kNone;
         const int alphaMode = hasTexture || m.diffuseColor[3] < 1.0f ? 2 : 0;
         surface.CreateInput(TfToken("alpha_mode"), SdfValueTypeNames->Int).Set(alphaMode);
-        surface.CreateInput(TfToken("alpha"), SdfValueTypeNames->Float)
-            .Set(m.diffuseColor[3]);
+        surface.CreateInput(TfToken("alpha"), SdfValueTypeNames->Float).Set(m.diffuseColor[3]);
 
         if (texture) {
             UsdShadeShader st = _Shader(graphPath, "st", "ND_texcoord_vector2");
             st.CreateInput(TfToken("index"), SdfValueTypeNames->Int).Set(0);
-            const UsdShadeOutput stOut =
-                st.CreateOutput(TfToken("out"), SdfValueTypeNames->Float2);
+            const UsdShadeOutput stOut = st.CreateOutput(TfToken("out"), SdfValueTypeNames->Float2);
 
             UsdShadeShader image = _Shader(graphPath, "baseTexture", "ND_image_color4");
             UsdShadeInput file = image.CreateInput(TfToken("file"), SdfValueTypeNames->Asset);
@@ -435,16 +457,14 @@ private:
             image.CreateInput(TfToken("vaddressmode"), SdfValueTypeNames->String)
                 .Set(std::string("periodic"));
 
-            UsdShadeShader factor = _Shader(graphPath, "baseColorFactor",
-                "ND_multiply_color4");
+            UsdShadeShader factor = _Shader(graphPath, "baseColorFactor", "ND_multiply_color4");
             factor.CreateInput(TfToken("in1"), SdfValueTypeNames->Color4f)
                 .ConnectToSource(image.CreateOutput(TfToken("out"), SdfValueTypeNames->Color4f));
             factor.CreateInput(TfToken("in2"), SdfValueTypeNames->Color4f)
-                .Set(GfVec4f(m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2],
-                    m.diffuseColor[3]));
+                .Set(GfVec4f(
+                    m.diffuseColor[0], m.diffuseColor[1], m.diffuseColor[2], m.diffuseColor[3]));
 
-            UsdShadeShader split =
-                _Shader(graphPath, "baseColorSplit", "ND_separate4_color4");
+            UsdShadeShader split = _Shader(graphPath, "baseColorSplit", "ND_separate4_color4");
             split.CreateInput(TfToken("in"), SdfValueTypeNames->Color4f)
                 .ConnectToSource(factor.CreateOutput(TfToken("out"), SdfValueTypeNames->Color4f));
             const UsdShadeOutput r = split.CreateOutput(TfToken("outr"), SdfValueTypeNames->Float);
@@ -452,8 +472,7 @@ private:
             const UsdShadeOutput b = split.CreateOutput(TfToken("outb"), SdfValueTypeNames->Float);
             const UsdShadeOutput a = split.CreateOutput(TfToken("outa"), SdfValueTypeNames->Float);
 
-            UsdShadeShader rgb = _Shader(graphPath, "baseColorRgb",
-                "ND_combine3_color3");
+            UsdShadeShader rgb = _Shader(graphPath, "baseColorRgb", "ND_combine3_color3");
             rgb.CreateInput(TfToken("in1"), SdfValueTypeNames->Float).ConnectToSource(r);
             rgb.CreateInput(TfToken("in2"), SdfValueTypeNames->Float).ConnectToSource(g);
             rgb.CreateInput(TfToken("in3"), SdfValueTypeNames->Float).ConnectToSource(b);
@@ -471,8 +490,10 @@ private:
 
         if (material.GetPrim().ApplyAPI(TfToken("MaterialXConfigAPI"))) {
             material.GetPrim()
-                .CreateAttribute(TfToken("config:mtlx:version"), SdfValueTypeNames->String,
-                    /*custom=*/false, SdfVariabilityUniform)
+                .CreateAttribute(TfToken("config:mtlx:version"),
+                                 SdfValueTypeNames->String,
+                                 /*custom=*/false,
+                                 SdfVariabilityUniform)
                 .Set(std::string("1.39"));
         }
     }
@@ -492,11 +513,11 @@ private:
 
             _MaterialSemantics(prim, m);
             _TextureSlot(prim, m.texture, "mmd:material:texture", kSourceTexturePathKey);
-            _TextureSlot(prim, m.sphereTexture, "mmd:material:sphereTexture",
-                kSourceSphereTexturePathKey);
+            _TextureSlot(
+                prim, m.sphereTexture, "mmd:material:sphereTexture", kSourceSphereTexturePathKey);
             if (m.toonSource == mmd::ToonSource::Individual) {
-                _TextureSlot(prim, m.toonTexture, "mmd:material:toonTexture",
-                    kSourceToonTexturePathKey);
+                _TextureSlot(
+                    prim, m.toonTexture, "mmd:material:toonTexture", kSourceToonTexturePathKey);
             }
             _AuthorPreview(material, m);
             _AuthorMtlx(material, m);
@@ -507,7 +528,7 @@ private:
     /// slot names a texture, and the anchored asset path only when it is safe
     /// (TEXT_ENCODING_POLICY.md §7).
     void _TextureSlot(const UsdPrim& prim, std::int32_t texture, const char* attribute,
-        const TfToken& provenanceKey)
+                      const TfToken& provenanceKey)
     {
         if (texture == mmd::kNone) {
             return;
@@ -515,8 +536,8 @@ private:
         const mmd::Texture& t = _doc.textures[static_cast<std::size_t>(texture)];
         prim.SetCustomDataByKey(provenanceKey, VtValue(t.sourcePath));
         if (!t.assetPath.empty()) {
-            SetCustom(prim, attribute, SdfValueTypeNames->Asset,
-                VtValue(SdfAssetPath(t.assetPath)));
+            SetCustom(
+                prim, attribute, SdfValueTypeNames->Asset, VtValue(SdfAssetPath(t.assetPath)));
         }
     }
 
@@ -533,18 +554,23 @@ private:
             for (std::size_t i = 0; i < m.faceCount; ++i) {
                 faces[i] = static_cast<int>(m.firstFace + i);
             }
-            const UsdGeomSubset subset = UsdGeomSubset::CreateGeomSubset(mesh,
-                TfToken(m.name.stableId), UsdGeomTokens->face, faces,
-                UsdShadeTokens->materialBind);
+            const UsdGeomSubset subset =
+                UsdGeomSubset::CreateGeomSubset(mesh,
+                                                TfToken(m.name.stableId),
+                                                UsdGeomTokens->face,
+                                                faces,
+                                                UsdShadeTokens->materialBind);
             const UsdShadeMaterial material(
                 _stage->GetPrimAtPath(kMtlPath.AppendChild(TfToken(m.name.stableId))));
             UsdShadeMaterialBindingAPI::Apply(subset.GetPrim()).Bind(material);
             any = true;
         }
         if (any) {
-            UsdGeomSubset::SetFamilyType(mesh, UsdShadeTokens->materialBind,
-                _doc.mesh.materialsCoverFaces ? UsdGeomTokens->partition
-                                              : UsdGeomTokens->nonOverlapping);
+            UsdGeomSubset::SetFamilyType(mesh,
+                                         UsdShadeTokens->materialBind,
+                                         _doc.mesh.materialsCoverFaces
+                                             ? UsdGeomTokens->partition
+                                             : UsdGeomTokens->nonOverlapping);
         }
     }
 
@@ -567,8 +593,8 @@ private:
             world.SetTranslateOnly(GfVec3d(bone.position[0], bone.position[1], bone.position[2]));
             bind.push_back(world);
             GfMatrix4d local(1.0);
-            local.SetTranslateOnly(GfVec3d(bone.localTranslation[0], bone.localTranslation[1],
-                bone.localTranslation[2]));
+            local.SetTranslateOnly(GfVec3d(
+                bone.localTranslation[0], bone.localTranslation[1], bone.localTranslation[2]));
             rest.push_back(local);
             sourceIndex.push_back(static_cast<int>(bone.sourceIndex));
             sourceName.push_back(bone.name.source);
@@ -579,12 +605,21 @@ private:
         skeleton.CreateRestTransformsAttr(VtValue(rest));
 
         const UsdPrim prim = skeleton.GetPrim();
-        SetCustom(prim, "mmd:bone:sourceIndex", SdfValueTypeNames->IntArray,
-            VtValue(sourceIndex), SdfVariabilityUniform);
-        SetCustom(prim, "mmd:bone:sourceName", SdfValueTypeNames->StringArray,
-            VtValue(sourceName), SdfVariabilityUniform);
-        SetCustom(prim, "mmd:bone:sourceEnglishName", SdfValueTypeNames->StringArray,
-            VtValue(sourceEnglishName), SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:bone:sourceIndex",
+                  SdfValueTypeNames->IntArray,
+                  VtValue(sourceIndex),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:bone:sourceName",
+                  SdfValueTypeNames->StringArray,
+                  VtValue(sourceName),
+                  SdfVariabilityUniform);
+        SetCustom(prim,
+                  "mmd:bone:sourceEnglishName",
+                  SdfValueTypeNames->StringArray,
+                  VtValue(sourceEnglishName),
+                  SdfVariabilityUniform);
     }
 
     /// What the stage approximates or leaves out, said once per import.
@@ -597,25 +632,30 @@ private:
         mmd::Location onVertices;
         onVertices.table = "vertices";
         if (skinned && m.sdefVertexCount > 0) {
-            _diagnostics.push_back(mmd::MakeDiagnostic(codes::SkelSdefApproximated,
-                vertices(m.sdefVertexCount) + " SDEF, skinned here by linear blending; C, R0 and "
-                    "R1 are preserved in primvars:mmd:sdefC, sdefR0 and sdefR1",
-                onVertices));
+            _diagnostics.push_back(
+                mmd::MakeDiagnostic(codes::SkelSdefApproximated,
+                                    vertices(m.sdefVertexCount) +
+                                        " SDEF, skinned here by linear blending; C, R0 and "
+                                        "R1 are preserved in primvars:mmd:sdefC, sdefR0 and sdefR1",
+                                    onVertices));
         }
         if (skinned && m.qdefVertexCount > 0) {
-            _diagnostics.push_back(mmd::MakeDiagnostic(codes::SkelQdefApproximated,
-                vertices(m.qdefVertexCount) + " QDEF, skinned here by linear blending; no "
-                    "dual-quaternion consumer has been verified against it",
-                onVertices));
+            _diagnostics.push_back(
+                mmd::MakeDiagnostic(codes::SkelQdefApproximated,
+                                    vertices(m.qdefVertexCount) +
+                                        " QDEF, skinned here by linear blending; no "
+                                        "dual-quaternion consumer has been verified against it",
+                                    onVertices));
         }
         // Rigid bodies and joints are Phase 6's and raise nothing yet: they
         // are reserved, not refused (PMX_CONTRACT.md §12).
         if (const std::size_t n = _doc.metadata.softBodyCount; n > 0) {
             mmd::Location where;
             where.table = "softBodies";
-            _diagnostics.push_back(mmd::MakeDiagnostic(codes::PhysicsSoftBodyUnsupported,
-                (n == 1 ? std::string("1 soft body is") : std::to_string(n) + " soft bodies are")
-                    + " read and not authored; no stage contract carries soft bodies",
+            _diagnostics.push_back(mmd::MakeDiagnostic(
+                codes::PhysicsSoftBodyUnsupported,
+                (n == 1 ? std::string("1 soft body is") : std::to_string(n) + " soft bodies are") +
+                    " read and not authored; no stage contract carries soft bodies",
                 std::move(where)));
         }
     }
@@ -640,13 +680,11 @@ private:
     UsdStageRefPtr _stage;
 };
 
-}  // namespace
+} // namespace
 
 bool
-UsdMmdAuthorer::WriteToString(
-    const mmd::CanonicalDocument& document,
-    std::vector<mmd::Diagnostic>* diagnostics,
-    std::string* outUsda) const
+UsdMmdAuthorer::WriteToString(const mmd::CanonicalDocument& document,
+                              std::vector<mmd::Diagnostic>* diagnostics, std::string* outUsda) const
 {
     if (!diagnostics || !outUsda) {
         return false;
@@ -654,4 +692,4 @@ UsdMmdAuthorer::WriteToString(
     return Authorer(document, *diagnostics).Author(outUsda);
 }
 
-}  // namespace usdmmd
+} // namespace usdmmd

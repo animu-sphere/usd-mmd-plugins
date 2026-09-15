@@ -45,8 +45,7 @@ public:
         U16(u >> 16);
     }
     void F32(float v) { I32(static_cast<std::int32_t>(std::bit_cast<std::uint32_t>(v))); }
-    template <std::size_t N>
-    void Floats(const std::array<float, N>& values)
+    template <std::size_t N> void Floats(const std::array<float, N>& values)
     {
         for (float v : values) {
             F32(v);
@@ -111,8 +110,8 @@ public:
                 cp = ((b(0) & 0x0F) << 12) | ((b(1) & 0x3F) << 6) | (b(2) & 0x3F);
                 i += 3;
             } else {
-                cp = ((b(0) & 0x07) << 18) | ((b(1) & 0x3F) << 12) | ((b(2) & 0x3F) << 6)
-                    | (b(3) & 0x3F);
+                cp = ((b(0) & 0x07) << 18) | ((b(1) & 0x3F) << 12) | ((b(2) & 0x3F) << 6) |
+                     (b(3) & 0x3F);
                 i += 4;
             }
             if (cp >= 0x10000) {
@@ -137,10 +136,13 @@ EncodeHeader(Writer& w, const pmx::Document& doc)
     w.F32(doc.header.version == pmx::Version::V2_1 ? 2.1f : 2.0f);
     w.U8(static_cast<std::uint32_t>(8 + g.unknown.size()));
     for (std::uint32_t v : {static_cast<std::uint32_t>(g.textEncoding),
-             std::uint32_t{g.additionalVec4Count}, std::uint32_t{g.vertexIndexSize},
-             std::uint32_t{g.textureIndexSize}, std::uint32_t{g.materialIndexSize},
-             std::uint32_t{g.boneIndexSize}, std::uint32_t{g.morphIndexSize},
-             std::uint32_t{g.rigidBodyIndexSize}}) {
+                            std::uint32_t{g.additionalVec4Count},
+                            std::uint32_t{g.vertexIndexSize},
+                            std::uint32_t{g.textureIndexSize},
+                            std::uint32_t{g.materialIndexSize},
+                            std::uint32_t{g.boneIndexSize},
+                            std::uint32_t{g.morphIndexSize},
+                            std::uint32_t{g.rigidBodyIndexSize}}) {
         w.U8(v);
     }
     for (std::uint8_t v : g.unknown) {
@@ -190,7 +192,7 @@ EncodeVertices(Writer& w, const pmx::Document& doc)
             w.Floats(d.sdefR1);
             break;
         default:
-            return;  // an invalid type: the reader stops here
+            return; // an invalid type: the reader stops here
         }
         w.F32(v.edgeScale);
     }
@@ -421,8 +423,14 @@ EncodeJoints(Writer& w, const pmx::Document& doc)
         w.U8(j.type);
         w.RigidBody(j.rigidBodyA);
         w.RigidBody(j.rigidBodyB);
-        for (const pmx::Vec3& v : {j.position, j.rotation, j.translationMin, j.translationMax,
-                 j.rotationMin, j.rotationMax, j.translationSpring, j.rotationSpring}) {
+        for (const pmx::Vec3& v : {j.position,
+                                   j.rotation,
+                                   j.translationMin,
+                                   j.translationMax,
+                                   j.rotationMin,
+                                   j.rotationMax,
+                                   j.translationSpring,
+                                   j.rotationSpring}) {
             w.Floats(v);
         }
     }
@@ -490,7 +498,7 @@ Encode(const pmx::Document& doc, bool rawText = false)
 /// An empty model: every table empty, index width 1, UTF-16LE.
 inline pmx::Document
 EmptyDocument(pmx::Version version = pmx::Version::V2_0,
-    pmx::TextEncoding encoding = pmx::TextEncoding::Utf16Le)
+              pmx::TextEncoding encoding = pmx::TextEncoding::Utf16Le)
 {
     pmx::Document doc;
     doc.header.version = version;
@@ -513,7 +521,7 @@ SetIndexWidths(pmx::Document& doc, std::uint8_t width)
 /// field, every morph type, both display-frame element kinds, and (2.1) a
 /// soft body. Japanese names throughout, as in the ordinary case.
 pmx::Document SampleDocument(pmx::Version version, pmx::TextEncoding encoding,
-    std::uint8_t indexWidth, std::uint8_t additionalVec4 = 2);
+                             std::uint8_t indexWidth, std::uint8_t additionalVec4 = 2);
 
 /// Every invariant a successfully read document promises (Document.h):
 /// faces name vertices, materials' face counts fit the face table, and every
@@ -521,4 +529,4 @@ pmx::Document SampleDocument(pmx::Version version, pmx::TextEncoding encoding,
 /// first violation, or an empty string.
 std::string CheckInvariants(const pmx::Document& doc);
 
-}  // namespace pmxtest
+} // namespace pmxtest

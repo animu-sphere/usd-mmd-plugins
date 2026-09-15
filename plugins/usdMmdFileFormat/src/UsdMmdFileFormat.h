@@ -8,11 +8,8 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 // The tokens that identify this file format to Sdf's layer registry.
-#define USDMMD_FILE_FORMAT_TOKENS \
-    ((Id, "pmx"))                 \
-    ((Version, "1.0"))            \
-    ((Target, "usd"))             \
-    ((Extension, "pmx"))
+#define USDMMD_FILE_FORMAT_TOKENS                                                                  \
+    ((Id, "pmx"))((Version, "1.0"))((Target, "usd"))((Extension, "pmx"))
 
 TF_DECLARE_PUBLIC_TOKENS(UsdMmdFileFormatTokens, USDMMD_FILE_FORMAT_TOKENS);
 
@@ -24,10 +21,8 @@ class UsdMmdFileFormat : public SdfFileFormat {
 public:
     bool CanRead(const std::string& file) const override;
     bool Read(SdfLayer* layer, const std::string& resolvedPath, bool metadataOnly) const override;
-    bool WriteToString(
-        const SdfLayer& layer,
-        std::string* str,
-        const std::string& comment = std::string()) const override;
+    bool WriteToString(const SdfLayer& layer, std::string* str,
+                       const std::string& comment = std::string()) const override;
 
 protected:
     SDF_FILE_FORMAT_FACTORY_ACCESS;
