@@ -77,6 +77,21 @@ enum class DeformType : std::uint8_t {
     Qdef = 4,
 };
 
+/// MMD sphere-map mode (MATERIAL_POLICY.md §4.1).
+enum class SphereMode : std::uint8_t {
+    Disabled = 0,
+    Multiply = 1,
+    Add = 2,
+    SubTexture = 3,
+};
+
+/// The source form of a material's toon ramp (MATERIAL_POLICY.md §7).
+enum class ToonSource : std::uint8_t {
+    None = 0,
+    Individual = 1,
+    Shared = 2,
+};
+
 /// The one mesh of contract v1 (STAGE_CONTRACT.md §8.1). Every per-vertex
 /// array is sized to the vertex count; every value is in the USD basis.
 struct Mesh {
@@ -118,18 +133,35 @@ struct Mesh {
     bool operator==(const Mesh&) const = default;
 };
 
-/// A material's identity, face range and texture slots. Its full MMD semantics
-/// and realizations are authored from Phase 3 (MATERIAL_POLICY.md).
+/// A material's canonical MMD semantics, identity, face range and texture
+/// slots (MATERIAL_POLICY.md §§4 and 7).
 struct Material {
     Name name;
     std::size_t sourceIndex = 0;  ///< also MMD's draw order
     std::size_t firstFace = 0;    ///< in triangles
     std::size_t faceCount = 0;    ///< in triangles; 0 authors no subset
+    Float4 diffuseColor{};
+    Float3 specularColor{};
+    float specularPower = 0.0f;
+    Float3 ambientColor{};
     bool doubleSided = false;     ///< PMX drawing flag 0x01
+    bool groundShadow = false;
+    bool castSelfShadow = false;
+    bool receiveSelfShadow = false;
+    bool drawEdge = false;
+    bool vertexColor = false;
+    bool drawPoints = false;
+    bool drawLines = false;
+    Float4 edgeColor{};
+    float edgeSize = 0.0f;
     // Indices into CanonicalDocument::textures, or kNone.
     std::int32_t texture = kNone;
     std::int32_t sphereTexture = kNone;
+    SphereMode sphereMode = SphereMode::Disabled;
+    ToonSource toonSource = ToonSource::None;
     std::int32_t toonTexture = kNone;  ///< an individual toon ramp only
+    std::int32_t sharedToonIndex = kNone;
+    std::string memo;
 
     bool operator==(const Material&) const = default;
 };

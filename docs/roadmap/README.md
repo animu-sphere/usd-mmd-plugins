@@ -30,7 +30,7 @@ in.** No other document states a version for a Phase.
 | 0 | workspace skeleton | ✅ done | unassigned |
 | 1 | PMX structural parser | ✅ done | unassigned |
 | 2 | canonical stage | 🚧 awaiting CI | unassigned |
-| 3 | material triad | ⬜ | unassigned |
+| 3 | material triad | 🚧 in progress | unassigned |
 | 4 | morphs | ⬜ | unassigned |
 | 5 | control semantics | ⬜ | unassigned |
 | 6 | physics preservation | ⬜ | unassigned |
@@ -63,7 +63,10 @@ Where things stand, as of 2026-09-15:
   implementation policy
   ([DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy)),
   four are authored with fixtures and binding; the material graphs of the
-  fifth are Phase 3's.
+  fifth are now implemented as the Phase 3 material triad: canonical MMD
+  semantics, a VRM-like unlit `UsdPreviewSurface` fallback, and an unlit
+  MaterialX `gltf_pbr` path. MMD-specific sphere, toon, edge and source
+  values remain on the material prim for an MMD-aware consumer.
 
 ## Open decisions
 

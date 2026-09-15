@@ -1,6 +1,6 @@
 # Material policy
 
-> Status: **proposed**; authored from Phase 3, except what Phase 2 already
+> Status: **binding for Phase 3**; authored from Phase 3, except what Phase 2 already
 > authors with fixtures — one `UsdShadeMaterial` per PMX material at its
 > §3 path, bound by its subset; `mmd:material:doubleSided` and the three
 > texture slots of §4.1; and the provenance of §4.2 but `mmd:sourceMemo` —
@@ -30,8 +30,8 @@ realization from the semantics — never one realization from another.
 PMX material
     ↓
 canonical MMD material semantics      (mmdModel)
-    ├→ UsdPreviewSurface               generic fallback          /preview
-    ├→ MaterialX gltf_pbr              portable approximation     /mtlx
+    ├→ UsdPreviewSurface               unlit-compatible fallback /preview
+    ├→ MaterialX gltf_pbr              unlit-compatible portable path /mtlx
     └→ MMD toon realization            hydra-toon, elsewhere      (not authored here)
 ```
 
@@ -123,47 +123,58 @@ the path is unsafe or does not resolve
 
 ## 5. UsdPreviewSurface realization
 
-The broad compatibility fallback, and the easiest one to debug. It does **not**
-claim to reproduce MMD shading.
+The broad compatibility fallback, and the easiest one to debug. To keep the
+usdview result stable across scene lighting, it follows the VRM unlit pattern:
+the surface's lit response is disabled and the source color is carried through
+`emissiveColor`. This is a display realization only; the complete MMD values
+remain on `mmd:material:*` attributes.
 
 | `UsdPreviewSurface` input | From |
 | --- | --- |
-| `diffuseColor` | base texture RGB × diffuse RGB (factor folded into `UsdUVTexture.scale`), or diffuse RGB when untextured |
+| `diffuseColor` | black; the portable display path uses `emissiveColor` |
+| `emissiveColor` | base texture RGB × diffuse RGB (factor folded into `UsdUVTexture.scale`), or diffuse RGB when untextured |
 | `opacity` | base texture alpha × diffuse alpha, or diffuse alpha |
 | `useSpecularWorkflow` | `0` |
 | `metallic` | `0` |
-| `roughness` | derived from specular power (MAT-O1) |
+| `roughness` | `1` |
 
 - The texture reader uses `primvars:st`, `wrapS`/`wrapT = repeat`, and
   `sourceColorSpace = "sRGB"` — authored explicitly, not left to a renderer's
   guess.
-- **Ambient is not mapped.** MMD adds ambient as a constant term; as emission
-  it would wash a model out under scene lights.
+- **Ambient, specular, sphere, toon and edge are not mapped into this generic
+  realization.** They remain available as MMD semantics for an MMD-aware
+  consumer; the unlit display path deliberately avoids scene-light response.
 - Sphere, toon and edge are omitted: `UsdPreviewSurface` has nothing that
   holds them.
 - Double-sidedness is the mesh's, not the material's
   ([STAGE_CONTRACT.md §8.5](STAGE_CONTRACT.md#85-double-sidedness)).
 
-Proposed roughness mapping (MAT-O1): treat specular power *n* as a Blinn-Phong
-exponent, convert with the Beckmann equivalence `α = sqrt(2 / (n + 2))`, and
-author `roughness = sqrt(α)`, since `UsdPreviewSurface` squares its roughness.
-Clamped to `[0.05, 1]`. It is monotonic, documented, and fixture-tested; it is
-not claimed to match MMD's highlight.
+The canonical `specularPower` remains available for an MMD-aware realization;
+this portable path does not convert it because it intentionally has no lit
+specular response. A future lit realization must make its own documented
+conversion from the canonical value rather than changing this fallback.
 
 ## 6. MaterialX `gltf_pbr` realization
 
 The preferred portable approximation — the shading model already chosen
-across the avatar family, well supported, and renderer-independent.
+across the avatar family, well supported, and renderer-independent. Its
+terminal remains `gltf_pbr`, but it follows the same unlit display policy as
+the preview graph so usdview and MaterialX-aware consumers do not introduce a
+different lighting model.
 
 | `gltf_pbr` input | From |
 | --- | --- |
-| `base_color` | base texture RGB × diffuse RGB |
+| `base_color` | black; the display color is carried by `emissive` |
+| `emissive` | base texture RGB × diffuse RGB |
 | `alpha` | base texture alpha × diffuse alpha |
 | `alpha_mode` | per MAT-O2 |
 | `metallic` | `0` |
-| `roughness` | the §5 mapping |
+| `roughness` | `1` |
+| `specular` | `0` |
 
-It is a closest useful approximation, not an emulation of MMD's lighting.
+It is a closest useful unlit display path, not an emulation of MMD's toon
+lighting. Sphere, toon, edge, ambient and specular semantics are not discarded;
+they stay on the material prim for an MMD-aware renderer.
 Sphere, toon and edge are omitted here too. The graph is authored for every
 material, with `config:mtlx:version = "1.39"` on the material, as in
 `usd-vrm-plugins`.
@@ -240,7 +251,7 @@ unchanged.
 
 | Id | Question | Proposed answer | Resolve by |
 | --- | --- | --- | --- |
-| MAT-O1 | Roughness from specular power | §5 | Phase 3 |
-| MAT-O2 | Alpha mode without decoding images: the importer never reads texture pixels, so it cannot know whether a texture has alpha | blend when the material is textured or diffuse alpha < 1; opaque otherwise | Phase 3 |
-| MAT-O3 | Missing individual toon texture | preserve, report unresolved, no fallback | Phase 3 |
+| MAT-O1 | Roughness from specular power | resolved for the current portable realizations: they are unlit and author `roughness = 1`; `specularPower` remains canonical for an MMD-aware realization | Phase 3 |
+| MAT-O2 | Alpha mode without decoding images: the importer never reads texture pixels, so it cannot know whether a texture has alpha | resolved: blend when the material names a base texture or diffuse alpha < 1; opaque otherwise | Phase 3 |
+| MAT-O3 | Missing individual toon texture | resolved: preserve the source path and provenance, author a safe asset path when available so USD validation can report an unresolved file, and never fall back to a shared ramp | Phase 3 |
 | MAT-O4 | How `hydra-toon` reads MMD semantics | `MmdMaterialAPI` + imaging adapter, or a toon realization graph | when `hydra-toon` consumes the stage |

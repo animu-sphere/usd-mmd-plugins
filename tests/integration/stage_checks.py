@@ -207,6 +207,7 @@ class Checker:
                    f"{path} provenance is {prim.GetCustomData()}")
             expect(prim.GetAttribute("mmd:material:doubleSided").Get() == m["doubleSided"],
                    f"{path} mmd:material:doubleSided")
+            self.material_graphs(prim, path, m)
             for slot, key in (("texture", "mmd:sourceTexturePath"),
                               ("sphereTexture", "mmd:sourceSphereTexturePath"),
                               ("toonTexture", "mmd:sourceToonTexturePath")):
@@ -235,6 +236,90 @@ class Checker:
             valid, reason = UsdGeom.Subset.ValidateFamily(
                 mesh, UsdGeom.Tokens.face, UsdShade.Tokens.materialBind)
             expect(valid, f"the materialBind family is not valid: {reason}")
+
+    def material_graphs(self, material: Usd.Prim, path: str, want: dict) -> None:
+        """Validate the VRM-like unlit portable material realizations."""
+        expect = self.expect
+
+        def child(name: str, type_name: str) -> Usd.Prim:
+            prim = self.stage.GetPrimAtPath(f"{path}/{name}")
+            expect(prim.IsValid() and prim.GetTypeName() == type_name,
+                   f"{path}/{name} is not a {type_name}")
+            return prim
+
+        def shader_id(prim: Usd.Prim, expected: str) -> None:
+            got = prim.GetAttribute("info:id").Get()
+            expect(str(got) == expected, f"{prim.GetPath()} info:id is {got!r}")
+
+        def connections(prim: Usd.Prim, output: str) -> list[str]:
+            attr = prim.GetAttribute(f"outputs:{output}")
+            return [str(connection) for connection in attr.GetConnections()] if attr else []
+
+        preview = child("preview", "NodeGraph")
+        preview_surface = child("preview/surface", "Shader")
+        shader_id(preview_surface, "UsdPreviewSurface")
+        expect(preview_surface.GetAttribute("inputs:useSpecularWorkflow").Get() == 0,
+               f"{path}/preview/surface is not using the unlit path")
+        expect(preview_surface.GetAttribute("inputs:diffuseColor").Get() == (0.0, 0.0, 0.0),
+               f"{path}/preview/surface diffuseColor is not black")
+        expect(preview_surface.GetAttribute("inputs:emissiveColor").IsValid(),
+               f"{path}/preview/surface has no emissiveColor")
+        for input_name in ("mmd:material:diffuseColor", "mmd:material:specularColor",
+                           "mmd:material:specularPower", "mmd:material:ambientColor",
+                           "mmd:material:sphereMode", "mmd:material:toonSource"):
+            expect(material.GetAttribute(input_name).IsValid(),
+                   f"{path} has no preserved {input_name}")
+        expect(connections(preview, "surface") ==
+               [f"{path}/preview/surface.outputs:surface"],
+               f"{path}/preview output is not connected to its surface shader")
+        expect(connections(material, "surface") == [f"{path}/preview.outputs:surface"],
+               f"{path} surface output is not connected to preview")
+
+        mtlx = child("mtlx", "NodeGraph")
+        mtlx_surface = child("mtlx/surface", "Shader")
+        shader_id(mtlx_surface, "ND_gltf_pbr_surfaceshader")
+        expect(mtlx_surface.GetAttribute("inputs:base_color").Get() == (0.0, 0.0, 0.0),
+               f"{path}/mtlx/surface base_color is not black")
+        expect(mtlx_surface.GetAttribute("inputs:emissive").IsValid(),
+               f"{path}/mtlx/surface has no emissive")
+        expect(mtlx_surface.GetAttribute("inputs:specular").Get() == 0.0,
+               f"{path}/mtlx/surface retains a lit specular response")
+        expect(mtlx_surface.GetAttribute("inputs:roughness").Get() == 1.0,
+               f"{path}/mtlx/surface is not maximally rough")
+        expect(mtlx_surface.GetAttribute("inputs:alpha_mode").IsValid(),
+               f"{path}/mtlx/surface has no alpha_mode")
+        expect(connections(mtlx, "surface") ==
+               [f"{path}/mtlx/surface.outputs:surface"],
+               f"{path}/mtlx output is not connected to its surface shader")
+        expect(connections(material, "mtlx:surface") == [f"{path}/mtlx.outputs:surface"],
+               f"{path} mtlx surface output is not connected to mtlx")
+        config = material.GetAttribute("config:mtlx:version")
+        expect(config.IsValid() and config.Get() == "1.39",
+               f"{path} has no MaterialX 1.39 config")
+
+        diffuse_color = material.GetAttribute("mmd:material:diffuseColor").Get()
+        expected_alpha_mode = 2 if want["textures"].get("texture") is not None \
+            or diffuse_color[3] < 1.0 else 0
+        expect(mtlx_surface.GetAttribute("inputs:alpha_mode").Get() == expected_alpha_mode,
+               f"{path}/mtlx/surface alpha_mode is not {expected_alpha_mode}")
+
+        texture_want = want["textures"].get("texture")
+        textured = texture_want is not None and texture_want["asset"] is not None
+        if textured:
+            preview_texture = child("preview/baseTexture", "Shader")
+            shader_id(preview_texture, "UsdUVTexture")
+            expect(preview_texture.GetAttribute("inputs:sourceColorSpace").Get() == "sRGB",
+                   f"{path}/preview/baseTexture is not marked sRGB")
+            for node, node_id in (("baseTexture", "ND_image_color4"),
+                                  ("baseColorFactor", "ND_multiply_color4"),
+                                  ("baseColorSplit", "ND_separate4_color4"),
+                                  ("baseColorRgb", "ND_combine3_color3")):
+                shader_id(child(f"mtlx/{node}", "Shader"), node_id)
+        else:
+            expect(not self.stage.GetPrimAtPath(f"{path}/preview/baseTexture").IsValid(),
+                   f"{path} has a preview texture node without a base texture")
+            expect(not self.stage.GetPrimAtPath(f"{path}/mtlx/baseTexture").IsValid(),
+                   f"{path} has an mtlx texture node without a base texture")
 
     def texture_slot(self, prim: Usd.Prim, slot: str, key: str, want: dict | None) -> None:
         """The verbatim source path as provenance whenever the slot names a

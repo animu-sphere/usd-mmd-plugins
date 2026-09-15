@@ -388,12 +388,52 @@ private:
             m.firstFace = consumed / 3;
             m.faceCount = taken / 3;
             consumed += taken;
+            m.diffuseColor = {source.diffuse[0], source.diffuse[1], source.diffuse[2],
+                source.diffuse[3]};
+            m.specularColor = ToFloat3(source.specular);
+            m.specularPower = source.specularPower;
+            m.ambientColor = ToFloat3(source.ambient);
             m.doubleSided = (source.flags & pmx::MaterialFlag::NoCulling) != 0;
+            m.groundShadow = (source.flags & pmx::MaterialFlag::GroundShadow) != 0;
+            m.castSelfShadow = (source.flags & pmx::MaterialFlag::CastsSelfShadow) != 0;
+            m.receiveSelfShadow = (source.flags & pmx::MaterialFlag::ReceivesSelfShadow) != 0;
+            m.drawEdge = (source.flags & pmx::MaterialFlag::DrawsEdge) != 0;
+            m.vertexColor = (source.flags & pmx::MaterialFlag::VertexColor) != 0;
+            m.drawPoints = (source.flags & pmx::MaterialFlag::PointDrawing) != 0;
+            m.drawLines = (source.flags & pmx::MaterialFlag::LineDrawing) != 0;
+            m.edgeColor = {source.edgeColor[0], source.edgeColor[1], source.edgeColor[2],
+                source.edgeColor[3]};
+            m.edgeSize = source.edgeSize;
             m.texture = texture(source.texture);
             m.sphereTexture = texture(source.sphereTexture);
+            switch (source.sphereMode) {
+            case 0:
+                m.sphereMode = SphereMode::Disabled;
+                break;
+            case 1:
+                m.sphereMode = SphereMode::Multiply;
+                break;
+            case 2:
+                m.sphereMode = SphereMode::Add;
+                break;
+            case 3:
+                m.sphereMode = SphereMode::SubTexture;
+                break;
+            default:
+                _diagnostics.Add(codes::MaterialUnsupportedSphereMode,
+                    "sphere mode " + std::to_string(source.sphereMode)
+                        + " is unsupported and is treated as disabled",
+                    At("materials", i, "sphereMode"));
+                break;
+            }
             if (source.toonReference == pmx::ToonReference::Texture) {
                 m.toonTexture = texture(source.toonTexture);
+                m.toonSource = m.toonTexture == kNone ? ToonSource::None : ToonSource::Individual;
+            } else {
+                m.toonSource = ToonSource::Shared;
+                m.sharedToonIndex = static_cast<std::int32_t>(source.sharedToon);
             }
+            m.memo = source.memo;
             // A material that draws nothing makes no face double-sided.
             if (m.doubleSided && m.faceCount > 0) {
                 _out.mesh.doubleSided = true;

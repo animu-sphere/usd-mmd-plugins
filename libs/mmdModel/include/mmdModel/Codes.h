@@ -24,6 +24,10 @@ inline constexpr Code SkelJointsReordered{"MMD_SKEL_JOINTS_REORDERED", Severity:
 inline constexpr Code SkelWeightsNormalized{"MMD_SKEL_WEIGHTS_NORMALIZED", Severity::Info};
 inline constexpr Code SkelZeroWeights{"MMD_SKEL_ZERO_WEIGHTS", Severity::Warning};
 
+// Materials -- docs/design/PMX_CONTRACT.md §8.
+inline constexpr Code MaterialUnsupportedSphereMode{
+	"MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE", Severity::Warning};
+
 // The source -> USD boundary -- docs/design/TEXT_ENCODING_POLICY.md §6.1.
 inline constexpr Code UsdIdentifierCollision{"MMD_USD_IDENTIFIER_COLLISION", Severity::Info};
 
