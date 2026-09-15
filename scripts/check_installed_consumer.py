@@ -99,6 +99,8 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
 
 
 def main() -> int:
+    # Paths are printed, and a console's code page may not spell them.
+    sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--build-dir", required=True, type=pathlib.Path)
     parser.add_argument("--config", default="Release")

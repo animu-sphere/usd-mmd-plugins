@@ -6,6 +6,10 @@
 **/.strata/
 CMakeUserPresets.json
 strata.lock
+# What a generated CI job creates in its checkout: the bootstrapped `ost` and
+# its OST_HOME (the materialized runtime).
+/.ost-ci/
+/.ost-ci-home/
 
 # Built plugin libraries are staged into each bundle's lib/ by the build.
 /plugins/*/lib/

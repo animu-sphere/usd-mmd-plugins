@@ -32,6 +32,9 @@ ASCII_DIR = "ascii"
 
 
 def main() -> int:
+    # The console may not be able to spell the directory either (CP1252 on a
+    # hosted Windows runner): what this test proves must not depend on it.
+    sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--fixtures", required=True, type=pathlib.Path)
     args = parser.parse_args()

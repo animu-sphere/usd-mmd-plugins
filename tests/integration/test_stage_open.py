@@ -52,6 +52,7 @@ def check_fails(path: pathlib.Path, expectation: dict, fmt: Sdf.FileFormat) -> N
 
 
 def main() -> int:
+    sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--fixtures", required=True, type=pathlib.Path)
     args = parser.parse_args()

@@ -28,12 +28,13 @@ from __future__ import annotations
 
 import pathlib
 import re
+import subprocess
 import sys
 import unicodedata
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 SKIP_DIRS = {".git", "build", "dist", ".strata", "node_modules", "__pycache__",
-             ".claude", "local"}
+             ".claude", "local", ".ost-ci", ".ost-ci-home"}
 
 FENCE = re.compile(r"^\s*(```|~~~)")
 INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
@@ -89,6 +90,22 @@ def anchors(path: pathlib.Path, cache: dict[pathlib.Path, set[str]]) -> set[str]
 
 
 def markdown_files(root: pathlib.Path) -> list[pathlib.Path]:
+    """The repository's own Markdown: what git tracks or would track.
+
+    Asking git rather than walking the tree matters in CI, where the checkout
+    also holds the bootstrapped `ost` and the materialized runtime, each with
+    Markdown of its own whose links point into trees that are not here.
+    Walking the directory is the fallback for a tree without git.
+    """
+    try:
+        listed = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z", "--cached", "--others",
+             "--exclude-standard", "--", "*.md"],
+            check=True, stdout=subprocess.PIPE).stdout.decode("utf-8")
+        files = [root / name for name in listed.split("\0") if name]
+        return sorted(path for path in files if path.is_file())
+    except (OSError, subprocess.CalledProcessError):
+        pass
     files = []
     for path in root.rglob("*.md"):
         if not any(part in SKIP_DIRS for part in path.relative_to(root).parts):
