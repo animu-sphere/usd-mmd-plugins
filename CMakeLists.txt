@@ -50,10 +50,12 @@ if(USDMMD_BUILD_TESTS)
     enable_testing()
 endif()
 
-# The PMX syntax parser links no OpenUSD (WORKSPACE.md §2), so it is added
-# before the one workspace-wide OpenUSD resolution below. Its position is the
-# statement: nothing it configures can see pxr.
+# The PMX syntax parser and the tool that reports on it link no OpenUSD
+# (WORKSPACE.md §2), so they are added before the one workspace-wide OpenUSD
+# resolution below. Their position is the statement: nothing they configure
+# can see pxr.
 add_subdirectory("libs/mmdPmx")
+add_subdirectory("tools/mmdInspect")
 
 # Resolve OpenUSD once for the whole project; bundles reuse the result.
 find_package(pxr REQUIRED CONFIG)

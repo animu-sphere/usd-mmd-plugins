@@ -7,7 +7,8 @@ installed-consumer lane
 ([WORKSPACE.md §6](WORKSPACE.md#6-tests)) builds against a clean prefix to
 keep it true.
 
-Status (2026-09-15): both Phase 0 packages exist. Identities and dependency
+Status (2026-09-15): the two Phase 0 packages exist, and `mmd_inspect`
+installs with the workspace since Phase 1. Identities and dependency
 edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not restate them.
 
 ## `mmdPmx`
@@ -45,3 +46,17 @@ relative to itself, and the installed bundle keeps the source bundle's shape.
 A host makes the plugin available by putting
 `plugin/resources/usdMmdFileFormat` on `PXR_PLUGINPATH_NAME`, with OpenUSD
 26.08's libraries on the loader path. It needs no other package at run time.
+
+## `mmd_inspect`
+
+An executable, found on `PATH` rather than by CMake. It exports no CMake
+package and no headers.
+
+| Installed path | Content |
+| --- | --- |
+| `${CMAKE_INSTALL_BINDIR}/mmd_inspect` (`.exe` on Windows) | the tool; `mmdPmx` is linked in statically, so it needs no other file and no OpenUSD at run time |
+
+On Windows it embeds a UTF-8 `activeCodePage` manifest, so a path given on
+its command line may name any directory
+([TEXT_ENCODING_POLICY.md §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere)).
+The installed-consumer lane runs it from the prefix over every fixture.

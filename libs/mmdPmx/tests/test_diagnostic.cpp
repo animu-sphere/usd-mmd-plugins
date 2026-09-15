@@ -3,9 +3,13 @@
 #include "mmdPmx/Diagnostic.h"
 #include "mmdPmx/Result.h"
 
+#include "DiagnosticList.h"
+
 #include <cassert>
+#include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -96,6 +100,35 @@ TestResult()
     assert(taken == "pmx");
 }
 
+void
+TestDiagnosticList()
+{
+    using mmd::pmx::detail::DiagnosticList;
+    DiagnosticList list;
+    const auto at = [](const char* table, std::uint64_t index) {
+        mmd::Location where;
+        where.table = table;
+        where.index = index;
+        return where;
+    };
+    for (std::uint64_t i = 0; i < DiagnosticList::kLimit + 5; ++i) {
+        list.Add(mmd::codes::PmxIndexOutOfRange, "bad", at("vertices", i));
+    }
+    list.Add(mmd::codes::TextInvalidUtf8, "bad", at("vertices", 0));
+    list.Add(mmd::codes::PmxIndexOutOfRange, "bad", at("bones", 0));
+
+    const std::vector<mmd::Diagnostic> taken = list.Take();
+    // The limit is per code and table: the other two are recorded in full.
+    assert(taken.size() == DiagnosticList::kLimit + 2 + 1);
+    assert(taken[DiagnosticList::kLimit].code == "MMD_TEXT_INVALID_UTF8");
+    assert(taken[DiagnosticList::kLimit + 1].location.table == "bones");
+    const mmd::Diagnostic& summary = taken.back();
+    assert(summary.code == "MMD_PMX_INDEX_OUT_OF_RANGE");
+    assert(summary.severity == mmd::Severity::Error);
+    assert(summary.location.table == "vertices" && !summary.location.index);
+    assert(summary.message == "5 more in vertices are not listed");
+}
+
 }  // namespace
 
 void
@@ -105,4 +138,5 @@ TestDiagnostic()
     TestLocationText();
     TestFormat();
     TestResult();
+    TestDiagnosticList();
 }

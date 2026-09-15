@@ -4,10 +4,12 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-15 the tree holds the Phase 0 workspace skeleton:** `.pmx` is
-registered, the PMX header is read and validated, and the stage metadata and
-`/Asset` are authored. Every other *current* status is `—` (nothing
-implemented). The *intended* column is the claim the design makes for the
+**As of 2026-09-15 the tree holds Phases 0 and 1:** `.pmx` is registered,
+every table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`,
+reported by `mmd_inspect`), and the stage metadata and `/Asset` are authored.
+Nothing is authored from the tables yet, so parsing is claimed in its own
+section below and the import rows stay `—` until the Phase that authors each
+one. The *intended* column is the claim the design makes for the
 first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
 it is listed so reviewers can see the target, and it is not a support claim.
@@ -29,18 +31,31 @@ and `fixtures.json` there says what each must do.
 
 Never "supported" merely because code parses the bytes.
 
+## PMX parsing (`mmdPmx`, `mmd_inspect`)
+
+What the parser reads into a `pmx::Document` — source facts, not a stage.
+Each claim is backed by the generated fixtures and the parser's unit tests.
+
+| Capability | Current | Contract |
+| --- | :---: | --- |
+| PMX 2.0: every table | supported | [PMX §3–§13](../design/PMX_CONTRACT.md#3-header-and-globals) |
+| PMX 2.1: every table, QDEF, flip and impulse morphs, soft bodies | supported | [PMX §5](../design/PMX_CONTRACT.md#5-vertices-and-deform), [§10](../design/PMX_CONTRACT.md#10-morphs), [§12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
+| UTF-8 and UTF-16LE text, Japanese names, validated; malformed text read as empty | supported | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
+| Index widths 1 / 2 / 4, per index kind | supported | [PMX §4](../design/PMX_CONTRACT.md#4-indices) |
+| Additional vec4 count 0–4 | supported | [PMX §5](../design/PMX_CONTRACT.md#5-vertices-and-deform) |
+| Out-of-range indices repaired to none, with a diagnostic | supported | [PMX §4](../design/PMX_CONTRACT.md#4-indices) |
+| Malformed-input rejection: truncation, counts, layout bytes, face structure | supported | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
+| Fuzzing under ASan and UBSan | supported | [DESIGN_POLICY §13](../design/DESIGN_POLICY.md#13-testing-policy) |
+| Reading a file by a non-ASCII path (`ReadFile`, `mmd_inspect`) | supported | [TEXT §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere) |
+
 ## PMX model import
 
 | Capability | Current | Intended | Phase | Contract |
 | --- | :---: | --- | :---: | --- |
 | `.pmx` registration, `Usd.Stage.Open` | supported | supported | 0 | [STAGE §1](../design/STAGE_CONTRACT.md#1-scope) |
 | Non-ASCII file paths (read through `Ar`) | supported | supported | 0 | [TEXT §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere) |
-| PMX 2.0 | — (header only) | supported | 1 | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| PMX 2.1 | — (header only) | supported | 1 | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| UTF-8 text | — | supported | 1 | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
-| UTF-16LE text | — | supported | 1 | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
-| Index widths 1 / 2 / 4 | — (validated, not yet used) | supported | 1 | [PMX §4](../design/PMX_CONTRACT.md#4-indices) |
-| Malformed-input rejection | — (header only) | supported | 1 | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
+| PMX 2.0 and 2.1 open; a malformed file fails with its fatal code | supported | supported | 0, 1 | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
+| Recoverable parser diagnostics recorded on the stage | supported | supported | 1 | [DIAGNOSTICS §4](DIAGNOSTICS.md#4-surfacing) |
 | Stage metadata (`/Asset`, Y-up, meters, contract version) | supported | supported | 0, 2 | [STAGE §2](../design/STAGE_CONTRACT.md#2-contract-version), [§4](../design/STAGE_CONTRACT.md#4-prim-hierarchy) |
 | Mesh: points, faces, normals | — | supported | 2 | [STAGE §8](../design/STAGE_CONTRACT.md#8-geometry) |
 | Primary UV (`primvars:st`) | — | supported | 2 | [STAGE §8.3](../design/STAGE_CONTRACT.md#83-uvs) |
@@ -69,9 +84,9 @@ Never "supported" merely because code parses the bytes.
 | Impulse morph | — | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
 | IK chains | — | preserved | 5 | [STAGE §12](../design/STAGE_CONTRACT.md#12-control-rig--reserved) |
 | Append transforms, fixed and local axes, external parent | — | preserved | 5 | [STAGE §12](../design/STAGE_CONTRACT.md#12-control-rig--reserved) |
-| Display frames | — | unsupported (parsed, not authored) | 1 | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |
+| Display frames | — (parsed; contract v1 authors none) | unsupported (parsed, not authored) | 1 | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |
 | Rigid bodies and joints | — | preserved | 6 | [STAGE §13](../design/STAGE_CONTRACT.md#13-physics--reserved) |
-| Soft bodies (2.1) | — | unsupported (parsed, not authored) | 1 | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
+| Soft bodies (2.1) | unsupported (parsed, not authored) | unsupported (parsed, not authored) | 1 | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
 
 ## Outside the PMX importer
 

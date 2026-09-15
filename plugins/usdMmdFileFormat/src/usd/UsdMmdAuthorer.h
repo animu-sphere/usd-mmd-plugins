@@ -16,8 +16,8 @@ constexpr int kStageContractVersion = 1;
 
 /// Authors the stage for one PMX as `.usda` text (DESIGN_POLICY.md §4).
 ///
-/// Phase 0 takes the parser's document directly and authors the stage
-/// metadata and `/Asset` only. From Phase 2 it takes mmdModel's
+/// Until Phase 2 it takes the parser's document directly and authors the
+/// stage metadata and `/Asset` only. From Phase 2 it takes mmdModel's
 /// CanonicalDocument instead, and never sees PMX syntax again.
 class UsdMmdAuthorer {
 public:

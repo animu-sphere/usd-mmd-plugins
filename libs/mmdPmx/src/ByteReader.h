@@ -41,6 +41,16 @@ public:
         return std::to_integer<std::uint8_t>((*b)[0]);
     }
 
+    std::optional<std::uint16_t> U16()
+    {
+        const auto b = Bytes(2);
+        if (!b) {
+            return std::nullopt;
+        }
+        return static_cast<std::uint16_t>(std::to_integer<std::uint16_t>((*b)[0])
+            | (std::to_integer<std::uint16_t>((*b)[1]) << 8));
+    }
+
     std::optional<std::uint32_t> U32()
     {
         const auto b = Bytes(4);
@@ -51,6 +61,25 @@ public:
             | (std::to_integer<std::uint32_t>((*b)[1]) << 8)
             | (std::to_integer<std::uint32_t>((*b)[2]) << 16)
             | (std::to_integer<std::uint32_t>((*b)[3]) << 24);
+    }
+
+    // Two's complement, which C++20 guarantees for the conversion.
+    std::optional<std::int8_t> I8()
+    {
+        const auto v = U8();
+        return v ? std::optional<std::int8_t>(static_cast<std::int8_t>(*v)) : std::nullopt;
+    }
+
+    std::optional<std::int16_t> I16()
+    {
+        const auto v = U16();
+        return v ? std::optional<std::int16_t>(static_cast<std::int16_t>(*v)) : std::nullopt;
+    }
+
+    std::optional<std::int32_t> I32()
+    {
+        const auto v = U32();
+        return v ? std::optional<std::int32_t>(static_cast<std::int32_t>(*v)) : std::nullopt;
     }
 
     /// IEEE-754 binary32, little-endian.

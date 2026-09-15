@@ -169,7 +169,7 @@ install(FILES
     DESTINATION "plugin/resources/usdMmdFileFormat")
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/openstrata.plugin.yaml" DESTINATION ".")
 
-# No bundle-local tests yet: in Phase 0 everything this bundle does is observed
-# by opening a fixture, which the workspace's integration tests do
+# No bundle-local tests yet: everything this bundle does before Phase 2 is
+# observed by opening a fixture, which the workspace's integration tests do
 # (tests/integration/) and `ost plugin test` does from the manifest's smoke
-# list. Unit tests of the authorer arrive with mmdModel in Phase 2.
+# and negative lists. Unit tests of the authorer arrive with mmdModel.

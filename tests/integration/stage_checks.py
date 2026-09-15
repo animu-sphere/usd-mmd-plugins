@@ -50,9 +50,11 @@ def check_opened_stage(stage: Usd.Stage, expectation: dict, where: str) -> None:
     asset = stage.GetPrimAtPath("/Asset")
     expect(asset.IsValid(), "/Asset does not exist")
     expect(stage.GetDefaultPrim() == asset, "the default prim is not /Asset")
-    # Phase 0 reads no bone table, so no model has bones yet: /Asset is an
-    # Xform, not a SkelRoot (STAGE_CONTRACT.md §4.1).
+    # Nothing is authored beneath /Asset before Phase 2, so it is an Xform
+    # even for a model with bones; Phase 2 makes it the SkelRoot
+    # (STAGE_CONTRACT.md §4.1).
     expect(asset.GetTypeName() == "Xform", f"/Asset is a {asset.GetTypeName()}")
+    expect(not asset.GetChildren(), "/Asset has children before Phase 2")
     expect(Usd.ModelAPI(asset).GetKind() == Kind.Tokens.component,
            f"/Asset kind is {Usd.ModelAPI(asset).GetKind()!r}")
 

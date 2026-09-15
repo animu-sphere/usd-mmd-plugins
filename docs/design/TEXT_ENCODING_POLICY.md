@@ -1,7 +1,8 @@
 # Text, identifier and path policy
 
-> Status: **proposed**; binding from Phase 1 (decoding) and Phase 2
-> (identifiers, texture paths). It fixes how PMX text is decoded, how a source
+> Status: §2–§4 are **binding**: the Phase 1 parser decodes text as they
+> say, with fixtures, and `mmd_inspect` and the importer read paths as §4
+> says. §5–§7 are **proposed** until Phase 2 (identifiers, texture paths). It fixes how PMX text is decoded, how a source
 > name relates to a USD identifier, how collisions are resolved, and how a
 > texture string becomes an `SdfAssetPath`. Japanese names and Japanese
 > filenames are the ordinary case here, not an edge case. Section numbers are
@@ -36,8 +37,9 @@ length or an unpaired surrogate is `MMD_TEXT_INVALID_UTF16`.
 above U+10FFFF and truncated sequences are `MMD_TEXT_INVALID_UTF8`.
 
 **Malformed text is rejected, never repaired.** The string is replaced by the
-empty string in the canonical model and the diagnostic records the field, the
-table index and the byte offset. There is no U+FFFD substitution: a substituted
+empty string — already in the parser's document, so no later layer ever sees
+the bytes — and the diagnostic records the table, the element index, the field
+and the byte offset where decoding stopped. There is no U+FFFD substitution: a substituted
 name would look like data while silently being different data. The
 consequences are local and deterministic — an invalid name falls back to an
 index identifier (§6), an invalid texture path leaves its slot empty (§7) — so

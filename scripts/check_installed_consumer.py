@@ -9,7 +9,8 @@ proves the prefix works on its own:
      source tree or the build tree;
   2. tests/installed_consumer/, copied out of the repository, configures
      against the prefix alone, builds, and reads a PMX through mmdPmx;
-  3. a Python host whose only plugin path is the prefix's opens a PMX through
+  3. the installed mmd_inspect reads every fixture from the prefix's bin/;
+  4. a Python host whose only plugin path is the prefix's opens a PMX through
      the installed usdMmdFileFormat.
 
   check_installed_consumer.py --build-dir build/windows-msvc --config Release
@@ -45,6 +46,10 @@ def shared_library(name: str) -> str:
     return f"lib{name}.dylib" if sys.platform == "darwin" else f"lib{name}.so"
 
 
+def executable(name: str) -> str:
+    return f"{name}.exe" if sys.platform == "win32" else name
+
+
 def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     errors: list[str] = []
     # mmdPmx installs under CMAKE_INSTALL_LIBDIR, which GNUInstallDirs makes
@@ -61,6 +66,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
                           f"{version_file.relative_to(prefix).as_posix()}")
     expected = [
         pathlib.Path("include", "mmdPmx", "Reader.h"),
+        pathlib.Path("bin", executable("mmd_inspect")),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
         PLUGIN_RESOURCES / "plugInfo.json",
         PLUGIN_RESOURCES / "buildInfo.json",
@@ -178,6 +184,19 @@ def main() -> int:
                       f"{result.stdout!r}, expected {want}", file=sys.stderr)
                 return 1
             print(f"ok  mmdPmx reads {relative}: {want}")
+
+        # The installed tool, from the prefix alone: it links mmdPmx
+        # statically and needs no other file.
+        tool = prefix / "bin" / executable("mmd_inspect")
+        for relative, expectation in sorted(manifest.items()):
+            result = subprocess.run([str(tool), "--json", str(fixtures / relative)],
+                                    stdout=subprocess.PIPE)
+            report = json.loads(result.stdout.decode("utf-8"))
+            if report["ok"] != expectation["opens"]:
+                print(f"{relative}: the installed mmd_inspect reported ok="
+                      f"{report['ok']}", file=sys.stderr)
+                return 1
+        print(f"ok  the installed mmd_inspect reads all {len(manifest)} fixtures")
 
         # The Python host, with only the prefix on the plugin path.
         env = dict(os.environ)

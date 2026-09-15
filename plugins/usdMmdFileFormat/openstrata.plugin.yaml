@@ -34,15 +34,39 @@ usd:
 # Written by the workspace's fixture generator (tests/fixtures/
 # generate_fixtures.py); tests/fixtures/fixtures.json here says what each one
 # must do, and tests/integration/ asserts the stage contract over them. They
-# live in the bundle because ost accepts no fixture path outside it.
+# live in the bundle because ost accepts no fixture path outside it. Every
+# fixture that opens is a smoke input -- the recoverable ones included, since
+# opening with a recorded diagnostic is what they are for -- and every fatal
+# one is a negative input.
 tests:
   smoke:
     - tests/fixtures/minimal.pmx
     - tests/fixtures/minimal-2.1-utf8.pmx
     - tests/fixtures/unknown-globals.pmx
+    - tests/fixtures/sample-2.0-utf16.pmx
+    - tests/fixtures/sample-2.1-utf8.pmx
+    - tests/fixtures/sample-2.1-utf16-wide.pmx
+    - tests/fixtures/recoverable/index-out-of-range.pmx
+    - tests/fixtures/recoverable/invalid-utf16-name.pmx
+    - tests/fixtures/recoverable/invalid-utf8-name.pmx
+    - tests/fixtures/recoverable/material-faces-short.pmx
+    - tests/fixtures/recoverable/trailing-bytes.pmx
   roundtrip:
     - tests/fixtures/minimal.pmx
   negative:
     - tests/fixtures/malformed/bad-signature.pmx
     - tests/fixtures/malformed/unsupported-version.pmx
     - tests/fixtures/malformed/truncated-header.pmx
+    - tests/fixtures/malformed/truncated-inside-vertex.pmx
+    - tests/fixtures/malformed/count-exceeds-buffer.pmx
+    - tests/fixtures/malformed/negative-count.pmx
+    - tests/fixtures/malformed/text-length-exceeds-buffer.pmx
+    - tests/fixtures/malformed/invalid-deform-type.pmx
+    - tests/fixtures/malformed/qdef-in-2.0.pmx
+    - tests/fixtures/malformed/face-count-not-triangles.pmx
+    - tests/fixtures/malformed/face-index-out-of-range.pmx
+    - tests/fixtures/malformed/material-faces-exceed-table.pmx
+    - tests/fixtures/malformed/invalid-toon-reference.pmx
+    - tests/fixtures/malformed/invalid-morph-type.pmx
+    - tests/fixtures/malformed/flip-morph-in-2.0.pmx
+    - tests/fixtures/malformed/invalid-frame-element.pmx
