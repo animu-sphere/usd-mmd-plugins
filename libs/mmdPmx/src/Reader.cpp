@@ -2,9 +2,9 @@
 #include "mmdPmx/Reader.h"
 
 #include "mmdPmx/Codes.h"
+#include "mmdPmx/DiagnosticList.h"
 
 #include "ByteReader.h"
-#include "DiagnosticList.h"
 #include "Text.h"
 
 #include <algorithm>
@@ -1209,7 +1209,7 @@ private:
     const std::size_t _size;
     detail::ByteReader _in;
     Document _doc;
-    detail::DiagnosticList _diagnostics;
+    DiagnosticList _diagnostics;
     std::optional<Diagnostic> _fatal;
 
     std::string_view _table;

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "mmdPmx/Codes.h"
 #include "mmdPmx/Diagnostic.h"
+#include "mmdPmx/DiagnosticList.h"
 #include "mmdPmx/Result.h"
-
-#include "DiagnosticList.h"
 
 #include <cassert>
 #include <cstdint>
@@ -103,7 +102,7 @@ TestResult()
 void
 TestDiagnosticList()
 {
-    using mmd::pmx::detail::DiagnosticList;
+    using mmd::DiagnosticList;
     DiagnosticList list;
     const auto at = [](const char* table, std::uint64_t index) {
         mmd::Location where;

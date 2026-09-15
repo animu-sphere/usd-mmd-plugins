@@ -14,6 +14,7 @@ profile = "usd"
 members = [
   "plugins/usdMmdFileFormat",
   "libs/mmdPmx",
+  "libs/mmdModel",
   "tools/mmdInspect",
 ]
 # The aggregate product: every bundle and tool that ships. A library ships as

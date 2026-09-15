@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: Apache-2.0
+#include "TexturePaths.h"
+
+#include <vector>
+
+namespace mmd::detail {
+
+namespace {
+
+bool
+IsAsciiLetter(char c)
+{
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
+
+/// `scheme:` at the start (RFC 3986: a letter, then letters, digits, `+`, `-`
+/// or `.`). A drive letter, `C:`, is the one-letter case.
+bool
+StartsWithScheme(std::string_view path)
+{
+    if (path.empty() || !IsAsciiLetter(path[0])) {
+        return false;
+    }
+    for (std::size_t i = 1; i < path.size(); ++i) {
+        const char c = path[i];
+        if (c == ':') {
+            return true;
+        }
+        if (!IsAsciiLetter(c) && !(c >= '0' && c <= '9') && c != '+' && c != '-' && c != '.') {
+            return false;
+        }
+    }
+    return false;
+}
+
+}  // namespace
+
+TexturePath
+NormalizeTexturePath(std::string_view source)
+{
+    TexturePath result;
+    // Trailing U+0000 is padding some writers add; anywhere else it is not a
+    // character any filesystem accepts in a name.
+    std::string_view text = source;
+    while (!text.empty() && text.back() == '\0') {
+        text.remove_suffix(1);
+    }
+    std::string path(text);
+    if (path.find('\0') != std::string::npos) {
+        result.unsafe = true;
+        return result;
+    }
+    for (char& c : path) {
+        if (c == '\\') {
+            c = '/';
+        }
+    }
+    // Absolute and UNC (`\\server\share` is `//server/share` by now), then a
+    // drive or a URI scheme.
+    if (!path.empty() && path[0] == '/') {
+        result.unsafe = true;
+        return result;
+    }
+    if (StartsWithScheme(path)) {
+        result.unsafe = true;
+        return result;
+    }
+
+    std::vector<std::string_view> segments;
+    std::string_view rest = path;
+    while (!rest.empty()) {
+        const std::size_t slash = rest.find('/');
+        const std::string_view segment = rest.substr(0, slash);
+        rest = slash == std::string_view::npos ? std::string_view() : rest.substr(slash + 1);
+        if (segment.empty() || segment == ".") {
+            continue;
+        }
+        if (segment == ".." && !segments.empty() && segments.back() != "..") {
+            segments.pop_back();
+            continue;
+        }
+        segments.push_back(segment);
+    }
+    if (!segments.empty() && segments.front() == "..") {
+        result.unsafe = true;  // it escapes the model's directory (TEXT-O1)
+        return result;
+    }
+    if (segments.empty()) {
+        return result;
+    }
+    result.assetPath = ".";
+    for (std::string_view segment : segments) {
+        result.assetPath += '/';
+        result.assetPath += segment;
+    }
+    return result;
+}
+
+}  // namespace mmd::detail

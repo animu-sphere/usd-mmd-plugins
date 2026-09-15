@@ -18,10 +18,19 @@ include_guard(GLOBAL)
 # (docs/design/TEXT_ENCODING_POLICY.md §4). Both are PRIVATE: they govern how
 # this workspace compiles, and are never imposed on a consumer of an installed
 # package.
+#
+# GCC and Clang: `-ffp-contract=off`, so `a * b + c` is never fused into one
+# FMA instruction. Clang fuses by default wherever the target has FMA (arm64
+# does, baseline x86-64 does not), and a fused result can round differently --
+# the same bytes would then author a different stage on macOS than on Linux,
+# and one golden could not serve both (DESIGN_POLICY.md §2.5). MSVC's default
+# /fp:precise does not contract.
 function(usdmmd_target_defaults target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /utf-8)
         target_compile_definitions(${target} PRIVATE NOMINMAX)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target} PRIVATE -ffp-contract=off)
     endif()
 endfunction()
 
