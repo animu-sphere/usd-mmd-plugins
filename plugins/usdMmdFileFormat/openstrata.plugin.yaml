@@ -21,12 +21,15 @@ provides:
   - usd-fileformat:pmx
 requires:
   capabilities: [usd-stage-read]
-  # The PMX syntax parser, a plain library (libs/mmdPmx). ost validates this
-  # edge against libs/mmdPmx/openstrata.library.yaml, builds the library into
-  # the workspace prefix before configuring this bundle, and stages it into
-  # the package (WORKSPACE.md §2.1, §2.3).
+  # The PMX syntax parser and the canonical model, plain libraries
+  # (libs/mmdPmx, libs/mmdModel). ost validates each edge against the
+  # library's openstrata.library.yaml, builds the libraries into the workspace
+  # prefix before configuring this bundle, and stages them into the package
+  # (WORKSPACE.md §2.1, §2.3).
   libraries:
     - id: mmdPmx
+      version: ">=0.0,<0.1"
+    - id: mmdModel
       version: ">=0.0,<0.1"
 usd:
   # Where this bundle's plugInfo.json lives, relative to the bundle root.
@@ -37,7 +40,11 @@ usd:
 # live in the bundle because ost accepts no fixture path outside it. Every
 # fixture that opens is a smoke input -- the recoverable ones included, since
 # opening with a recorded diagnostic is what they are for -- and every fatal
-# one is a negative input.
+# one is a negative input. The roundtrip goldens are the empty stage and a
+# whole canonical stage -- skeleton, every 2.0 deform type, material subsets,
+# provenance (DESIGN_POLICY.md §13). That second one is the fixture whose
+# texture paths are all refused: `usdcat --flatten` anchors every asset path
+# it writes to an absolute one, and a golden must carry no machine-local path.
 tests:
   smoke:
     - tests/fixtures/minimal.pmx
@@ -46,13 +53,20 @@ tests:
     - tests/fixtures/sample-2.0-utf16.pmx
     - tests/fixtures/sample-2.1-utf8.pmx
     - tests/fixtures/sample-2.1-utf16-wide.pmx
+    - tests/fixtures/bones-reordered.pmx
+    - tests/fixtures/identifiers.pmx
     - tests/fixtures/recoverable/index-out-of-range.pmx
     - tests/fixtures/recoverable/invalid-utf16-name.pmx
     - tests/fixtures/recoverable/invalid-utf8-name.pmx
     - tests/fixtures/recoverable/material-faces-short.pmx
     - tests/fixtures/recoverable/trailing-bytes.pmx
+    - tests/fixtures/recoverable/bone-parent-cycle.pmx
+    - tests/fixtures/recoverable/weights-normalized.pmx
+    - tests/fixtures/recoverable/unsafe-texture-paths.pmx
+    - tests/fixtures/recoverable/no-bones.pmx
   roundtrip:
     - tests/fixtures/minimal.pmx
+    - tests/fixtures/recoverable/unsafe-texture-paths.pmx
   negative:
     - tests/fixtures/malformed/bad-signature.pmx
     - tests/fixtures/malformed/unsupported-version.pmx

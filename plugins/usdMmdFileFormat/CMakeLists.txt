@@ -43,14 +43,17 @@ if(NOT pxr_FOUND)
 endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdOpenUsd.cmake")
 
-# mmdPmx is a plain library, not a bundle. ost executes the manifest's
-# requires.libraries closure -- it builds and installs the library into the
-# workspace prefix before configuring this bundle -- and the composed root
-# build already has the in-tree alias. Any other standalone caller supplies an
-# installed package through CMAKE_PREFIX_PATH: a bundle never reaches into a
+# mmdPmx and mmdModel are plain libraries, not bundles. ost executes the
+# manifest's requires.libraries closure -- it builds and installs them into
+# the workspace prefix before configuring this bundle -- and the composed root
+# build already has the in-tree aliases. Any other standalone caller supplies
+# installed packages through CMAKE_PREFIX_PATH: a bundle never reaches into a
 # sibling's source tree (WORKSPACE.md §5).
 if(NOT TARGET mmdPmx::mmdPmx)
     find_package(mmdPmx CONFIG REQUIRED)
+endif()
+if(NOT TARGET mmdModel::mmdModel)
+    find_package(mmdModel CONFIG REQUIRED)
 endif()
 
 set(PLUGIN_NAME UsdMmdFileFormat)
@@ -63,7 +66,7 @@ target_compile_features(${PLUGIN_NAME} PRIVATE cxx_std_20)
 target_include_directories(${PLUGIN_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     ${PXR_INCLUDE_DIRS})
-target_link_libraries(${PLUGIN_NAME} PRIVATE mmdPmx::mmdPmx)
+target_link_libraries(${PLUGIN_NAME} PRIVATE mmdModel::mmdModel mmdPmx::mmdPmx)
 usdmmd_target_defaults(${PLUGIN_NAME})
 
 # The OpenUSD monolith when the install has one, else the discrete libraries
@@ -72,7 +75,7 @@ if(TARGET usd_ms)
     target_link_libraries(${PLUGIN_NAME} PRIVATE usd_ms)
 else()
     set(_pxr_targets)
-    foreach(_t IN ITEMS arch tf gf vt ar sdf usd usdGeom kind)
+    foreach(_t IN ITEMS arch tf gf vt ar sdf usd usdGeom usdShade usdSkel kind)
         if(TARGET ${_t})
             list(APPEND _pxr_targets ${_t})
         elseif(TARGET pxr::${_t})
@@ -169,7 +172,8 @@ install(FILES
     DESTINATION "plugin/resources/usdMmdFileFormat")
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/openstrata.plugin.yaml" DESTINATION ".")
 
-# No bundle-local tests yet: everything this bundle does before Phase 2 is
-# observed by opening a fixture, which the workspace's integration tests do
-# (tests/integration/) and `ost plugin test` does from the manifest's smoke
-# and negative lists. Unit tests of the authorer arrive with mmdModel.
+# No bundle-local tests: everything this bundle does is observed by opening a
+# fixture, which the workspace's integration tests do against the stage
+# checklist (tests/integration/) and `ost plugin test` does from the
+# manifest's smoke, roundtrip and negative lists. What the stage is made from
+# is mmdModel's, and tested there.

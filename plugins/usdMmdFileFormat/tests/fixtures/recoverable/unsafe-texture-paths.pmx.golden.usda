@@ -1,0 +1,140 @@
+#usda 1.0
+(
+    defaultPrim = "Asset"
+    doc = """Generated from Composed Stage of root layer tests/fixtures/recoverable/unsafe-texture-paths.pmx
+"""
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def SkelRoot "Asset" (
+    customData = {
+        dictionary mmd = {
+            string[] diagnostics = ["MMD_PATH_UNSAFE_TEXTURE_PATH: the texture path is absolute, names a drive, a server or a URI scheme, or leaves the model's directory; it is kept as provenance and not followed (textures[0])", "MMD_PATH_UNSAFE_TEXTURE_PATH: the texture path is absolute, names a drive, a server or a URI scheme, or leaves the model's directory; it is kept as provenance and not followed (textures[1])", "MMD_PATH_UNSAFE_TEXTURE_PATH: the texture path is absolute, names a drive, a server or a URI scheme, or leaves the model's directory; it is kept as provenance and not followed (textures[2])", "MMD_PATH_UNSAFE_TEXTURE_PATH: the texture path is absolute, names a drive, a server or a URI scheme, or leaves the model's directory; it is kept as provenance and not followed (textures[3])", "MMD_SKEL_SDEF_APPROXIMATED: 1 vertex is SDEF, skinned here by linear blending; C, R0 and R1 are preserved in primvars:mmd:sdefC, sdefR0 and sdefR1 (vertices)"]
+            string sourceComment = """合成フィクスチャ\r
+配布モデルではない"""
+            string sourceEnglishComment = """A synthetic fixture\r
+not a distributed model"""
+            string sourceEnglishName = "Sample 2.0"
+            string sourceFormat = "PMX"
+            string sourceName = "サンプル2.0"
+            string sourceVersion = "2.0"
+            int stageContractVersion = 1
+        }
+    }
+    kind = "component"
+)
+{
+    def Scope "geo"
+    {
+        def Mesh "Mesh" (
+            apiSchemas = ["SkelBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(0, 0.8, 0.04), (0.4, 1.2, 0.04)]
+            int[] faceVertexCounts = [3, 3, 3]
+            int[] faceVertexIndices = [0, 2, 1, 2, 4, 3, 3, 5, 4]
+            normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+                interpolation = "vertex"
+            )
+            point3f[] points = [(0, 0.8, 0.04), (0.08, 0.88, 0.04), (0.16, 0.96, 0.04), (0.24, 1.04, 0.04), (0.32, 1.12, 0.04), (0.4, 1.2, 0.04)]
+            int[] primvars:mmd:deformType = [0, 1, 2, 3, 0, 1] (
+                interpolation = "vertex"
+            )
+            float[] primvars:mmd:edgeScale = [1, 1, 1, 1, 1, 1] (
+                interpolation = "vertex"
+            )
+            point3f[] primvars:mmd:sdefC = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0.96, 0), (0, 0, 0), (0, 0, 0)] (
+                interpolation = "vertex"
+            )
+            point3f[] primvars:mmd:sdefR0 = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 1, 0), (0, 0, 0), (0, 0, 0)] (
+                interpolation = "vertex"
+            )
+            point3f[] primvars:mmd:sdefR1 = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0.92, 0), (0, 0, 0), (0, 0, 0)] (
+                interpolation = "vertex"
+            )
+            int[] primvars:skel:jointIndices = [0, 0, 0, 0, 1, 2, 0, 0, 0, 1, 2, 0, 1, 2, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0] (
+                elementSize = 4
+                interpolation = "vertex"
+            )
+            float[] primvars:skel:jointWeights = [1, 0, 0, 0, 0.25, 0.75, 0, 0, 0.5, 0.3, 0.2, 0, 0.5, 0.5, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0] (
+                elementSize = 4
+                interpolation = "vertex"
+            )
+            texCoord2f[] primvars:st = [(0, 0), (0.125, 0.125), (0.25, 0.25), (0.375, 0.375), (0.5, 0.5), (0.625, 0.625)] (
+                interpolation = "vertex"
+            )
+            rel skel:skeleton = </Asset/skel/Skeleton>
+            uniform token subdivisionScheme = "none"
+            uniform token subsetFamily:materialBind:familyType = "partition"
+
+            def GeomSubset "hair" (
+                apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token elementType = "face"
+                uniform token familyName = "materialBind"
+                int[] indices = [0]
+                rel material:binding = </Asset/mtl/hair>
+            }
+
+            def GeomSubset "skin" (
+                apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token elementType = "face"
+                uniform token familyName = "materialBind"
+                int[] indices = [1, 2]
+                rel material:binding = </Asset/mtl/skin>
+            }
+        }
+    }
+
+    def Scope "mtl"
+    {
+        def Material "hair" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = "hair"
+                    int sourceIndex = 0
+                    string sourceName = "髪"
+                    string sourceSphereTexturePath = "/tex/光沢.sph"
+                    string sourceTexturePath = "..\\toon\\共有.bmp"
+                    string sourceToonTexturePath = "http://example.com/トゥーン.bmp"
+                }
+            }
+        )
+        {
+            custom uniform bool mmd:material:doubleSided = 1
+        }
+
+        def Material "skin" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = "skin"
+                    int sourceIndex = 1
+                    string sourceName = "肌"
+                    string sourceTexturePath = "C:\\tex\\肌.png"
+                }
+            }
+        )
+        {
+            custom uniform bool mmd:material:doubleSided = 0
+        }
+    }
+
+    def Scope "skel"
+    {
+        def Skeleton "Skeleton"
+        {
+            uniform matrix4d[] bindTransforms = [( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0.64, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.12, 1.04, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.24, 0.96, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.36, 0.88, 0, 1) )]
+            uniform token[] joints = ["center", "center/LeftArm", "center/LeftArm/LeftElbow", "center/LeftWrist_IK"]
+            custom uniform string[] mmd:bone:sourceEnglishName = ["center", "LeftArm", "LeftElbow", "LeftWrist IK"]
+            custom uniform int[] mmd:bone:sourceIndex = [0, 1, 2, 3]
+            custom uniform string[] mmd:bone:sourceName = ["センター", "左腕", "左ひじ", "左手首ＩＫ"]
+            uniform matrix4d[] restTransforms = [( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0.64, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.12, 0.4, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.12, -0.08, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.36, 0.24, 0, 1) )]
+        }
+    }
+}
+

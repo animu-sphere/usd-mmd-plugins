@@ -8,7 +8,8 @@ proves the prefix works on its own:
   1. the prefix holds what each package promises, and no file in it names the
      source tree or the build tree;
   2. tests/installed_consumer/, copied out of the repository, configures
-     against the prefix alone, builds, and reads a PMX through mmdPmx;
+     against the prefix alone -- finding mmdModel, whose package finds mmdPmx
+     --, builds, and reads and canonicalizes every fixture;
   3. the installed mmd_inspect reads every fixture from the prefix's bin/;
   4. a Python host whose only plugin path is the prefix's opens a PMX through
      the installed usdMmdFileFormat.
@@ -52,20 +53,23 @@ def executable(name: str) -> str:
 
 def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     errors: list[str] = []
-    # mmdPmx installs under CMAKE_INSTALL_LIBDIR, which GNUInstallDirs makes
-    # lib64 on some Linux distributions; the plugin bundle's lib/ is fixed by
-    # its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
-    config_dirs = sorted(p.parent for p in prefix.glob("lib*/cmake/mmdPmx/mmdPmxConfig.cmake"))
-    if len(config_dirs) != 1:
-        errors.append(f"the prefix has {len(config_dirs)} mmdPmx package configs "
-                      f"under lib*/cmake/mmdPmx, expected one")
-    else:
-        version_file = config_dirs[0] / "mmdPmxConfigVersion.cmake"
-        if not version_file.is_file():
-            errors.append(f"the prefix has no "
-                          f"{version_file.relative_to(prefix).as_posix()}")
+    # The libraries install under CMAKE_INSTALL_LIBDIR, which GNUInstallDirs
+    # makes lib64 on some Linux distributions; the plugin bundle's lib/ is
+    # fixed by its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
+    for package in ("mmdPmx", "mmdModel"):
+        config_dirs = sorted(p.parent for p in prefix.glob(
+            f"lib*/cmake/{package}/{package}Config.cmake"))
+        if len(config_dirs) != 1:
+            errors.append(f"the prefix has {len(config_dirs)} {package} package configs "
+                          f"under lib*/cmake/{package}, expected one")
+        else:
+            version_file = config_dirs[0] / f"{package}ConfigVersion.cmake"
+            if not version_file.is_file():
+                errors.append(f"the prefix has no "
+                              f"{version_file.relative_to(prefix).as_posix()}")
     expected = [
         pathlib.Path("include", "mmdPmx", "Reader.h"),
+        pathlib.Path("include", "mmdModel", "Canonicalize.h"),
         pathlib.Path("bin", executable("mmd_inspect")),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
         PLUGIN_RESOURCES / "plugInfo.json",
@@ -177,13 +181,19 @@ def main() -> int:
             result = subprocess.run([str(probes[0]), str(fixtures / relative)],
                                     text=True, encoding="utf-8",
                                     stdout=subprocess.PIPE)
-            want = (f"version={expectation['sourceVersion']}" if expectation["opens"]
-                    else f"fatal={expectation['fatal']}")
-            if want not in result.stdout.splitlines():
-                print(f"{relative}: the installed mmdPmx printed "
-                      f"{result.stdout!r}, expected {want}", file=sys.stderr)
+            if expectation["opens"]:
+                stage = expectation["stage"]
+                faces = stage["mesh"]["faces"] if stage["mesh"] else 0
+                wants = [f"version={expectation['sourceVersion']}",
+                         f"joints={len(stage['joints'])} faces={faces}"]
+            else:
+                wants = [f"fatal={expectation['fatal']}"]
+            lines = result.stdout.splitlines()
+            if not all(want in lines for want in wants):
+                print(f"{relative}: the installed mmdPmx and mmdModel printed "
+                      f"{result.stdout!r}, expected {wants}", file=sys.stderr)
                 return 1
-            print(f"ok  mmdPmx reads {relative}: {want}")
+            print(f"ok  mmdPmx and mmdModel read {relative}: {', '.join(wants)}")
 
         # The installed tool, from the prefix alone: it links mmdPmx
         # statically and needs no other file.
@@ -206,7 +216,7 @@ def main() -> int:
         env["PYTHONPATH"] = os.pathsep.join(
             [str(args.usd_root / "lib" / "python"), env.get("PYTHONPATH", "")])
         run([sys.executable, source / "open_stage.py", prefix,
-             fixtures / "minimal.pmx"], env=env)
+             fixtures / "sample-2.0-utf16.pmx"], env=env)
         print("installed-consumer lane passed")
         return 0
     except subprocess.CalledProcessError as error:

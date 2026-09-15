@@ -3,6 +3,13 @@
 # it and the file no longer parses.
 *.pmx binary
 
+# The texture files the generator writes beside the fixtures are images, and
+# compared byte for byte like the fixtures. `.sph` is MMD's name for a BMP
+# used as a sphere map.
+*.png binary
+*.bmp binary
+*.sph binary
+
 # The fixture manifest is compared byte for byte with what the generator writes
 # (`generate_fixtures.py --check`), and the generator writes '\n'.
 fixtures.json text eol=lf

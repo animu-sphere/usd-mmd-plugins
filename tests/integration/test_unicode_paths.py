@@ -8,11 +8,13 @@ the project's. This test is that host: a Python process with no UTF-8
 manifest, so an importer that opened the file by its narrow path would fail
 here even where every tool with the manifest passes.
 
-Each fixture that opens is copied under `ユニコード-é/` -- Japanese and a
-Latin-1 accent, which neither CP932 nor CP1252 can both spell -- and under an
-ASCII twin, and the two stages must be identical. The test also calls CanRead
-directly, because Usd.Stage.Open selects a format by extension and never
-reaches it.
+The fixture directory -- the fixtures and the texture files beside them -- is
+copied under `ユニコード-é/` (Japanese and a Latin-1 accent, which neither
+CP932 nor CP1252 can both spell) and under an ASCII twin. Every fixture that
+opens must pass the stage checklist in both, Japanese texture filenames
+resolving under the Japanese directory included, and the two stages must be
+identical. The test also calls CanRead directly, because Usd.Stage.Open
+selects a format by extension and never reaches it.
 """
 
 from __future__ import annotations
@@ -46,13 +48,13 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as scratch:
         root = pathlib.Path(scratch)
+        for directory in (ASCII_DIR, UNICODE_DIR):
+            shutil.copytree(args.fixtures, root / directory)
         for relative, expectation in opening.items():
             exported = {}
             for directory in (ASCII_DIR, UNICODE_DIR):
-                target = root / directory / pathlib.PurePosixPath(relative).name
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(args.fixtures / relative, target)
-                where = f"{directory}/{target.name}"
+                target = root / directory / relative
+                where = f"{directory}/{relative}"
 
                 assert fmt.CanRead(str(target)), f"{where}: CanRead is false"
                 stage = Usd.Stage.Open(str(target))

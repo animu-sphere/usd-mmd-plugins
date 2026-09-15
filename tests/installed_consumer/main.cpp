@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// Reads one PMX through the installed mmdPmx and prints what it found:
+// Reads one PMX through the installed mmdPmx, canonicalizes it through the
+// installed mmdModel, and prints what it found:
 //   version=2.0                 on success
+//   joints=4 faces=3            the canonical skeleton and mesh
 //   fatal=MMD_PMX_...           when the file is refused
 // Exit status: 0 read, 1 refused, 2 usage or I/O error.
+#include <mmdModel/Canonicalize.h>
 #include <mmdPmx/Reader.h>
 
 #include <cstddef>
@@ -41,5 +44,9 @@ main(int argc, char** argv)
     }
     std::printf("version=%s\n",
         std::string(mmd::pmx::ToString(result.value().header.version)).c_str());
+
+    const auto canonical = mmd::Canonicalize(result.value());
+    std::printf("joints=%zu faces=%zu\n", canonical.value().skeleton.bones.size(),
+        canonical.value().mesh.FaceCount());
     return 0;
 }

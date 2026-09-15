@@ -1,4 +1,308 @@
 {
+  "bones-reordered.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_SKEL_JOINTS_REORDERED",
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "a bone listed before its parent: the joints are reordered",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        2,
+        3,
+        1
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftWrist_IK/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftWrist_IK/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": true,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": true,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": true,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
+  "identifiers.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_TEXT_TRAILING_NUL",
+      "MMD_USD_IDENTIFIER_COLLISION",
+      "MMD_USD_IDENTIFIER_COLLISION",
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0\u0000\u0000",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "names padded with U+0000, an empty English name, one that starts with a digit, and two that collide ignoring case",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "",
+          "name": "左腕",
+          "path": "center/bone_0001",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "2nd elbow",
+          "name": "左ひじ",
+          "path": "center/bone_0001/_2nd_elbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "CENTER",
+          "name": "左手首ＩＫ",
+          "path": "center/CENTER_3",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": true,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": true,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "Hair",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "Hair_1",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": true,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
   "malformed/bad-signature.pmx": {
     "fatal": "MMD_PMX_BAD_SIGNATURE",
     "opens": false,
@@ -97,7 +401,14 @@
     "opens": true,
     "parserDiagnostics": [],
     "purpose": "PMX 2.1, UTF-8, every table empty",
-    "sourceVersion": "2.1"
+    "sourceVersion": "2.1",
+    "stage": {
+      "jointOfSourceBone": [],
+      "joints": [],
+      "materials": [],
+      "mesh": null,
+      "skinned": false
+    }
   },
   "minimal.pmx": {
     "counts": {
@@ -117,7 +428,166 @@
     "opens": true,
     "parserDiagnostics": [],
     "purpose": "PMX 2.0, UTF-16LE, every table empty",
-    "sourceVersion": "2.0"
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [],
+      "joints": [],
+      "materials": [],
+      "mesh": null,
+      "skinned": false
+    }
+  },
+  "recoverable/bone-parent-cycle.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_SKEL_INVALID_PARENT",
+      "MMD_SKEL_PARENT_CYCLE",
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "two bones each other's parent, and one its own",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": false,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": false,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "recoverable/index-out-of-range.pmx": {
     "counts": {
@@ -135,7 +605,9 @@
     "diagnostics": [
       "MMD_PMX_INDEX_OUT_OF_RANGE",
       "MMD_PMX_INDEX_OUT_OF_RANGE",
-      "MMD_PMX_INDEX_OUT_OF_RANGE"
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_SKEL_WEIGHTS_NORMALIZED",
+      "MMD_SKEL_SDEF_APPROXIMATED"
     ],
     "modelName": "サンプル2.0",
     "opens": true,
@@ -145,7 +617,130 @@
       "MMD_PMX_INDEX_OUT_OF_RANGE"
     ],
     "purpose": "a weighted deform of no bone, a missing texture, a missing parent: each read as none",
-    "sourceVersion": "2.0"
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": false,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "recoverable/invalid-utf16-name.pmx": {
     "counts": {
@@ -161,7 +756,8 @@
       "vertices": 6
     },
     "diagnostics": [
-      "MMD_TEXT_INVALID_UTF16"
+      "MMD_TEXT_INVALID_UTF16",
+      "MMD_SKEL_SDEF_APPROXIMATED"
     ],
     "modelName": "サンプル2.0",
     "opens": true,
@@ -169,7 +765,135 @@
       "MMD_TEXT_INVALID_UTF16"
     ],
     "purpose": "a bone's English name of odd byte length: read as empty",
-    "sourceVersion": "2.0"
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "",
+          "name": "左腕",
+          "path": "center/bone_0001",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/bone_0001/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": false,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": false,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "recoverable/invalid-utf8-name.pmx": {
     "counts": {
@@ -185,7 +909,8 @@
       "vertices": 6
     },
     "diagnostics": [
-      "MMD_TEXT_INVALID_UTF8"
+      "MMD_TEXT_INVALID_UTF8",
+      "MMD_SKEL_SDEF_APPROXIMATED"
     ],
     "modelName": "サンプル2.0",
     "opens": true,
@@ -193,7 +918,135 @@
       "MMD_TEXT_INVALID_UTF8"
     ],
     "purpose": "a material name that is not valid UTF-8: read as empty",
-    "sourceVersion": "2.0"
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": false,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": false,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "recoverable/material-faces-short.pmx": {
     "counts": {
@@ -209,7 +1062,8 @@
       "vertices": 6
     },
     "diagnostics": [
-      "MMD_PMX_MATERIAL_FACES_SHORT"
+      "MMD_PMX_MATERIAL_FACES_SHORT",
+      "MMD_SKEL_SDEF_APPROXIMATED"
     ],
     "modelName": "サンプル2.0",
     "opens": true,
@@ -217,7 +1071,223 @@
       "MMD_PMX_MATERIAL_FACES_SHORT"
     ],
     "purpose": "the materials draw 6 of the 9 face indices",
-    "sourceVersion": "2.0"
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": false,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            1
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": false,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "nonOverlapping",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
+  "recoverable/no-bones.pmx": {
+    "counts": {
+      "bones": 0,
+      "displayFrames": 0,
+      "faces": 3,
+      "joints": 0,
+      "materials": 1,
+      "morphs": 0,
+      "rigidBodies": 0,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 3
+    },
+    "diagnostics": [
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_PMX_INDEX_OUT_OF_RANGE"
+    ],
+    "purpose": "a mesh and a material, and no bones: /Asset is an Xform and the mesh is unskinned",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [],
+      "joints": [],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": false,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 1,
+        "familyType": "partition",
+        "influences": 0,
+        "points": 3,
+        "sdef": false,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": false
+    }
   },
   "recoverable/trailing-bytes.pmx": {
     "counts": {
@@ -234,6 +1304,8 @@
     },
     "diagnostics": [
       "MMD_PMX_TRAILING_BYTES",
+      "MMD_SKEL_SDEF_APPROXIMATED",
+      "MMD_SKEL_QDEF_APPROXIMATED",
       "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"
     ],
     "modelName": "サンプル2.1",
@@ -242,7 +1314,441 @@
       "MMD_PMX_TRAILING_BYTES"
     ],
     "purpose": "16 bytes after the soft-body table",
-    "sourceVersion": "2.1"
+    "sourceVersion": "2.1",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": false,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": false,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
+  "recoverable/unsafe-texture-paths.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_PATH_UNSAFE_TEXTURE_PATH",
+      "MMD_PATH_UNSAFE_TEXTURE_PATH",
+      "MMD_PATH_UNSAFE_TEXTURE_PATH",
+      "MMD_PATH_UNSAFE_TEXTURE_PATH",
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "texture paths that leave the model's directory, name a drive, are absolute, and carry a scheme",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": null,
+              "resolves": false,
+              "source": "/tex/光沢.sph"
+            },
+            "texture": {
+              "asset": null,
+              "resolves": false,
+              "source": "..\\toon\\共有.bmp"
+            },
+            "toonTexture": {
+              "asset": null,
+              "resolves": false,
+              "source": "http://example.com/トゥーン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": null,
+              "resolves": false,
+              "source": "C:\\tex\\肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
+  "recoverable/weights-normalized.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 1,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 4,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_SKEL_WEIGHTS_NORMALIZED",
+      "MMD_SKEL_ZERO_WEIGHTS",
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "BDEF4 weights that sum to 2, and ones that sum to 0",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": false,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": false,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": false,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": false,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "sample-2.0-utf16.pmx": {
     "counts": {
@@ -257,12 +1763,142 @@
       "textures": 4,
       "vertices": 6
     },
-    "diagnostics": [],
+    "diagnostics": [
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
     "modelName": "サンプル2.0",
     "opens": true,
     "parserDiagnostics": [],
     "purpose": "PMX 2.0, UTF-16LE, index width 1: every table and every 2.0 record variant, Japanese names",
-    "sourceVersion": "2.0"
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": true,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": true,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": true,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "sample-2.1-utf16-wide.pmx": {
     "counts": {
@@ -278,13 +1914,143 @@
       "vertices": 6
     },
     "diagnostics": [
+      "MMD_SKEL_SDEF_APPROXIMATED",
+      "MMD_SKEL_QDEF_APPROXIMATED",
       "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"
     ],
     "modelName": "サンプル2.1",
     "opens": true,
     "parserDiagnostics": [],
     "purpose": "PMX 2.1, UTF-16LE, index width 4, four additional vec4",
-    "sourceVersion": "2.1"
+    "sourceVersion": "2.1",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": true,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": true,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": true,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 4,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "sample-2.1-utf8.pmx": {
     "counts": {
@@ -300,13 +2066,143 @@
       "vertices": 6
     },
     "diagnostics": [
+      "MMD_SKEL_SDEF_APPROXIMATED",
+      "MMD_SKEL_QDEF_APPROXIMATED",
       "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"
     ],
     "modelName": "サンプル2.1",
     "opens": true,
     "parserDiagnostics": [],
     "purpose": "PMX 2.1, UTF-8, index width 2, two additional vec4: QDEF, flip and impulse morphs, a soft body",
-    "sourceVersion": "2.1"
+    "sourceVersion": "2.1",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/光沢.sph",
+              "resolves": true,
+              "source": "sph\\光沢.sph"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/ト ゥ ー ン.bmp",
+              "resolves": true,
+              "source": "toon\\ト ゥ ー ン.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/肌.png",
+              "resolves": true,
+              "source": "tex/肌.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 2,
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "skinned": true
+    }
   },
   "unknown-globals.pmx": {
     "counts": {
@@ -330,6 +2226,13 @@
       "MMD_PMX_UNKNOWN_GLOBALS"
     ],
     "purpose": "nine globals: the ninth is preserved and warned about",
-    "sourceVersion": "2.0"
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [],
+      "joints": [],
+      "materials": [],
+      "mesh": null,
+      "skinned": false
+    }
   }
 }

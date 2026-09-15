@@ -21,23 +21,34 @@ the bundle (docs/architecture/WORKSPACE.md §6).
 `fixtures.json` records what each fixture is for and what reading it must do.
 A fixture that opens lists `diagnostics` (the codes the stage records, in
 order), `parserDiagnostics` (the codes mmdPmx reports, which the stage's list
-starts with), `counts` (the size of every table) and `modelName`; one that
-fails names its `fatal` code. Tests read expectations from there rather than
-restating them.
+starts with), `counts` (the size of every table), `modelName`, and `stage`:
+what the canonical stage must hold -- identifiers, joint paths and order,
+material face ranges, texture asset paths and whether each resolves, and a
+vertex and a joint through the coordinate conversion. One that fails names its
+`fatal` code. Tests read expectations from there rather than restating them.
 
 The layout follows docs/design/PMX_CONTRACT.md. This encoder is written
 independently of the C++ one in libs/mmdPmx/tests/PmxEncoder.h, so the two
 check each other: the parser reads these bytes, and the tools and the importer
-must agree with what this file says they hold.
+must agree with what this file says they hold. The stage expectations are
+likewise computed here, from the design documents' rules, and not by the C++
+canonicalizer they check.
+
+Beside the fixtures the generator writes the texture files the sample models
+name -- one-pixel images, also synthetic -- so that a Japanese texture
+filename is proven to resolve (docs/design/STAGE_CONTRACT.md §14).
 """
 
 from __future__ import annotations
 
 import argparse
+import heapq
 import json
 import pathlib
+import re
 import struct
 import sys
+import zlib
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 COMMITTED = REPO / "plugins" / "usdMmdFileFormat" / "tests" / "fixtures"
@@ -483,10 +494,236 @@ def counts(model: dict) -> dict[str, int]:
     return {table: len(model[table]) for table in TABLES}
 
 
+# --- the texture files -------------------------------------------------------------
+
+def png(rgba: tuple[int, int, int, int]) -> bytes:
+    """A 1x1 RGBA PNG. The image data is a stored (uncompressed) deflate block
+    written here, so the bytes do not depend on the zlib that runs this."""
+    raw = b"\x00" + bytes(rgba)  # filter type 0, one pixel
+    stored = (b"\x78\x01" + b"\x01" + struct.pack("<HH", len(raw), len(raw) ^ 0xFFFF)
+              + raw + struct.pack(">I", zlib.adler32(raw)))
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return (struct.pack(">I", len(data)) + tag + data
+                + struct.pack(">I", zlib.crc32(tag + data)))
+
+    return (b"\x89PNG\r\n\x1a\n"
+            + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0))
+            + chunk(b"IDAT", stored) + chunk(b"IEND", b""))
+
+
+def bmp(rgb: tuple[int, int, int]) -> bytes:
+    """A 1x1 24-bit BMP, the format MMD's toon and sphere textures use."""
+    pixel = bytes((rgb[2], rgb[1], rgb[0], 0))  # BGR, padded to 4 bytes
+    info = struct.pack("<IiiHHIIiiII", 40, 1, 1, 1, 24, 0, len(pixel), 2835, 2835, 0, 0)
+    header = struct.pack("<2sIHHI", b"BM", 14 + len(info) + len(pixel), 0, 0,
+                         14 + len(info))
+    return header + info + pixel
+
+
+# Every texture the sample models name, beside the fixtures at the top of the
+# fixture directory -- so the samples' textures resolve, and the fixtures in
+# subdirectories name the same paths and do not.
+TEXTURES = {
+    "tex/髪.png": png((64, 40, 32, 255)),
+    "tex/肌.png": png((250, 220, 200, 255)),
+    "sph/光沢.sph": bmp((255, 255, 255)),
+    "toon/ト ゥ ー ン.bmp": bmp((200, 200, 200)),
+}
+
+
+# --- what the stage must say ----------------------------------------------------------
+#
+# The rules of the design documents, restated in Python: stable identifiers
+# (TEXT_ENCODING_POLICY.md §6), the canonical joint order (STAGE_CONTRACT.md
+# §9.1), texture paths (TEXT_ENCODING_POLICY.md §7) and the coordinate
+# conversion (STAGE_CONTRACT.md §6). They are what the C++ canonicalizer is
+# checked against, so they are written from the documents, not from it.
+
+METERS_PER_UNIT = 0.08
+
+
+def f32(value: float) -> float:
+    """`value` rounded to binary32, as a point3f holds it."""
+    return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
+def point(v: tuple) -> list[float]:
+    """A PMX position as the stage's point3f: meters, Z mirrored."""
+    return [f32(f32(v[0]) * METERS_PER_UNIT), f32(f32(v[1]) * METERS_PER_UNIT),
+            -f32(f32(v[2]) * METERS_PER_UNIT) + 0.0]
+
+
+def point_d(v: tuple) -> list[float]:
+    """A PMX position as a joint translation: the same, kept in double."""
+    return [f32(v[0]) * METERS_PER_UNIT + 0.0, f32(v[1]) * METERS_PER_UNIT + 0.0,
+            -(f32(v[2]) * METERS_PER_UNIT) + 0.0]
+
+
+def display_name(text) -> str:
+    """A decoded name with trailing U+0000 padding dropped; text that does not
+    decode is read as empty."""
+    return text.rstrip("\0") if isinstance(text, str) else ""
+
+
+def identifiers(kind: str, english: list[str]) -> list[str]:
+    taken: set[str] = set()
+    out = []
+    for i, name in enumerate(english):
+        candidate = re.sub(r"[^A-Za-z0-9_]+", "_", name).strip("_")[:64]
+        if candidate[:1].isdigit():
+            candidate = "_" + candidate
+        candidate = candidate or f"{kind}_{i:04d}"
+        chosen = candidate
+        if chosen.lower() in taken:
+            chosen = f"{candidate}_{i}"
+            if chosen.lower() in taken:
+                chosen = f"{kind}_{i:04d}"
+                n = 2
+                while chosen.lower() in taken:
+                    chosen = f"{kind}_{i:04d}_{n}"
+                    n += 1
+        taken.add(chosen.lower())
+        out.append(chosen)
+    return out
+
+
+def joint_order(parents: list[int]) -> tuple[list[int], list[int]]:
+    """(repaired parents, canonical order as source indices)."""
+    n = len(parents)
+    fixed = [p if 0 <= p < n and p != i else -1 for i, p in enumerate(parents)]
+    state = [0] * n  # 0 unvisited, 1 on the walk, 2 settled
+    for start in range(n):
+        walk, current = [], start
+        while current != -1 and state[current] == 0:
+            state[current] = 1
+            walk.append(current)
+            current = fixed[current]
+        if current != -1 and state[current] == 1:
+            fixed[min(walk[walk.index(current):])] = -1
+        for bone in walk:
+            state[bone] = 2
+    children: list[list[int]] = [[] for _ in range(n)]
+    ready: list[int] = []
+    for i, p in enumerate(fixed):
+        if p == -1:
+            heapq.heappush(ready, i)
+        else:
+            children[p].append(i)
+    order = []
+    while ready:
+        bone = heapq.heappop(ready)
+        order.append(bone)
+        for child in children[bone]:
+            heapq.heappush(ready, child)
+    return fixed, order
+
+
+def asset_path(source) -> str | None:
+    """The anchored logical path a texture string authors, or None when it
+    authors none (unsafe, undecodable, or empty)."""
+    if not isinstance(source, str):
+        return None
+    text = source.rstrip("\0")
+    if "\0" in text:
+        return None
+    path = text.replace("\\", "/")
+    if path.startswith("/") or re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", path):
+        return None
+    segments: list[str] = []
+    for segment in path.split("/"):
+        if segment in ("", "."):
+            continue
+        if segment == ".." and segments and segments[-1] != "..":
+            segments.pop()
+            continue
+        segments.append(segment)
+    if not segments or segments[0] == "..":
+        return None
+    return "./" + "/".join(segments)
+
+
+def stage_expectation(model: dict, relative: str) -> dict:
+    """What the canonical stage of `model`, written at `relative`, holds."""
+    bones = model["bones"]
+    skinned = bool(bones)
+    folder = pathlib.PurePosixPath(relative).parent
+
+    def resolves(path: str | None) -> bool:
+        return path is not None and (folder / path[2:]).as_posix() in TEXTURES
+
+    parents, order = joint_order([b["parent"] for b in bones])
+    bone_ids = identifiers("bone", [display_name(b["englishName"]) for b in bones])
+    canonical_of = {source: c for c, source in enumerate(order)}
+    paths: dict[int, str] = {}
+    joints = []
+    for source in order:
+        parent = parents[source]
+        paths[source] = bone_ids[source] if parent == -1 \
+            else paths[parent] + "/" + bone_ids[source]
+        joints.append({"path": paths[source], "sourceIndex": source,
+                       "name": display_name(bones[source]["name"]),
+                       "englishName": display_name(bones[source]["englishName"]),
+                       "bind": point_d(bones[source]["position"])})
+
+    materials = []
+    material_ids = identifiers("material", [display_name(m["englishName"])
+                                            for m in model["materials"]])
+    first = 0
+    faces = len(model["faces"]) // 3
+    double_sided = False
+    for i, m in enumerate(model["materials"]):
+        count = min(m["faceCount"] // 3, faces - first)
+        slots = {}
+        toon_kind, toon_value = m["toon"]
+        for slot, index in (("texture", m["texture"]), ("sphereTexture", m["sphereTexture"]),
+                            ("toonTexture", toon_value if toon_kind == "texture" else -1)):
+            if 0 <= index < len(model["textures"]):
+                source = model["textures"][index]
+                asset = asset_path(source)
+                slots[slot] = {"source": source if isinstance(source, str) else "",
+                               "asset": asset, "resolves": resolves(asset)}
+        materials.append({"id": material_ids[i], "sourceIndex": i,
+                          "name": display_name(m["name"]),
+                          "englishName": display_name(m["englishName"]),
+                          "faces": [first, count], "doubleSided": bool(m["flags"] & 0x01),
+                          "textures": slots})
+        double_sided |= bool(m["flags"] & 0x01) and count > 0
+        first += count
+
+    mesh = None
+    if model["vertices"]:
+        deforms = [v["deform"]["type"] for v in model["vertices"]]
+        influences = 0
+        if skinned:
+            influences = max({"BDEF1": 1, "BDEF2": 2, "SDEF": 2}.get(d, 4) for d in deforms)
+        v1 = model["vertices"][min(1, len(model["vertices"]) - 1)]
+        normal = [f32(c) for c in v1["normal"]]
+        normal[2] = -normal[2] + 0.0
+        mesh = {
+            "points": len(model["vertices"]), "faces": faces,
+            "doubleSided": double_sided,
+            "familyType": None if not any(m["faces"][1] for m in materials)
+            else "partition" if first == faces else "nonOverlapping",
+            "influences": influences,
+            "sdef": skinned and "SDEF" in deforms,
+            "additionalUv": model["additionalVec4"],
+            # A vertex through the conversion (STAGE_CONTRACT.md §6.3).
+            "vertex1": {"point": point(v1["position"]), "normal": normal,
+                        "st": [f32(v1["uv"][0]), f32(1.0 - f32(v1["uv"][1]))]},
+        }
+    return {"skinned": skinned, "mesh": mesh, "materials": materials,
+            "joints": joints,
+            "jointOfSourceBone": [canonical_of[i] for i in range(len(bones))]}
+
+
 # --- the fixtures ------------------------------------------------------------------
 
 def opens(model: dict, purpose: str, parser: list[str] | None = None,
-          importer: list[str] | None = None) -> tuple[bytes, dict]:
+          canonical: list[str] | None = None,
+          importer: list[str] | None = None) -> tuple[bytes, dict, dict]:
+    """A fixture that opens. The stage records the parser's codes, then the
+    canonical model's, then the importer's (DIAGNOSTICS.md §4)."""
     data, _ = encode(model)
     parser = parser or []
     name = model["info"][0]
@@ -496,12 +733,12 @@ def opens(model: dict, purpose: str, parser: list[str] | None = None,
         "modelName": name if isinstance(name, str) else "",
         "counts": counts(model),
         "parserDiagnostics": parser,
-        "diagnostics": parser + (importer or []),
-    }
+        "diagnostics": parser + (canonical or []) + (importer or []),
+    }, model
 
 
-def fails(data: bytes, purpose: str, fatal: str) -> tuple[bytes, dict]:
-    return data, {"purpose": purpose, "opens": False, "fatal": fatal}
+def fails(data: bytes, purpose: str, fatal: str) -> tuple[bytes, dict, None]:
+    return data, {"purpose": purpose, "opens": False, "fatal": fatal}, None
 
 
 def patched(model: dict, table: str, delta: int, value: bytes) -> bytes:
@@ -514,7 +751,19 @@ def patched(model: dict, table: str, delta: int, value: bytes) -> bytes:
 
 def fixtures() -> dict[str, tuple[bytes, dict]]:
     """Every fixture: relative path -> (bytes, expectation)."""
-    soft_body = ["MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"]
+    entries = {}
+    for relative, (data, expectation, model) in _fixtures().items():
+        if model is not None:
+            expectation["stage"] = stage_expectation(model, relative)
+        entries[relative] = (data, expectation)
+    return entries
+
+
+def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
+    # The importer's once-per-import codes for the sample models: their SDEF
+    # vertex, their QDEF vertex (2.1), their soft body (2.1).
+    sdef = ["MMD_SKEL_SDEF_APPROXIMATED"]
+    v21 = sdef + ["MMD_SKEL_QDEF_APPROXIMATED", "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"]
     minimal, _ = encode(empty_model(2.0, UTF16LE))
     entries = {
         # Phase 0: the header, every table empty.
@@ -540,17 +789,76 @@ def fixtures() -> dict[str, tuple[bytes, dict]]:
         "sample-2.0-utf16.pmx": opens(
             sample_model(2.0, UTF16LE, 1, 0),
             "PMX 2.0, UTF-16LE, index width 1: every table and every 2.0 "
-            "record variant, Japanese names"),
+            "record variant, Japanese names", importer=sdef),
         "sample-2.1-utf8.pmx": opens(
             sample_model(2.1, UTF8, 2, 2),
             "PMX 2.1, UTF-8, index width 2, two additional vec4: QDEF, flip "
             "and impulse morphs, a soft body",
-            importer=soft_body),
+            importer=v21),
         "sample-2.1-utf16-wide.pmx": opens(
             sample_model(2.1, UTF16LE, 4, 4),
             "PMX 2.1, UTF-16LE, index width 4, four additional vec4",
-            importer=soft_body),
+            importer=v21),
     }
+
+    # Phase 2: what canonicalization repairs, each on its own. The ones that
+    # only normalize (info) sit beside the samples, so their textures resolve.
+    reordered = sample_model(2.0, UTF16LE, 1, 0)
+    reordered["bones"][1]["parent"] = 3  # listed before its parent
+    named = sample_model(2.0, UTF16LE, 1, 0)
+    named["info"][0] = "サンプル2.0\0\0"          # padded with U+0000
+    named["materials"][1]["englishName"] = "Hair"  # "hair" is material 0's
+    named["bones"][1]["englishName"] = ""          # falls back to bone_0001
+    named["bones"][2]["englishName"] = "2nd elbow"
+    named["bones"][3]["englishName"] = "CENTER"    # "center" is bone 0's
+    cycle = sample_model(2.0, UTF16LE, 1, 0)
+    cycle["bones"][1]["parent"] = 2  # 1 -> 2 -> 1
+    cycle["bones"][2]["parent"] = 1
+    cycle["bones"][3]["parent"] = 3  # its own parent
+    weights = sample_model(2.0, UTF16LE, 1, 0)
+    weights["vertices"][2]["deform"]["weights"] = [1.0, 0.5, 0.5, 0.0]  # sums to 2
+    weights["vertices"][0]["deform"] = deform("BDEF4", [0, 1, -1, -1],
+                                              [0.0, 0.0, 0.0, 0.0])
+    unsafe = sample_model(2.0, UTF16LE, 1, 0)
+    unsafe["textures"] = ["..\\toon\\共有.bmp", "C:\\tex\\肌.png", "/tex/光沢.sph",
+                          "http://example.com/トゥーン.bmp"]
+    boneless = sample_model(2.0, UTF16LE, 1, 0)
+    boneless["bones"] = []
+    boneless["morphs"] = []
+    boneless["displayFrames"] = []
+    boneless["rigidBodies"] = []
+    boneless["joints"] = []
+    for v in boneless["vertices"][:3]:
+        v["deform"] = deform("BDEF1", [-1])
+    boneless["vertices"] = boneless["vertices"][:3]
+    boneless["faces"] = [0, 1, 2]
+    boneless["materials"] = boneless["materials"][:1]
+    entries.update({
+        "bones-reordered.pmx": opens(
+            reordered, "a bone listed before its parent: the joints are reordered",
+            canonical=["MMD_SKEL_JOINTS_REORDERED"], importer=sdef),
+        "identifiers.pmx": opens(
+            named, "names padded with U+0000, an empty English name, one that "
+            "starts with a digit, and two that collide ignoring case",
+            canonical=["MMD_TEXT_TRAILING_NUL", "MMD_USD_IDENTIFIER_COLLISION",
+                       "MMD_USD_IDENTIFIER_COLLISION"], importer=sdef),
+        "recoverable/bone-parent-cycle.pmx": opens(
+            cycle, "two bones each other's parent, and one its own",
+            canonical=["MMD_SKEL_INVALID_PARENT", "MMD_SKEL_PARENT_CYCLE"],
+            importer=sdef),
+        "recoverable/weights-normalized.pmx": opens(
+            weights, "BDEF4 weights that sum to 2, and ones that sum to 0",
+            canonical=["MMD_SKEL_WEIGHTS_NORMALIZED", "MMD_SKEL_ZERO_WEIGHTS"],
+            importer=sdef),
+        "recoverable/unsafe-texture-paths.pmx": opens(
+            unsafe, "texture paths that leave the model's directory, name a "
+            "drive, are absolute, and carry a scheme",
+            canonical=["MMD_PATH_UNSAFE_TEXTURE_PATH"] * 4, importer=sdef),
+        "recoverable/no-bones.pmx": opens(
+            boneless, "a mesh and a material, and no bones: /Asset is an Xform "
+            "and the mesh is unskinned",
+            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 3),
+    })
 
     # Recoverable: the model opens, and the stage records why it is not exact.
     bad_utf8 = sample_model(2.0, UTF8, 1, 0)
@@ -568,20 +876,23 @@ def fixtures() -> dict[str, tuple[bytes, dict]]:
     entries.update({
         "recoverable/invalid-utf8-name.pmx": opens(
             bad_utf8, "a material name that is not valid UTF-8: read as empty",
-            parser=["MMD_TEXT_INVALID_UTF8"]),
+            parser=["MMD_TEXT_INVALID_UTF8"], importer=sdef),
         "recoverable/invalid-utf16-name.pmx": opens(
             bad_utf16, "a bone's English name of odd byte length: read as empty",
-            parser=["MMD_TEXT_INVALID_UTF16"]),
+            parser=["MMD_TEXT_INVALID_UTF16"], importer=sdef),
+        # The weighted none is dropped, and the vertex's one remaining weight
+        # rescaled to 1.
         "recoverable/index-out-of-range.pmx": opens(
             bad_index, "a weighted deform of no bone, a missing texture, a "
             "missing parent: each read as none",
-            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 3),
+            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 3,
+            canonical=["MMD_SKEL_WEIGHTS_NORMALIZED"], importer=sdef),
         "recoverable/material-faces-short.pmx": opens(
             short, "the materials draw 6 of the 9 face indices",
-            parser=["MMD_PMX_MATERIAL_FACES_SHORT"]),
+            parser=["MMD_PMX_MATERIAL_FACES_SHORT"], importer=sdef),
         "recoverable/trailing-bytes.pmx": opens(
             trailing, "16 bytes after the soft-body table",
-            parser=["MMD_PMX_TRAILING_BYTES"], importer=soft_body),
+            parser=["MMD_PMX_TRAILING_BYTES"], importer=v21),
     })
 
     # Fatal: the rest of the file cannot be located, or its structure is wrong.
@@ -657,28 +968,42 @@ def manifest_text(entries: dict[str, tuple[bytes, dict]]) -> str:
     return json.dumps(body, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
+def files() -> dict[str, bytes]:
+    """Every file the generator writes but the manifest: relative path ->
+    bytes."""
+    written = {relative: data for relative, (data, _) in fixtures().items()}
+    written.update(TEXTURES)
+    return written
+
+
 def write(out: pathlib.Path) -> int:
     entries = fixtures()
-    for relative, (data, _) in entries.items():
+    for relative, data in files().items():
         path = out / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
     (out / MANIFEST).write_bytes(manifest_text(entries).encode("utf-8"))
-    print(f"wrote {len(entries)} fixtures and {MANIFEST} to {out}")
+    print(f"wrote {len(entries)} fixtures, {len(TEXTURES)} textures and {MANIFEST} "
+          f"to {out}")
     return 0
 
 
 def check(out: pathlib.Path) -> int:
     entries = fixtures()
+    expected = files()
     problems: list[str] = []
-    for relative, (data, _) in entries.items():
+    for relative, data in expected.items():
         path = out / relative
         if not path.is_file():
             problems.append(f"missing: {relative}")
         elif path.read_bytes() != data:
             problems.append(f"differs from the generator: {relative}")
-    committed = {p.relative_to(out).as_posix() for p in out.rglob("*.pmx")}
-    for extra in sorted(committed - set(entries)):
+    # Everything else in the directory is the generator's too, except the
+    # manifest and the importer's goldens.
+    committed = {p.relative_to(out).as_posix() for p in out.rglob("*")
+                 if p.is_file() and p.name != MANIFEST
+                 and not p.name.endswith(".golden.usda")}
+    for extra in sorted(committed - set(expected)):
         problems.append(f"not written by the generator: {extra}")
     manifest = out / MANIFEST
     if not manifest.is_file() or manifest.read_bytes() != manifest_text(
@@ -690,7 +1015,8 @@ def check(out: pathlib.Path) -> int:
         print("run tests/fixtures/generate_fixtures.py and commit the result",
               file=sys.stderr)
         return 1
-    print(f"{len(entries)} fixtures in {out} match the generator")
+    print(f"{len(entries)} fixtures and {len(TEXTURES)} textures in {out} match the "
+          f"generator")
     return 0
 
 
