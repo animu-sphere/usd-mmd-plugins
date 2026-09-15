@@ -14,9 +14,10 @@ strata.lock
 # Built plugin libraries are staged into each bundle's lib/ by the build.
 /plugins/*/lib/
 
-# The configure-time build stamp written into bundle resources: it varies per
-# commit, toolchain and platform. (plugInfo.json is committed, so a bundle can
-# be inspected before it is built; the build regenerates it per platform.)
+# Generated into bundle resources by the build: plugInfo.json names this
+# platform's library suffix, and buildInfo.json varies per commit, toolchain
+# and platform.
+/plugins/*/plugin/resources/*/plugInfo.json
 /plugins/*/plugin/resources/*/buildInfo.json
 
 # --- CMake / MSVC generated ---

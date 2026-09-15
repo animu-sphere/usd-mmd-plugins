@@ -107,31 +107,24 @@ endforeach()
 
 set(_mmd_resources "${CMAKE_CURRENT_SOURCE_DIR}/plugin/resources/usdMmdFileFormat")
 
-# The registration file for this platform's library suffix. The committed
-# plugInfo.json lets the bundle be inspected before it is built; configuring
-# rewrites it, so macOS gets .dylib, Windows .dll, and Linux .so.
+# The registration file, for this platform's library suffix: .dll, .dylib or
+# .so. It is generated, never committed -- one committed copy would name one
+# platform's suffix and be rewritten by every configure on the others.
 configure_file("${_mmd_resources}/plugInfo.json.in" "${_mmd_resources}/plugInfo.json" @ONLY)
 
 # buildInfo.json (WORKSPACE.md §4): what produced this binary, readable from a
 # shipped package without the build tree. No timestamp, host name or absolute
 # path, so an unchanged build packages to the same digest.
-set(_mmd_git_commit "unknown")
-find_package(Git QUIET)
-if(GIT_FOUND)
-    execute_process(
-        COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_CURRENT_SOURCE_DIR}" rev-parse HEAD
-        OUTPUT_VARIABLE _mmd_git_head
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-        RESULT_VARIABLE _mmd_git_rc)
-    if(_mmd_git_rc EQUAL 0)
-        set(_mmd_git_commit "${_mmd_git_head}")
-    endif()
-endif()
+#
+# Its values must be current when the file is installed, so each has a way to
+# refresh without a manual reconfigure: the project version and the
+# stage-contract version are read from files that are configure dependencies,
+# and the git commit is read at build time by cmake/WriteBuildInfo.cmake.
 
 # The stage-contract version has one source: the constant the authorer stamps
 # on every stage. Read it rather than restate it.
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/usd/UsdMmdAuthorer.h"
+set(_mmd_authorer_header "${CMAKE_CURRENT_SOURCE_DIR}/src/usd/UsdMmdAuthorer.h")
+file(STRINGS "${_mmd_authorer_header}"
      _mmd_contract_line REGEX "kStageContractVersion = [0-9]+;")
 string(REGEX MATCH "[0-9]+" _mmd_stage_contract_version "${_mmd_contract_line}")
 if(NOT _mmd_stage_contract_version)
@@ -139,11 +132,34 @@ if(NOT _mmd_stage_contract_version)
         "usdMmdFileFormat: could not read kStageContractVersion from "
         "src/usd/UsdMmdAuthorer.h")
 endif()
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_mmd_authorer_header}")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
+endif()
 
-configure_file("${_mmd_resources}/buildInfo.json.in" "${_mmd_resources}/buildInfo.json" @ONLY)
+find_package(Git QUIET)
+add_custom_target(UsdMmdFileFormat_buildInfo ALL
+    COMMAND "${CMAKE_COMMAND}"
+        "-DTEMPLATE=${_mmd_resources}/buildInfo.json.in"
+        "-DOUTPUT=${_mmd_resources}/buildInfo.json"
+        "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+        "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}"
+        "-D_mmd_plugin_version=${_mmd_plugin_version}"
+        "-D_mmd_stage_contract_version=${_mmd_stage_contract_version}"
+        "-DUSDMMD_OPENUSD_RELEASE=${USDMMD_OPENUSD_RELEASE}"
+        "-DCMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}"
+        "-DCMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}"
+        "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}"
+        "-DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WriteBuildInfo.cmake"
+    BYPRODUCTS "${_mmd_resources}/buildInfo.json"
+    COMMENT "Stamping usdMmdFileFormat buildInfo.json"
+    VERBATIM)
+add_dependencies(${PLUGIN_NAME} UsdMmdFileFormat_buildInfo)
 
 # The installed bundle keeps the source bundle's shape -- lib/ beside
-# plugin/resources/ -- so the committed relative LibraryPath resolves in both.
+# plugin/resources/ -- so the relative LibraryPath resolves in both.
 install(TARGETS ${PLUGIN_NAME}
     RUNTIME DESTINATION "lib"
     LIBRARY DESTINATION "lib")

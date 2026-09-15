@@ -7,6 +7,7 @@
 #include <mmdPmx/Reader.h>
 
 #include "pxr/base/tf/diagnostic.h"
+#include "pxr/base/tf/pyLock.h"
 #include "pxr/base/tf/registryManager.h"
 #include "pxr/base/tf/type.h"
 #include "pxr/usd/ar/asset.h"
@@ -122,13 +123,25 @@ UsdMmdFileFormat::Read(
     // UsdStage authored on the calling thread cannot observe the prims it
     // authors until that block closes. Authoring on another thread keeps the
     // detached stage outside it (usd-vrm-plugins' importer does the same).
+    //
+    // Authoring sends change notices, and a Python listener registered with
+    // Tf.Notice.RegisterGlobally runs on the worker and takes the GIL. Some
+    // Python entry points reach Read still holding it -- Sdf.Layer.Reload
+    // does -- so the wait releases the GIL, or the two threads wait on each
+    // other forever (tests/integration/test_notice_listeners.py). It does
+    // nothing when this thread does not hold the GIL.
     const std::size_t parserDiagnostics = diagnostics.size();
     std::string usda;
     const usdmmd::UsdMmdAuthorer authorer;
     auto task = std::async(std::launch::async, [&]() {
         return authorer.WriteToString(parsed.value(), &diagnostics, &usda);
     });
-    if (!task.get()) {
+    bool authored = false;
+    {
+        TF_PY_ALLOW_THREADS_IN_SCOPE();
+        authored = task.get();
+    }
+    if (!authored) {
         TF_RUNTIME_ERROR("usdMmdFileFormat: failed to author USD for '%s'",
             resolvedPath.c_str());
         return false;

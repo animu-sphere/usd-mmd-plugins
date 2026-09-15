@@ -47,10 +47,20 @@ def shared_library(name: str) -> str:
 
 def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     errors: list[str] = []
+    # mmdPmx installs under CMAKE_INSTALL_LIBDIR, which GNUInstallDirs makes
+    # lib64 on some Linux distributions; the plugin bundle's lib/ is fixed by
+    # its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
+    config_dirs = sorted(p.parent for p in prefix.glob("lib*/cmake/mmdPmx/mmdPmxConfig.cmake"))
+    if len(config_dirs) != 1:
+        errors.append(f"the prefix has {len(config_dirs)} mmdPmx package configs "
+                      f"under lib*/cmake/mmdPmx, expected one")
+    else:
+        version_file = config_dirs[0] / "mmdPmxConfigVersion.cmake"
+        if not version_file.is_file():
+            errors.append(f"the prefix has no "
+                          f"{version_file.relative_to(prefix).as_posix()}")
     expected = [
         pathlib.Path("include", "mmdPmx", "Reader.h"),
-        pathlib.Path("lib", "cmake", "mmdPmx", "mmdPmxConfig.cmake"),
-        pathlib.Path("lib", "cmake", "mmdPmx", "mmdPmxConfigVersion.cmake"),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
         PLUGIN_RESOURCES / "plugInfo.json",
         PLUGIN_RESOURCES / "buildInfo.json",

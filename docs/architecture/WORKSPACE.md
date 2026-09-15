@@ -135,7 +135,8 @@ usd-mmd-plugins/
 │  └─ mmdModel/                (Phase 2)
 ├─ plugins/
 │  └─ usdMmdFileFormat/
-│     ├─ plugin/resources/usdMmdFileFormat/   plugInfo.json(.in), buildInfo.json.in
+│     ├─ plugin/resources/usdMmdFileFormat/   plugInfo.json.in, buildInfo.json.in (the build writes both .json)
+│     ├─ cmake/                WriteBuildInfo.cmake (the build-time buildInfo.json stamp)
 │     ├─ src/                  UsdMmdFileFormat.cpp, usd/UsdMmdAuthorer.cpp
 │     ├─ tests/fixtures/       the generated PMX fixtures, fixtures.json, the L5 golden
 │     ├─ CMakeLists.txt
@@ -196,7 +197,11 @@ bundle's copies.
   ```
 
   No timestamp, host name or absolute path — reproducibility-sensitive package
-  metadata never contains one.
+  metadata never contains one. It is written on every build and rewritten only
+  when a value changed: `projectVersion` and `stageContractVersion` come from
+  files that are configure dependencies (`VERSION`, `UsdMmdAuthorer.h`), and
+  `gitCommit` is read at build time, so an installed stamp never names an
+  older commit than the one built.
 
 ## 5. Build modes
 

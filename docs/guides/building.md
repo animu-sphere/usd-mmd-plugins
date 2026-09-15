@@ -47,6 +47,7 @@ bundle's `plugInfo.json` expects it.
 | `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees |
 | `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says |
 | `usdMmdFileFormat_unicode_paths` | the same opens under `ユニコード-é/`, from a Python host |
+| `usdMmdFileFormat_notice_listeners` | every Python entry point that reaches the importer (`Usd.Stage.Open`, `Sdf.Layer.Reload`, `Sdf.Layer.OpenAsAnonymous`) returns while a global Python notice listener is registered |
 | `workspace_installed_consumer` | the installed-consumer lane (below) |
 
 The installed-consumer lane configures and builds a second project, so it is

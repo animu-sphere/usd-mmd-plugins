@@ -20,7 +20,7 @@ edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not restate them.
 | Required packages | none: the package's config names no `find_dependency` |
 | Language | C++20 (`cxx_std_20` is a usage requirement) |
 | Version compatibility | `SameMinorVersion`: before 1.0 a minor version may change the API |
-| Installed files | `lib/` (the archive), `lib/cmake/mmdPmx/`, `include/mmdPmx/` |
+| Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive) and `${CMAKE_INSTALL_LIBDIR}/cmake/mmdPmx/` — `lib`, or `lib64` on Linux distributions whose GNUInstallDirs default says so — and `include/mmdPmx/` |
 
 The same surface is declared as `package_contract` in
 [libs/mmdPmx/openstrata.library.yaml](../../libs/mmdPmx/openstrata.library.yaml),
@@ -31,13 +31,15 @@ alone.
 ## `usdMmdFileFormat`
 
 A plugin bundle, found by OpenUSD's plug registry rather than by CMake. It
-exports no CMake package and no headers.
+exports no CMake package and no headers. Its `lib/` is always `lib`, whatever
+`CMAKE_INSTALL_LIBDIR` is: `plugInfo.json` names the library by a path
+relative to itself, and the installed bundle keeps the source bundle's shape.
 
 | Installed path | Content |
 | --- | --- |
 | `lib/libUsdMmdFileFormat.{dll,dylib,so}` | the plugin library; `mmdPmx` is linked in statically |
 | `plugin/resources/usdMmdFileFormat/plugInfo.json` | registration: format id and extension `pmx`, target `usd`; `LibraryPath` is relative (`../../../lib/…`) |
-| `plugin/resources/usdMmdFileFormat/buildInfo.json` | build metadata ([WORKSPACE.md §4](WORKSPACE.md#4-manifests-versioning-and-build-metadata)) |
+| `plugin/resources/usdMmdFileFormat/buildInfo.json` | build metadata ([WORKSPACE.md §4](WORKSPACE.md#4-manifests-versioning-and-build-metadata)), stamped at build time so the git commit is the one built |
 | `openstrata.plugin.yaml` | the bundle manifest |
 
 A host makes the plugin available by putting

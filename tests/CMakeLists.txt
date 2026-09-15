@@ -64,6 +64,17 @@ add_test(NAME usdMmdFileFormat_unicode_paths
 set_tests_properties(usdMmdFileFormat_unicode_paths PROPERTIES
     ENVIRONMENT_MODIFICATION "${_plugin_env}")
 
+# Every Python entry point that reaches Read, from a host listening to every
+# change notice: the importer authors on a worker thread, and must not wait for
+# it while holding the GIL a Python listener on that thread needs.
+add_test(NAME usdMmdFileFormat_notice_listeners
+    COMMAND "${USDMMD_TEST_PYTHON}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/integration/test_notice_listeners.py"
+        --fixtures "${_fixtures}")
+set_tests_properties(usdMmdFileFormat_notice_listeners PROPERTIES
+    ENVIRONMENT_MODIFICATION "${_plugin_env}"
+    TIMEOUT 120)
+
 # The installed-consumer lane: install this build tree into a clean prefix and
 # consume it from outside the repository (scripts/check_installed_consumer.py).
 # It configures and builds a second CMake project, so it is labelled and can be
