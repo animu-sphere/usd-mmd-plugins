@@ -34,9 +34,9 @@ inline constexpr std::int32_t kNone = -1;
 /// The three names every canonical element carries
 /// (docs/design/TEXT_ENCODING_POLICY.md §5).
 struct Name {
-    std::string source;    ///< decoded source name, e.g. "左腕"
-    std::string english;   ///< decoded English name, e.g. "LeftArm"; often empty
-    std::string stableId;  ///< USD-safe identifier (TEXT_ENCODING_POLICY.md §6)
+    std::string source;   ///< decoded source name, e.g. "左腕"
+    std::string english;  ///< decoded English name, e.g. "LeftArm"; often empty
+    std::string stableId; ///< USD-safe identifier (TEXT_ENCODING_POLICY.md §6)
 
     bool operator==(const Name&) const = default;
 };
@@ -44,7 +44,7 @@ struct Name {
 /// Model-level provenance (docs/design/STAGE_CONTRACT.md §5). Display names
 /// have their trailing U+0000 padding dropped; comments are verbatim.
 struct Metadata {
-    std::string sourceVersion;  ///< "2.0" or "2.1"
+    std::string sourceVersion; ///< "2.0" or "2.1"
     std::string name;
     std::string englishName;
     std::string comment;
@@ -58,7 +58,7 @@ struct Metadata {
 
 /// One entry of the texture table (TEXT_ENCODING_POLICY.md §7).
 struct Texture {
-    std::string sourcePath;  ///< exactly as decoded; kept even when unsafe
+    std::string sourcePath; ///< exactly as decoded; kept even when unsafe
     /// The normalized logical path anchored to the model's layer, e.g.
     /// "./tex/髪.png". Empty when the path is unsafe or names nothing: no
     /// asset path is authored for it.
@@ -95,9 +95,9 @@ enum class ToonSource : std::uint8_t {
 /// The one mesh of contract v1 (STAGE_CONTRACT.md §8.1). Every per-vertex
 /// array is sized to the vertex count; every value is in the USD basis.
 struct Mesh {
-    std::vector<Float3> points;   ///< meters
-    std::vector<Float3> normals;  ///< unit length, or zero where the source's was
-    std::vector<Float2> st;       ///< PMX UV with v flipped (STAGE_CONTRACT.md §8.3)
+    std::vector<Float3> points;  ///< meters
+    std::vector<Float3> normals; ///< unit length, or zero where the source's was
+    std::vector<Float2> st;      ///< PMX UV with v flipped (STAGE_CONTRACT.md §8.3)
     /// Additional vec4 channels, raw. Only the first `additionalUvCount` are
     /// filled; the others are empty.
     std::uint8_t additionalUvCount = 0;
@@ -137,14 +137,14 @@ struct Mesh {
 /// slots (MATERIAL_POLICY.md §§4 and 7).
 struct Material {
     Name name;
-    std::size_t sourceIndex = 0;  ///< also MMD's draw order
-    std::size_t firstFace = 0;    ///< in triangles
-    std::size_t faceCount = 0;    ///< in triangles; 0 authors no subset
+    std::size_t sourceIndex = 0; ///< also MMD's draw order
+    std::size_t firstFace = 0;   ///< in triangles
+    std::size_t faceCount = 0;   ///< in triangles; 0 authors no subset
     Float4 diffuseColor{};
     Float3 specularColor{};
     float specularPower = 0.0f;
     Float3 ambientColor{};
-    bool doubleSided = false;     ///< PMX drawing flag 0x01
+    bool doubleSided = false; ///< PMX drawing flag 0x01
     bool groundShadow = false;
     bool castSelfShadow = false;
     bool receiveSelfShadow = false;
@@ -159,7 +159,7 @@ struct Material {
     std::int32_t sphereTexture = kNone;
     SphereMode sphereMode = SphereMode::Disabled;
     ToonSource toonSource = ToonSource::None;
-    std::int32_t toonTexture = kNone;  ///< an individual toon ramp only
+    std::int32_t toonTexture = kNone; ///< an individual toon ramp only
     std::int32_t sharedToonIndex = kNone;
     std::string memo;
 
@@ -186,7 +186,7 @@ struct Bone {
 };
 
 struct Skeleton {
-    std::vector<Bone> bones;  ///< canonical joint order (STAGE_CONTRACT.md §9.1)
+    std::vector<Bone> bones; ///< canonical joint order (STAGE_CONTRACT.md §9.1)
     /// Source bone index -> canonical index.
     std::vector<std::int32_t> jointOfSourceBone;
 
@@ -195,12 +195,12 @@ struct Skeleton {
 
 struct CanonicalDocument {
     Metadata metadata;
-    std::vector<Texture> textures;  ///< source texture-table order
-    Mesh mesh;                      ///< empty when the model has no vertices
+    std::vector<Texture> textures; ///< source texture-table order
+    Mesh mesh;                     ///< empty when the model has no vertices
     std::vector<Material> materials;
-    Skeleton skeleton;              ///< empty when the model has no bones
+    Skeleton skeleton; ///< empty when the model has no bones
 
     bool operator==(const CanonicalDocument&) const = default;
 };
 
-}  // namespace mmd
+} // namespace mmd

@@ -37,8 +37,9 @@ ReadAndCheck(const Bytes& bytes)
         ++g_documents;
         const std::string violation = CheckInvariants(result.value());
         if (!violation.empty()) {
-            std::fprintf(stderr, "a mutated file read as a document that breaks an invariant: %s\n",
-                violation.c_str());
+            std::fprintf(stderr,
+                         "a mutated file read as a document that breaks an invariant: %s\n",
+                         violation.c_str());
         }
         assert(violation.empty());
     } else {
@@ -79,7 +80,7 @@ TruncateAndExtend(const Bytes& original)
     }
 }
 
-}  // namespace
+} // namespace
 
 void
 TestRobustness()

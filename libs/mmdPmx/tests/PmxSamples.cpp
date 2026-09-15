@@ -9,7 +9,7 @@ using namespace mmd::pmx;
 
 Document
 SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
-    std::uint8_t additionalVec4)
+               std::uint8_t additionalVec4)
 {
     const bool v21 = version == Version::V2_1;
     Document doc = EmptyDocument(version, encoding);
@@ -40,7 +40,7 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     vertex(1.0f, bdef2);
     Deform bdef4;
     bdef4.type = DeformType::Bdef4;
-    bdef4.bones = {0, 1, 2, kNoIndex};  // a none with weight 0 is legal
+    bdef4.bones = {0, 1, 2, kNoIndex}; // a none with weight 0 is legal
     bdef4.weights = {0.5f, 0.25f, 0.25f, 0.0f};
     vertex(2.0f, bdef4);
     Deform sdef;
@@ -71,8 +71,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     hair.specular = {0.1f, 0.1f, 0.1f};
     hair.specularPower = 5.0f;
     hair.ambient = {0.5f, 0.45f, 0.4f};
-    hair.flags = MaterialFlag::NoCulling | MaterialFlag::DrawsEdge
-        | (v21 ? MaterialFlag::VertexColor : 0);
+    hair.flags =
+        MaterialFlag::NoCulling | MaterialFlag::DrawsEdge | (v21 ? MaterialFlag::VertexColor : 0);
     hair.edgeColor = {0.0f, 0.0f, 0.0f, 1.0f};
     hair.edgeSize = 1.0f;
     hair.texture = 0;
@@ -87,8 +87,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     Material skin;
     skin.name = "肌";
     skin.diffuse = {1.0f, 0.8f, 0.7f, 0.5f};
-    skin.flags = MaterialFlag::GroundShadow | MaterialFlag::CastsSelfShadow
-        | MaterialFlag::ReceivesSelfShadow;
+    skin.flags = MaterialFlag::GroundShadow | MaterialFlag::CastsSelfShadow |
+                 MaterialFlag::ReceivesSelfShadow;
     skin.texture = kNoIndex;
     skin.sphereTexture = kNoIndex;
     skin.toonReference = ToonReference::Shared;
@@ -101,8 +101,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     Bone center;
     center.name = "センター";
     center.position = {0.0f, 8.0f, 0.0f};
-    center.flags = BoneFlag::Rotatable | BoneFlag::Translatable | BoneFlag::Visible
-        | BoneFlag::Operable;
+    center.flags =
+        BoneFlag::Rotatable | BoneFlag::Translatable | BoneFlag::Visible | BoneFlag::Operable;
     center.tailOffset = {0.0f, -1.0f, 0.0f};
     doc.bones.push_back(center);
 
@@ -112,7 +112,7 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     arm.position = {1.0f, 12.0f, 0.0f};
     arm.parent = 0;
     arm.flags = BoneFlag::TailIsBone | BoneFlag::Rotatable | BoneFlag::Visible;
-    arm.tailBone = 2;  // a forward reference is legal
+    arm.tailBone = 2; // a forward reference is legal
     doc.bones.push_back(arm);
 
     Bone elbow;
@@ -121,8 +121,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     elbow.position = {3.0f, 12.0f, 0.0f};
     elbow.parent = 1;
     elbow.transformLayer = 1;
-    elbow.flags = BoneFlag::Rotatable | BoneFlag::AppendRotation | BoneFlag::FixedAxis
-        | BoneFlag::LocalAxes | BoneFlag::DeformAfterPhysics | BoneFlag::ExternalParent;
+    elbow.flags = BoneFlag::Rotatable | BoneFlag::AppendRotation | BoneFlag::FixedAxis |
+                  BoneFlag::LocalAxes | BoneFlag::DeformAfterPhysics | BoneFlag::ExternalParent;
     elbow.appendParent = 1;
     elbow.appendRatio = 0.5f;
     elbow.fixedAxis = {1.0f, 0.0f, 0.0f};
@@ -135,8 +135,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     ik.name = "左腕ＩＫ";
     ik.englishName = "LeftArm IK";
     ik.position = {5.0f, 12.0f, 0.0f};
-    ik.flags = BoneFlag::TailIsBone | BoneFlag::Rotatable | BoneFlag::Translatable
-        | BoneFlag::Ik | BoneFlag::AppendTranslation | BoneFlag::LocalAppend;
+    ik.flags = BoneFlag::TailIsBone | BoneFlag::Rotatable | BoneFlag::Translatable | BoneFlag::Ik |
+               BoneFlag::AppendTranslation | BoneFlag::LocalAppend;
     ik.tailBone = kNoIndex;
     ik.appendParent = kNoIndex;
     ik.appendRatio = 1.0f;
@@ -154,8 +154,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     doc.bones.push_back(ik);
 
     // Morphs: every type the version has.
-    const auto morph = [&](std::string name, std::string english, std::uint8_t panel,
-                           MorphType type) -> Morph& {
+    const auto morph =
+        [&](std::string name, std::string english, std::uint8_t panel, MorphType type) -> Morph& {
         Morph m;
         m.name = std::move(name);
         m.englishName = std::move(english);
@@ -164,8 +164,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
         doc.morphs.push_back(std::move(m));
         return doc.morphs.back();
     };
-    morph("まばたき", "Blink", 2, MorphType::Vertex).vertexOffsets = {
-        {0, {0.0f, -0.1f, 0.0f}}, {3, {0.0f, -0.2f, 0.01f}}};
+    morph("まばたき", "Blink", 2, MorphType::Vertex).vertexOffsets = {{0, {0.0f, -0.1f, 0.0f}},
+                                                                      {3, {0.0f, -0.2f, 0.01f}}};
     morph("笑い", "smile 2", 3, MorphType::Group).groupOffsets = {{0, 0.5f}, {3, 1.0f}};
     morph("腕上げ", "", 4, MorphType::Bone).boneOffsets = {
         {1, {0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.38268343f, 0.9238795f}}};
@@ -174,7 +174,7 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     morph("追加UV4", "", 0, MorphType::AdditionalUv4).uvOffsets = {};
     {
         MaterialOffset all;
-        all.material = kNoIndex;  // every material
+        all.material = kNoIndex; // every material
         all.operation = 0;
         all.diffuse = {1.0f, 1.0f, 1.0f, 0.0f};
         all.textureTint = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -203,8 +203,8 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     face.elements = {{FrameElementKind::Morph, 0}, {FrameElementKind::Morph, 1}};
     DisplayFrame arms;
     arms.name = "腕";
-    arms.elements = {{FrameElementKind::Bone, 1}, {FrameElementKind::Bone, 2},
-        {FrameElementKind::Bone, 3}};
+    arms.elements = {
+        {FrameElementKind::Bone, 1}, {FrameElementKind::Bone, 2}, {FrameElementKind::Bone, 3}};
     doc.displayFrames = {root, face, arms};
 
     RigidBody head;
@@ -224,7 +224,7 @@ SampleDocument(Version version, TextEncoding encoding, std::uint8_t indexWidth,
     RigidBody hair1 = head;
     hair1.name = "髪1";
     hair1.englishName = "hair1";
-    hair1.bone = kNoIndex;  // unattached
+    hair1.bone = kNoIndex; // unattached
     hair1.shape = 2;
     hair1.size = {0.2f, 1.0f, 0.0f};
     hair1.rotation = {0.1f, 0.2f, 0.3f};
@@ -302,8 +302,8 @@ CheckInvariants(const Document& doc)
             return "a material face count is not a whole number of triangles";
         }
         drawn += static_cast<std::size_t>(m.faceCount);
-        if (!inRange(m.texture, textures) || !inRange(m.sphereTexture, textures)
-            || !inRange(m.toonTexture, textures)) {
+        if (!inRange(m.texture, textures) || !inRange(m.sphereTexture, textures) ||
+            !inRange(m.toonTexture, textures)) {
             return "a material texture index is out of range";
         }
     }
@@ -318,8 +318,8 @@ CheckInvariants(const Document& doc)
         }
     }
     for (const Bone& b : doc.bones) {
-        if (!inRange(b.parent, bones) || !inRange(b.tailBone, bones)
-            || !inRange(b.appendParent, bones) || !inRange(b.ik.target, bones)) {
+        if (!inRange(b.parent, bones) || !inRange(b.tailBone, bones) ||
+            !inRange(b.appendParent, bones) || !inRange(b.ik.target, bones)) {
             return "a bone relation is out of range";
         }
         for (const IkLink& link : b.ik.links) {
@@ -398,4 +398,4 @@ CheckInvariants(const Document& doc)
     return {};
 }
 
-}  // namespace pmxtest
+} // namespace pmxtest

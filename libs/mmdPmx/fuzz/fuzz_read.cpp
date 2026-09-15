@@ -25,8 +25,9 @@ LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size)
         mmd::pmx::Read(std::span<const std::byte>(reinterpret_cast<const std::byte*>(data), size));
     for (const mmd::Diagnostic& d : result.diagnostics()) {
         if (!d.recoverable || d.severity == mmd::Severity::Fatal) {
-            std::fprintf(stderr, "a fatal diagnostic among the recoverable ones: %s\n",
-                mmd::FormatDiagnostic(d).c_str());
+            std::fprintf(stderr,
+                         "a fatal diagnostic among the recoverable ones: %s\n",
+                         mmd::FormatDiagnostic(d).c_str());
             std::abort();
         }
     }

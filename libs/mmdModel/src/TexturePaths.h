@@ -26,4 +26,4 @@ struct TexturePath {
 /// normalizes to nothing is neither authored nor unsafe.
 TexturePath NormalizeTexturePath(std::string_view source);
 
-}  // namespace mmd::detail
+} // namespace mmd::detail

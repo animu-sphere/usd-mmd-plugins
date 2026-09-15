@@ -40,7 +40,7 @@ Fail(std::string& out, std::size_t offset, const char* reason)
     return DecodeError{offset, reason};
 }
 
-}  // namespace
+} // namespace
 
 std::optional<DecodeError>
 DecodeUtf8(std::span<const std::byte> bytes, std::string& out)
@@ -79,21 +79,23 @@ DecodeUtf8(std::span<const std::byte> bytes, std::string& out)
             length = 4;
             high = 0x8F;
         } else {
-            return Fail(out, i,
-                lead < 0xC2 && lead >= 0xC0 ? "an overlong two-byte form"
-                : lead < 0xC0               ? "a continuation byte where a character starts"
-                                            : "a byte that starts no UTF-8 sequence");
+            return Fail(out,
+                        i,
+                        lead < 0xC2 && lead >= 0xC0 ? "an overlong two-byte form"
+                        : lead < 0xC0               ? "a continuation byte where a character starts"
+                                                    : "a byte that starts no UTF-8 sequence");
         }
         if (n - i < length) {
             return Fail(out, i, "a sequence truncated by the end of the string");
         }
         const std::uint8_t second = At(bytes, i + 1);
         if (second < low || second > high) {
-            return Fail(out, i + 1,
-                second < 0x80 || second > 0xBF ? "a missing continuation byte"
-                : lead == 0xED                 ? "an encoded surrogate"
-                : lead == 0xF4                 ? "a code point above U+10FFFF"
-                                               : "an overlong form");
+            return Fail(out,
+                        i + 1,
+                        second < 0x80 || second > 0xBF ? "a missing continuation byte"
+                        : lead == 0xED                 ? "an encoded surrogate"
+                        : lead == 0xF4                 ? "a code point above U+10FFFF"
+                                                       : "an overlong form");
         }
         for (std::size_t k = 2; k < length; ++k) {
             const std::uint8_t next = At(bytes, i + k);
@@ -142,4 +144,4 @@ DecodeUtf16Le(std::span<const std::byte> bytes, std::string& out)
     return std::nullopt;
 }
 
-}  // namespace mmd::pmx::detail
+} // namespace mmd::pmx::detail

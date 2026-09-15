@@ -50,7 +50,7 @@ enum class TextEncoding : std::uint8_t {
 /// The header's globals (PMX_CONTRACT.md §3), validated.
 struct Globals {
     TextEncoding textEncoding = TextEncoding::Utf16Le;
-    std::uint8_t additionalVec4Count = 0;  ///< 0-4
+    std::uint8_t additionalVec4Count = 0; ///< 0-4
     // Index widths in bytes: 1, 2 or 4 each (PMX_CONTRACT.md §4).
     std::uint8_t vertexIndexSize = 1;
     std::uint8_t textureIndexSize = 1;
@@ -88,7 +88,7 @@ enum class DeformType : std::uint8_t {
     Bdef2 = 1,
     Bdef4 = 2,
     Sdef = 3,
-    Qdef = 4,  ///< PMX 2.1 only
+    Qdef = 4, ///< PMX 2.1 only
 };
 
 /// "BDEF1", "BDEF2", "BDEF4", "SDEF" or "QDEF".
@@ -145,8 +145,8 @@ struct MaterialFlag {
 
 /// What follows a material's toon-reference byte.
 enum class ToonReference : std::uint8_t {
-    Texture = 0,  ///< a texture index: `Material::toonTexture`
-    Shared = 1,   ///< a shared toon slot: `Material::sharedToon`
+    Texture = 0, ///< a texture index: `Material::toonTexture`
+    Shared = 1,  ///< a shared toon slot: `Material::sharedToon`
 };
 
 struct Material {
@@ -156,7 +156,7 @@ struct Material {
     Vec3 specular{};
     float specularPower = 0.0f;
     Vec3 ambient{};
-    std::uint8_t flags = 0;  ///< MaterialFlag bits, as stored
+    std::uint8_t flags = 0; ///< MaterialFlag bits, as stored
     Vec4 edgeColor{};
     float edgeSize = 0.0f;
     std::int32_t texture = kNoIndex;
@@ -165,8 +165,8 @@ struct Material {
     /// value is canonicalization's to judge.
     std::uint8_t sphereMode = 0;
     ToonReference toonReference = ToonReference::Texture;
-    std::int32_t toonTexture = kNoIndex;  ///< when toonReference is Texture
-    std::uint8_t sharedToon = 0;          ///< when Shared: as stored; 0-9 are defined
+    std::int32_t toonTexture = kNoIndex; ///< when toonReference is Texture
+    std::uint8_t sharedToon = 0;         ///< when Shared: as stored; 0-9 are defined
     std::string memo;
     /// The number of face indices this material draws, a multiple of 3. The
     /// materials consume the face table in order.
@@ -197,8 +197,8 @@ struct BoneFlag {
 struct IkLink {
     std::int32_t bone = kNoIndex;
     bool hasLimits = false;
-    Vec3 lowerLimit{};  ///< radians, when hasLimits
-    Vec3 upperLimit{};  ///< radians, when hasLimits
+    Vec3 lowerLimit{}; ///< radians, when hasLimits
+    Vec3 upperLimit{}; ///< radians, when hasLimits
 
     bool operator==(const IkLink&) const = default;
 };
@@ -206,7 +206,7 @@ struct IkLink {
 struct Ik {
     std::int32_t target = kNoIndex;
     std::int32_t loopCount = 0;
-    float limitAngle = 0.0f;  ///< radians
+    float limitAngle = 0.0f; ///< radians
     std::vector<IkLink> links;
 
     bool operator==(const Ik&) const = default;
@@ -220,16 +220,16 @@ struct Bone {
     Vec3 position{};
     std::int32_t parent = kNoIndex;
     std::int32_t transformLayer = 0;
-    std::uint16_t flags = 0;  ///< BoneFlag bits, as stored
-    std::int32_t tailBone = kNoIndex;  ///< TailIsBone
-    Vec3 tailOffset{};                 ///< not TailIsBone
-    std::int32_t appendParent = kNoIndex;  ///< AppendRotation or AppendTranslation
-    float appendRatio = 0.0f;              ///< AppendRotation or AppendTranslation
-    Vec3 fixedAxis{};                  ///< FixedAxis
-    Vec3 localAxisX{};                 ///< LocalAxes
-    Vec3 localAxisZ{};                 ///< LocalAxes
-    std::int32_t externalParentKey = 0;  ///< ExternalParent
-    Ik ik;                             ///< Ik
+    std::uint16_t flags = 0;              ///< BoneFlag bits, as stored
+    std::int32_t tailBone = kNoIndex;     ///< TailIsBone
+    Vec3 tailOffset{};                    ///< not TailIsBone
+    std::int32_t appendParent = kNoIndex; ///< AppendRotation or AppendTranslation
+    float appendRatio = 0.0f;             ///< AppendRotation or AppendTranslation
+    Vec3 fixedAxis{};                     ///< FixedAxis
+    Vec3 localAxisX{};                    ///< LocalAxes
+    Vec3 localAxisZ{};                    ///< LocalAxes
+    std::int32_t externalParentKey = 0;   ///< ExternalParent
+    Ik ik;                                ///< Ik
 
     bool operator==(const Bone&) const = default;
 };
@@ -272,7 +272,7 @@ struct VertexOffset {
 struct BoneOffset {
     std::int32_t bone = kNoIndex;
     Vec3 translation{};
-    Vec4 rotation{};  ///< quaternion (x, y, z, w)
+    Vec4 rotation{}; ///< quaternion (x, y, z, w)
 
     bool operator==(const BoneOffset&) const = default;
 };
@@ -287,8 +287,8 @@ struct UvOffset {
 };
 
 struct MaterialOffset {
-    std::int32_t material = kNoIndex;  ///< kNoIndex means every material
-    std::uint8_t operation = 0;        ///< as stored: 0 multiply, 1 add
+    std::int32_t material = kNoIndex; ///< kNoIndex means every material
+    std::uint8_t operation = 0;       ///< as stored: 0 multiply, 1 add
     Vec4 diffuse{};
     Vec3 specular{};
     float specularPower = 0.0f;
@@ -304,7 +304,7 @@ struct MaterialOffset {
 
 struct ImpulseOffset {
     std::int32_t rigidBody = kNoIndex;
-    std::uint8_t local = 0;  ///< as stored: 0 world, 1 local
+    std::uint8_t local = 0; ///< as stored: 0 world, 1 local
     Vec3 velocity{};
     Vec3 torque{};
 
@@ -316,7 +316,7 @@ struct ImpulseOffset {
 struct Morph {
     std::string name;
     std::string englishName;
-    std::uint8_t panel = 0;  ///< as stored: 0 hidden, 1 eyebrow, 2 eye, 3 mouth, 4 other
+    std::uint8_t panel = 0; ///< as stored: 0 hidden, 1 eyebrow, 2 eye, 3 mouth, 4 other
     MorphType type = MorphType::Group;
     std::vector<GroupOffset> groupOffsets;
     std::vector<VertexOffset> vertexOffsets;
@@ -340,7 +340,7 @@ enum class FrameElementKind : std::uint8_t {
 
 struct FrameElement {
     FrameElementKind kind = FrameElementKind::Bone;
-    std::int32_t index = kNoIndex;  ///< a bone or a morph, by `kind`
+    std::int32_t index = kNoIndex; ///< a bone or a morph, by `kind`
 
     bool operator==(const FrameElement&) const = default;
 };
@@ -348,7 +348,7 @@ struct FrameElement {
 struct DisplayFrame {
     std::string name;
     std::string englishName;
-    std::uint8_t special = 0;  ///< as stored: 1 marks the Root and expression frames
+    std::uint8_t special = 0; ///< as stored: 1 marks the Root and expression frames
     std::vector<FrameElement> elements;
 
     bool operator==(const DisplayFrame&) const = default;
@@ -364,7 +364,7 @@ struct RigidBody {
     std::int32_t bone = kNoIndex;
     std::uint8_t group = 0;
     std::uint16_t nonCollisionMask = 0;
-    std::uint8_t shape = 0;  ///< as stored: 0 sphere, 1 box, 2 capsule
+    std::uint8_t shape = 0; ///< as stored: 0 sphere, 1 box, 2 capsule
     Vec3 size{};
     Vec3 position{};
     Vec3 rotation{};
@@ -414,20 +414,20 @@ struct SoftBodyAnchor {
 struct SoftBody {
     std::string name;
     std::string englishName;
-    std::uint8_t shape = 0;  ///< as stored: 0 triangle mesh, 1 rope
+    std::uint8_t shape = 0; ///< as stored: 0 triangle mesh, 1 rope
     std::int32_t material = kNoIndex;
     std::uint8_t group = 0;
     std::uint16_t nonCollisionMask = 0;
-    std::uint8_t flags = 0;  ///< 0x01 B-link, 0x02 cluster creation, 0x04 link crossing
+    std::uint8_t flags = 0; ///< 0x01 B-link, 0x02 cluster creation, 0x04 link crossing
     std::int32_t bLinkDistance = 0;
     std::int32_t clusterCount = 0;
     float totalMass = 0.0f;
     float collisionMargin = 0.0f;
     std::int32_t aeroModel = 0;
-    std::array<float, 12> config{};  ///< VCF DP DG LF PR VC DF MT CHR KHR SHR AHR
-    std::array<float, 6> cluster{};  ///< SRHR_CL SKHR_CL SSHR_CL SR_SPLT_CL SK_SPLT_CL SS_SPLT_CL
-    std::array<std::int32_t, 4> iteration{};  ///< V_IT P_IT D_IT C_IT
-    std::array<float, 3> materialCoefficients{};  ///< LST AST VST
+    std::array<float, 12> config{}; ///< VCF DP DG LF PR VC DF MT CHR KHR SHR AHR
+    std::array<float, 6> cluster{}; ///< SRHR_CL SKHR_CL SSHR_CL SR_SPLT_CL SK_SPLT_CL SS_SPLT_CL
+    std::array<std::int32_t, 4> iteration{};     ///< V_IT P_IT D_IT C_IT
+    std::array<float, 3> materialCoefficients{}; ///< LST AST VST
     std::vector<SoftBodyAnchor> anchors;
     std::vector<std::int32_t> pinVertices;
 
@@ -450,9 +450,9 @@ struct Document {
     std::vector<DisplayFrame> displayFrames;
     std::vector<RigidBody> rigidBodies;
     std::vector<Joint> joints;
-    std::vector<SoftBody> softBodies;  ///< PMX 2.1 only; empty in a 2.0 file
+    std::vector<SoftBody> softBodies; ///< PMX 2.1 only; empty in a 2.0 file
 
     bool operator==(const Document&) const = default;
 };
 
-}  // namespace mmd::pmx
+} // namespace mmd::pmx

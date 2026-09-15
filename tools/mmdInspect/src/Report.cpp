@@ -22,7 +22,8 @@ constexpr std::array<std::string_view, 3> kPhysicsModes{
     "follows bone", "simulated", "simulated, bone aligned"};
 constexpr std::array<std::string_view, 6> kJointTypes{
     "spring 6-DOF", "6-DOF", "point-to-point", "cone-twist", "slider", "hinge"};
-constexpr std::array<std::string_view, 4> kSphereModes{"disabled", "multiply", "add", "sub-texture"};
+constexpr std::array<std::string_view, 4> kSphereModes{
+    "disabled", "multiply", "add", "sub-texture"};
 
 /// A table's name for a stored byte, or the number when PMX names none.
 template <std::size_t N>
@@ -119,7 +120,7 @@ Quoted(std::string_view text)
                 std::snprintf(buffer, sizeof buffer, "\\u%04X", u);
                 out += buffer;
             } else {
-                out += c;  // decoded text is valid UTF-8, and JSON is UTF-8
+                out += c; // decoded text is valid UTF-8, and JSON is UTF-8
             }
         }
     }
@@ -200,11 +201,11 @@ JsonDiagnostic(Json& json, const mmd::Diagnostic& d, std::string_view key = {})
     json.EndObject();
 }
 
-}  // namespace
+} // namespace
 
 std::string
 TextReport(const std::string& file, const mmd::Result<Document>& result,
-    const ReportOptions& options)
+           const ReportOptions& options)
 {
     std::string out = "file:        " + file + "\n";
     if (!result.ok()) {
@@ -212,17 +213,17 @@ TextReport(const std::string& file, const mmd::Result<Document>& result,
     } else {
         const Document& doc = result.value();
         const Globals& g = doc.header.globals;
-        out += "format:      PMX " + std::string(ToString(doc.header.version)) + ", "
-            + std::string(EncodingText(g.textEncoding)) + ", "
-            + std::to_string(g.additionalVec4Count) + " additional vec4\n";
-        out += "index bytes: vertex " + std::to_string(g.vertexIndexSize) + ", texture "
-            + std::to_string(g.textureIndexSize) + ", material "
-            + std::to_string(g.materialIndexSize) + ", bone " + std::to_string(g.boneIndexSize)
-            + ", morph " + std::to_string(g.morphIndexSize) + ", rigid body "
-            + std::to_string(g.rigidBodyIndexSize) + "\n";
+        out += "format:      PMX " + std::string(ToString(doc.header.version)) + ", " +
+               std::string(EncodingText(g.textEncoding)) + ", " +
+               std::to_string(g.additionalVec4Count) + " additional vec4\n";
+        out += "index bytes: vertex " + std::to_string(g.vertexIndexSize) + ", texture " +
+               std::to_string(g.textureIndexSize) + ", material " +
+               std::to_string(g.materialIndexSize) + ", bone " + std::to_string(g.boneIndexSize) +
+               ", morph " + std::to_string(g.morphIndexSize) + ", rigid body " +
+               std::to_string(g.rigidBodyIndexSize) + "\n";
         if (!g.unknown.empty()) {
-            out += "globals:     " + std::to_string(g.unknown.size())
-                + " beyond the 8 PMX defines\n";
+            out +=
+                "globals:     " + std::to_string(g.unknown.size()) + " beyond the 8 PMX defines\n";
         }
         out += "model:       " + Names(doc.model.name, doc.model.englishName) + "\n";
 
@@ -237,8 +238,7 @@ TextReport(const std::string& file, const mmd::Result<Document>& result,
         };
         out += "tables:\n";
         row("vertices", doc.vertices.size(), Histogram(DeformHistogram(doc)));
-        row("faces", doc.faces.size() / 3,
-            "  (" + std::to_string(doc.faces.size()) + " indices)");
+        row("faces", doc.faces.size() / 3, "  (" + std::to_string(doc.faces.size()) + " indices)");
         row("textures", doc.textures.size(), "");
         row("materials", doc.materials.size(), "");
         row("bones", doc.bones.size(), ik ? "  (IK " + std::to_string(ik) + ")" : "");
@@ -264,51 +264,50 @@ TextReport(const std::string& file, const mmd::Result<Document>& result,
             list("materials", doc.materials.size(), [&](std::size_t i) {
                 const Material& m = doc.materials[i];
                 std::string toon = m.toonReference == ToonReference::Shared
-                    ? "shared toon " + std::to_string(m.sharedToon)
-                    : "toon texture " + IndexText(m.toonTexture);
-                return Names(m.name, m.englishName) + "  faces "
-                    + std::to_string(m.faceCount / 3) + "  texture " + IndexText(m.texture)
-                    + "  sphere " + IndexText(m.sphereTexture) + " ("
-                    + Named(kSphereModes, m.sphereMode) + ")  " + toon + "  flags "
-                    + Hex(m.flags, 2);
+                                       ? "shared toon " + std::to_string(m.sharedToon)
+                                       : "toon texture " + IndexText(m.toonTexture);
+                return Names(m.name, m.englishName) + "  faces " + std::to_string(m.faceCount / 3) +
+                       "  texture " + IndexText(m.texture) + "  sphere " +
+                       IndexText(m.sphereTexture) + " (" + Named(kSphereModes, m.sphereMode) +
+                       ")  " + toon + "  flags " + Hex(m.flags, 2);
             });
             list("bones", doc.bones.size(), [&](std::size_t i) {
                 const Bone& b = doc.bones[i];
-                std::string line = Names(b.name, b.englishName) + "  parent "
-                    + IndexText(b.parent) + "  layer " + std::to_string(b.transformLayer)
-                    + "  flags " + Hex(b.flags, 4);
+                std::string line = Names(b.name, b.englishName) + "  parent " +
+                                   IndexText(b.parent) + "  layer " +
+                                   std::to_string(b.transformLayer) + "  flags " + Hex(b.flags, 4);
                 if (b.flags & BoneFlag::Ik) {
-                    line += "  IK target " + IndexText(b.ik.target) + ", "
-                        + std::to_string(b.ik.links.size()) + " links";
+                    line += "  IK target " + IndexText(b.ik.target) + ", " +
+                            std::to_string(b.ik.links.size()) + " links";
                 }
                 return line;
             });
             list("morphs", doc.morphs.size(), [&](std::size_t i) {
                 const Morph& m = doc.morphs[i];
-                return Names(m.name, m.englishName) + "  " + std::string(ToString(m.type)) + ", "
-                    + std::to_string(m.OffsetCount()) + " offsets  panel "
-                    + Named(kPanels, m.panel);
+                return Names(m.name, m.englishName) + "  " + std::string(ToString(m.type)) + ", " +
+                       std::to_string(m.OffsetCount()) + " offsets  panel " +
+                       Named(kPanels, m.panel);
             });
             list("display frames", doc.displayFrames.size(), [&](std::size_t i) {
                 const DisplayFrame& f = doc.displayFrames[i];
-                return Names(f.name, f.englishName) + "  " + std::to_string(f.elements.size())
-                    + " elements" + (f.special ? "  special" : "");
+                return Names(f.name, f.englishName) + "  " + std::to_string(f.elements.size()) +
+                       " elements" + (f.special ? "  special" : "");
             });
             list("rigid bodies", doc.rigidBodies.size(), [&](std::size_t i) {
                 const RigidBody& r = doc.rigidBodies[i];
-                return Names(r.name, r.englishName) + "  bone " + IndexText(r.bone) + "  "
-                    + Named(kShapes, r.shape) + "  " + Named(kPhysicsModes, r.physicsMode);
+                return Names(r.name, r.englishName) + "  bone " + IndexText(r.bone) + "  " +
+                       Named(kShapes, r.shape) + "  " + Named(kPhysicsModes, r.physicsMode);
             });
             list("joints", doc.joints.size(), [&](std::size_t i) {
                 const Joint& j = doc.joints[i];
-                return Names(j.name, j.englishName) + "  " + Named(kJointTypes, j.type)
-                    + "  bodies " + IndexText(j.rigidBodyA) + ", " + IndexText(j.rigidBodyB);
+                return Names(j.name, j.englishName) + "  " + Named(kJointTypes, j.type) +
+                       "  bodies " + IndexText(j.rigidBodyA) + ", " + IndexText(j.rigidBodyB);
             });
             list("soft bodies", doc.softBodies.size(), [&](std::size_t i) {
                 const SoftBody& s = doc.softBodies[i];
-                return Names(s.name, s.englishName) + "  material " + IndexText(s.material)
-                    + "  " + std::to_string(s.anchors.size()) + " anchors, "
-                    + std::to_string(s.pinVertices.size()) + " pins";
+                return Names(s.name, s.englishName) + "  material " + IndexText(s.material) + "  " +
+                       std::to_string(s.anchors.size()) + " anchors, " +
+                       std::to_string(s.pinVertices.size()) + " pins";
             });
         }
     }
@@ -319,8 +318,8 @@ TextReport(const std::string& file, const mmd::Result<Document>& result,
     } else {
         out += "diagnostics:\n";
         for (const mmd::Diagnostic& d : diagnostics) {
-            out += "  " + std::string(mmd::ToString(d.severity)) + "  "
-                + mmd::FormatDiagnostic(d) + "\n";
+            out += "  " + std::string(mmd::ToString(d.severity)) + "  " + mmd::FormatDiagnostic(d) +
+                   "\n";
         }
         if (!result.ok()) {
             out += "  fatal  " + mmd::FormatDiagnostic(*result.fatal()) + "\n";
@@ -524,4 +523,4 @@ ExitStatus(const mmd::Result<Document>& result)
     return 0;
 }
 
-}  // namespace mmdinspect
+} // namespace mmdinspect

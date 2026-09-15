@@ -25,12 +25,12 @@ inline constexpr Code SkelWeightsNormalized{"MMD_SKEL_WEIGHTS_NORMALIZED", Sever
 inline constexpr Code SkelZeroWeights{"MMD_SKEL_ZERO_WEIGHTS", Severity::Warning};
 
 // Materials -- docs/design/PMX_CONTRACT.md §8.
-inline constexpr Code MaterialUnsupportedSphereMode{
-	"MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE", Severity::Warning};
-inline constexpr Code MaterialUnsupportedToonSlot{
-    "MMD_MATERIAL_UNSUPPORTED_TOON_SLOT", Severity::Warning};
+inline constexpr Code MaterialUnsupportedSphereMode{"MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE",
+                                                    Severity::Warning};
+inline constexpr Code MaterialUnsupportedToonSlot{"MMD_MATERIAL_UNSUPPORTED_TOON_SLOT",
+                                                  Severity::Warning};
 
 // The source -> USD boundary -- docs/design/TEXT_ENCODING_POLICY.md §6.1.
 inline constexpr Code UsdIdentifierCollision{"MMD_USD_IDENTIFIER_COLLISION", Severity::Info};
 
-}  // namespace mmd::codes
+} // namespace mmd::codes

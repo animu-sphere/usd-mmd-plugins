@@ -47,8 +47,10 @@ ExpectFatal(const mmd::Result<Document>& result, const std::string& code)
     assert(!result.ok());
     assert(result.fatal() != nullptr);
     if (result.fatal()->code != code) {
-        std::fprintf(stderr, "expected %s, got %s\n", code.c_str(),
-            mmd::FormatDiagnostic(*result.fatal()).c_str());
+        std::fprintf(stderr,
+                     "expected %s, got %s\n",
+                     code.c_str(),
+                     mmd::FormatDiagnostic(*result.fatal()).c_str());
     }
     assert(result.fatal()->code == code);
     assert(!result.fatal()->recoverable);
@@ -61,8 +63,10 @@ ExpectFatalAt(const Bytes& bytes, const std::string& code, std::uint64_t offset)
     const auto result = ReadBytes(bytes);
     const mmd::Diagnostic& fatal = ExpectFatal(result, code);
     if (fatal.location.byteOffset != offset) {
-        std::fprintf(stderr, "%s: expected byte %llu\n", mmd::FormatDiagnostic(fatal).c_str(),
-            static_cast<unsigned long long>(offset));
+        std::fprintf(stderr,
+                     "%s: expected byte %llu\n",
+                     mmd::FormatDiagnostic(fatal).c_str(),
+                     static_cast<unsigned long long>(offset));
     }
     assert(fatal.location.byteOffset == offset);
 }
@@ -87,8 +91,16 @@ ExpectRead(const Bytes& bytes, const std::vector<std::string>& codes = {})
 }
 
 enum class Table {
-    Vertices, Faces, Textures, Materials, Bones, Morphs, DisplayFrames, RigidBodies,
-    Joints, SoftBodies,
+    Vertices,
+    Faces,
+    Textures,
+    Materials,
+    Bones,
+    Morphs,
+    DisplayFrames,
+    RigidBodies,
+    Joints,
+    SoftBodies,
 };
 
 /// The whole document, except that `replaced` is written by `write`.
@@ -203,8 +215,9 @@ TestValidHeaders()
 
     // A 2.1 file ends with the soft-body count; a 2.0 file with that many
     // bytes has four trailing ones.
-    ExpectFatalAt(Complete(Header(2.1f, {1, 0, 1, 1, 1, 1, 1, 1})), "MMD_PMX_TRUNCATED_BUFFER",
-        Complete(Header(2.1f, {1, 0, 1, 1, 1, 1, 1, 1})).size());
+    ExpectFatalAt(Complete(Header(2.1f, {1, 0, 1, 1, 1, 1, 1, 1})),
+                  "MMD_PMX_TRUNCATED_BUFFER",
+                  Complete(Header(2.1f, {1, 0, 1, 1, 1, 1, 1, 1})).size());
     ExpectRead(Complete(Header(2.0f, {1, 0, 1, 1, 1, 1, 1, 1}), true), {"MMD_PMX_TRAILING_BYTES"});
 }
 
@@ -253,8 +266,8 @@ TestGlobals()
     shortGlobals.resize(12);
     ExpectFatalAt(shortGlobals, "MMD_PMX_TRUNCATED_BUFFER", 9);
 
-    ExpectFatalAt(Complete(Header(2.0f, {2, 0, 1, 1, 1, 1, 1, 1})),
-        "MMD_TEXT_INVALID_ENCODING_FLAG", 9);
+    ExpectFatalAt(
+        Complete(Header(2.0f, {2, 0, 1, 1, 1, 1, 1, 1})), "MMD_TEXT_INVALID_ENCODING_FLAG", 9);
     ExpectFatalAt(Complete(Header(2.0f, {0, 5, 1, 1, 1, 1, 1, 1})), "MMD_PMX_INVALID_GLOBALS", 10);
 
     // Each index width, in its own byte.
@@ -314,7 +327,8 @@ TestRoundTrip()
     assert(ExpectRead(Encode(mixed)) == mixed);
 
     // The sample's source facts survive exactly, Japanese included.
-    const Document read = ExpectRead(Encode(SampleDocument(Version::V2_0, TextEncoding::Utf16Le, 1)));
+    const Document read =
+        ExpectRead(Encode(SampleDocument(Version::V2_0, TextEncoding::Utf16Le, 1)));
     assert(read.model.name == "サンプル");
     assert(read.model.comment == "テスト用のモデル\n二行目");
     assert(read.textures[0] == "tex\\髪.png");
@@ -446,7 +460,7 @@ TestMinimumRecords()
             };
             std::vector<Document> docs;
 
-            Document vertices = empty();  // BDEF1: one bone index
+            Document vertices = empty(); // BDEF1: one bone index
             vertices.bones.resize(1);
             vertices.bones[0].flags = BoneFlag::TailIsBone;
             vertices.vertices.resize(n);
@@ -455,35 +469,35 @@ TestMinimumRecords()
             }
             docs.push_back(vertices);
 
-            Document textures = empty();  // an empty path
+            Document textures = empty(); // an empty path
             textures.textures.resize(n);
             docs.push_back(textures);
 
-            Document materials = empty();  // a shared toon slot, no names
+            Document materials = empty(); // a shared toon slot, no names
             materials.materials.resize(n);
             for (Material& m : materials.materials) {
                 m.toonReference = ToonReference::Shared;
             }
             docs.push_back(materials);
 
-            Document bones = empty();  // the tail as a bone index
+            Document bones = empty(); // the tail as a bone index
             bones.bones.resize(n);
             for (Bone& b : bones.bones) {
                 b.flags = BoneFlag::TailIsBone;
             }
             docs.push_back(bones);
 
-            Document links = empty();  // IK links without limits
+            Document links = empty(); // IK links without limits
             links.bones.resize(1);
             links.bones[0].flags = BoneFlag::TailIsBone | BoneFlag::Ik;
             links.bones[0].ik.links.resize(n);
             docs.push_back(links);
 
-            Document morphs = empty();  // no offsets
+            Document morphs = empty(); // no offsets
             morphs.morphs.resize(n);
             docs.push_back(morphs);
 
-            Document frames = empty();  // no elements, then elements
+            Document frames = empty(); // no elements, then elements
             frames.displayFrames.resize(n);
             frames.displayFrames[0].elements.resize(n);
             frames.bones.resize(1);
@@ -499,14 +513,18 @@ TestMinimumRecords()
             docs.push_back(physics);
 
             if (version == Version::V2_1) {
-                Document soft = empty();  // no anchors, no pins
+                Document soft = empty(); // no anchors, no pins
                 soft.softBodies.resize(n);
                 docs.push_back(soft);
             }
 
             // Each kind of morph offset, at its smallest.
-            for (MorphType type : {MorphType::Group, MorphType::Vertex, MorphType::Bone,
-                     MorphType::Uv, MorphType::Material, MorphType::Impulse}) {
+            for (MorphType type : {MorphType::Group,
+                                   MorphType::Vertex,
+                                   MorphType::Bone,
+                                   MorphType::Uv,
+                                   MorphType::Material,
+                                   MorphType::Impulse}) {
                 if (type == MorphType::Impulse && version != Version::V2_1) {
                     continue;
                 }
@@ -548,8 +566,8 @@ TestTruncationEverywhere()
             const auto result = ReadBytes(prefix);
             assert(!result.ok());
             const std::string& code = result.fatal()->code;
-            assert(code == "MMD_PMX_TRUNCATED_BUFFER" || code == "MMD_PMX_COUNT_EXCEEDS_BUFFER"
-                || (n == 0 && code == "MMD_PMX_BAD_SIGNATURE"));
+            assert(code == "MMD_PMX_TRUNCATED_BUFFER" || code == "MMD_PMX_COUNT_EXCEEDS_BUFFER" ||
+                   (n == 0 && code == "MMD_PMX_BAD_SIGNATURE"));
             assert(result.fatal()->location.byteOffset <= n);
         }
     }
@@ -596,9 +614,9 @@ TestDeformBones()
 
     auto result = ReadBytes(Encode(doc));
     assert(result.ok());
-    assert(Codes(result)
-        == (std::vector<std::string>{
-            "MMD_PMX_INDEX_OUT_OF_RANGE", "MMD_PMX_INDEX_OUT_OF_RANGE", "MMD_PMX_INDEX_OUT_OF_RANGE"}));
+    assert(Codes(result) == (std::vector<std::string>{"MMD_PMX_INDEX_OUT_OF_RANGE",
+                                                      "MMD_PMX_INDEX_OUT_OF_RANGE",
+                                                      "MMD_PMX_INDEX_OUT_OF_RANGE"}));
     const auto& d = result.diagnostics();
     assert(d[0].location.table == "vertices" && d[0].location.index == 0u);
     assert(d[0].location.field == "deform.bones[0]");
@@ -607,8 +625,8 @@ TestDeformBones()
     assert(d[0].severity == mmd::Severity::Error && d[0].recoverable);
     assert(!d[0].location.byteOffset.has_value());
     assert(d[1].message == "the influence names no bone, but its weight is 0.5");
-    assert(mmd::FormatDiagnostic(d[2])
-        == "MMD_PMX_INDEX_OUT_OF_RANGE: the index is 5, but the bones table holds 1; it is "
+    assert(mmd::FormatDiagnostic(d[2]) ==
+           "MMD_PMX_INDEX_OUT_OF_RANGE: the index is 5, but the bones table holds 1; it is "
            "read as none (vertices[3].deform.bones[1])");
     // The reference is "none" now; the document stays well-formed.
     assert(result.value().vertices[3].deform.bones[1] == kNoIndex);
@@ -702,8 +720,8 @@ TestMaterialFields()
     doc.materials = {m};
     const auto result = ReadBytes(Encode(doc));
     assert(result.ok());
-    assert(Codes(result)
-        == (std::vector<std::string>{"MMD_PMX_INDEX_OUT_OF_RANGE", "MMD_PMX_INDEX_OUT_OF_RANGE"}));
+    assert(Codes(result) ==
+           (std::vector<std::string>{"MMD_PMX_INDEX_OUT_OF_RANGE", "MMD_PMX_INDEX_OUT_OF_RANGE"}));
     assert(result.diagnostics()[0].location.field == "texture");
     assert(result.diagnostics()[1].location.field == "sphereTexture");
     const Material& read = result.value().materials[0];
@@ -925,7 +943,7 @@ TestReadFile()
     {
         std::ofstream out(path, std::ios::binary);
         out.write(reinterpret_cast<const char*>(bytes.data()),
-            static_cast<std::streamsize>(bytes.size()));
+                  static_cast<std::streamsize>(bytes.size()));
     }
     const auto read = ReadFile(path);
     assert(read.ok());
@@ -937,7 +955,7 @@ TestReadFile()
     fs::remove(path);
 }
 
-}  // namespace
+} // namespace
 
 void
 TestReader()

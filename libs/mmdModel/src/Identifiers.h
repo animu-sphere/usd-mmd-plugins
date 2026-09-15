@@ -30,7 +30,7 @@ std::string FallbackIdentifier(std::string_view kind, std::size_t sourceIndex);
 /// that had to be renamed raises MMD_USD_IDENTIFIER_COLLISION at
 /// `<table>[i].englishName` (§6.1 step 3).
 std::vector<std::string> AssignIdentifiers(std::string_view kind,
-    const std::vector<std::string>& englishNames, const std::string& table,
-    DiagnosticList& diagnostics);
+                                           const std::vector<std::string>& englishNames,
+                                           const std::string& table, DiagnosticList& diagnostics);
 
-}  // namespace mmd::detail
+} // namespace mmd::detail

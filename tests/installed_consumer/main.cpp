@@ -43,10 +43,11 @@ main(int argc, char** argv)
         return 1;
     }
     std::printf("version=%s\n",
-        std::string(mmd::pmx::ToString(result.value().header.version)).c_str());
+                std::string(mmd::pmx::ToString(result.value().header.version)).c_str());
 
     const auto canonical = mmd::Canonicalize(result.value());
-    std::printf("joints=%zu faces=%zu\n", canonical.value().skeleton.bones.size(),
-        canonical.value().mesh.FaceCount());
+    std::printf("joints=%zu faces=%zu\n",
+                canonical.value().skeleton.bones.size(),
+                canonical.value().mesh.FaceCount());
     return 0;
 }

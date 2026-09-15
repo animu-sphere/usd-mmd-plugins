@@ -14,12 +14,12 @@
 namespace mmdinspect {
 
 struct ReportOptions {
-    bool elements = false;  ///< text only: list every element of every table
+    bool elements = false; ///< text only: list every element of every table
 };
 
 /// The human-readable report. `file` is printed as given.
 std::string TextReport(const std::string& file, const mmd::Result<mmd::pmx::Document>& result,
-    const ReportOptions& options);
+                       const ReportOptions& options);
 
 /// The JSON report: one object, always with every element. Keys are stable;
 /// strings are UTF-8.
@@ -30,4 +30,4 @@ std::string JsonReport(const mmd::Result<mmd::pmx::Document>& result);
 /// status by the most severe diagnostic).
 int ExitStatus(const mmd::Result<mmd::pmx::Document>& result);
 
-}  // namespace mmdinspect
+} // namespace mmdinspect

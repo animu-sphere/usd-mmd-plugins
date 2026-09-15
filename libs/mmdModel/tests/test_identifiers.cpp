@@ -33,7 +33,7 @@ TestCandidate()
     assert(IdentifierCandidate("Left腕Arm") == "Left_Arm");
     assert(IdentifierCandidate("  a -- b  ") == "a_b");
     assert(IdentifierCandidate("__x__") == "x");
-    assert(IdentifierCandidate("a__b") == "a__b");  // `_` is in the set
+    assert(IdentifierCandidate("a__b") == "a__b"); // `_` is in the set
     assert(IdentifierCandidate("2nd bone") == "_2nd_bone");
     assert(IdentifierCandidate(std::string("tail\0\0", 6)) == "tail");
 
@@ -88,7 +88,7 @@ TestAssignment()
     assert(Codes(list) == std::vector<std::string>{"MMD_USD_IDENTIFIER_COLLISION"});
 }
 
-}  // namespace
+} // namespace
 
 void
 TestIdentifiers()

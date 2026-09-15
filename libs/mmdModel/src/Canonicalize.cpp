@@ -51,10 +51,10 @@ DisplayName(const std::string& text, Location where, DiagnosticList& diagnostics
     if (end != text.size()) {
         const std::size_t dropped = text.size() - end;
         diagnostics.Add(codes::TextTrailingNul,
-            std::to_string(dropped) + " trailing U+0000 "
-                + (dropped == 1 ? "character is" : "characters are")
-                + " dropped from a display name",
-            std::move(where));
+                        std::to_string(dropped) + " trailing U+0000 " +
+                            (dropped == 1 ? "character is" : "characters are") +
+                            " dropped from a display name",
+                        std::move(where));
     }
     return text.substr(0, end);
 }
@@ -88,10 +88,10 @@ public:
     Result<CanonicalDocument> Run()
     {
         _Metadata();
-        _Identity();          // PMX_CONTRACT.md §14 step 1
-        _Skeleton();          // steps 2 and 3, for bones
-        _MeshAndSkinning();   // steps 2, 4 and 5
-        _Materials();         // step 6
+        _Identity();        // PMX_CONTRACT.md §14 step 1
+        _Skeleton();        // steps 2 and 3, for bones
+        _MeshAndSkinning(); // steps 2, 4 and 5
+        _Materials();       // step 6
         return Result<CanonicalDocument>::Success(std::move(_out), _diagnostics.Take());
     }
 
@@ -118,7 +118,7 @@ private:
 
     template <class Element>
     std::vector<Name> _Names(const std::vector<Element>& table, const char* tableName,
-        const char* kind)
+                             const char* kind)
     {
         std::vector<Name> names(table.size());
         std::vector<std::string> english(table.size());
@@ -159,12 +159,12 @@ private:
             bone.name = _boneNames[source];
             bone.sourceIndex = source;
             const std::int32_t parent = order.parents[source];
-            bone.parent = parent == -1 ? kNone
-                                       : skeleton.jointOfSourceBone[static_cast<std::size_t>(parent)];
+            bone.parent =
+                parent == -1 ? kNone : skeleton.jointOfSourceBone[static_cast<std::size_t>(parent)];
             bone.jointPath = bone.parent == kNone
-                ? bone.name.stableId
-                : skeleton.bones[static_cast<std::size_t>(bone.parent)].jointPath + "/"
-                    + bone.name.stableId;
+                                 ? bone.name.stableId
+                                 : skeleton.bones[static_cast<std::size_t>(bone.parent)].jointPath +
+                                       "/" + bone.name.stableId;
             // The rest translation is the source offset, taken in double from
             // the floats as stored (exactly, for any two positions within a
             // model's scale), and converted once.
@@ -175,7 +175,8 @@ private:
             } else {
                 const pmx::Vec3& q = _doc.bones[static_cast<std::size_t>(parent)].position;
                 bone.localTranslation = basis::PointD({static_cast<double>(p[0]) - q[0],
-                    static_cast<double>(p[1]) - q[1], static_cast<double>(p[2]) - q[2]});
+                                                       static_cast<double>(p[1]) - q[1],
+                                                       static_cast<double>(p[2]) - q[2]});
             }
         }
     }
@@ -210,8 +211,8 @@ private:
         mesh.faceVertexIndices.reserve(triangles * 3);
         for (std::size_t t = 0; t < triangles; ++t) {
             const auto tri = basis::Triangle(static_cast<std::int32_t>(_doc.faces[3 * t]),
-                static_cast<std::int32_t>(_doc.faces[3 * t + 1]),
-                static_cast<std::int32_t>(_doc.faces[3 * t + 2]));
+                                             static_cast<std::int32_t>(_doc.faces[3 * t + 1]),
+                                             static_cast<std::int32_t>(_doc.faces[3 * t + 2]));
             mesh.faceVertexIndices.insert(mesh.faceVertexIndices.end(), tri.begin(), tri.end());
         }
 
@@ -338,16 +339,17 @@ private:
         // Once per import, with the count (DIAGNOSTICS.md §4).
         if (normalized > 0) {
             _diagnostics.Add(codes::SkelWeightsNormalized,
-                std::to_string(normalized) + (normalized == 1 ? " vertex's" : " vertices'")
-                    + " weights are rescaled to sum to 1",
-                At("vertices", firstNormalized));
+                             std::to_string(normalized) +
+                                 (normalized == 1 ? " vertex's" : " vertices'") +
+                                 " weights are rescaled to sum to 1",
+                             At("vertices", firstNormalized));
         }
         if (zero > 0) {
             _diagnostics.Add(codes::SkelZeroWeights,
-                std::to_string(zero) + (zero == 1 ? " vertex has" : " vertices have")
-                    + " no positive weight on any bone and "
-                    + (zero == 1 ? "is" : "are") + " bound fully to its first bone",
-                At("vertices", firstZero));
+                             std::to_string(zero) + (zero == 1 ? " vertex has" : " vertices have") +
+                                 " no positive weight on any bone and " +
+                                 (zero == 1 ? "is" : "are") + " bound fully to its first bone",
+                             At("vertices", firstZero));
         }
     }
 
@@ -359,7 +361,8 @@ private:
         for (std::size_t i = 0; i < _doc.textures.size(); ++i) {
             const detail::TexturePath path = detail::NormalizeTexturePath(_doc.textures[i]);
             if (path.unsafe) {
-                _diagnostics.Add(codes::PathUnsafeTexturePath,
+                _diagnostics.Add(
+                    codes::PathUnsafeTexturePath,
                     "the texture path is absolute, names a drive, a server or a URI scheme, or "
                     "leaves the model's directory; it is kept as provenance and not followed",
                     At("textures", i));
@@ -368,7 +371,7 @@ private:
         }
         const auto texture = [this](std::int32_t index) {
             return index >= 0 && static_cast<std::size_t>(index) < _out.textures.size() ? index
-                                                                                      : kNone;
+                                                                                        : kNone;
         };
 
         const std::size_t faceIndices = _out.mesh.faceVertexIndices.size();
@@ -388,8 +391,8 @@ private:
             m.firstFace = consumed / 3;
             m.faceCount = taken / 3;
             consumed += taken;
-            m.diffuseColor = {source.diffuse[0], source.diffuse[1], source.diffuse[2],
-                source.diffuse[3]};
+            m.diffuseColor = {
+                source.diffuse[0], source.diffuse[1], source.diffuse[2], source.diffuse[3]};
             m.specularColor = ToFloat3(source.specular);
             m.specularPower = source.specularPower;
             m.ambientColor = ToFloat3(source.ambient);
@@ -401,8 +404,8 @@ private:
             m.vertexColor = (source.flags & pmx::MaterialFlag::VertexColor) != 0;
             m.drawPoints = (source.flags & pmx::MaterialFlag::PointDrawing) != 0;
             m.drawLines = (source.flags & pmx::MaterialFlag::LineDrawing) != 0;
-            m.edgeColor = {source.edgeColor[0], source.edgeColor[1], source.edgeColor[2],
-                source.edgeColor[3]};
+            m.edgeColor = {
+                source.edgeColor[0], source.edgeColor[1], source.edgeColor[2], source.edgeColor[3]};
             m.edgeSize = source.edgeSize;
             m.texture = texture(source.texture);
             m.sphereTexture = texture(source.sphereTexture);
@@ -421,9 +424,9 @@ private:
                 break;
             default:
                 _diagnostics.Add(codes::MaterialUnsupportedSphereMode,
-                    "sphere mode " + std::to_string(source.sphereMode)
-                        + " is unsupported and is treated as disabled",
-                    At("materials", i, "sphereMode"));
+                                 "sphere mode " + std::to_string(source.sphereMode) +
+                                     " is unsupported and is treated as disabled",
+                                 At("materials", i, "sphereMode"));
                 break;
             }
             if (source.toonReference == pmx::ToonReference::Texture) {
@@ -435,9 +438,9 @@ private:
                     m.sharedToonIndex = static_cast<std::int32_t>(source.sharedToon);
                 } else {
                     _diagnostics.Add(codes::MaterialUnsupportedToonSlot,
-                        "shared toon slot " + std::to_string(source.sharedToon)
-                            + " is outside 0-9 and is treated as absent",
-                        At("materials", i, "sharedToon"));
+                                     "shared toon slot " + std::to_string(source.sharedToon) +
+                                         " is outside 0-9 and is treated as absent",
+                                     At("materials", i, "sharedToon"));
                 }
             }
             m.memo = source.memo;
@@ -457,7 +460,7 @@ private:
     std::vector<Name> _boneNames;
 };
 
-}  // namespace
+} // namespace
 
 Result<CanonicalDocument>
 Canonicalize(const pmx::Document& document)
@@ -465,4 +468,4 @@ Canonicalize(const pmx::Document& document)
     return Canonicalizer(document).Run();
 }
 
-}  // namespace mmd
+} // namespace mmd

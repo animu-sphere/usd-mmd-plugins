@@ -68,4 +68,4 @@ FormatDiagnostic(const Diagnostic& diagnostic)
     return out;
 }
 
-}  // namespace mmd
+} // namespace mmd

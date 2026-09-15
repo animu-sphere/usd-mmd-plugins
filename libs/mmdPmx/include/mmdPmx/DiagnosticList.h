@@ -41,9 +41,9 @@ public:
                 Location where;
                 where.table = tally.table;
                 _list.push_back(MakeDiagnostic(*tally.code,
-                    std::to_string(tally.seen - kLimit) + " more in " + tally.table
-                        + " are not listed",
-                    std::move(where)));
+                                               std::to_string(tally.seen - kLimit) + " more in " +
+                                                   tally.table + " are not listed",
+                                               std::move(where)));
             }
         }
         _tallies.clear();
@@ -71,4 +71,4 @@ private:
     std::vector<Diagnostic> _list;
 };
 
-}  // namespace mmd
+} // namespace mmd

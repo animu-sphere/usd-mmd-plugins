@@ -44,4 +44,4 @@ Float2 St(const Float2& source);
 /// away otherwise.
 std::array<std::int32_t, 3> Triangle(std::int32_t i0, std::int32_t i1, std::int32_t i2);
 
-}  // namespace mmd::basis
+} // namespace mmd::basis

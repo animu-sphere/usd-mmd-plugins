@@ -1,5 +1,9 @@
 # OpenUSD MMD Plugins
 
+[![License: Apache-2.0](https://img.shields.io/github/license/animu-sphere/usd-mmd-plugins?label=license)](LICENSE)
+[![CI](https://github.com/animu-sphere/usd-mmd-plugins/actions/workflows/ost-source-ci.yml/badge.svg)](https://github.com/animu-sphere/usd-mmd-plugins/actions/workflows/ost-source-ci.yml)
+[![OpenUSD 26.08](https://img.shields.io/badge/OpenUSD-26.08-1f6feb)](docs/architecture/DEPENDENCIES.md#1-openusd)
+
 OpenUSD plugins for [MikuMikuDance](https://sites.google.com/view/vpvp/) (MMD)
 assets: PMX models first, VMD motion later.
 
@@ -96,6 +100,13 @@ installed-consumer lane — every command in it run.
 | [docs/contributing/](docs/contributing/) | How the documentation is maintained |
 
 Changes are recorded in the [changelog](CHANGELOG.md).
+
+## Contributing
+
+Small fixes, documentation, tests and design discussion are welcome. Start
+with [CONTRIBUTING.md](CONTRIBUTING.md), and see the [Code of Conduct](CODE_OF_CONDUCT.md)
+for the community expectations. Please report security issues privately using
+the [Security Policy](SECURITY.md).
 
 ## License
 

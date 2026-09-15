@@ -21,4 +21,4 @@ namespace mmd {
 /// (docs/reference/DIAGNOSTICS.md §4).
 Result<CanonicalDocument> Canonicalize(const pmx::Document& document);
 
-}  // namespace mmd
+} // namespace mmd

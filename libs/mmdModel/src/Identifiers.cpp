@@ -12,8 +12,7 @@ namespace {
 bool
 IsIdentifierChar(char c)
 {
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')
-        || c == '_';
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
 }
 
 /// The key two identifiers collide on: equal ignoring ASCII case, so the stage
@@ -30,7 +29,7 @@ CollisionKey(std::string_view identifier)
     return key;
 }
 
-}  // namespace
+} // namespace
 
 std::string
 IdentifierCandidate(std::string_view english)
@@ -75,7 +74,7 @@ FallbackIdentifier(std::string_view kind, std::size_t sourceIndex)
 
 std::vector<std::string>
 AssignIdentifiers(std::string_view kind, const std::vector<std::string>& englishNames,
-    const std::string& table, DiagnosticList& diagnostics)
+                  const std::string& table, DiagnosticList& diagnostics)
 {
     std::vector<std::string> identifiers;
     identifiers.reserve(englishNames.size());
@@ -103,9 +102,9 @@ AssignIdentifiers(std::string_view kind, const std::vector<std::string>& english
             where.index = i;
             where.field = "englishName";
             diagnostics.Add(codes::UsdIdentifierCollision,
-                "'" + candidate + "' is taken by an earlier " + std::string(kind)
-                    + "; this one is '" + identifier + "'",
-                std::move(where));
+                            "'" + candidate + "' is taken by an earlier " + std::string(kind) +
+                                "; this one is '" + identifier + "'",
+                            std::move(where));
         }
         taken.insert(CollisionKey(identifier));
         identifiers.push_back(std::move(identifier));
@@ -113,4 +112,4 @@ AssignIdentifiers(std::string_view kind, const std::vector<std::string>& english
     return identifiers;
 }
 
-}  // namespace mmd::detail
+} // namespace mmd::detail

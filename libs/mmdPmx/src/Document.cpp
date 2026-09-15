@@ -82,4 +82,4 @@ Morph::OffsetCount() const
     return 0;
 }
 
-}  // namespace mmd::pmx
+} // namespace mmd::pmx

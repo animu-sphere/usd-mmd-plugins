@@ -25,10 +25,8 @@ public:
     /// raised so far, the authorer appends its own, and the whole list is
     /// recorded on `/Asset` (DIAGNOSTICS.md §4). Returns false only on an
     /// internal failure to author, never for anything in the source.
-    bool WriteToString(
-        const mmd::CanonicalDocument& document,
-        std::vector<mmd::Diagnostic>* diagnostics,
-        std::string* outUsda) const;
+    bool WriteToString(const mmd::CanonicalDocument& document,
+                       std::vector<mmd::Diagnostic>* diagnostics, std::string* outUsda) const;
 };
 
-}  // namespace usdmmd
+} // namespace usdmmd
