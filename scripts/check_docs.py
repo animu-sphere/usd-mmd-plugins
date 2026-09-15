@@ -20,6 +20,11 @@ the single product version, and openstrata.toml, every component manifest and
 every CMake fallback mirror it; cmake/UsdMmdOpenUsd.cmake's pin and every
 bundle manifest's `runtime.openusd` name the same OpenUSD release.
 
+Diagnostics -- docs/reference/DIAGNOSTICS.md §5 is the catalog, and each
+component's *Codes.h declares the codes it raises: every declared code must be
+catalogued as *emitted* with its declared severity, and every *emitted* code
+must be declared.
+
   check_docs.py             check the repository
   check_docs.py --selftest  check the slug and link rules against known cases
 """
@@ -173,6 +178,57 @@ def check_mirrors(root: pathlib.Path) -> list[str]:
     return errors
 
 
+# `inline constexpr Code PmxBadSignature{"MMD_PMX_BAD_SIGNATURE", Severity::Fatal};`
+CODE_DECLARATION = re.compile(
+    r'inline\s+constexpr\s+(?:mmd::)?Code\s+\w+\s*\{\s*"(MMD_[A-Z0-9_]+)"\s*,'
+    r'\s*(?:mmd::)?Severity::(\w+)\s*\}')
+# `| `MMD_PMX_BAD_SIGNATURE` *emitted* | fatal | ...`
+CATALOG_ROW = re.compile(
+    r"^\|\s*`(MMD_[A-Z0-9_]+)`(\s*\*emitted\*)?[^|]*\|\s*(\w+)", re.MULTILINE)
+
+
+def declared_codes(root: pathlib.Path) -> dict[str, tuple[str, str]]:
+    """Every code a component declares: id -> (severity, declaring file)."""
+    found: dict[str, tuple[str, str]] = {}
+    for pattern in ("libs/*/include/**/*Codes.h", "plugins/*/src/**/*Codes.h",
+                    "tools/*/src/**/*Codes.h"):
+        for header in sorted(root.glob(pattern)):
+            where = header.relative_to(root).as_posix()
+            for code, severity in CODE_DECLARATION.findall(
+                    header.read_text(encoding="utf-8")):
+                found[code] = (severity.lower(), where)
+    return found
+
+
+def check_diagnostics(root: pathlib.Path) -> list[str]:
+    """DIAGNOSTICS.md §5 against the code: every declared code is catalogued
+    as *emitted* with the severity it is declared with, and every code the
+    catalog calls *emitted* is declared (DIAGNOSTICS.md, status)."""
+    catalog_path = root / "docs" / "reference" / "DIAGNOSTICS.md"
+    text = catalog_path.read_text(encoding="utf-8")
+    section = text.split("## 5. ", 1)[-1]
+    catalog = {code: (bool(emitted), severity.lower())
+               for code, emitted, severity in CATALOG_ROW.findall(section)}
+    declared = declared_codes(root)
+    errors: list[str] = []
+    for code, (severity, where) in sorted(declared.items()):
+        if code not in catalog:
+            errors.append(f"{where}: {code} is not in DIAGNOSTICS.md §5")
+            continue
+        emitted, listed = catalog[code]
+        if not emitted:
+            errors.append(f"DIAGNOSTICS.md §5: {code} is declared in {where} "
+                          f"but not marked *emitted*")
+        if listed != severity:
+            errors.append(f"DIAGNOSTICS.md §5: {code} is listed as {listed}, "
+                          f"declared {severity} in {where}")
+    for code, (emitted, _) in sorted(catalog.items()):
+        if emitted and code not in declared:
+            errors.append(f"DIAGNOSTICS.md §5: {code} is marked *emitted* but "
+                          f"no component declares it")
+    return errors
+
+
 def selftest() -> int:
     cases = {
         "14.1 First substantial release — definition of done":
@@ -195,6 +251,19 @@ def selftest() -> int:
         failures.append("a link inside a code span is checked")
     if not MACHINE_LOCAL.match("C:\\dev\\x.md") or not MACHINE_LOCAL.match("/home/u/x"):
         failures.append("machine-local paths are not recognized")
+
+    declarations = CODE_DECLARATION.findall(
+        'inline constexpr Code PmxX{"MMD_PMX_X", Severity::Fatal};\n'
+        'inline constexpr mmd::Code Y{\n    "MMD_Y_Z", mmd::Severity::Warning};\n')
+    if declarations != [("MMD_PMX_X", "Fatal"), ("MMD_Y_Z", "Warning")]:
+        failures.append(f"CODE_DECLARATION found {declarations}")
+    rows = CATALOG_ROW.findall(
+        "| `MMD_A` *emitted* | fatal | x |\n| `MMD_B` | error | y |\n"
+        "| `MMD_C` *emitted* (header) | warning | z |\n")
+    if [(c, bool(e), s) for c, e, s in rows] != [
+            ("MMD_A", True, "fatal"), ("MMD_B", False, "error"),
+            ("MMD_C", True, "warning")]:
+        failures.append(f"CATALOG_ROW found {rows}")
 
     # The whole rule, on files: one good link, and one of each kind of bad.
     import tempfile
@@ -231,12 +300,14 @@ def main() -> int:
     files = markdown_files(REPO)
     errors = [e for path in files for e in check_file(path, cache)]
     errors += check_mirrors(REPO)
+    errors += check_diagnostics(REPO)
     if errors:
         print("\n".join(errors), file=sys.stderr)
         print(f"{len(errors)} problem(s)", file=sys.stderr)
         return 1
     print(f"{len(files)} Markdown file(s): every relative link and anchor "
-          f"resolves; every version and pin mirror agrees")
+          f"resolves; every version and pin mirror agrees; the diagnostic "
+          f"catalog matches the {len(declared_codes(REPO))} declared codes")
     return 0
 
 

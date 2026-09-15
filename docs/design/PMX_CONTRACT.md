@@ -1,10 +1,15 @@
 # PMX contract
 
-> Status: **proposed**. No parser exists yet. This document fixes how PMX 2.0
-> and 2.1 bytes are read (`mmdPmx`) and what each source concept becomes in
-> the canonical model (`mmdModel`). It records *decisions*; the byte layout
-> below is a summary for orientation, and once Phase 1 lands the parser's
-> fixtures are the authority on layout.
+> Status: §1–§13 and §15 are **binding** for the syntax layer: the Phase 1
+> parser (`mmdPmx`) implements them, with fixtures. §14 and every "Canonical"
+> column are **proposed** until `mmdModel` exists (Phase 2). This document
+> fixes how PMX 2.0 and 2.1 bytes are read and what each source concept
+> becomes in the canonical model. It records *decisions*; the byte layout
+> below is a summary for orientation, and the parser's fixtures —
+> [tests/fixtures/generate_fixtures.py](../../tests/fixtures/generate_fixtures.py)
+> and the unit tests' encoder in
+> [libs/mmdPmx/tests/](../../libs/mmdPmx/tests/) — are the authority on
+> layout.
 >
 > What the canonical values become in USD is
 > [STAGE_CONTRACT.md](STAGE_CONTRACT.md)'s; how text is decoded and names are
@@ -48,6 +53,14 @@ These apply to every read in `mmdPmx`:
 - **Text** is an `int32` byte length followed by that many bytes, decoded per
   the header's encoding
   ([TEXT_ENCODING_POLICY.md §3](TEXT_ENCODING_POLICY.md#3-decoding-pmx-text)).
+  The length is a count like any other: negative, or more than the bytes
+  left, is `MMD_PMX_COUNT_EXCEEDS_BUFFER`.
+- **A byte that selects the layout of what follows** — a material's toon
+  reference (§8), an IK link's limit flag (§9), a display-frame element's kind
+  (§11) — must hold a value PMX defines. Any other value is
+  `MMD_PMX_INVALID_LAYOUT_FLAG` (fatal): the record's length is unknown. The
+  deform type and the morph type select layouts too, and have codes of their
+  own (§5, §10).
 - **Trailing bytes** after the last table are `MMD_PMX_TRAILING_BYTES`
   (warning, recoverable) and are ignored.
 - **No pointer walking.** The reader is a cursor over a `std::span<const
@@ -80,8 +93,16 @@ Forward references (a bone whose parent is a later bone, a morph naming a later
 morph) are legal and are validated after the table is complete. A negative
 index other than `−1`, or an index ≥ the table size, is out of range. In a face
 that is `MMD_PMX_FACE_INDEX_OUT_OF_RANGE` (fatal, §6); everywhere else it is
-`MMD_PMX_INDEX_OUT_OF_RANGE` (recoverable), and each table below says what is
-dropped. A vertex index read at width 4 that is negative is out of range.
+`MMD_PMX_INDEX_OUT_OF_RANGE` (recoverable). A vertex index read at width 4
+that is negative is out of range.
+
+**The syntax layer repairs, the canonical layer drops.** An out-of-range index
+becomes `−1` in the `pmx::Document`, so the document holds one record per
+record in the file and every index in it names an element or is `−1`. What a
+`−1` then means for each relation — an influence dropped, a bone made a root, a
+joint dropped — is canonicalization's to apply, as each table below says. `−1`
+itself is a legal "none" for every non-vertex index kind; the syntax layer
+reports it only where §5 says a none is an error.
 
 ## 5. Vertices and deform
 
@@ -100,9 +121,10 @@ Per vertex: position (vec3), normal (vec3), UV (vec2), additional vec4 × *n*
   `MMD_PMX_INVALID_DEFORM_TYPE` (fatal: the record length is unknown, so the
   rest of the file cannot be located).
 - A bone index of `−1` inside a deform with weight 0 is accepted and dropped. A
-  `−1` or out-of-range bone with a non-zero weight is
+  `−1` with a non-zero weight — BDEF1's implicit weight is 1, BDEF2's and
+  SDEF's second is 1 − weight₁ — and an out-of-range bone with any weight are
   `MMD_PMX_INDEX_OUT_OF_RANGE` (recoverable): the influence is dropped and the
-  vertex's remaining weights are renormalized.
+  vertex's remaining weights are renormalized in canonicalization.
 - SDEF is **approximated** as linear blend skinning in generic `UsdSkel`; its
   parameters are preserved for an SDEF-aware consumer
   ([DESIGN_POLICY.md §7.1](DESIGN_POLICY.md#71-conventional-usd-first-source-semantics-preserved-beside-it)).
@@ -139,7 +161,7 @@ formation happen in canonicalization
 | texture | texture index | base texture, or none |
 | sphere texture | texture index | sphere (environment) texture, or none |
 | sphere mode | `uint8` | `0` disabled, `1` multiply, `2` add, `3` sub-texture |
-| toon reference | `uint8` | `0` texture index follows, `1` shared toon slot (`uint8`, `0`–`9`) follows |
+| toon reference | `uint8` | `0` texture index follows, `1` shared toon slot (`uint8`, `0`–`9`) follows; anything else is `MMD_PMX_INVALID_LAYOUT_FLAG` (§2) |
 | toon value | texture index or `uint8` | one canonical toon ramp (below) |
 | memo | text | preserved as provenance |
 | face count | `int32` | number of vertex indices this material draws |
@@ -191,7 +213,7 @@ Decisions:
 | fixed axis | `0x0400` | control semantics |
 | local X and Z axes | `0x0800` | control semantics |
 | external parent key | `0x2000` | control semantics |
-| IK target, loop count, limit angle, links (bone, has-limit, min, max) | `0x0020` | declarative IK chain |
+| IK target, loop count, limit angle, links (bone, has-limit, min, max) | `0x0020` | declarative IK chain; a has-limit byte other than `0`/`1` is `MMD_PMX_INVALID_LAYOUT_FLAG` (§2) |
 
 | Flag bit | Meaning |
 | --- | --- |
@@ -201,6 +223,7 @@ Decisions:
 | `0x0008` | visible |
 | `0x0010` | operable |
 | `0x0020` | IK |
+| `0x0080` | local append: append the parent's local transform |
 | `0x0100` | append (inherit) rotation |
 | `0x0200` | append (inherit) translation |
 | `0x0400` | fixed axis |
@@ -267,7 +290,9 @@ Decisions:
 ## 11. Display frames
 
 Per frame: name, English name, special flag (`uint8`), `int32` element count,
-elements (`uint8` kind — `0` bone, `1` morph — and the index).
+elements (`uint8` kind — `0` bone, `1` morph — and the index). Any other kind
+is `MMD_PMX_INVALID_LAYOUT_FLAG` (§2); an out-of-range index is
+`MMD_PMX_INDEX_OUT_OF_RANGE`, and the element is dropped in canonicalization.
 
 Display frames organize bones and morphs for an editor's UI; they carry no
 geometry, deformation or rendering meaning. They are parsed and kept in the
@@ -280,7 +305,17 @@ PMX 2.1 appends a soft-body table after the joints. Contract v1 parses it
 completely, so that a 2.1 file is traversed to its end and trailing-byte
 detection (§2) stays meaningful, and keeps it in the syntax layer only. Soft
 bodies are **unsupported** for authoring; a model with any raises
-`MMD_PHYSICS_SOFT_BODY_UNSUPPORTED` (warning).
+`MMD_PHYSICS_SOFT_BODY_UNSUPPORTED` (warning), once per import, from the
+importer.
+
+Per soft body: name, English name, shape (`uint8`: `0` triangle mesh, `1`
+rope), material index, group (`uint8`), non-collision mask (`uint16`), flags
+(`uint8`: `0x01` B-link, `0x02` cluster creation, `0x04` link crossing), B-link
+distance and cluster count (`int32`), total mass and collision margin
+(`float`), aero model (`int32`), 12 configuration and 6 cluster coefficients
+(`float`), 4 iteration counts (`int32`), 3 material coefficients (`float`), an
+`int32` count of anchors (rigid-body index, vertex index, near mode `uint8`),
+and an `int32` count of pinned vertex indices.
 
 ## 13. Rigid bodies and joints
 
@@ -333,8 +368,9 @@ The same `pmx::Document` always produces the same `CanonicalDocument`.
 ## 15. Fatal versus recoverable
 
 A diagnostic is **fatal** when the parser can no longer locate the rest of the
-file (bad signature, version, globals or index sizes; truncation; unknown
-deform or morph type) or when continuing would author a stage whose basic
+file (bad signature, version, globals or index sizes; truncation; a count or
+text length the bytes cannot hold; an unknown deform or morph type or layout
+flag) or when continuing would author a stage whose basic
 structure is wrong (face ranges overrunning the table, a face referencing a
 missing vertex). A fatal diagnostic makes `SdfFileFormat::Read` fail, and the
 stage does not open.

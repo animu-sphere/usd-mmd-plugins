@@ -2,8 +2,9 @@
 
 How to build the workspace, run its tests, and package the plugin. Every
 command on this page has been run, on Windows 11 with Visual Studio 18
-(MSVC 19.51), CMake 4.4, Python 3.13 and OpenUSD 26.08, on 2026-09-15. macOS
-and Linux run the same `ost` commands in CI
+(MSVC 19.51), CMake 4.4, Python 3.13 and OpenUSD 26.08, on 2026-09-15 — except
+the sanitizer build, which was run on Ubuntu (WSL) with GCC 15, as that
+section says. macOS and Linux run the same `ost` commands in CI
 ([openstrata.ci.yaml](../../openstrata.ci.yaml)); their plain-CMake presets
 exist but have not been run by hand, so they are not documented here yet.
 
@@ -34,17 +35,21 @@ ctest --preset windows-release
 The Windows preset names no generator, so CMake picks the newest Visual Studio
 installed. The build tree is `build/windows-msvc/`. The plugin library is
 staged into the bundle itself, `plugins/usdMmdFileFormat/lib/`, where the
-bundle's `plugInfo.json` expects it.
+bundle's `plugInfo.json` expects it, and `mmd_inspect` into
+`tools/mmdInspect/bin/` ([inspecting.md](inspecting.md) says how to use it).
 
 `ctest` runs every test in the workspace:
 
 | Test | What it proves |
 | --- | --- |
-| `mmdPmx_unit` | the header reader, `Diagnostic` and `Result<T>` |
+| `mmdPmx_unit` | the parser table by table — every record variant, every index width, each malformed case at its byte — the text decoders, `Diagnostic`, `Result<T>` and the diagnostic limit |
+| `mmdPmx_robustness` | every byte of the sample models overwritten, and every prefix read: no crash, and no document that breaks its invariants |
 | `mmdPmx_boundaries` | `mmdPmx`'s sources include no OpenUSD, its link line is empty, and a binary linking it imports no OpenUSD library |
 | `mmdPmx_boundaries_selftest` | the boundary check's own rules reject what they must |
+| `mmd_inspect_fixtures` | `mmd_inspect` reads every generated fixture as `fixtures.json` says, from an ASCII and a non-ASCII directory |
+| `mmd_inspect_boundaries` | `mmd_inspect` links `mmdPmx` and nothing else, and imports no OpenUSD library |
 | `workspace_fixtures` | the committed fixtures are exactly what the generator writes |
-| `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees |
+| `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees; the diagnostic catalog matches the declared codes |
 | `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says |
 | `usdMmdFileFormat_unicode_paths` | the same opens under `ユニコード-é/`, from a Python host |
 | `usdMmdFileFormat_notice_listeners` | every Python entry point that reaches the importer (`Usd.Stage.Open`, `Sdf.Layer.Reload`, `Sdf.Layer.OpenAsAnonymous`) returns while a global Python notice listener is registered |
@@ -108,21 +113,44 @@ ost library test libs/mmdPmx
 ost library verify-consumer libs/mmdPmx
 ```
 
+## Sanitizers
+
+`mmdPmx` builds on its own, and its unit, robustness and boundary tests run
+under AddressSanitizer and UndefinedBehaviorSanitizer with two cache options.
+Run on Ubuntu 24.04 under WSL, with GCC 15, CMake 4.2 and Ninja, from the
+repository root:
+
+```sh
+cmake -S libs/mmdPmx -B ~/mmd-sanitize -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo       -DMMDPMX_SANITIZERS="address;undefined" -DMMDPMX_BUILD_TESTS=ON
+cmake --build ~/mmd-sanitize
+ctest --test-dir ~/mmd-sanitize --output-on-failure
+```
+
+The fuzz target needs Clang's libFuzzer: `-DMMDPMX_BUILD_FUZZER=ON` with
+`clang++`, and the sanitizers on. It has run only in CI;
+[parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) is the
+record of its commands, including how the corpus is seeded from the generated
+fixtures.
+
 ## The installed-consumer lane
 
 [scripts/check_installed_consumer.py](../../scripts/check_installed_consumer.py)
 installs a build tree into a temporary prefix, checks that the prefix holds
 what each package promises and names no source or build location, builds
 [tests/installed_consumer/](../../tests/installed_consumer/) — copied out of the
-repository — against that prefix alone, and opens a PMX from a Python host
-whose only plugin path is the prefix's. `ctest` runs it as
+repository — against that prefix alone, runs the installed `mmd_inspect` over
+every fixture, and opens a PMX from a Python host whose only plugin path is
+the prefix's. `ctest` runs it as
 `workspace_installed_consumer`.
 
 ## Fixtures
 
 Every PMX fixture is written by
 [tests/fixtures/generate_fixtures.py](../../tests/fixtures/generate_fixtures.py)
-into `plugins/usdMmdFileFormat/tests/fixtures/`. After changing the generator:
+into `plugins/usdMmdFileFormat/tests/fixtures/`: models that use every table
+and record variant, recoverable ones that open with a recorded diagnostic
+(`recoverable/`), and fatal ones (`malformed/`). `fixtures.json` beside them
+says what each must do. After changing the generator:
 
 ```powershell
 python tests/fixtures/generate_fixtures.py

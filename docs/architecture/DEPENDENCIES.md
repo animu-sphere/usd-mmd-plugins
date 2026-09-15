@@ -38,6 +38,7 @@ calls the MaterialX library. The MaterialX document version it declares
 | Python | the Python OpenUSD was built against — 3.13 for the 26.08 runtimes — for stage tests and tooling. The root project finds the interpreter *after* OpenUSD, so it inherits the one `pxrConfig.cmake` names |
 | OpenStrata | `ost` **0.22.10**, pinned in `openstrata.ci.yaml` |
 | Unit-test framework | **none**, as in `usd-vrm-plugins`: each suite is a plain executable that checks with `assert()`, compiled with `NDEBUG` undefined so Release builds still check, and registered with CTest |
+| Sanitizers and fuzzing | Clang 18's AddressSanitizer, UndefinedBehaviorSanitizer and libFuzzer, from Ubuntu 24.04's packages, in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) only; `mmdPmx`'s `MMDPMX_SANITIZERS` and `MMDPMX_BUILD_FUZZER` options switch them on, and nothing shipped is built with them. Toolchain runtimes, not dependencies: no code is vendored and nothing links them outside that lane |
 
 ## 3. Refused dependencies
 

@@ -3,11 +3,13 @@
 > Status: **proposed**, stage-contract version **1**. Each section becomes
 > binding when the Phase that first authors it lands with a fixture (Phase
 > numbers are [DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)); until then
-> it may be corrected here without a version bump. The Phase 0 importer
-> authors §2, the stage metadata and `/Asset` of §4 (as an `Xform`: it reads
-> no bone table yet), and `mmd:stageContractVersion`, `mmd:sourceFormat`,
-> `mmd:sourceVersion` and `mmd:diagnostics` of §5, with fixtures; nothing
-> else here is authored yet.
+> it may be corrected here without a version bump. The importer authors §2,
+> the stage metadata and `/Asset` of §4, and `mmd:stageContractVersion`,
+> `mmd:sourceFormat`, `mmd:sourceVersion` and `mmd:diagnostics` of §5, with
+> fixtures. Since Phase 1 it parses every PMX table, so every recoverable
+> parser diagnostic reaches `mmd:diagnostics`; it still authors nothing
+> beneath `/Asset`, which is therefore an `Xform` even for a model with bones
+> until Phase 2 authors the skeleton. Nothing else here is authored yet.
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
 > stage metadata, prim hierarchy, types, names, the coordinate conversion, and

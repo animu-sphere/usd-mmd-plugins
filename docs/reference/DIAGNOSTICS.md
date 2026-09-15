@@ -5,13 +5,18 @@ a tool reports carries a **stable code** with a **fixed severity**. The code is
 the contract; the message is human-readable detail and may change at any time.
 Tests assert codes, never prose.
 
-Status (2026-09-15): the record below is code, and the Phase 0 header reader
-**emits** seven codes — each marked *emitted* in §5. Every other code is
-*reserved* by a design document, which is where its meaning is fixed. A code
-joins [libs/mmdPmx/include/mmdPmx/Codes.h](../../libs/mmdPmx/include/mmdPmx/Codes.h)
-(or its component's equivalent) with the code that raises it; when the Phase 1
-parser lands, this page is generated from those declarations, as
-`usd-vrm-plugins` does for its own diagnostics.
+Status (2026-09-15): the record below is code, and every code marked
+*emitted* in §5 is raised by the current tree — the Phase 1 parser raises all
+of its PMX-syntax and text-decoding codes, and the importer the soft-body one.
+Every other code is *reserved* by a design document, which is where its
+meaning is fixed. A code joins its component's declarations —
+[libs/mmdPmx/include/mmdPmx/Codes.h](../../libs/mmdPmx/include/mmdPmx/Codes.h),
+[plugins/usdMmdFileFormat/src/usd/UsdMmdCodes.h](../../plugins/usdMmdFileFormat/src/usd/UsdMmdCodes.h)
+— with the code that raises it, and
+[scripts/check_docs.py](../../scripts/check_docs.py) fails when those
+declarations and §5 disagree: a declared code missing from the catalog, not
+marked *emitted*, or listed with another severity, and an *emitted* code
+nothing declares.
 
 ## 1. The record
 
@@ -101,6 +106,12 @@ severity. An event that needs a different severity gets a new code.
   and `error` and `warning` are also posted as warnings. A diagnostic raised
   once per import (the SDEF approximation, weight normalization) carries a count
   rather than repeating per element.
+- **Bounded.** One code is recorded at most 16 times per table; the rest of its
+  occurrences in that table are counted, and reported once, after everything
+  else, as that code with the table as its location and the number not listed
+  as its message. A malformed file can otherwise raise one diagnostic per
+  vertex, and each recorded diagnostic is a string on the stage. Every element
+  is still repaired as its section says, listed or not.
 - **Tools** (`mmd_inspect`) print every diagnostic and set their exit status by
   the most severe one.
 - **Validation** codes are raised by checks over an already-imported stage, not
@@ -121,24 +132,26 @@ raises; every other code is reserved.
 | `MMD_PMX_INVALID_GLOBALS` *emitted* | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
 | `MMD_PMX_UNKNOWN_GLOBALS` *emitted* | warning | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
 | `MMD_PMX_INVALID_INDEX_SIZE` *emitted* | fatal | `mmdPmx` | [PMX §3](../design/PMX_CONTRACT.md#3-header-and-globals) |
-| `MMD_PMX_TRUNCATED_BUFFER` *emitted* (header) | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
-| `MMD_PMX_COUNT_EXCEEDS_BUFFER` | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
-| `MMD_PMX_TRAILING_BYTES` | warning | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
-| `MMD_PMX_INVALID_DEFORM_TYPE` | fatal | `mmdPmx` | [PMX §5](../design/PMX_CONTRACT.md#5-vertices-and-deform) |
-| `MMD_PMX_FACE_COUNT_NOT_TRIANGLES` | fatal | `mmdPmx` | [PMX §6](../design/PMX_CONTRACT.md#6-faces) |
-| `MMD_PMX_FACE_INDEX_OUT_OF_RANGE` | fatal | `mmdPmx` | [PMX §6](../design/PMX_CONTRACT.md#6-faces) |
-| `MMD_PMX_MATERIAL_FACES_EXCEED_TABLE` | fatal | `mmdPmx` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
-| `MMD_PMX_MATERIAL_FACES_SHORT` | error | `mmdPmx` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
-| `MMD_PMX_INVALID_MORPH_TYPE` | fatal | `mmdPmx` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
-| `MMD_PMX_INDEX_OUT_OF_RANGE` | error | `mmdPmx` | [PMX §4](../design/PMX_CONTRACT.md#4-indices) |
+| `MMD_PMX_TRUNCATED_BUFFER` *emitted* | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
+| `MMD_PMX_COUNT_EXCEEDS_BUFFER` *emitted* | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
+| `MMD_PMX_TRAILING_BYTES` *emitted* | warning | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
+| `MMD_PMX_INVALID_DEFORM_TYPE` *emitted* | fatal | `mmdPmx` | [PMX §5](../design/PMX_CONTRACT.md#5-vertices-and-deform) |
+| `MMD_PMX_FACE_COUNT_NOT_TRIANGLES` *emitted* | fatal | `mmdPmx` | [PMX §6](../design/PMX_CONTRACT.md#6-faces) |
+| `MMD_PMX_FACE_INDEX_OUT_OF_RANGE` *emitted* | fatal | `mmdPmx` | [PMX §6](../design/PMX_CONTRACT.md#6-faces) |
+| `MMD_PMX_MATERIAL_FACES_EXCEED_TABLE` *emitted* | fatal | `mmdPmx` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
+| `MMD_PMX_MATERIAL_FACES_SHORT` *emitted* | error | `mmdPmx` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
+| `MMD_PMX_INVALID_MORPH_TYPE` *emitted* | fatal | `mmdPmx` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
+| `MMD_PMX_INVALID_LAYOUT_FLAG` *emitted* | fatal | `mmdPmx` | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
+| `MMD_PMX_INDEX_OUT_OF_RANGE` *emitted* | error | `mmdPmx` | [PMX §4](../design/PMX_CONTRACT.md#4-indices) |
+| `MMD_PMX_FILE_UNREADABLE` *emitted* | fatal | `mmdPmx` (`ReadFile`) | [PMX §2](../design/PMX_CONTRACT.md#2-reading-rules) |
 
 ### 5.2 Text
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
 | `MMD_TEXT_INVALID_ENCODING_FLAG` *emitted* | fatal | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
-| `MMD_TEXT_INVALID_UTF8` | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
-| `MMD_TEXT_INVALID_UTF16` | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
+| `MMD_TEXT_INVALID_UTF8` *emitted* | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
+| `MMD_TEXT_INVALID_UTF16` *emitted* | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_TRAILING_NUL` | info | `mmdModel` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_TRUNCATED_CP932` | info | `motionVmd` | [MOTION §4](../design/MOTION_CONTRACT.md#4-text) |
 
@@ -169,7 +182,7 @@ raises; every other code is reserved.
 | `MMD_MORPH_UNKNOWN_PANEL` | warning | `mmdModel` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
 | `MMD_MORPH_GROUP_CYCLE` | error | `mmdModel` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
 | `MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE` | warning | `mmdModel` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
-| `MMD_PHYSICS_SOFT_BODY_UNSUPPORTED` | warning | `usdMmdFileFormat` | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
+| `MMD_PHYSICS_SOFT_BODY_UNSUPPORTED` *emitted* | warning | `usdMmdFileFormat` | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
 
 ### 5.6 Motion (Phase 7)
 

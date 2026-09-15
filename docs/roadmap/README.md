@@ -7,11 +7,11 @@ state goes to [architecture/](../architecture/) and
 [reference/](../reference/). The roadmap is not a second changelog. Design
 rationale lives in [design/](../design/).
 
-Legend: 🚧 in progress · ⬜ not started · ⛔ blocked
+Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The current milestone — Phase 0, the workspace skeleton — and what remains of it. |
+| [current.md](current.md) | The current milestone — Phase 1, the PMX structural parser — and what remains of it. |
 
 ## One sequence
 
@@ -27,8 +27,8 @@ in.** No other document states a version for a Phase.
 
 | Phase | Scope | Status | Release |
 | --- | --- | --- | --- |
-| 0 | workspace skeleton | 🚧 awaiting CI | unassigned |
-| 1 | PMX structural parser | ⬜ | unassigned |
+| 0 | workspace skeleton | ✅ done | unassigned |
+| 1 | PMX structural parser | 🚧 awaiting CI | unassigned |
 | 2 | canonical stage | ⬜ | unassigned |
 | 3 | material triad | ⬜ | unassigned |
 | 4 | morphs | ⬜ | unassigned |
@@ -41,17 +41,21 @@ No release number is assigned yet. The first release that claims PMX import is
 the one that meets
 [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
 — Phases 0–4 plus the preservation parts of 5 and 6 it names. Whether earlier
-Phases get releases of their own is decided here when Phase 0 is done.
+Phases get releases of their own is decided here; Phase 0 is done and the
+question is still open.
 
 Where things stand, as of 2026-09-15:
 
 - The documentation baseline exists: the design policy, five focused design
   contracts, the workspace contract, and reference pages that state what is
   implemented.
-- The Phase 0 workspace skeleton is implemented: `.pmx` opens as a stage with
-  the Phase 0 metadata, through `ost` and plain CMake and from an installed
-  prefix, on Windows. CI is written (`openstrata.ci.yaml`, `docs-check.yml`)
-  and has not run yet.
+- Phase 0, the workspace skeleton, is done: `.pmx` opens as a stage with the
+  Phase 0 metadata, through `ost` and plain CMake and from an installed
+  prefix, green in CI on Windows, macOS and Linux.
+- Phase 1, the PMX structural parser, is implemented and verified on Windows,
+  and its sanitizer build on Linux (GCC): every table of PMX 2.0 and 2.1 is
+  parsed, and `mmd_inspect` reports on it. Its first CI run, including the new
+  `parser-sanitizers.yml`, is what remains ([current.md](current.md)).
 - Five places where the design departs from the 2026-09-15 implementation
   policy are listed in
   [DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy).

@@ -3,13 +3,14 @@
 OpenUSD plugins for [MikuMikuDance](https://sites.google.com/view/vpvp/) (MMD)
 assets: PMX models first, VMD motion later.
 
-> **Status: workspace skeleton.** `Usd.Stage.Open("model.pmx")` works, and
-> authors an empty `/Asset` with the stage metadata: the plugin registers
-> `.pmx` and reads the PMX header, and nothing else yet. Most of what is
-> described below is still design; the
+> **Status: PMX parser.** Every table of a PMX 2.0 or 2.1 file is parsed and
+> validated, and `mmd_inspect` reports what a file contains.
+> `Usd.Stage.Open("model.pmx")` works, and authors an empty `/Asset` with the
+> stage metadata and the parser's diagnostics: geometry, materials and the
+> skeleton are Phase 2. Most of what is described below is still design; the
 > [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the only page
-> that says what is implemented. The current milestone is
-> [Phase 0](docs/roadmap/current.md); the PMX parser is Phase 1.
+> that says what is implemented, and [the roadmap](docs/roadmap/current.md)
+> what comes next.
 
 `usd-mmd-plugins` is the MMD sibling of
 [`usd-vrm-plugins`](https://github.com/animu-sphere/usd-vrm-plugins): the
@@ -38,10 +39,10 @@ produce the same stage.
 
 | Component | Kind | Role | State |
 | --- | --- | --- | --- |
-| `mmdPmx` | plain C++ library | PMX 2.0/2.1 syntax, text decoding, validation — no OpenUSD | reads the header |
+| `mmdPmx` | plain C++ library | PMX 2.0/2.1 syntax, text decoding, validation — no OpenUSD | reads every table |
 | `mmdModel` | plain C++ library | canonical MMD semantics and the single source → USD coordinate conversion — no OpenUSD | Phase 2 |
 | `usdMmdFileFormat` | OpenUSD `SdfFileFormat` bundle | `.pmx` → a USD stage | registers `.pmx`, authors `/Asset` |
-| `mmd_inspect` | CLI | what a PMX contains, without USD | Phase 1 |
+| `mmd_inspect` | CLI | what a PMX contains, without USD | exists ([guide](docs/guides/inspecting.md)) |
 | `motionVmd` | plain C++ library | VMD syntax, extraction-ready for the shared motion architecture | Phase 7 |
 
 `mmdSchema` exists only if an MMD API schema passes the
@@ -89,7 +90,7 @@ installed-consumer lane — every command in it run.
 | --- | --- |
 | [docs/design/](docs/design/) | What the importer authors and why — start with [DESIGN_POLICY.md](docs/design/DESIGN_POLICY.md) |
 | [docs/architecture/](docs/architecture/) | The binding workspace contract, external dependencies, and installed packages |
-| [docs/guides/](docs/guides/) | How to build, test and package |
+| [docs/guides/](docs/guides/) | How to build, test and package, and how to inspect a PMX |
 | [docs/reference/](docs/reference/) | What is implemented, diagnostics, and where each PMX field lands |
 | [docs/roadmap/](docs/roadmap/) | What is planned next (incomplete work only) |
 | [docs/contributing/](docs/contributing/) | How the documentation is maintained |
