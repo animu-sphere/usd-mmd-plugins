@@ -1,0 +1,37 @@
+{
+  "malformed/bad-signature.pmx": {
+    "fatal": "MMD_PMX_BAD_SIGNATURE",
+    "opens": false,
+    "purpose": "a signature that is not \"PMX \""
+  },
+  "malformed/truncated-header.pmx": {
+    "fatal": "MMD_PMX_TRUNCATED_BUFFER",
+    "opens": false,
+    "purpose": "the file ends inside the globals"
+  },
+  "malformed/unsupported-version.pmx": {
+    "fatal": "MMD_PMX_UNSUPPORTED_VERSION",
+    "opens": false,
+    "purpose": "version 3.0"
+  },
+  "minimal-2.1-utf8.pmx": {
+    "diagnostics": [],
+    "opens": true,
+    "purpose": "PMX 2.1, UTF-8, every table empty",
+    "sourceVersion": "2.1"
+  },
+  "minimal.pmx": {
+    "diagnostics": [],
+    "opens": true,
+    "purpose": "PMX 2.0, UTF-16LE, every table empty",
+    "sourceVersion": "2.0"
+  },
+  "unknown-globals.pmx": {
+    "diagnostics": [
+      "MMD_PMX_UNKNOWN_GLOBALS"
+    ],
+    "opens": true,
+    "purpose": "nine globals: the ninth is preserved and warned about",
+    "sourceVersion": "2.0"
+  }
+}

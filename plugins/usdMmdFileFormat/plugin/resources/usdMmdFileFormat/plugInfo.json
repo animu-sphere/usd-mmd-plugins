@@ -1,0 +1,27 @@
+{
+    "Plugins": [
+        {
+            "Type": "library",
+            "Name": "UsdMmdFileFormat",
+            "Root": ".",
+            "LibraryPath": "../../../lib/libUsdMmdFileFormat.dll",
+            "ResourcePath": ".",
+            "Info": {
+                "Types": {
+                    "UsdMmdFileFormat": {
+                        "bases": [
+                            "SdfFileFormat"
+                        ],
+                        "displayName": "MikuMikuDance PMX",
+                        "extensions": [
+                            "pmx"
+                        ],
+                        "formatId": "pmx",
+                        "primary": true,
+                        "target": "usd"
+                    }
+                }
+            }
+        }
+    ]
+}

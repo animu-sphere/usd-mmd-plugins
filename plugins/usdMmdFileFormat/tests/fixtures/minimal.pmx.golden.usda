@@ -1,0 +1,22 @@
+#usda 1.0
+(
+    defaultPrim = "Asset"
+    doc = """Generated from Composed Stage of root layer tests/fixtures/minimal.pmx
+"""
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "Asset" (
+    customData = {
+        dictionary mmd = {
+            string sourceFormat = "PMX"
+            string sourceVersion = "2.0"
+            int stageContractVersion = 1
+        }
+    }
+    kind = "component"
+)
+{
+}
+

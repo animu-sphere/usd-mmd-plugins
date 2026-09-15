@@ -1,0 +1,45 @@
+# --- OpenStrata / build state (tool-owned, never committed) ---
+/build/
+**/build/
+**/dist/
+/.strata/
+**/.strata/
+CMakeUserPresets.json
+strata.lock
+
+# Built plugin libraries are staged into each bundle's lib/ by the build.
+/plugins/*/lib/
+
+# The configure-time build stamp written into bundle resources: it varies per
+# commit, toolchain and platform. (plugInfo.json is committed, so a bundle can
+# be inspected before it is built; the build regenerates it per platform.)
+/plugins/*/plugin/resources/*/buildInfo.json
+
+# --- CMake / MSVC generated ---
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.dll
+
+# --- Python cache ---
+__pycache__/
+*.pyc
+
+# --- Docs scratch ---
+/docs/local/
+
+# --- Editor / OS noise ---
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Agent / assistant tooling (local, not shared) ---
+/.claude/
