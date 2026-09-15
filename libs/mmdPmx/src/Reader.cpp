@@ -554,10 +554,13 @@ private:
     {
         _Enter("materials");
         const std::size_t t = _doc.header.globals.textureIndexSize;
-        // names, the fixed colors and flags (73 bytes), texture and sphere
-        // indices, sphere mode, toon reference, the smaller toon value (a
-        // shared slot, one byte), memo, face count.
-        const std::size_t minimum = 8 + 73 + 2 * t + 1 + 1 + 1 + 4 + 4;
+        // names; diffuse, specular, specular power, ambient, flags, edge
+        // color, edge size; texture and sphere indices, sphere mode, toon
+        // reference, the smaller toon value (a shared slot, one byte); memo,
+        // face count. Spelled out rather than summed: a hand-summed constant
+        // here once overstated the minimum and refused valid files.
+        const std::size_t minimum = 8 + (16 + 12 + 4 + 12 + 1 + 16 + 4) + 2 * t + 1 + 1 + 1
+            + 4 + 4;
         std::size_t count = 0;
         if (!_Count(count, minimum, "count")) {
             return false;

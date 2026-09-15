@@ -427,6 +427,115 @@ TestCounts()
     assert(ReadBytes(bytes).fatal()->location.field == "ik.linkCount");
 }
 
+/// Each table, and each list inside a record, filled with records of the
+/// smallest size its layout allows, with nothing after it but the empty
+/// tables' counts: the count bound (PMX_CONTRACT.md §2) is at its tightest
+/// here, and a minimum stated too large refuses the file. That once happened
+/// to the material table.
+void
+TestMinimumRecords()
+{
+    constexpr std::size_t n = 50;
+    for (Version version : {Version::V2_0, Version::V2_1}) {
+        for (std::uint8_t width : {1, 2, 4}) {
+            const auto empty = [&] {
+                Document doc = EmptyDocument(version, TextEncoding::Utf8);
+                SetIndexWidths(doc, width);
+                doc.model.name.clear();
+                return doc;
+            };
+            std::vector<Document> docs;
+
+            Document vertices = empty();  // BDEF1: one bone index
+            vertices.bones.resize(1);
+            vertices.bones[0].flags = BoneFlag::TailIsBone;
+            vertices.vertices.resize(n);
+            for (Vertex& v : vertices.vertices) {
+                v.deform.bones[0] = 0;
+            }
+            docs.push_back(vertices);
+
+            Document textures = empty();  // an empty path
+            textures.textures.resize(n);
+            docs.push_back(textures);
+
+            Document materials = empty();  // a shared toon slot, no names
+            materials.materials.resize(n);
+            for (Material& m : materials.materials) {
+                m.toonReference = ToonReference::Shared;
+            }
+            docs.push_back(materials);
+
+            Document bones = empty();  // the tail as a bone index
+            bones.bones.resize(n);
+            for (Bone& b : bones.bones) {
+                b.flags = BoneFlag::TailIsBone;
+            }
+            docs.push_back(bones);
+
+            Document links = empty();  // IK links without limits
+            links.bones.resize(1);
+            links.bones[0].flags = BoneFlag::TailIsBone | BoneFlag::Ik;
+            links.bones[0].ik.links.resize(n);
+            docs.push_back(links);
+
+            Document morphs = empty();  // no offsets
+            morphs.morphs.resize(n);
+            docs.push_back(morphs);
+
+            Document frames = empty();  // no elements, then elements
+            frames.displayFrames.resize(n);
+            frames.displayFrames[0].elements.resize(n);
+            frames.bones.resize(1);
+            frames.bones[0].flags = BoneFlag::TailIsBone;
+            for (FrameElement& e : frames.displayFrames[0].elements) {
+                e.index = 0;
+            }
+            docs.push_back(frames);
+
+            Document physics = empty();
+            physics.rigidBodies.resize(n);
+            physics.joints.resize(n);
+            docs.push_back(physics);
+
+            if (version == Version::V2_1) {
+                Document soft = empty();  // no anchors, no pins
+                soft.softBodies.resize(n);
+                docs.push_back(soft);
+            }
+
+            // Each kind of morph offset, at its smallest.
+            for (MorphType type : {MorphType::Group, MorphType::Vertex, MorphType::Bone,
+                     MorphType::Uv, MorphType::Material, MorphType::Impulse}) {
+                if (type == MorphType::Impulse && version != Version::V2_1) {
+                    continue;
+                }
+                Document offsets = empty();
+                offsets.morphs.resize(1);
+                Morph& m = offsets.morphs[0];
+                m.type = type;
+                offsets.vertices.resize(1);
+                offsets.vertices[0].deform.bones[0] = 0;
+                offsets.bones.resize(1);
+                offsets.bones[0].flags = BoneFlag::TailIsBone;
+                offsets.materials.resize(1);
+                offsets.rigidBodies.resize(1);
+                m.groupOffsets.assign(type == MorphType::Group ? n : 0, GroupOffset{0, 1.0f});
+                m.vertexOffsets.assign(type == MorphType::Vertex ? n : 0, VertexOffset{0, {}});
+                m.boneOffsets.assign(type == MorphType::Bone ? n : 0, BoneOffset{0, {}, {}});
+                m.uvOffsets.assign(type == MorphType::Uv ? n : 0, UvOffset{0, {}});
+                m.materialOffsets.resize(type == MorphType::Material ? n : 0);
+                m.impulseOffsets.resize(type == MorphType::Impulse ? n : 0);
+                docs.push_back(offsets);
+            }
+
+            for (const Document& doc : docs) {
+                assert(ExpectRead(Encode(doc)) == doc);
+            }
+        }
+    }
+}
+
 void
 TestTruncationEverywhere()
 {
@@ -842,6 +951,7 @@ TestReader()
     TestIndexSignedness();
     TestTrailingBytes();
     TestCounts();
+    TestMinimumRecords();
     TestTruncationEverywhere();
     TestDeformTypes();
     TestDeformBones();
