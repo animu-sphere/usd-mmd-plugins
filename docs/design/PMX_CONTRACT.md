@@ -294,7 +294,11 @@ Decisions:
   group morphs, is `MMD_MORPH_GROUP_CYCLE` (recoverable): the cyclic member is
   dropped. Nothing is expanded, so this is a validation, not an evaluation.
 - Out-of-range offset targets are recoverable: the offset is dropped with
-  `MMD_PMX_INDEX_OUT_OF_RANGE`.
+  `MMD_PMX_INDEX_OUT_OF_RANGE`. A **material** morph is the one exception —
+  §4 reads a rejected index as none, and none is `−1`, which is a material
+  morph's "every material" rather than an absence. Such an offset is
+  therefore kept, and reads as every material; the parser's diagnostic is
+  what records that the source named a material that is not there.
 
 ## 11. Display frames
 

@@ -2425,6 +2425,100 @@
       "skinned": true
     }
   },
+  "recoverable/morph-no-mesh.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 0,
+      "faces": 0,
+      "joints": 0,
+      "materials": 0,
+      "morphs": 1,
+      "rigidBodies": 0,
+      "softBodies": 0,
+      "textures": 0,
+      "vertices": 0
+    },
+    "diagnostics": [
+      "MMD_PMX_INDEX_OUT_OF_RANGE",
+      "MMD_MORPH_NO_SKELETON"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [
+      "MMD_PMX_INDEX_OUT_OF_RANGE"
+    ],
+    "purpose": "a vertex morph in a model with bones and no mesh: nothing can name a blend shape, and the offset of a vertex the empty table does not hold is dropped",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [],
+      "mesh": null,
+      "morphs": [
+        {
+          "englishName": "blink",
+          "id": "blink",
+          "name": "まばたき",
+          "offsets": [],
+          "panel": "eye",
+          "pointIndices": [],
+          "sourceIndex": 0,
+          "type": "vertex"
+        }
+      ],
+      "skinned": true
+    }
+  },
   "recoverable/morph-no-skeleton.pmx": {
     "counts": {
       "bones": 0,

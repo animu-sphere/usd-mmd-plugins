@@ -455,9 +455,11 @@ the same order as the prims it targets. An offset whose vertex the parser
 rejected is dropped rather than repaired.
 
 A model with **no bones** authors no SkelRoot, and a blend shape outside one
-deforms nothing (§4.1). There the morph is a typeless prim carrying the same
-two arrays as `mmd:morph:offsets` (`vector3f[]`) and `mmd:morph:pointIndices`
-(`int[]`), and the import records `MMD_MORPH_NO_SKELETON`.
+deforms nothing (§4.1); a model with **no mesh** has nothing to name one, and
+a blend shape nothing names deforms nothing either. In both cases the morph
+is a typeless prim carrying the same two arrays as `mmd:morph:offsets`
+(`vector3f[]`) and `mmd:morph:pointIndices` (`int[]`), and the import records
+`MMD_MORPH_NO_SKELETON`.
 
 ### 11.2 Every other morph type
 

@@ -975,6 +975,15 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
                       "sphereTint": (0.0, 0.0, 0.0, 0.0),
                       "toonTint": (0.0, 0.0, 0.0, 0.0)}]},
     ]}
+    # Bones but no mesh: /Asset is a SkelRoot, and there is still nothing to
+    # name a blend shape (STAGE_CONTRACT.md §11.1).
+    morphs_no_mesh = sample_model(2.0, UTF16LE, 1, 0)
+    morphs_no_mesh.update({"vertices": [], "faces": [], "materials": [], "textures": [],
+                           "displayFrames": [], "rigidBodies": [], "joints": []})
+    morphs_no_mesh["morphs"] = [
+        {"name": "まばたき", "englishName": "blink", "panel": 2, "type": "vertex",
+         "offsets": [(0, (0.0, -0.1, 0.0))]},  # vertex 0 of an empty table
+    ]
     entries.update({
         "bones-reordered.pmx": opens(
             reordered, "a bone listed before its parent: the joints are reordered",
@@ -1012,6 +1021,12 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
             morphs_unskinned, "a vertex morph in a model with no bones: "
             "preserved without a UsdSkelBlendShape",
             parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 3,
+            importer=["MMD_MORPH_NO_SKELETON"]),
+        "recoverable/morph-no-mesh.pmx": opens(
+            morphs_no_mesh, "a vertex morph in a model with bones and no "
+            "mesh: nothing can name a blend shape, and the offset of a "
+            "vertex the empty table does not hold is dropped",
+            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"],
             importer=["MMD_MORPH_NO_SKELETON"]),
     })
 

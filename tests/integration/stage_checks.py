@@ -345,7 +345,6 @@ class Checker:
         self.expect(bool(value.resolvedPath) == want["resolves"],
                     f"{where} resolves to {value.resolvedPath!r}")
 
-
     # --- /Asset/morph (§11) -----------------------------------------------------------
 
     def morphs(self, mesh: UsdGeom.Mesh | None) -> None:
@@ -367,8 +366,10 @@ class Checker:
             path = f"/Asset/morph/{m['id']}"
             prim = self.stage.GetPrimAtPath(path)
             # A blend shape needs a SkelRoot, which a boneless model is not
-            # (§4.1): there the vertex morph is preserved on a typeless prim.
-            drivable = m["type"] == "vertex" and self.shape["skinned"]
+            # (§4.1), and a mesh to name it (§11.1): without either, the
+            # vertex morph is preserved on a typeless prim.
+            drivable = (m["type"] == "vertex" and self.shape["skinned"]
+                        and self.shape["mesh"] is not None)
             type_name = "BlendShape" if drivable else ""
             expect(prim.GetTypeName() == type_name,
                    f"{path} is a {prim.GetTypeName()!r}, expected {type_name!r}")
@@ -539,6 +540,13 @@ class Checker:
         cache.Populate(root, Usd.PrimDefaultPredicate)
         expect(bool(cache.GetSkelQuery(skeleton)), "the skeleton query is not valid")
         bindings = cache.ComputeSkelBindings(root, Usd.PrimDefaultPredicate)
+        if mesh is None:
+            # A model with bones and no vertices authors no mesh (§8), so the
+            # skeleton stands alone and skins nothing.
+            skinned = [str(target.GetPrim().GetPath())
+                       for binding in bindings for target in binding.GetSkinningTargets()]
+            expect(not skinned, f"the skeleton skins {skinned} with no mesh")
+            return
         expect(len(bindings) == 1, f"{len(bindings)} skeleton bindings")
         targets = [q.GetPrim().GetPath() for q in bindings[0].GetSkinningTargets()]
         expect(targets == [mesh.GetPath()], f"the skinning targets are {targets}")

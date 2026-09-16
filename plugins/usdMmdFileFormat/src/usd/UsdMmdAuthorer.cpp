@@ -685,16 +685,25 @@ private:
     void _Morphs(const UsdGeomMesh& mesh, bool skinned)
     {
         // Blend shapes deform only beneath a SkelRoot, which a model with no
-        // bones does not author (STAGE_CONTRACT.md §4.1).
-        const bool blendShapes = skinned && bool(mesh);
+        // bones does not author, and only a mesh can name them
+        // (STAGE_CONTRACT.md §4.1, §11.1). Either way the vertex morph falls
+        // back to a typeless prim, and _ImporterDiagnostics records it.
+        _blendShapes = skinned && bool(mesh);
         VtTokenArray names;
         SdfPathVector targets;
         for (const mmd::Morph& m : _doc.morphs) {
             const SdfPath path = kMorphPath.AppendChild(TfToken(m.name.stableId));
             const bool vertex = m.type == mmd::MorphType::Vertex;
-            UsdPrim prim;
-            if (vertex && blendShapes) {
-                const UsdSkelBlendShape shape = UsdSkelBlendShape::Define(_stage, path);
+            const UsdSkelBlendShape shape = vertex && _blendShapes
+                                                ? UsdSkelBlendShape::Define(_stage, path)
+                                                : UsdSkelBlendShape();
+            const UsdPrim prim = shape ? shape.GetPrim() : _stage->DefinePrim(path);
+            // The mesh must never name a blend shape that is not there, so
+            // nothing is listed before the prim exists.
+            if (!prim) {
+                continue;
+            }
+            if (shape) {
                 VtVec3fArray offsets;
                 VtIntArray points;
                 offsets.reserve(m.vertexOffsets.size());
@@ -705,14 +714,8 @@ private:
                 }
                 shape.CreateOffsetsAttr(VtValue(offsets));
                 shape.CreatePointIndicesAttr(VtValue(points));
-                prim = shape.GetPrim();
                 names.push_back(TfToken(m.name.stableId));
                 targets.push_back(path);
-            } else {
-                prim = _stage->DefinePrim(path);
-            }
-            if (!prim) {
-                continue;
             }
             prim.SetCustomDataByKey(kSourceNameKey, VtValue(m.name.source));
             prim.SetCustomDataByKey(kSourceEnglishNameKey, VtValue(m.name.english));
@@ -726,7 +729,9 @@ private:
                 _MorphMembers(prim, m);
                 break;
             case mmd::MorphType::Vertex:
-                if (!blendShapes) {
+                // The schema's own offsets when it is a blend shape, the same
+                // two arrays under `mmd:morph:*` when it cannot be one.
+                if (!shape) {
                     _MorphVertexOffsets(prim, m);
                 }
                 break;
@@ -936,9 +941,12 @@ private:
                                         "dual-quaternion consumer has been verified against it",
                                     onVertices));
         }
-        // Vertex morphs are blend shapes only beneath a SkelRoot, and a model
-        // with no bones authors none (STAGE_CONTRACT.md §4.1).
-        if (!skinned) {
+        // Vertex morphs are blend shapes only beneath a SkelRoot that holds a
+        // mesh to name them: a model with no bones authors none, and neither
+        // does one with no mesh (STAGE_CONTRACT.md §4.1, §11.1). The
+        // condition is the one _Morphs authored by, so the fallback is never
+        // silent.
+        if (!_blendShapes) {
             std::size_t preserved = 0;
             for (const mmd::Morph& morph : _doc.morphs) {
                 if (morph.type == mmd::MorphType::Vertex) {
@@ -952,8 +960,10 @@ private:
                     codes::MorphNoSkeleton,
                     (preserved == 1 ? std::string("1 vertex morph is")
                                     : std::to_string(preserved) + " vertex morphs are") +
-                        " preserved without a UsdSkelBlendShape: the model has no bones, so "
-                        "/Asset is no SkelRoot and a blend shape would not deform",
+                        " preserved without a UsdSkelBlendShape: " +
+                        (skinned ? "the model has no mesh to name one"
+                                 : "the model has no bones, so /Asset is no SkelRoot") +
+                        " and a blend shape would not deform",
                     std::move(where)));
             }
         }
@@ -988,6 +998,9 @@ private:
     const mmd::CanonicalDocument& _doc;
     std::vector<mmd::Diagnostic>& _diagnostics;
     UsdStageRefPtr _stage;
+    /// Whether _Morphs authored vertex morphs as UsdSkelBlendShapes; false
+    /// until it runs, which is only when the model has a morph.
+    bool _blendShapes = false;
 };
 
 } // namespace

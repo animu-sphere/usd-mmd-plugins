@@ -91,7 +91,7 @@ Each claim is backed by the generated fixtures and the parser's unit tests.
 | UV and additional-UV morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
 | Material morph | preserved | preserved | 4 | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
 | Impulse morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| A vertex morph without bones (preserved, no blend shape) | supported | supported | 4 | [STAGE §11.1](../design/STAGE_CONTRACT.md#111-vertex-morphs) |
+| A vertex morph nothing can drive: no bones, or no mesh (preserved, no blend shape) | supported | supported | 4 | [STAGE §11.1](../design/STAGE_CONTRACT.md#111-vertex-morphs) |
 | Group and flip morph cycles | supported | supported | 4 | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
 | Japanese morph names preserved | supported | supported | 4 | [TEXT §5](../design/TEXT_ENCODING_POLICY.md#5-identity-versus-display) |
 | IK chains | — | preserved | 5 | [STAGE §12](../design/STAGE_CONTRACT.md#12-control-rig--reserved) |
