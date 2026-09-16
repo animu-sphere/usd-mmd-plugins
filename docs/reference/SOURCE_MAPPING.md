@@ -90,9 +90,12 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 | name / English name / index | `Morph` identifier; customData provenance | 4 |
 | panel | `Morph.mmd:morph:panel` | 4 |
 | type | `Morph.mmd:morph:type` | 4 |
-| vertex offsets | `Morph` as `UsdSkelBlendShape`: `offsets`, `pointIndices`; `Mesh` `skel:blendShapes` / `skel:blendShapeTargets` | 4 |
-| group / flip members | `Morph` relationships + weights (`mmd:morph:*`) | 4 |
-| bone / UV / material / impulse offsets | `Morph` `mmd:morph:*` attributes | 4 |
+| vertex offsets | `Morph` as `UsdSkelBlendShape`: `offsets`, `pointIndices`; `Mesh` `skel:blendShapes` / `skel:blendShapeTargets`. Without bones: `Morph.mmd:morph:offsets`, `.mmd:morph:pointIndices` | 4 |
+| group / flip members | `Morph.mmd:morph:members` (rel) + `.mmd:morph:weights` | 4 |
+| bone offsets | `Morph.mmd:morph:joints`, `.translations`, `.rotations` | 4 |
+| UV offsets | `Morph.mmd:morph:pointIndices`, `.uvOffsets` (raw) | 4 |
+| material offsets | `Morph.mmd:morph:materialIndices` (`−1` = all), `.materialOperations`, and one array per modulated value | 4 |
+| impulse offsets | `Morph.mmd:morph:rigidBodyIndices` (source table), `.impulseLocal`, `.velocities`, `.torques` | 4 |
 
 ## Display frames
 

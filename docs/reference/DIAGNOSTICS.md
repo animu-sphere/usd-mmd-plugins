@@ -5,11 +5,11 @@ a tool reports carries a **stable code** with a **fixed severity**. The code is
 the contract; the message is human-readable detail and may change at any time.
 Tests assert codes, never prose.
 
-Status (2026-09-15): the record below is code, and every code marked
+Status (2026-09-16): the record below is code, and every code marked
 *emitted* in §5 is raised by the current tree — the parser raises all of its
-PMX-syntax and text-decoding codes, the canonical model (Phase 2) its
-identifier, path, skeleton and weight codes, and the importer its skinning
-and soft-body ones. Every other code is *reserved* by a design document,
+PMX-syntax and text-decoding codes, the canonical model its identifier, path,
+skeleton, weight, material and morph codes, and the importer its skinning,
+blend-shape and soft-body ones. Every other code is *reserved* by a design document,
 which is where its meaning is fixed. A code joins its component's
 declarations —
 [libs/mmdPmx/include/mmdPmx/Codes.h](../../libs/mmdPmx/include/mmdPmx/Codes.h),
@@ -185,9 +185,9 @@ raises; every other code is reserved.
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_MORPH_NO_SKELETON` | warning | `usdMmdFileFormat` | [STAGE §4.1](../design/STAGE_CONTRACT.md#41-why-asset-is-the-skelroot) |
-| `MMD_MORPH_UNKNOWN_PANEL` | warning | `mmdModel` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
-| `MMD_MORPH_GROUP_CYCLE` | error | `mmdModel` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
+| `MMD_MORPH_NO_SKELETON` *emitted* | warning | `usdMmdFileFormat` | [STAGE §4.1](../design/STAGE_CONTRACT.md#41-why-asset-is-the-skelroot) |
+| `MMD_MORPH_UNKNOWN_PANEL` *emitted* | warning | `mmdModel` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
+| `MMD_MORPH_GROUP_CYCLE` *emitted* | error | `mmdModel` | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
 | `MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE` *emitted* | warning | `mmdModel` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
 | `MMD_MATERIAL_UNSUPPORTED_TOON_SLOT` *emitted* | warning | `mmdModel` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
 | `MMD_PHYSICS_SOFT_BODY_UNSUPPORTED` *emitted* | warning | `usdMmdFileFormat` | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |

@@ -1,8 +1,9 @@
 # usd-mmd-plugins — design policy
 
-> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–2
-> are implemented — the workspace skeleton, the PMX structural parser, and the
-> canonical stage; every other behavior described here is intended, and
+> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–4
+> are implemented — the workspace skeleton, the PMX structural parser, the
+> canonical stage, the material triad and morphs; every other behavior
+> described here is intended, and
 > [reference/CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md) is the
 > only document that says what is implemented.
 >
@@ -559,7 +560,7 @@ the Phase that first authors it lands with a fixture, and binding from then.
 | Implementation policy | Here | Why | Status |
 | --- | --- | --- | --- |
 | §6.1, §6.8 — `/Asset` is a `UsdGeomXform`; `/Asset/rig/SkelRoot/Skeleton` | `/Asset` is the `UsdSkelRoot` when the model has bones; the skeleton is `/Asset/skel/Skeleton` | `UsdSkel` only skins geometry beneath a `SkelRoot`, so meshes under `/Asset/geo` would not deform under `/Asset/rig/SkelRoot`. The `skel`/`rig` split is `usd-vrm-plugins`' layout and matches §7.3's own deformation/control split ([STAGE_CONTRACT.md §4.1](STAGE_CONTRACT.md#41-why-asset-is-the-skelroot)). | binding (Phase 2) |
-| §10 — a `native` child under each material | Native semantics are attributes on the `UsdShadeMaterial` itself | A child graph reads as a third realization; the material prim is where identity and semantics already live in the VRM material policy ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding for the attributes Phase 2 authors; the graphs are Phase 3's |
+| §10 — a `native` child under each material | Native semantics are attributes on the `UsdShadeMaterial` itself | A child graph reads as a third realization; the material prim is where identity and semantics already live in the VRM material policy ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding (Phases 2 and 3) |
 | §27 — `customLayerData.mmdSchemaContractVersion` | `/Asset.customData.mmd:stageContractVersion` | Layer metadata is not composed, so it is lost once the asset is referenced; `/Asset` customData travels with the reference, and matches `vrm:schemaContractVersion` ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)). | binding (Phase 0) |
 | §19 — `mmdModel` may or may not depend on `mmdPmx`; OpenUSD unspecified | `mmdModel → mmdPmx`; no OpenUSD in either | §26's `Canonicalize(const pmx::Document&)` settles the first; the second keeps canonical MMD usable by non-USD tools ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)). | binding (Phase 2) |
 | §15.2 — stable-ID precedence includes transliteration and recognized roles | Contract v1 uses the English name or an index fallback only | Both a transliteration table and a role table would become part of the stage ABI; they stay open until a consumer needs them ([TEXT_ENCODING_POLICY.md §6](TEXT_ENCODING_POLICY.md#6-stable-identifiers)). | binding (Phase 2) |

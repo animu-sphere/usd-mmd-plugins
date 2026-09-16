@@ -76,3 +76,9 @@ specific sphere, toon, edge and other semantics remain on the material prim.
 - A texture whose path is refused keeps its source string in the material's
   `customData` and has no `mmd:material:*` asset attribute
   ([TEXT_ENCODING_POLICY.md §7.2](../design/TEXT_ENCODING_POLICY.md#72-unsafe-paths)).
+- `/Asset/morph` holds one prim per PMX morph. A vertex morph is a
+  `UsdSkelBlendShape` the mesh lists in `skel:blendShapes`, so any UsdSkel
+  consumer that authors blend-shape weights over the stage — the importer
+  authors none — deforms the mesh with it; every other type is a typeless
+  prim whose `mmd:morph:*` properties preserve the source semantics without
+  evaluating them ([STAGE_CONTRACT.md §11](../design/STAGE_CONTRACT.md#11-morphs)).
