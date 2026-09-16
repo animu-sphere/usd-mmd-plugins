@@ -7,9 +7,9 @@
 > Phase 2, where `mmdModel` implements them for what the stage authors: the
 > model's metadata, textures, vertices, faces, materials' face ranges and
 > texture slots, and bones' names, positions and parents. §8's "Canonical"
-> column is binding since Phase 3, and §10 with the morph part of §14 step 7
-> since Phase 4. The control and physics parts of step 7 stay **proposed**
-> until the Phase that authors each. This document
+> column is binding since Phase 3, §10 with the morph part of §14 step 7
+> since Phase 4, and §9's decisions with the control part of step 7 since
+> Phase 5. The physics part of step 7 stays **proposed** until Phase 6. This document
 > fixes how PMX 2.0 and 2.1 bytes are read and what each source concept
 > becomes in the canonical model. It records *decisions*; the byte layout
 > below is a summary for orientation, and the parser's fixtures —
@@ -244,14 +244,21 @@ Decisions:
 
 - The **deformation skeleton** is built from positions and parents only.
   Everything else in this table is control or display semantics, carried
-  declaratively into the canonical model and authored under `/Asset/rig` from
-  Phase 5. Nothing is evaluated.
+  declaratively into the canonical model and authored under `/Asset/rig`
+  ([STAGE_CONTRACT.md §12](STAGE_CONTRACT.md#12-control-rig)), every bone
+  index remapped to the canonical joint order. Nothing is evaluated.
 - **Transform layer** and **deform after physics** determine MMD's evaluation
   order. They are preserved exactly; the canonical joint order is *not* an
   evaluation order and must not be read as one.
 - An out-of-range **parent** is recoverable (the bone becomes a root). An
   out-of-range IK target, IK link, append parent or tail bone is recoverable:
-  that relation is dropped with `MMD_PMX_INDEX_OUT_OF_RANGE`.
+  that relation is dropped with `MMD_PMX_INDEX_OUT_OF_RANGE`. An IK bone
+  whose target names no bone — dropped so, or `−1` in the source — carries
+  no IK chain, since it brings nothing anywhere; its other semantics stay.
+- **Axes and limits** are converted once: a fixed axis as an axial vector,
+  local axes as the frame they make up, and IK link limits per axis
+  ([STAGE_CONTRACT.md §6.3](STAGE_CONTRACT.md#63-conversion-functions)).
+  Angles stay in radians and the loop count and limit angle are unchanged.
 - Flag bits not listed are preserved and ignored.
 
 ## 10. Morphs
@@ -382,7 +389,8 @@ repair is a recoverable diagnostic.
 
 Each step covers only the tables the stage authors so far: step 1 names
 materials and bones; step 6 normalizes texture references, and toon ramps and
-sphere modes with Phase 3; step 7 is empty until Phase 4. An element kind joins
+sphere modes with Phase 3; step 7 carries morphs from Phase 4 and control
+semantics from Phase 5. An element kind joins
 identity and provenance with the Phase that authors it, so no diagnostic is
 raised about something the stage does not contain.
 

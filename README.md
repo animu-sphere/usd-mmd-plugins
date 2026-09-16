@@ -62,7 +62,7 @@ are fixed in [docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md).
   mtl/<material>          UsdShadeMaterial: MMD semantics + /preview and /mtlx graphs
   skel/Skeleton           UsdSkelSkeleton in canonical joint order
   morph/<morph>           UsdSkelBlendShape for vertex morphs; others preserved declaratively
-  rig/                    MMD control semantics (IK, append transforms) — later
+  rig/Bones, rig/ik/<bone> MMD control semantics: IK chains, append relations, axes — never solved
   physics/                rigid bodies and joints, preserved, never simulated — later
 ```
 

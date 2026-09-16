@@ -82,3 +82,9 @@ specific sphere, toon, edge and other semantics remain on the material prim.
   authors none — deforms the mesh with it; every other type is a typeless
   prim whose `mmd:morph:*` properties preserve the source semantics without
   evaluating them ([STAGE_CONTRACT.md §11](../design/STAGE_CONTRACT.md#11-morphs)).
+- `/Asset/rig` holds each bone's control semantics, never solved:
+  `/Asset/rig/Bones` has one `mmd:rig:*` array per property, element `j`
+  describing joint `j` of the Skeleton, and `/Asset/rig/ik` one prim per IK
+  chain, named by its IK bone, whose `mmd:rig:effector` and
+  `mmd:rig:linkJoints` are joint indices too
+  ([STAGE_CONTRACT.md §12](../design/STAGE_CONTRACT.md#12-control-rig)).
