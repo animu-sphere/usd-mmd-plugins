@@ -72,10 +72,12 @@ TRANSLATABLE = 0x0004
 VISIBLE = 0x0008
 OPERABLE = 0x0010
 IK = 0x0020
+LOCAL_APPEND = 0x0080
 APPEND_ROTATION = 0x0100
 APPEND_TRANSLATION = 0x0200
 FIXED_AXIS = 0x0400
 LOCAL_AXES = 0x0800
+DEFORM_AFTER_PHYSICS = 0x1000
 EXTERNAL_PARENT = 0x2000
 
 
@@ -420,17 +422,17 @@ def sample_model(version: float, encoding: int, width: int, extra: int) -> dict:
         bone("センター", "center", (0.0, 8.0, 0.0), -1,
              ROTATABLE | TRANSLATABLE | VISIBLE | OPERABLE, (0.0, 1.0, 0.0)),
         bone("左腕", "LeftArm", (1.5, 13.0, 0.0), 0,
-             TAIL_IS_BONE | ROTATABLE | VISIBLE | OPERABLE, 2),
+             TAIL_IS_BONE | ROTATABLE | VISIBLE | OPERABLE | DEFORM_AFTER_PHYSICS, 2),
         bone("左ひじ", "LeftElbow", (3.0, 12.0, 0.0), 1,
-             ROTATABLE | VISIBLE | APPEND_ROTATION | FIXED_AXIS | LOCAL_AXES
-             | EXTERNAL_PARENT, (1.0, 0.0, 0.0), layer=1,
-             append=(1, 0.5), fixedAxis=(1.0, 0.0, 0.0),
-             localAxes=((1.0, 0.0, 0.0), (0.0, 0.0, 1.0)), externalParentKey=3),
+             ROTATABLE | VISIBLE | APPEND_ROTATION | APPEND_TRANSLATION | LOCAL_APPEND
+             | FIXED_AXIS | LOCAL_AXES | EXTERNAL_PARENT, (1.0, 0.25, -0.5), layer=1,
+             append=(1, 0.5), fixedAxis=(0.8, 0.0, -0.6),
+             localAxes=((0.8, 0.0, 0.6), (-0.6, 0.0, 0.8)), externalParentKey=3),
         bone("左手首ＩＫ", "LeftWrist IK", (4.5, 11.0, 0.0), 0,
              TAIL_IS_BONE | ROTATABLE | TRANSLATABLE | VISIBLE | OPERABLE | IK,
              -1, ik={"target": 2, "loopCount": 40, "limitAngle": 2.0,
-                     "links": [(2, ((-3.1, 0.0, 0.0), (-0.01, 0.0, 0.0))),
-                               (1, None)]}),
+                     "links": [(1, ((-3.1, -0.5, -0.25), (-0.01, 0.5, 0.75))),
+                               (0, None)]}),
     ]
     model["morphs"] = [
         {"name": "まばたき", "englishName": "blink", "panel": 2, "type": "vertex",
@@ -754,6 +756,90 @@ def morph_expectation(model: dict, canonical_of: list[int]) -> list[dict]:
     return out
 
 
+def rig_expectation(model: dict, canonical_of: list[int], order: list[int],
+                    bone_ids: list[str]) -> dict:
+    """What /Asset/rig holds (STAGE_CONTRACT.md §12): every joint's control
+    semantics in canonical joint order, and one chain per IK bone whose
+    effector names a bone, in bone-table order. A relation whose bone the
+    parser rejects is dropped (PMX_CONTRACT.md §9)."""
+    bones = model["bones"]
+
+    def joint(index: int) -> int:
+        return canonical_of[index] if in_table(index, len(bones)) else -1
+
+    def mirrored(v: tuple) -> list[float]:
+        """A local X axis: Z mirrored, neither scaled nor normalized."""
+        return [f32(v[0]) + 0.0, f32(v[1]) + 0.0, -f32(v[2]) + 0.0]
+
+    zero = [0.0, 0.0, 0.0]
+    controls = []
+    for source in order:
+        b = bones[source]
+        flags = b["flags"]
+        tail_is_bone = bool(flags & TAIL_IS_BONE)
+        appends = bool(flags & (APPEND_ROTATION | APPEND_TRANSLATION))
+        append_source = joint(b["append"][0]) if appends else -1
+        appended = append_source != -1
+        local_axes = flags & LOCAL_AXES
+        controls.append({
+            "transformLayer": b["transformLayer"],
+            "deformAfterPhysics": bool(flags & DEFORM_AFTER_PHYSICS),
+            "rotatable": bool(flags & ROTATABLE),
+            "translatable": bool(flags & TRANSLATABLE),
+            "visible": bool(flags & VISIBLE),
+            "operable": bool(flags & OPERABLE),
+            "tailJoint": joint(b["tail"]) if tail_is_bone else -1,
+            "tailOffset": zero if tail_is_bone else point(b["tail"]),
+            "appendSource": append_source,
+            "appendRatio": f32(b["append"][1]) if appended else 0.0,
+            "appendRotation": appended and bool(flags & APPEND_ROTATION),
+            "appendTranslation": appended and bool(flags & APPEND_TRANSLATION),
+            "appendLocal": appended and bool(flags & LOCAL_APPEND),
+            "hasFixedAxis": bool(flags & FIXED_AXIS),
+            "fixedAxis": axial(b["fixedAxis"]) if flags & FIXED_AXIS else zero,
+            "hasLocalAxes": bool(local_axes),
+            "localAxisX": mirrored(b["localAxes"][0]) if local_axes else zero,
+            "localAxisZ": axial(b["localAxes"][1]) if local_axes else zero,
+            "hasExternalParent": bool(flags & EXTERNAL_PARENT),
+            "externalParentKey": b["externalParentKey"] if flags & EXTERNAL_PARENT else 0,
+        })
+
+    chains = []
+    for i, b in enumerate(bones):
+        if not b["flags"] & IK or joint(b["ik"]["target"]) == -1:
+            continue
+        links = []
+        for index, limits in b["ik"]["links"]:
+            if joint(index) == -1:
+                continue
+            lower, upper = limits if limits is not None else (zero, zero)
+            links.append({
+                "joint": joint(index), "hasLimits": limits is not None,
+                # About X and Y [min, max] -> [-max, -min]; Z unchanged.
+                "lower": [-f32(upper[0]) + 0.0, -f32(upper[1]) + 0.0, f32(lower[2]) + 0.0],
+                "upper": [-f32(lower[0]) + 0.0, -f32(lower[1]) + 0.0, f32(upper[2]) + 0.0],
+            })
+        chains.append({"id": bone_ids[i], "sourceIndex": i,
+                       "name": display_name(b["name"]),
+                       "englishName": display_name(b["englishName"]),
+                       "joint": joint(i), "effector": joint(b["ik"]["target"]),
+                       "loopCount": b["ik"]["loopCount"],
+                       "limitAngle": f32(b["ik"]["limitAngle"]), "links": links})
+
+    # The acceptance of Phase 5, in the source's own terms: every IK chain as
+    # (IK bone, effector, links) and every append as (bone, source), by
+    # bone-table index, for a check that reconstructs them from the stage.
+    relations = {
+        "ikChains": [[c["sourceIndex"], b["ik"]["target"],
+                      [index for index, _ in b["ik"]["links"] if in_table(index, len(bones))]]
+                     for c, b in ((c, bones[c["sourceIndex"]]) for c in chains)],
+        "appends": [[i, b["append"][0]] for i, b in enumerate(bones)
+                    if b["flags"] & (APPEND_ROTATION | APPEND_TRANSLATION)
+                    and in_table(b["append"][0], len(bones))],
+    }
+    return {"bones": controls, "ikChains": chains, "sourceRelations": relations}
+
+
 def stage_expectation(model: dict, relative: str) -> dict:
     """What the canonical stage of `model`, written at `relative`, holds."""
     bones = model["bones"]
@@ -829,8 +915,9 @@ def stage_expectation(model: dict, relative: str) -> dict:
         # Blend shapes deform only beneath a SkelRoot (STAGE_CONTRACT.md §4.1).
         mesh["blendShapes"] = [m["id"] for m in morphs
                                if m["type"] == "vertex"] if skinned else []
+    rig = rig_expectation(model, joint_of_source, order, bone_ids) if skinned else None
     return {"skinned": skinned, "mesh": mesh, "materials": materials,
-            "joints": joints, "morphs": morphs,
+            "joints": joints, "morphs": morphs, "rig": rig,
             "jointOfSourceBone": joint_of_source}
 
 
@@ -984,7 +1071,24 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
         {"name": "まばたき", "englishName": "blink", "panel": 2, "type": "vertex",
          "offsets": [(0, (0.0, -0.1, 0.0))]},  # vertex 0 of an empty table
     ]
+    # Control relations that name bones the table does not hold, and an IK
+    # bone whose effector is none: each relation is dropped, the rest kept.
+    broken = sample_model(2.0, UTF16LE, 1, 0)
+    broken["bones"][1]["tail"] = 9
+    broken["bones"][2]["append"] = (9, 0.5)
+    broken["bones"][3]["ik"]["links"].insert(1, (9, None))
+    broken["bones"] += [
+        bone("足ＩＫ", "LegIK", (1.0, 1.0, 0.0), 0, TAIL_IS_BONE | IK, -1,
+             ik={"target": 9, "loopCount": 40, "limitAngle": 2.0, "links": [(0, None)]}),
+        bone("つま先ＩＫ", "ToeIK", (1.0, 0.0, -1.0), 0, TAIL_IS_BONE | IK, -1,
+             ik={"target": -1, "loopCount": 3, "limitAngle": 4.0, "links": []}),
+    ]
     entries.update({
+        "recoverable/rig-broken-relations.pmx": opens(
+            broken, "a tail, an append source, an IK link and an IK effector "
+            "that name no bone, and an IK bone whose effector is none: each "
+            "relation is dropped and the rest of the rig kept",
+            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 4, importer=sdef),
         "bones-reordered.pmx": opens(
             reordered, "a bone listed before its parent: the joints are reordered",
             canonical=["MMD_SKEL_JOINTS_REORDERED"], importer=sdef),

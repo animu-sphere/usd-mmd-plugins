@@ -50,6 +50,21 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   with `MMD_MORPH_UNKNOWN_PANEL`. STAGE-O4 is resolved as proposed; the
   torque of an impulse morph adds the axial-vector row to the conversion
   table.
+- **Phase 5 control semantics.** A model with bones now authors `/Asset/rig`.
+  `/Asset/rig/Bones` carries every joint's control semantics as uniform
+  `mmd:rig:*` arrays parallel to the Skeleton's joints — transform layer,
+  deform-after-physics, the rotatable / translatable / visible / operable
+  flags, the tail, the append source, ratio and kind, the fixed axis, the
+  local axes and the external-parent key — and `/Asset/rig/ik/<bone>` one
+  typeless prim per IK chain, with its effector, loop count, limit angle and
+  links with their rotation limits. Every joint index is canonical; a fixed
+  axis converts as an axial vector, local axes as the frame they make up, and
+  link limits per axis. A relation whose bone the parser rejected is dropped,
+  and an IK bone with no effector authors no chain. Nothing is solved or
+  applied. The rig half of STAGE-O6 is decided: typeless prims and no API
+  schema. `recoverable/rig-broken-relations.pmx` joins the fixtures (38), and
+  the stage checks reconstruct every IK chain and append relation from the
+  stage alone and compare them with the source.
 - **`mmdModel`** (`libs/mmdModel/`), a plain static library with no OpenUSD:
   `mmd::Canonicalize(const pmx::Document&)` applies the one source-to-USD
   conversion (right-handed, facing +Z, 0.08 m per MMD unit), assigns stable

@@ -74,6 +74,19 @@ Quaternion(const Float4& source)
     return {Mirror(source[0]), Mirror(source[1]), source[2], source[3]};
 }
 
+LocalAxes
+Frame(const Float3& x, const Float3& z)
+{
+    return {{x[0] + 0.0f, x[1] + 0.0f, Mirror(x[2])}, AxialVector(z)};
+}
+
+RotationLimits
+Limits(const Float3& lower, const Float3& upper)
+{
+    return {{Mirror(upper[0]), Mirror(upper[1]), lower[2] + 0.0f},
+            {Mirror(lower[0]), Mirror(lower[1]), upper[2] + 0.0f}};
+}
+
 Float2
 St(const Float2& source)
 {

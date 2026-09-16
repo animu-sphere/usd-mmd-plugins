@@ -9,8 +9,9 @@
 // the pieces that make a path unsafe. Each generated document is
 // canonicalized twice and checked against the promises CanonicalDocument.h
 // makes -- morphs included, whose members are generated to cycle freely
-// through each other. The generator is a fixed-seed PRNG with its own arithmetic, so the
-// run is the same on every platform.
+// through each other, and the rig, whose bones carry every flag and name any
+// bone or none. The generator is a fixed-seed PRNG with its own arithmetic,
+// so the run is the same on every platform.
 #include "mmdModel/Canonicalize.h"
 
 #include <cassert>
@@ -166,6 +167,25 @@ Generate(Random& r)
         b.position = WildVec3(r);
         // Anything the parser can leave, cycles and self-parents included.
         b.parent = Index(r, bones);
+        // Every flag, undefined bits too, and relations that name any bone,
+        // this one included, or none.
+        b.flags = static_cast<std::uint16_t>(r.Below(0x10000));
+        b.transformLayer = static_cast<std::int32_t>(r.Below(5)) - 2;
+        b.tailBone = Index(r, bones);
+        b.tailOffset = WildVec3(r);
+        b.appendParent = Index(r, bones);
+        b.appendRatio = WildFloat(r);
+        b.fixedAxis = WildVec3(r);
+        b.localAxisX = WildVec3(r);
+        b.localAxisZ = WildVec3(r);
+        b.externalParentKey = static_cast<std::int32_t>(r.Below(8));
+        b.ik.target = Index(r, bones);
+        b.ik.loopCount = static_cast<std::int32_t>(r.Below(100));
+        b.ik.limitAngle = WildFloat(r);
+        const std::size_t links = r.Below(4);
+        for (std::size_t k = 0; k < links; ++k) {
+            b.ik.links.push_back({Index(r, bones), r.OneIn(2), WildVec3(r), WildVec3(r)});
+        }
         doc.bones.push_back(b);
     }
 
@@ -386,6 +406,51 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
         }
     }
 
+    // Rig: one control per joint, every kept joint index naming a joint, one
+    // chain per IK bone with an effector, in bone-table order.
+    const auto joint = [nb](std::int32_t j) { return j >= 0 && static_cast<std::size_t>(j) < nb; };
+    if (c.rig.bones.size() != nb) {
+        return "the rig is not one control per joint";
+    }
+    for (const mmd::BoneControl& b : c.rig.bones) {
+        if ((b.tailJoint != mmd::kNone && !joint(b.tailJoint)) ||
+            (b.appendSource != mmd::kNone && !joint(b.appendSource))) {
+            return "a bone's tail or append source names no joint";
+        }
+        if (b.appendSource == mmd::kNone &&
+            (b.appendRatio != 0.0f || b.appendRotation || b.appendTranslation || b.appendLocal)) {
+            return "a bone that appends nothing keeps append fields";
+        }
+    }
+    std::size_t chains = 0;
+    std::int32_t previous = -1;
+    for (std::size_t i = 0; i < nb; ++i) {
+        const pmx::Bone& b = doc.bones[i];
+        if ((b.flags & pmx::BoneFlag::Ik) && b.ik.target >= 0 &&
+            static_cast<std::size_t>(b.ik.target) < nb) {
+            ++chains;
+        }
+    }
+    if (c.rig.ikChains.size() != chains) {
+        return "the IK chains are not one per IK bone with an effector";
+    }
+    for (const mmd::IkChain& chain : c.rig.ikChains) {
+        if (!joint(chain.joint) || !joint(chain.effector)) {
+            return "an IK chain's joint or effector names no joint";
+        }
+        const auto source = static_cast<std::int32_t>(
+            c.skeleton.bones[static_cast<std::size_t>(chain.joint)].sourceIndex);
+        if (source <= previous) {
+            return "the IK chains are not in bone-table order";
+        }
+        previous = source;
+        for (const mmd::IkLink& link : chain.links) {
+            if (!joint(link.joint)) {
+                return "an IK link names no joint";
+            }
+        }
+    }
+
     // Mesh: every array sized to the vertices, faces in range.
     if (mesh.points.size() != nv || mesh.normals.size() != nv || mesh.st.size() != nv ||
         mesh.edgeScale.size() != nv) {
@@ -588,6 +653,24 @@ public:
                 std::to_string(b.sourceIndex),
                 std::to_string(b.parent));
             Raw(std::vector<mmd::Double3>{b.position, b.localTranslation});
+        }
+        for (const mmd::BoneControl& b : c.rig.bones) {
+            Add(std::to_string(b.transformLayer),
+                std::to_string(b.tailJoint),
+                std::to_string(b.appendSource),
+                std::to_string(b.externalParentKey));
+            Raw(std::vector<mmd::Float3>{b.tailOffset, b.fixedAxis, b.localAxisX, b.localAxisZ});
+            Raw(std::vector<float>{b.appendRatio});
+        }
+        for (const mmd::IkChain& chain : c.rig.ikChains) {
+            Add(std::to_string(chain.joint),
+                std::to_string(chain.effector),
+                std::to_string(chain.loopCount));
+            Raw(std::vector<float>{chain.limitAngle});
+            for (const mmd::IkLink& link : chain.links) {
+                Add(std::to_string(link.joint));
+                Raw(std::vector<mmd::Float3>{link.lowerLimit, link.upperLimit});
+            }
         }
     }
 

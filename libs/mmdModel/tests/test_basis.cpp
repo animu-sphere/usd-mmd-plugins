@@ -66,6 +66,23 @@ TestRotationsAndTexCoords()
     assert(torque[0] == -0.1f && torque[1] == -0.2f && torque[2] == 0.3f);
     assert(PositiveZero(basis::AxialVector({0.0f, 0.0f, 0.0f})[0]));
 
+    // A local frame converts as the rotation it makes up: X as a direction,
+    // Z as an axial vector, neither scaled nor normalized -- so the identity
+    // frame stays the identity, and Y = Z x X still holds.
+    const basis::LocalAxes frame = basis::Frame({2.0f, 0.5f, 0.25f}, {0.1f, 0.2f, 0.3f});
+    assert(frame.x[0] == 2.0f && frame.x[1] == 0.5f && frame.x[2] == -0.25f);
+    assert(frame.z[0] == -0.1f && frame.z[1] == -0.2f && frame.z[2] == 0.3f);
+    const basis::LocalAxes identity = basis::Frame({1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
+    assert(identity.x[0] == 1.0f && PositiveZero(identity.x[2]));
+    assert(PositiveZero(identity.z[0]) && PositiveZero(identity.z[1]) && identity.z[2] == 1.0f);
+
+    // Rotation limits: about X and Y [min, max] -> [-max, -min]; Z unchanged.
+    const basis::RotationLimits limits =
+        basis::Limits({-3.0f, -2.0f, -1.0f}, {0.5f, 0.25f, 0.125f});
+    assert(limits.lower[0] == -0.5f && limits.lower[1] == -0.25f && limits.lower[2] == -1.0f);
+    assert(limits.upper[0] == 3.0f && limits.upper[1] == 2.0f && limits.upper[2] == 0.125f);
+    assert(PositiveZero(basis::Limits({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}).lower[0]));
+
     const Float2 st = basis::St({0.25f, 0.125f});
     assert(st[0] == 0.25f && st[1] == 0.875f);
     assert(PositiveZero(basis::St({0.0f, 1.0f})[1]));

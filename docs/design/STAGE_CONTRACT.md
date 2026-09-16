@@ -11,13 +11,15 @@
 > material prims with the part of their semantics §10 names — and the §14
 > checklist, which the integration tests assert on every fixture. **Binding**
 > since Phase 4: §11, the morph prims with every property it names.
-> **Proposed**: §12 (Phase 5) and §13 (Phase 6). The material
-> semantics and `preview`/`mtlx` graph boundaries are binding from Phase 3;
-> their interior shader node names remain realization-local.
+> **Binding** since Phase 5: §12, the control rig with every property it
+> names, and the §6.3 rows for fixed axes and local axes.
+> **Proposed**: §13 (Phase 6). The material semantics and `preview`/`mtlx`
+> graph boundaries are binding from Phase 3; their interior shader node names
+> remain realization-local.
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
 > stage metadata, prim hierarchy, types, names, the coordinate conversion, and
-> the layout of skeleton, materials and morphs. Material graphs are detailed in
+> the layout of skeleton, materials, morphs and control rig. Material graphs are detailed in
 > [MATERIAL_POLICY.md](MATERIAL_POLICY.md) and identifier rules in
 > [TEXT_ENCODING_POLICY.md](TEXT_ENCODING_POLICY.md); on those topics they win.
 >
@@ -92,7 +94,10 @@ consumer can ignore.
 │  └─ Skeleton                  UsdSkelSkeleton
 ├─ morph                        Scope                                       (Phase 4)
 │  └─ <morphId>                 UsdSkelBlendShape for vertex morphs; typeless otherwise
-├─ rig                          Scope — MMD control semantics               (reserved, Phase 5)
+├─ rig                          Scope — MMD control semantics               (Phase 5)
+│  ├─ Bones                     typeless: every joint's control semantics, parallel to the Skeleton's joints
+│  └─ ik                        Scope
+│     └─ <boneId>               typeless: one IK chain, named by its IK bone
 └─ physics                      Scope                                       (reserved, Phase 6)
    ├─ rigidBodies/<rigidBodyId>
    └─ joints/<jointId>
@@ -100,7 +105,7 @@ consumer can ignore.
 
 A scope is authored only when it has children: a PMX with no morphs has no
 `/Asset/morph`. The minimal stage for a model with geometry and bones is
-`/Asset`, `/Asset/geo`, `/Asset/mtl`, `/Asset/skel`.
+`/Asset`, `/Asset/geo`, `/Asset/mtl`, `/Asset/skel`, `/Asset/rig`.
 
 `/Asset` is the default prim in every case: it gives a predictable
 `defaultPrim`, references and payloads that need no target path, one layout
@@ -118,8 +123,8 @@ scope while leaving the geometry where the `/Asset/geo` vocabulary puts it.
 `UsdSkelRoot` is a `UsdGeomXformable`, so `/Asset` still behaves as an
 xformable model root.
 
-The deformation skeleton lives at `/Asset/skel/Skeleton`, and `/Asset/rig` is
-reserved for control semantics (IK chains, append transforms, axes). That is
+The deformation skeleton lives at `/Asset/skel/Skeleton`, and `/Asset/rig`
+holds the control semantics (IK chains, append transforms, axes; §12). That is
 the `usd-vrm-plugins` layout — `skel/Skeleton` beside `rig/Humanoid` — and it is
 the deformation/control split
 [DESIGN_POLICY.md §7.3](DESIGN_POLICY.md#73-the-deformation-skeleton-is-not-the-control-rig)
@@ -201,6 +206,8 @@ With `S = diag(1, 1, −1)`:
 | axial vector (an impulse morph's torque) | `(x, y, z) → (−x, −y, z)`, unscaled — a mirror reverses rotation about X and Y |
 | rotation matrix `R` | `→ S · R · S` |
 | affine matrix | rotation part `S · R · S`, translation part as a point |
+| fixed axis (the one axis a bone rotates about) | `(x, y, z) → (−x, −y, z)`, as an axial vector; unscaled and not normalized |
+| local axes (a bone's X and Z) | the frame as a rotation, `S · R · S`: X `→ (x, y, −z)`, Z `→ (−x, −y, z)`; unscaled and not normalized, and `Y = Z × X` in both bases |
 | Euler angles (rigid bodies, joints) | compose to a matrix in the source's rotation order, convert the matrix, keep it as a quaternion; the source order is fixed in [PMX_CONTRACT.md §13](PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 | rotation limits about X, Y (IK links, joints) | `[min, max] → [−max, −min]` — a Z mirror reverses rotation about X and Y |
 | rotation limits about Z | unchanged |
@@ -351,8 +358,9 @@ from display names. PMX bones carry a position and no orientation; MMD poses
 bones in a world-aligned frame, so every joint's rest and bind rotation is the
 identity. A rest translation is the source offset from the parent's position,
 taken from the source floats and converted once (§6.2), so it is exact rather
-than a difference of two converted positions. Local axes, fixed axes and bone tails are control or display
-semantics, preserved under `/Asset/rig` (Phase 5), not joint orientations.
+than a difference of two converted positions. Local axes, fixed axes and
+bone tails are control or display semantics, preserved under `/Asset/rig`
+(§12), not joint orientations.
 
 ### 9.3 Joint provenance
 
@@ -486,15 +494,75 @@ own morph — directly or through other group morphs — is dropped with
 `MMD_MORPH_GROUP_CYCLE`, so a consumer that does expand one terminates; that
 is a validation, not an evaluation.
 
-## 12. Control rig — reserved
+## 12. Control rig
 
-`/Asset/rig` is reserved for MMD control semantics (Phase 5): IK chains
-(target, end effector, links, loop count, angle limits), append rotation and
-translation (source bone, ratio), fixed and local axes, external parents,
-transform layer and the after-physics flag, and bone tails. Nothing is authored
-there before Phase 5, and nothing there is solved. The shape — plain attributes
-or an admitted API schema — is decided then, under
-[DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test).
+Authored from Phase 5, whenever the model has bones. `/Asset/rig` holds MMD's
+**control** semantics — everything a PMX bone carries beyond the position and
+parent the deformation skeleton is built from (§9) — declaratively, and
+without a second joint hierarchy
+([DESIGN_POLICY.md §7.3](DESIGN_POLICY.md#73-the-deformation-skeleton-is-not-the-control-rig)).
+Every joint index on it is a canonical joint index (§9.1) into
+`/Asset/skel/Skeleton`'s `joints`, as a bone morph's are (§11.2), and `−1`
+names none. Every property is a `uniform` custom attribute, and no API schema
+is applied (STAGE-O6).
+
+### 12.1 Per-joint control semantics
+
+`/Asset/rig/Bones` is a typeless prim whose arrays are each parallel to the
+Skeleton's `joints`: element `j` describes joint `j`.
+
+| Attribute | Type | Content |
+| --- | --- | --- |
+| `mmd:rig:transformLayers` | `int[]` | PMX transform layer, as stored |
+| `mmd:rig:deformAfterPhysics` | `bool[]` | flag `0x1000` |
+| `mmd:rig:rotatable`, `translatable`, `visible`, `operable` | `bool[]` | flags `0x0002`, `0x0004`, `0x0008`, `0x0010` |
+| `mmd:rig:tailJoints` | `int[]` | the tail joint when the tail is a bone (flag `0x0001`), else `−1` |
+| `mmd:rig:tailOffsets` | `vector3f[]` | the tail offset when it is not a bone, §6.3 displacement; else zero |
+| `mmd:rig:appendSources` | `int[]` | the joint whose transform the bone appends (flag `0x0100` or `0x0200`), else `−1` |
+| `mmd:rig:appendRatios` | `float[]` | the append ratio; `0` where `appendSources` is `−1` |
+| `mmd:rig:appendRotation`, `appendTranslation`, `appendLocal` | `bool[]` | flags `0x0100`, `0x0200`, `0x0080`; all `false` where `appendSources` is `−1` |
+| `mmd:rig:hasFixedAxis`, `mmd:rig:fixedAxes` | `bool[]`, `vector3f[]` | flag `0x0400`, and the axis (§6.3 fixed axis); zero where there is none |
+| `mmd:rig:hasLocalAxes`, `mmd:rig:localAxesX`, `mmd:rig:localAxesZ` | `bool[]`, `vector3f[]`, `vector3f[]` | flag `0x0800`, and the X and Z axes (§6.3 local axes); zero where there are none |
+| `mmd:rig:hasExternalParent`, `mmd:rig:externalParentKeys` | `bool[]`, `int[]` | flag `0x2000`, and the key; `0` where there is none |
+
+The transform layer and the after-physics flag are MMD's **evaluation order**
+and are preserved exactly; the canonical joint order is not an evaluation
+order and must not be read as one
+([PMX_CONTRACT.md §9](PMX_CONTRACT.md#9-bones)).
+
+### 12.2 IK chains
+
+One typeless prim per IK chain at `/Asset/rig/ik/<boneId>`, named by its IK
+bone's stable identifier, in bone-table order, carrying that bone's
+provenance (`mmd:sourceName`, `mmd:sourceEnglishName`, `mmd:sourceIndex`) as
+`customData`. The `ik` scope exists only when there is a chain.
+
+| Attribute | Type | Content |
+| --- | --- | --- |
+| `mmd:rig:joint` | `int` | the IK bone: the goal |
+| `mmd:rig:effector` | `int` | PMX's IK target: the joint brought to the goal |
+| `mmd:rig:loopCount` | `int` | as stored |
+| `mmd:rig:limitAngle` | `float` | radians per iteration, unchanged |
+| `mmd:rig:linkJoints` | `int[]` | the links, in source order |
+| `mmd:rig:linkHasLimits` | `bool[]` | whether each link is limited |
+| `mmd:rig:linkLowerLimits`, `mmd:rig:linkUpperLimits` | `vector3f[]` | radians about X, Y and Z, §6.3 rotation limits; zero for an unlimited link |
+
+### 12.3 Repairs
+
+A relation that names a bone the parser rejected (`MMD_PMX_INDEX_OUT_OF_RANGE`,
+[PMX_CONTRACT.md §9](PMX_CONTRACT.md#9-bones)) is dropped rather than
+repaired: a tail becomes `−1`, an append clears every append field, an IK link
+leaves its chain. An IK bone whose effector names no bone — rejected, or `−1`
+in the source — authors no chain: it brings nothing anywhere. The bone's other
+semantics are kept.
+
+### 12.4 Nothing is evaluated
+
+No IK chain is solved, no append is applied, no axis constrains a rotation, no
+external parent is resolved, and nothing reorders the skeleton. A consumer
+reconstructs every IK chain and append relation from these properties alone,
+which is Phase 5's acceptance
+([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
 
 ## 13. Physics — reserved
 
@@ -521,6 +589,9 @@ The stage tests assert, for every fixture that reaches the relevant Phase:
 - every source name survives byte-exact in its provenance field, Japanese
   included;
 - a texture whose filename is Japanese resolves through its `SdfAssetPath`;
+- `/Asset/rig` exists exactly when the model has bones, every
+  `/Asset/rig/Bones` array is sized to `joints`, and every IK chain and append
+  relation the source holds is reconstructed from the stage alone;
 - no attribute has time samples.
 
 Golden `.usda` baselines cover the compact fixtures; the checklist is asserted
@@ -540,7 +611,7 @@ is.
 
 | Id | Question | Proposed answer | Resolve by |
 | --- | --- | --- | --- |
-| STAGE-O6 | Rig and physics prim shapes | decided under the schema admission test | Phases 5, 6 |
+| STAGE-O6 | Physics prim shapes | typeless prims with uniform `mmd:physics:*` attributes beside standard `UsdPhysics` where it matches, as the rig's were decided | Phase 6 |
 
 Resolved:
 
@@ -551,3 +622,4 @@ Resolved:
 | STAGE-O3 | Double-sidedness | the mesh is double-sided if any material that draws a face is no-cull (§8.5) | Phase 2, 2026-09-15 |
 | STAGE-O5 | Weight normalization tolerance and zero-weight rule | `1e-5`; zero weights bind to the first bone that names one (§9.5) | Phase 2, 2026-09-15 |
 | STAGE-O4 | Encoding of non-vertex morph semantics | typeless prims, one uniform `mmd:morph:*` array per field and a relationship for group and flip members (§11.2) | Phase 4, 2026-09-16 |
+| STAGE-O6, rig half | Rig prim shapes | typeless prims with uniform `mmd:rig:*` attributes and no API schema, since no consumer has asked for one ([DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test)): per-joint arrays parallel to the Skeleton's `joints` on `/Asset/rig/Bones`, and one prim per IK chain, whose links vary in length (§12). The physics half stays open. | Phase 5, 2026-09-16 |

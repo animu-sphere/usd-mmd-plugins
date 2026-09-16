@@ -41,6 +41,24 @@ Float3 AxialVector(const Float3& source);
 /// A unit quaternion (x, y, z, w) -> (-x, -y, z, w).
 Float4 Quaternion(const Float4& source);
 
+/// A bone's local X and Z axes, the columns of a frame, converted as the
+/// rotation they make up (S * R * S): X -> (x, y, -z), Z -> (-x, -y, z).
+/// Neither is scaled or normalized, and Y = Z x X in both bases, so a
+/// consumer that orthonormalizes the source frame gets the converted one.
+struct LocalAxes {
+    Float3 x;
+    Float3 z;
+};
+LocalAxes Frame(const Float3& x, const Float3& z);
+
+/// Per-axis rotation limits in radians, [lower, upper]: a Z mirror reverses
+/// rotation about X and Y, so those become [-upper, -lower]; Z is unchanged.
+struct RotationLimits {
+    Float3 lower;
+    Float3 upper;
+};
+RotationLimits Limits(const Float3& lower, const Float3& upper);
+
 /// A PMX UV (origin top-left) -> USD `st` (origin bottom-left): (u, 1 - v).
 Float2 St(const Float2& source);
 

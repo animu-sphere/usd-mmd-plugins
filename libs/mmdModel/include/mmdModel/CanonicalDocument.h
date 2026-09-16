@@ -8,8 +8,9 @@
 //
 // It holds what the current stage authors: metadata, textures, the mesh, the
 // materials' identity, face ranges and texture slots, the deformation
-// skeleton, and every morph's declarative semantics. Control and physics
-// semantics join it with the Phases that author them (DESIGN_POLICY.md §14).
+// skeleton and its control semantics, and every morph's declarative
+// semantics. Physics semantics join it with the Phase that authors them
+// (DESIGN_POLICY.md §14).
 //
 // No OpenUSD type appears here: a tool with no USD in the process can consume
 // canonical MMD (docs/architecture/WORKSPACE.md §2).
@@ -315,12 +316,89 @@ struct Skeleton {
     bool operator==(const Skeleton&) const = default;
 };
 
+/// A bone's control semantics -- everything PMX says about a bone beyond its
+/// position and parent (PMX_CONTRACT.md §9, STAGE_CONTRACT.md §12). Every
+/// joint index is canonical and names a joint, or is kNone; a relation whose
+/// bone the parser rejected is dropped rather than repaired. Nothing here is
+/// evaluated: no append is applied and no axis constrains a rotation.
+struct BoneControl {
+    /// MMD's evaluation order, with `deformAfterPhysics`: preserved exactly,
+    /// and not the canonical joint order.
+    std::int32_t transformLayer = 0;
+    bool deformAfterPhysics = false;
+    bool rotatable = false;
+    bool translatable = false;
+    bool visible = false;
+    bool operable = false;
+    /// The tail is a joint, or an offset from the bone in meters (a
+    /// displacement); the other is kNone or zero.
+    std::int32_t tailJoint = kNone;
+    Float3 tailOffset{};
+    /// Append (inherit): the joint whose rotation, translation or both this
+    /// bone takes on, scaled by the ratio. kNone, with every other append
+    /// field cleared, when the bone appends nothing.
+    std::int32_t appendSource = kNone;
+    float appendRatio = 0.0f;
+    bool appendRotation = false;
+    bool appendTranslation = false;
+    bool appendLocal = false; ///< PMX flag 0x0080: the source's local transform
+    /// The one axis the bone rotates about, as an axial vector
+    /// (STAGE_CONTRACT.md §6.3); zero when `hasFixedAxis` is false.
+    bool hasFixedAxis = false;
+    Float3 fixedAxis{};
+    /// The X and Z columns of the bone's local frame, converted as a rotation
+    /// (STAGE_CONTRACT.md §6.3); zero when `hasLocalAxes` is false.
+    bool hasLocalAxes = false;
+    Float3 localAxisX{};
+    Float3 localAxisZ{};
+    bool hasExternalParent = false;
+    std::int32_t externalParentKey = 0;
+
+    bool operator==(const BoneControl&) const = default;
+};
+
+/// One joint of an IK chain the solver may rotate, and its limits.
+struct IkLink {
+    std::int32_t joint = kNone;
+    bool hasLimits = false;
+    /// Radians, about each axis of the USD basis: about X and Y the source's
+    /// [min, max] is [-max, -min], about Z it is unchanged
+    /// (STAGE_CONTRACT.md §6.3). Zero when `hasLimits` is false.
+    Float3 lowerLimit{};
+    Float3 upperLimit{};
+
+    bool operator==(const IkLink&) const = default;
+};
+
+/// A declarative IK chain (STAGE_CONTRACT.md §12): the effector is brought
+/// to the IK bone by rotating the links. Nothing is solved.
+struct IkChain {
+    std::int32_t joint = kNone;    ///< the IK bone: the goal
+    std::int32_t effector = kNone; ///< PMX's IK target: the joint that reaches it
+    std::int32_t loopCount = 0;
+    float limitAngle = 0.0f;   ///< radians per iteration, unchanged
+    std::vector<IkLink> links; ///< source order; a link that names no bone is dropped
+
+    bool operator==(const IkChain&) const = default;
+};
+
+/// The control rig (STAGE_CONTRACT.md §12).
+struct Rig {
+    /// One per joint, in canonical joint order, parallel to Skeleton::bones.
+    std::vector<BoneControl> bones;
+    /// One per IK bone whose effector names a bone, in bone-table order.
+    std::vector<IkChain> ikChains;
+
+    bool operator==(const Rig&) const = default;
+};
+
 struct CanonicalDocument {
     Metadata metadata;
     std::vector<Texture> textures; ///< source texture-table order
     Mesh mesh;                     ///< empty when the model has no vertices
     std::vector<Material> materials;
     Skeleton skeleton;         ///< empty when the model has no bones
+    Rig rig;                   ///< empty when the model has no bones
     std::vector<Morph> morphs; ///< source morph-table order
 
     bool operator==(const CanonicalDocument&) const = default;

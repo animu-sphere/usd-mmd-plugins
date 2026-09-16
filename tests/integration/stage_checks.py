@@ -64,6 +64,7 @@ class Checker:
         self.materials(mesh)
         self.skeleton(mesh)
         self.morphs(mesh)
+        self.rig()
         for prim in self.stage.Traverse():
             for attr in prim.GetAttributes():
                 self.expect(attr.GetNumTimeSamples() == 0,
@@ -119,7 +120,8 @@ class Checker:
             ("geo", self.shape["mesh"] is not None),
             ("mtl", bool(self.shape["materials"])),
             ("skel", self.shape["skinned"]),
-            ("morph", bool(self.shape["morphs"]))) if present]
+            ("morph", bool(self.shape["morphs"])),
+            ("rig", self.shape["rig"] is not None)) if present]
         children = [child.GetName() for child in asset.GetChildren()]
         expect(children == scopes, f"/Asset's children are {children}, expected {scopes}")
         for name in scopes:
@@ -495,6 +497,106 @@ class Checker:
         self.expect(attr.IsValid(), f"{path} has no {name}")
         got = [list(v) for v in (attr.Get() or [])]
         self.expect(got == want, f"{path} {name} is {got}, expected {want}")
+
+    # --- /Asset/rig (§12) --------------------------------------------------------------
+
+    RIG_ARRAYS = (  # attribute on /Asset/rig/Bones, field of fixtures.json
+        ("transformLayers", "transformLayer"), ("deformAfterPhysics", "deformAfterPhysics"),
+        ("rotatable", "rotatable"), ("translatable", "translatable"),
+        ("visible", "visible"), ("operable", "operable"),
+        ("tailJoints", "tailJoint"), ("tailOffsets", "tailOffset"),
+        ("appendSources", "appendSource"), ("appendRatios", "appendRatio"),
+        ("appendRotation", "appendRotation"), ("appendTranslation", "appendTranslation"),
+        ("appendLocal", "appendLocal"),
+        ("hasFixedAxis", "hasFixedAxis"), ("fixedAxes", "fixedAxis"),
+        ("hasLocalAxes", "hasLocalAxes"), ("localAxesX", "localAxisX"),
+        ("localAxesZ", "localAxisZ"),
+        ("hasExternalParent", "hasExternalParent"),
+        ("externalParentKeys", "externalParentKey"),
+    )
+
+    def rig(self) -> None:
+        """Every joint's control semantics as uniform arrays parallel to the
+        Skeleton's joints, and one typeless prim per IK chain, every value
+        exactly the bits the generator computed."""
+        expect = self.expect
+        want = self.shape["rig"]
+        scope = self.stage.GetPrimAtPath("/Asset/rig")
+        if want is None:
+            expect(not scope.IsValid(), "a rig is authored for a model without bones")
+            return
+        children = [child.GetName() for child in scope.GetChildren()]
+        wanted = ["Bones"] + (["ik"] if want["ikChains"] else [])
+        expect(children == wanted, f"/Asset/rig holds {children}, expected {wanted}")
+
+        bones = self.stage.GetPrimAtPath("/Asset/rig/Bones")
+        expect(bones.GetTypeName() == "", f"/Asset/rig/Bones is a {bones.GetTypeName()!r}")
+        joints = len(self.shape["joints"])
+        for attribute, field in self.RIG_ARRAYS:
+            attr = bones.GetAttribute(f"mmd:rig:{attribute}")
+            expect(attr.IsValid() and attr.GetVariability() == Sdf.VariabilityUniform,
+                   f"/Asset/rig/Bones has no uniform mmd:rig:{attribute}")
+            got = attr.Get() or []
+            expect(len(got) == joints, f"mmd:rig:{attribute} holds {len(got)} of {joints} joints")
+            column = [control[field] for control in want["bones"]]
+            if column and isinstance(column[0], list):
+                self.vectors(attr, column, "/Asset/rig/Bones", attribute)
+            else:
+                self.array(attr, column, "/Asset/rig/Bones", attribute)
+
+        if want["ikChains"]:
+            ik = self.stage.GetPrimAtPath("/Asset/rig/ik")
+            expect(ik.GetTypeName() == "Scope", "/Asset/rig/ik is no Scope")
+            names = [child.GetName() for child in ik.GetChildren()]
+            expect(names == [c["id"] for c in want["ikChains"]],
+                   f"/Asset/rig/ik holds {names}, expected {[c['id'] for c in want['ikChains']]}")
+        for chain in want["ikChains"]:
+            path = f"/Asset/rig/ik/{chain['id']}"
+            prim = self.stage.GetPrimAtPath(path)
+            expect(prim.IsValid() and prim.GetTypeName() == "", f"{path} is no typeless prim")
+            custom = prim.GetCustomDataByKey
+            expect(custom("mmd:sourceName") == chain["name"]
+                   and custom("mmd:sourceEnglishName") == chain["englishName"]
+                   and custom("mmd:sourceIndex") == chain["sourceIndex"],
+                   f"{path} provenance is {prim.GetCustomData()}")
+            for name in ("joint", "effector", "loopCount", "limitAngle"):
+                got = prim.GetAttribute(f"mmd:rig:{name}").Get()
+                expect(got == chain[name], f"{path} mmd:rig:{name} is {got!r}")
+            links = chain["links"]
+            self.array(prim.GetAttribute("mmd:rig:linkJoints"),
+                       [link["joint"] for link in links], path, "linkJoints")
+            self.array(prim.GetAttribute("mmd:rig:linkHasLimits"),
+                       [link["hasLimits"] for link in links], path, "linkHasLimits")
+            self.vectors(prim.GetAttribute("mmd:rig:linkLowerLimits"),
+                         [link["lower"] for link in links], path, "linkLowerLimits")
+            self.vectors(prim.GetAttribute("mmd:rig:linkUpperLimits"),
+                         [link["upper"] for link in links], path, "linkUpperLimits")
+        self.reconstruction(want["sourceRelations"])
+
+    def reconstruction(self, want: dict) -> None:
+        """Phase 5's acceptance (DESIGN_POLICY.md §14): a consumer reconstructs
+        every IK chain and append relation from the stage alone. This reads
+        nothing but the stage -- the rig's joint indices, resolved through the
+        Skeleton's own provenance -- and compares with what the source says."""
+        skeleton = self.stage.GetPrimAtPath("/Asset/skel/Skeleton")
+        source_of = list(skeleton.GetAttribute("mmd:bone:sourceIndex").Get())
+        bones = self.stage.GetPrimAtPath("/Asset/rig/Bones")
+        chains = []
+        ik = self.stage.GetPrimAtPath("/Asset/rig/ik")
+        for prim in (ik.GetChildren() if ik.IsValid() else []):
+            attr = prim.GetAttribute
+            chains.append([source_of[attr("mmd:rig:joint").Get()],
+                           source_of[attr("mmd:rig:effector").Get()],
+                           [source_of[j] for j in attr("mmd:rig:linkJoints").Get()]])
+        chains.sort()
+        self.expect(chains == sorted(want["ikChains"]),
+                    f"the stage reconstructs IK chains {chains}, the source has "
+                    f"{sorted(want['ikChains'])}")
+        appends = sorted([source_of[j], source_of[s]] for j, s in
+                         enumerate(bones.GetAttribute("mmd:rig:appendSources").Get()) if s != -1)
+        self.expect(appends == sorted(want["appends"]),
+                    f"the stage reconstructs appends {appends}, the source has "
+                    f"{sorted(want['appends'])}")
 
     # --- /Asset/skel and the skin binding (§9) ----------------------------------------
 

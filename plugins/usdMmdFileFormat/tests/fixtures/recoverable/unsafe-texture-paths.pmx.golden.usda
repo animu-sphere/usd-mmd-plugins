@@ -364,5 +364,55 @@ not a distributed model"""
             custom uniform token mmd:morph:type = "material"
         }
     }
+
+    def Scope "rig"
+    {
+        def "Bones"
+        {
+            custom uniform bool[] mmd:rig:appendLocal = [0, 0, 1, 0]
+            custom uniform float[] mmd:rig:appendRatios = [0, 0, 0.5, 0]
+            custom uniform bool[] mmd:rig:appendRotation = [0, 0, 1, 0]
+            custom uniform int[] mmd:rig:appendSources = [-1, -1, 1, -1]
+            custom uniform bool[] mmd:rig:appendTranslation = [0, 0, 1, 0]
+            custom uniform bool[] mmd:rig:deformAfterPhysics = [0, 1, 0, 0]
+            custom uniform int[] mmd:rig:externalParentKeys = [0, 0, 3, 0]
+            custom uniform vector3f[] mmd:rig:fixedAxes = [(0, 0, 0), (0, 0, 0), (-0.8, 0, -0.6), (0, 0, 0)]
+            custom uniform bool[] mmd:rig:hasExternalParent = [0, 0, 1, 0]
+            custom uniform bool[] mmd:rig:hasFixedAxis = [0, 0, 1, 0]
+            custom uniform bool[] mmd:rig:hasLocalAxes = [0, 0, 1, 0]
+            custom uniform vector3f[] mmd:rig:localAxesX = [(0, 0, 0), (0, 0, 0), (0.8, 0, -0.6), (0, 0, 0)]
+            custom uniform vector3f[] mmd:rig:localAxesZ = [(0, 0, 0), (0, 0, 0), (0.6, 0, 0.8), (0, 0, 0)]
+            custom uniform bool[] mmd:rig:operable = [1, 1, 0, 1]
+            custom uniform bool[] mmd:rig:rotatable = [1, 1, 1, 1]
+            custom uniform int[] mmd:rig:tailJoints = [-1, 2, -1, -1]
+            custom uniform vector3f[] mmd:rig:tailOffsets = [(0, 0.08, 0), (0, 0, 0), (0.08, 0.02, 0.04), (0, 0, 0)]
+            custom uniform int[] mmd:rig:transformLayers = [0, 0, 1, 0]
+            custom uniform bool[] mmd:rig:translatable = [1, 0, 0, 1]
+            custom uniform bool[] mmd:rig:visible = [1, 1, 1, 1]
+        }
+
+        def Scope "ik"
+        {
+            def "LeftWrist_IK" (
+                customData = {
+                    dictionary mmd = {
+                        string sourceEnglishName = "LeftWrist IK"
+                        int sourceIndex = 3
+                        string sourceName = "左手首ＩＫ"
+                    }
+                }
+            )
+            {
+                custom uniform int mmd:rig:effector = 2
+                custom uniform int mmd:rig:joint = 3
+                custom uniform float mmd:rig:limitAngle = 2
+                custom uniform bool[] mmd:rig:linkHasLimits = [1, 0]
+                custom uniform int[] mmd:rig:linkJoints = [1, 0]
+                custom uniform vector3f[] mmd:rig:linkLowerLimits = [(0.01, -0.5, -0.25), (0, 0, 0)]
+                custom uniform vector3f[] mmd:rig:linkUpperLimits = [(3.1, 0.5, 0.75), (0, 0, 0)]
+                custom uniform int mmd:rig:loopCount = 40
+            }
+        }
+    }
 }
 

@@ -6,14 +6,15 @@ decisions behind each row are in [PMX_CONTRACT.md](../design/PMX_CONTRACT.md)
 [MATERIAL_POLICY.md](../design/MATERIAL_POLICY.md) (canonical → USD); when
 this table disagrees with them, they win and this table is the bug.
 
-Status (2026-09-15): **rows of Phases 0–2 are implemented; the rest are
+Status (2026-09-16): **rows of Phases 0–5 are implemented; the rest are
 intended.** The Phase column says when a row became true or is expected to;
 [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) says which claims a fixture
 backs.
 
 Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 `/Asset/skel/Skeleton`, `Mtl` is `/Asset/mtl/<materialId>`, `Morph` is
-`/Asset/morph/<morphId>`.
+`/Asset/morph/<morphId>`, `Bones` is `/Asset/rig/Bones`, `IK` is
+`/Asset/rig/ik/<boneId>`. Every joint index is canonical.
 
 ## Header
 
@@ -75,13 +76,14 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 | (table index) | `Skel.mmd:bone:sourceIndex` | 2 |
 | position | `Skel.bindTransforms` (translation), `Skel.restTransforms` (parent-relative) | 2 |
 | parent | `Skel.joints` hierarchy | 2 |
-| transform layer, deform-after-physics | `/Asset/rig` | 5 |
-| tail | `/Asset/rig` | 5 |
-| append rotation / translation + ratio | `/Asset/rig` | 5 |
-| fixed axis, local axes | `/Asset/rig` | 5 |
-| external parent | `/Asset/rig` | 5 |
-| IK target, loops, limit, links | `/Asset/rig` | 5 |
-| rotatable / translatable / visible / operable flags | `/Asset/rig` | 5 |
+| transform layer, deform-after-physics | `Bones.mmd:rig:transformLayers`, `deformAfterPhysics` | 5 |
+| tail | `Bones.mmd:rig:tailJoints` (a bone) or `tailOffsets` (an offset) | 5 |
+| append rotation / translation + ratio, local append | `Bones.mmd:rig:appendSources`, `appendRatios`, `appendRotation`, `appendTranslation`, `appendLocal` | 5 |
+| fixed axis, local axes | `Bones.mmd:rig:hasFixedAxis` / `fixedAxes`, `hasLocalAxes` / `localAxesX` / `localAxesZ` | 5 |
+| external parent | `Bones.mmd:rig:hasExternalParent` / `externalParentKeys` | 5 |
+| IK bone, target, loops, limit | one `IK` prim: `mmd:rig:joint`, `effector`, `loopCount`, `limitAngle` | 5 |
+| IK links | `IK.mmd:rig:linkJoints`, `linkHasLimits`, `linkLowerLimits`, `linkUpperLimits` | 5 |
+| rotatable / translatable / visible / operable flags | `Bones.mmd:rig:rotatable`, `translatable`, `visible`, `operable` | 5 |
 
 ## Morphs
 

@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The current milestone — Phase 5, control semantics — and what remains of it. |
+| [current.md](current.md) | The current milestone — Phase 6, physics preservation — and what remains of it. |
 
 ## One sequence
 
@@ -32,7 +32,7 @@ in.** No other document states a version for a Phase.
 | 2 | canonical stage | ✅ done | unassigned |
 | 3 | material triad | ✅ done | unassigned |
 | 4 | morphs | ✅ done | unassigned |
-| 5 | control semantics | ⬜ | unassigned |
+| 5 | control semantics | ✅ done | unassigned |
 | 6 | physics preservation | ⬜ | unassigned |
 | 7 | VMD | ⬜ | unassigned |
 | 8 | avatar runtime composition | ⬜ | unassigned, and owned mostly outside this repository |
@@ -41,8 +41,8 @@ No release number is assigned yet. The first release that claims PMX import is
 the one that meets
 [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
 — Phases 0–4 plus the preservation parts of 5 and 6 it names. Phases 0–4 are
-done, so what that definition still wants is Phase 5's and Phase 6's
-preservation. Whether earlier Phases get releases of their own is decided
+done, and so is Phase 5's preservation, so what that definition still wants
+is Phase 6's. Whether earlier Phases get releases of their own is decided
 here, and the question is still open.
 
 Where things stand, as of 2026-09-16:
@@ -74,8 +74,14 @@ Where things stand, as of 2026-09-16:
   policy
   ([DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy))
   are now authored with fixtures and binding.
-- Phase 5, control semantics, is the current milestone, and nothing of it is
-  implemented: `/Asset/rig` is still reserved and empty.
+- Phase 5, control semantics, is done: every bone's control semantics are
+  under `/Asset/rig`, per-joint arrays on `Bones` and one prim per IK chain,
+  with the rig half of STAGE-O6 decided and a consumer able to reconstruct
+  every IK chain and append relation from the stage alone — asserted on every
+  fixture and on ten distributed models
+  ([report](../reports/2026-09-16-phase5-local-models.md)).
+- Phase 6, physics preservation, is the current milestone, and nothing of it
+  is implemented: `/Asset/physics` is still reserved and empty.
 
 ## Open decisions
 
@@ -90,7 +96,7 @@ schedules them.
 | MAT-O2 | Alpha mode without decoding images | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
 | MAT-O3 | Missing individual toon texture | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
 | STAGE-O4 | Encoding of non-vertex morph semantics | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | resolved in Phase 4 |
-| STAGE-O6 | Rig and physics prim shapes | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phases 5, 6 |
+| STAGE-O6 | Physics prim shapes (the rig half resolved in Phase 5) | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 6 |
 | PMX-O1 | Euler order of rigid-body and joint rotations | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | Phase 6 |
 | MOT-O1 | Home of the shared basis-conversion functions | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | Phase 7 |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | Phase 7 |

@@ -75,6 +75,9 @@ const SdfPath kMtlPath("/Asset/mtl");
 const SdfPath kSkelPath("/Asset/skel");
 const SdfPath kSkeletonPath("/Asset/skel/Skeleton");
 const SdfPath kMorphPath("/Asset/morph");
+const SdfPath kRigPath("/Asset/rig");
+const SdfPath kRigBonesPath("/Asset/rig/Bones");
+const SdfPath kRigIkPath("/Asset/rig/ik");
 
 template <class GfType, class Source>
 VtArray<GfType>
@@ -252,6 +255,10 @@ public:
         if (!_doc.morphs.empty()) {
             UsdGeomScope::Define(_stage, kMorphPath);
             _Morphs(mesh, skinned);
+        }
+        if (skinned) {
+            UsdGeomScope::Define(_stage, kRigPath);
+            _Rig();
         }
 
         _ImporterDiagnostics(skinned);
@@ -914,6 +921,114 @@ private:
         _MorphArray(prim, "mmd:morph:impulseLocal", SdfValueTypeNames->BoolArray, local);
         _MorphArray(prim, "mmd:morph:velocities", SdfValueTypeNames->Vector3fArray, velocities);
         _MorphArray(prim, "mmd:morph:torques", SdfValueTypeNames->Vector3fArray, torques);
+    }
+
+    /// The control rig (STAGE_CONTRACT.md §12): every joint's control
+    /// semantics as arrays parallel to the Skeleton's joints on
+    /// /Asset/rig/Bones, and one typeless prim per IK chain under
+    /// /Asset/rig/ik. Every joint index is canonical. Nothing is solved or
+    /// applied, and the joint hierarchy is not duplicated.
+    void _Rig()
+    {
+        const UsdPrim bones = _stage->DefinePrim(kRigBonesPath);
+        if (!bones) {
+            return;
+        }
+        VtIntArray layers, tailJoints, appendSources, externalParentKeys;
+        VtBoolArray afterPhysics, rotatable, translatable, visible, operable;
+        VtBoolArray appendRotation, appendTranslation, appendLocal;
+        VtBoolArray hasFixedAxis, hasLocalAxes, hasExternalParent;
+        VtFloatArray appendRatios;
+        VtVec3fArray tailOffsets, fixedAxes, localAxesX, localAxesZ;
+        const auto vec = [](const mmd::Float3& v) { return GfVec3f(v[0], v[1], v[2]); };
+        for (const mmd::BoneControl& b : _doc.rig.bones) {
+            layers.push_back(b.transformLayer);
+            afterPhysics.push_back(b.deformAfterPhysics);
+            rotatable.push_back(b.rotatable);
+            translatable.push_back(b.translatable);
+            visible.push_back(b.visible);
+            operable.push_back(b.operable);
+            tailJoints.push_back(b.tailJoint);
+            tailOffsets.push_back(vec(b.tailOffset));
+            appendSources.push_back(b.appendSource);
+            appendRatios.push_back(b.appendRatio);
+            appendRotation.push_back(b.appendRotation);
+            appendTranslation.push_back(b.appendTranslation);
+            appendLocal.push_back(b.appendLocal);
+            hasFixedAxis.push_back(b.hasFixedAxis);
+            fixedAxes.push_back(vec(b.fixedAxis));
+            hasLocalAxes.push_back(b.hasLocalAxes);
+            localAxesX.push_back(vec(b.localAxisX));
+            localAxesZ.push_back(vec(b.localAxisZ));
+            hasExternalParent.push_back(b.hasExternalParent);
+            externalParentKeys.push_back(b.externalParentKey);
+        }
+        const auto uniform =
+            [&](const char* name, const SdfValueTypeName& type, const VtValue& value) {
+                SetCustom(bones, name, type, value, SdfVariabilityUniform);
+            };
+        const SdfValueTypeName& ints = SdfValueTypeNames->IntArray;
+        const SdfValueTypeName& bools = SdfValueTypeNames->BoolArray;
+        const SdfValueTypeName& vectors = SdfValueTypeNames->Vector3fArray;
+        uniform("mmd:rig:transformLayers", ints, VtValue(layers));
+        uniform("mmd:rig:deformAfterPhysics", bools, VtValue(afterPhysics));
+        uniform("mmd:rig:rotatable", bools, VtValue(rotatable));
+        uniform("mmd:rig:translatable", bools, VtValue(translatable));
+        uniform("mmd:rig:visible", bools, VtValue(visible));
+        uniform("mmd:rig:operable", bools, VtValue(operable));
+        uniform("mmd:rig:tailJoints", ints, VtValue(tailJoints));
+        uniform("mmd:rig:tailOffsets", vectors, VtValue(tailOffsets));
+        uniform("mmd:rig:appendSources", ints, VtValue(appendSources));
+        uniform("mmd:rig:appendRatios", SdfValueTypeNames->FloatArray, VtValue(appendRatios));
+        uniform("mmd:rig:appendRotation", bools, VtValue(appendRotation));
+        uniform("mmd:rig:appendTranslation", bools, VtValue(appendTranslation));
+        uniform("mmd:rig:appendLocal", bools, VtValue(appendLocal));
+        uniform("mmd:rig:hasFixedAxis", bools, VtValue(hasFixedAxis));
+        uniform("mmd:rig:fixedAxes", vectors, VtValue(fixedAxes));
+        uniform("mmd:rig:hasLocalAxes", bools, VtValue(hasLocalAxes));
+        uniform("mmd:rig:localAxesX", vectors, VtValue(localAxesX));
+        uniform("mmd:rig:localAxesZ", vectors, VtValue(localAxesZ));
+        uniform("mmd:rig:hasExternalParent", bools, VtValue(hasExternalParent));
+        uniform("mmd:rig:externalParentKeys", ints, VtValue(externalParentKeys));
+
+        if (_doc.rig.ikChains.empty()) {
+            return;
+        }
+        UsdGeomScope::Define(_stage, kRigIkPath);
+        for (const mmd::IkChain& chain : _doc.rig.ikChains) {
+            const mmd::Bone& bone = _doc.skeleton.bones[static_cast<std::size_t>(chain.joint)];
+            const UsdPrim prim =
+                _stage->DefinePrim(kRigIkPath.AppendChild(TfToken(bone.name.stableId)));
+            if (!prim) {
+                continue;
+            }
+            // Provenance is the IK bone's, the element the chain comes from.
+            prim.SetCustomDataByKey(kSourceNameKey, VtValue(bone.name.source));
+            prim.SetCustomDataByKey(kSourceEnglishNameKey, VtValue(bone.name.english));
+            prim.SetCustomDataByKey(kSourceIndexKey, VtValue(static_cast<int>(bone.sourceIndex)));
+
+            VtIntArray linkJoints;
+            VtBoolArray linkHasLimits;
+            VtVec3fArray lower, upper;
+            for (const mmd::IkLink& link : chain.links) {
+                linkJoints.push_back(link.joint);
+                linkHasLimits.push_back(link.hasLimits);
+                lower.push_back(vec(link.lowerLimit));
+                upper.push_back(vec(link.upperLimit));
+            }
+            const auto set =
+                [&](const char* name, const SdfValueTypeName& type, const VtValue& value) {
+                    SetCustom(prim, name, type, value, SdfVariabilityUniform);
+                };
+            set("mmd:rig:joint", SdfValueTypeNames->Int, VtValue(chain.joint));
+            set("mmd:rig:effector", SdfValueTypeNames->Int, VtValue(chain.effector));
+            set("mmd:rig:loopCount", SdfValueTypeNames->Int, VtValue(chain.loopCount));
+            set("mmd:rig:limitAngle", SdfValueTypeNames->Float, VtValue(chain.limitAngle));
+            set("mmd:rig:linkJoints", ints, VtValue(linkJoints));
+            set("mmd:rig:linkHasLimits", bools, VtValue(linkHasLimits));
+            set("mmd:rig:linkLowerLimits", vectors, VtValue(lower));
+            set("mmd:rig:linkUpperLimits", vectors, VtValue(upper));
+        }
     }
 
     /// What the stage approximates or leaves out, said once per import.
