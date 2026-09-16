@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import pathlib
 
-from pxr import Kind, Sdf, Usd, UsdGeom, UsdShade, UsdSkel, UsdValidation
+from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdShade, UsdSkel, UsdValidation, Vt
 
 STAGE_CONTRACT_VERSION = 1
 WEIGHT_TOLERANCE = 1e-5
@@ -63,6 +63,7 @@ class Checker:
         mesh = self.mesh()
         self.materials(mesh)
         self.skeleton(mesh)
+        self.morphs(mesh)
         for prim in self.stage.Traverse():
             for attr in prim.GetAttributes():
                 self.expect(attr.GetNumTimeSamples() == 0,
@@ -117,7 +118,8 @@ class Checker:
         scopes = [name for name, present in (
             ("geo", self.shape["mesh"] is not None),
             ("mtl", bool(self.shape["materials"])),
-            ("skel", self.shape["skinned"])) if present]
+            ("skel", self.shape["skinned"]),
+            ("morph", bool(self.shape["morphs"]))) if present]
         children = [child.GetName() for child in asset.GetChildren()]
         expect(children == scopes, f"/Asset's children are {children}, expected {scopes}")
         for name in scopes:
@@ -342,6 +344,156 @@ class Checker:
                     f"{where} is {value!r}, expected @{want['asset']}@")
         self.expect(bool(value.resolvedPath) == want["resolves"],
                     f"{where} resolves to {value.resolvedPath!r}")
+
+
+    # --- /Asset/morph (§11) -----------------------------------------------------------
+
+    def morphs(self, mesh: UsdGeom.Mesh | None) -> None:
+        """Every PMX morph is one prim, in morph-table order: a blend shape
+        for a vertex morph the skeleton can drive, a typeless prim carrying
+        its declarative semantics otherwise. Nothing here is evaluated."""
+        expect = self.expect
+        want = self.shape["morphs"]
+        scope = self.stage.GetPrimAtPath("/Asset/morph")
+        if not want:
+            expect(not scope.IsValid(), "a morph scope is authored for a model with no morphs")
+            return
+        names = [child.GetName() for child in scope.GetChildren()]
+        expect(names == [m["id"] for m in want],
+               f"/Asset/morph holds {names}, expected {[m['id'] for m in want]}")
+
+        blend_shapes = []
+        for m in want:
+            path = f"/Asset/morph/{m['id']}"
+            prim = self.stage.GetPrimAtPath(path)
+            # A blend shape needs a SkelRoot, which a boneless model is not
+            # (§4.1): there the vertex morph is preserved on a typeless prim.
+            drivable = m["type"] == "vertex" and self.shape["skinned"]
+            type_name = "BlendShape" if drivable else ""
+            expect(prim.GetTypeName() == type_name,
+                   f"{path} is a {prim.GetTypeName()!r}, expected {type_name!r}")
+            custom = prim.GetCustomDataByKey
+            expect(custom("mmd:sourceName") == m["name"]
+                   and custom("mmd:sourceEnglishName") == m["englishName"]
+                   and custom("mmd:sourceIndex") == m["sourceIndex"],
+                   f"{path} provenance is {prim.GetCustomData()}")
+            for key in ("type", "panel"):
+                got = prim.GetAttribute(f"mmd:morph:{key}").Get()
+                expect(got == m[key], f"{path} mmd:morph:{key} is {got!r}, expected {m[key]!r}")
+
+            if drivable:
+                shape = UsdSkel.BlendShape(prim)
+                expect(bool(shape), f"{path} is not a BlendShape")
+                self.array(shape.GetPointIndicesAttr(), m["pointIndices"], path, "pointIndices")
+                self.vectors(shape.GetOffsetsAttr(), m["offsets"], path, "offsets")
+                blend_shapes.append(m["id"])
+            else:
+                self.morph_payload(prim, path, m)
+
+        if mesh is None:
+            return
+        binding = UsdSkel.BindingAPI(mesh)
+        authored = list(binding.GetBlendShapesAttr().Get() or [])
+        expect(authored == blend_shapes,
+               f"the mesh names blend shapes {authored}, expected {blend_shapes}")
+        targets = [str(target) for target in binding.GetBlendShapeTargetsRel().GetTargets()]
+        expect(targets == [f"/Asset/morph/{name}" for name in blend_shapes],
+               f"skel:blendShapeTargets is {targets}")
+        # The binding resolves: UsdSkel finds every blend shape from the mesh
+        # and can compute a subshape from it.
+        query = UsdSkel.BlendShapeQuery(binding)
+        resolved = [str(query.GetBlendShape(i).GetPrim().GetPath())
+                    for i in range(query.GetNumBlendShapes())]
+        expect(resolved == targets,
+               f"UsdSkel resolves the blend shapes {resolved}, expected {targets}")
+        self.deformation(mesh, query, blend_shapes)
+
+    def deformation(self, mesh: UsdGeom.Mesh, query: UsdSkel.BlendShapeQuery,
+                    blend_shapes: list[str]) -> None:
+        """Each blend shape, driven to weight 1 by UsdSkel itself, moves the
+        points its morph names and no others, by the offsets it authored. The
+        importer authors no weight; a consumer supplies them."""
+        by_id = {m["id"]: m for m in self.shape["morphs"]}
+        points = mesh.GetPointsAttr().Get()
+        offsets = query.ComputeSubShapePointOffsets()
+        indices = query.ComputeBlendShapePointIndices()
+        for i, name in enumerate(blend_shapes):
+            weights = Vt.FloatArray([1.0 if k == i else 0.0
+                                     for k in range(len(blend_shapes))])
+            sub = query.ComputeSubShapeWeights(weights)
+            deformed = Vt.Vec3fArray(list(points))
+            self.expect(query.ComputeDeformedPoints(sub[0], sub[1], sub[2], indices,
+                                                    offsets, deformed),
+                        f"{name} does not deform the mesh")
+            # The offsets are added in float, so the deformed point is
+            # compared with the same sum rather than with the difference,
+            # which would not recover the offset's bits.
+            want = {v: points[v] + Gf.Vec3f(*o)
+                    for v, o in zip(by_id[name]["pointIndices"], by_id[name]["offsets"])
+                    if any(o)}
+            moved = {v: deformed[v] for v in range(len(points))
+                     if deformed[v] != points[v]}
+            self.expect(sorted(moved) == sorted(want),
+                        f"{name} moves points {sorted(moved)}, expected {sorted(want)}")
+            for v, position in moved.items():
+                self.expect(position == want[v],
+                            f"{name} moves point {v} to {position}, expected {want[v]}")
+
+    def morph_payload(self, prim: Usd.Prim, path: str, m: dict) -> None:
+        """The declarative semantics of a morph that is not a blend shape
+        (STAGE-O4): parallel `mmd:morph:*` arrays, and the members of a group
+        or flip morph as a relationship."""
+        kind = m["type"]
+        if kind in ("group", "flip"):
+            targets = [str(target) for target in
+                       prim.GetRelationship("mmd:morph:members").GetTargets()]
+            self.expect(targets == [f"/Asset/morph/{name}" for name in m["members"]],
+                        f"{path} mmd:morph:members is {targets}")
+            self.array(prim.GetAttribute("mmd:morph:weights"), m["weights"], path, "weights")
+        elif kind == "vertex":
+            self.array(prim.GetAttribute("mmd:morph:pointIndices"), m["pointIndices"],
+                       path, "pointIndices")
+            self.vectors(prim.GetAttribute("mmd:morph:offsets"), m["offsets"], path, "offsets")
+        elif kind == "bone":
+            self.array(prim.GetAttribute("mmd:morph:joints"), m["joints"], path, "joints")
+            self.vectors(prim.GetAttribute("mmd:morph:translations"), m["translations"],
+                         path, "translations")
+            got = [[*q.GetImaginary(), q.GetReal()]
+                   for q in prim.GetAttribute("mmd:morph:rotations").Get()]
+            self.expect(got == m["rotations"], f"{path} mmd:morph:rotations is {got}")
+        elif kind.startswith("uv"):
+            self.array(prim.GetAttribute("mmd:morph:pointIndices"), m["pointIndices"],
+                       path, "pointIndices")
+            self.vectors(prim.GetAttribute("mmd:morph:uvOffsets"), m["uvOffsets"],
+                         path, "uvOffsets")
+        elif kind == "material":
+            self.array(prim.GetAttribute("mmd:morph:materialIndices"), m["materialIndices"],
+                       path, "materialIndices")
+            self.array(prim.GetAttribute("mmd:morph:materialOperations"),
+                       m["materialOperations"], path, "materialOperations")
+            self.vectors(prim.GetAttribute("mmd:morph:diffuseColors"), m["diffuseColors"],
+                         path, "diffuseColors")
+        elif kind == "impulse":
+            self.array(prim.GetAttribute("mmd:morph:rigidBodyIndices"), m["rigidBodyIndices"],
+                       path, "rigidBodyIndices")
+            self.array(prim.GetAttribute("mmd:morph:impulseLocal"), m["impulseLocal"],
+                       path, "impulseLocal")
+            self.vectors(prim.GetAttribute("mmd:morph:velocities"), m["velocities"],
+                         path, "velocities")
+            self.vectors(prim.GetAttribute("mmd:morph:torques"), m["torques"], path, "torques")
+
+    def array(self, attr: Usd.Attribute, want: list, path: str, name: str) -> None:
+        self.expect(attr.IsValid(), f"{path} has no {name}")
+        got = [str(v) if isinstance(v, str) else v for v in (attr.Get() or [])]
+        self.expect(got == want, f"{path} {name} is {got}, expected {want}")
+
+    def vectors(self, attr: Usd.Attribute, want: list[list[float]], path: str,
+                name: str) -> None:
+        """A vector array, exactly: every value came through the one
+        conversion and is the bits the generator computed (§6.2)."""
+        self.expect(attr.IsValid(), f"{path} has no {name}")
+        got = [list(v) for v in (attr.Get() or [])]
+        self.expect(got == want, f"{path} {name} is {got}, expected {want}")
 
     # --- /Asset/skel and the skin binding (§9) ----------------------------------------
 
