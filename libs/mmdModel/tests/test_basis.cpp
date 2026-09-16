@@ -60,6 +60,12 @@ TestRotationsAndTexCoords()
     const Float4 q = basis::Quaternion({0.1f, 0.2f, 0.3f, 0.9f});
     assert(q[0] == -0.1f && q[1] == -0.2f && q[2] == 0.3f && q[3] == 0.9f);
 
+    // An axial vector -- a torque -- reverses about X and Y, keeps Z, and is
+    // never scaled: it is not a length.
+    const Float3 torque = basis::AxialVector({0.1f, 0.2f, 0.3f});
+    assert(torque[0] == -0.1f && torque[1] == -0.2f && torque[2] == 0.3f);
+    assert(PositiveZero(basis::AxialVector({0.0f, 0.0f, 0.0f})[0]));
+
     const Float2 st = basis::St({0.25f, 0.125f});
     assert(st[0] == 0.25f && st[1] == 0.875f);
     assert(PositiveZero(basis::St({0.0f, 1.0f})[1]));

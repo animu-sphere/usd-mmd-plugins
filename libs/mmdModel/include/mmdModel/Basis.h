@@ -33,6 +33,11 @@ Double3 PointD(const Double3& source);
 /// non-finite vector is returned mirrored but not normalized.
 Float3 Direction(const Float3& source);
 
+/// An axial (pseudo) vector -- an angular velocity, a torque: (x, y, z) ->
+/// (-x, -y, z). A mirror reverses the sense of rotation about X and Y and
+/// leaves it about Z, so an axial vector does not transform as a point.
+Float3 AxialVector(const Float3& source);
+
 /// A unit quaternion (x, y, z, w) -> (-x, -y, z, w).
 Float4 Quaternion(const Float4& source);
 

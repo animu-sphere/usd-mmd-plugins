@@ -68,9 +68,20 @@ MakeMaterial(const char* name, const char* english, std::int32_t faceIndices)
     return m;
 }
 
+pmx::Morph
+MakeMorph(const char* name, const char* english, std::uint8_t panel, pmx::MorphType type)
+{
+    pmx::Morph m;
+    m.name = name;
+    m.englishName = english;
+    m.panel = panel;
+    m.type = type;
+    return m;
+}
+
 /// Four bones, one vertex of each deform type and two more, two materials, a
-/// texture table with one path of each kind: the sample model of the fixture
-/// generator, restated.
+/// texture table with one path of each kind, and one morph of each kind that
+/// a 2.1 file can hold: the sample model of the fixture generator, restated.
 pmx::Document
 SampleDocument()
 {
@@ -116,6 +127,27 @@ SampleDocument()
         MakeBone("左ひじ", "LeftElbow", {3.0f, 12.0f, 0.0f}, 1),
         MakeBone("左手首ＩＫ", "LeftWrist IK", {4.5f, 11.0f, 0.0f}, 0),
     };
+    doc.rigidBodies.resize(2);
+    doc.morphs = {
+        MakeMorph("まばたき", "blink", 2, pmx::MorphType::Vertex),
+        MakeMorph("笑い", "smile", 3, pmx::MorphType::Group),
+        MakeMorph("肩", "", 4, pmx::MorphType::Bone),
+        MakeMorph("UV", "uv", 4, pmx::MorphType::Uv),
+        MakeMorph("材質", "material", 4, pmx::MorphType::Material),
+        MakeMorph("衝撃", "impulse", 0, pmx::MorphType::Impulse),
+    };
+    // The second offset names vertex 9, which the table does not hold: the
+    // parser would have rejected it, and canonicalization drops it.
+    doc.morphs[0].vertexOffsets = {{0, {0.0f, -0.5f, 1.0f}}, {9, {1.0f, 1.0f, 1.0f}}};
+    doc.morphs[1].groupOffsets = {{0, 1.0f}, {3, 0.5f}};
+    doc.morphs[2].boneOffsets = {{3, {0.0f, 2.0f, 1.0f}, {0.25f, 0.5f, 0.5f, 0.75f}}};
+    doc.morphs[3].uvOffsets = {{2, {0.1f, 0.2f, 0.3f, 0.4f}}};
+    doc.morphs[4].materialOffsets.resize(1);
+    doc.morphs[4].materialOffsets[0].material = -1; // every material
+    doc.morphs[4].materialOffsets[0].operation = 1; // add
+    doc.morphs[4].materialOffsets[0].diffuse = {0.1f, 0.2f, 0.3f, 0.4f};
+    doc.morphs[4].materialOffsets[0].edgeSize = 2.0f;
+    doc.morphs[5].impulseOffsets = {{1, 1, {0.0f, 1.0f, 2.0f}, {0.25f, 0.5f, 0.75f}}};
     doc.softBodies.resize(1);
     return doc;
 }
@@ -406,6 +438,108 @@ TestWithoutBones()
 }
 
 void
+TestMorphs()
+{
+    const CanonicalDocument c = ExpectCanonical(SampleDocument(), {"MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    assert(c.morphs.size() == 6);
+    for (std::size_t i = 0; i < c.morphs.size(); ++i) {
+        assert(c.morphs[i].sourceIndex == i); // morph-table order
+    }
+
+    // Identity and provenance, as every element carries it.
+    const Morph& blink = c.morphs[0];
+    assert(blink.name.source == "まばたき" && blink.name.stableId == "blink");
+    assert(c.morphs[2].name.source == "肩" && c.morphs[2].name.stableId == "morph_0002");
+    assert(blink.panel == MorphPanel::Eye);
+    assert(c.morphs[1].panel == MorphPanel::Mouth);
+    assert(c.morphs[5].panel == MorphPanel::Hidden);
+
+    // A vertex morph: a displacement, and the offset of a vertex the table
+    // does not hold dropped rather than repaired.
+    assert(blink.type == MorphType::Vertex);
+    assert(blink.vertexOffsets.size() == 1);
+    assert(blink.vertexOffsets[0].vertex == 0);
+    assert((blink.vertexOffsets[0].offset == Float3{0.0f, M(-0.5), M(-1.0)}));
+
+    // A group morph: members by canonical index, weights unchanged.
+    const Morph& smile = c.morphs[1];
+    assert(smile.type == MorphType::Group);
+    assert(smile.members.size() == 2);
+    assert(smile.members[0].morph == 0 && smile.members[0].weight == 1.0f);
+    assert(smile.members[1].morph == 3 && smile.members[1].weight == 0.5f);
+
+    // A bone morph: the joint in canonical order, a displacement, and a
+    // quaternion with X and Y negated.
+    const Morph& shoulder = c.morphs[2];
+    assert(shoulder.type == MorphType::Bone);
+    assert(shoulder.boneOffsets.size() == 1);
+    assert(shoulder.boneOffsets[0].joint == c.skeleton.jointOfSourceBone[3]);
+    assert((shoulder.boneOffsets[0].translation == Float3{0.0f, M(2.0), M(-1.0)}));
+    assert((shoulder.boneOffsets[0].rotation == Float4{-0.25f, -0.5f, 0.5f, 0.75f}));
+
+    // A UV morph: raw, in the channel it modifies -- never flipped.
+    const Morph& uv = c.morphs[3];
+    assert(uv.type == MorphType::Uv);
+    assert(uv.uvOffsets.size() == 1 && uv.uvOffsets[0].vertex == 2);
+    assert((uv.uvOffsets[0].delta == Float4{0.1f, 0.2f, 0.3f, 0.4f}));
+
+    // A material morph: -1 keeps PMX's "every material".
+    const Morph& material = c.morphs[4];
+    assert(material.type == MorphType::Material);
+    assert(material.materialOffsets.size() == 1);
+    assert(material.materialOffsets[0].material == kNone);
+    assert(material.materialOffsets[0].operation == MaterialMorphOperation::Add);
+    assert((material.materialOffsets[0].diffuseColor == Float4{0.1f, 0.2f, 0.3f, 0.4f}));
+    assert(material.materialOffsets[0].edgeSize == 2.0f);
+
+    // An impulse morph: the rigid body by its source index, a velocity as a
+    // displacement, a torque as an axial vector.
+    const Morph& impulse = c.morphs[5];
+    assert(impulse.type == MorphType::Impulse);
+    assert(impulse.impulseOffsets.size() == 1);
+    assert(impulse.impulseOffsets[0].rigidBody == 1);
+    assert(impulse.impulseOffsets[0].local);
+    assert((impulse.impulseOffsets[0].velocity == Float3{0.0f, M(1.0), M(-2.0)}));
+    assert((impulse.impulseOffsets[0].torque == Float3{-0.25f, -0.5f, 0.75f}));
+}
+
+void
+TestMorphPanel()
+{
+    pmx::Document doc = SampleDocument();
+    doc.morphs[3].panel = 7;
+    const CanonicalDocument c =
+        ExpectCanonical(doc, {"MMD_PATH_UNSAFE_TEXTURE_PATH", "MMD_MORPH_UNKNOWN_PANEL"});
+    assert(c.morphs[3].panel == MorphPanel::Other);
+}
+
+void
+TestMorphCycles()
+{
+    // 1 names itself and a vertex morph; 6 and 7 name each other. Each member
+    // that closes a cycle goes, and nothing else does.
+    pmx::Document doc = SampleDocument();
+    doc.morphs[1].groupOffsets = {{1, 1.0f}, {0, 0.5f}};
+    doc.morphs.push_back(MakeMorph("輪1", "", 4, pmx::MorphType::Group));
+    doc.morphs.push_back(MakeMorph("輪2", "", 4, pmx::MorphType::Group));
+    doc.morphs[6].groupOffsets = {{7, 1.0f}};
+    doc.morphs[7].groupOffsets = {{6, 1.0f}};
+    const CanonicalDocument c = ExpectCanonical(
+        doc, {"MMD_PATH_UNSAFE_TEXTURE_PATH", "MMD_MORPH_GROUP_CYCLE", "MMD_MORPH_GROUP_CYCLE"});
+    assert(c.morphs[1].members.size() == 1);
+    assert(c.morphs[1].members[0].morph == 0 && c.morphs[1].members[0].weight == 0.5f);
+    assert(c.morphs[6].members.size() == 1 && c.morphs[6].members[0].morph == 7);
+    assert(c.morphs[7].members.empty());
+
+    // A member that names no morph is dropped without a cycle diagnostic.
+    pmx::Document none = SampleDocument();
+    none.morphs[1].groupOffsets = {{-1, 1.0f}, {0, 0.5f}};
+    const CanonicalDocument dropped = ExpectCanonical(none, {"MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    assert(dropped.morphs[1].members.size() == 1);
+    assert(dropped.morphs[1].members[0].morph == 0);
+}
+
+void
 TestDeterminism()
 {
     const pmx::Document doc = SampleDocument();
@@ -425,5 +559,8 @@ TestCanonicalize()
     TestMaterials();
     TestNames();
     TestWithoutBones();
+    TestMorphs();
+    TestMorphPanel();
+    TestMorphCycles();
     TestDeterminism();
 }

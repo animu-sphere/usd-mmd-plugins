@@ -7,9 +7,9 @@
 // (docs/design/DESIGN_POLICY.md §5.2, docs/design/PMX_CONTRACT.md §14).
 //
 // It holds what the current stage authors: metadata, textures, the mesh, the
-// materials' identity, face ranges and texture slots, and the deformation
-// skeleton. Morphs, control and physics semantics join it with the Phases that
-// author them (DESIGN_POLICY.md §14).
+// materials' identity, face ranges and texture slots, the deformation
+// skeleton, and every morph's declarative semantics. Control and physics
+// semantics join it with the Phases that author them (DESIGN_POLICY.md §14).
 //
 // No OpenUSD type appears here: a tool with no USD in the process can consume
 // canonical MMD (docs/architecture/WORKSPACE.md §2).
@@ -185,6 +185,128 @@ struct Bone {
     bool operator==(const Bone&) const = default;
 };
 
+/// A morph's kind (PMX_CONTRACT.md §10). The values are the PMX ones, so a
+/// canonical morph keeps the source's vocabulary.
+enum class MorphType : std::uint8_t {
+    Group = 0,
+    Vertex = 1,
+    Bone = 2,
+    Uv = 3,
+    AdditionalUv1 = 4,
+    AdditionalUv2 = 5,
+    AdditionalUv3 = 6,
+    AdditionalUv4 = 7,
+    Material = 8,
+    Flip = 9,
+    Impulse = 10,
+};
+
+/// The editor panel a morph belongs to (PMX_CONTRACT.md §10). A value the
+/// source does not define becomes `Other`, with MMD_MORPH_UNKNOWN_PANEL.
+enum class MorphPanel : std::uint8_t {
+    Hidden = 0,
+    Eyebrow = 1,
+    Eye = 2,
+    Mouth = 3,
+    Other = 4,
+};
+
+/// How a material morph combines with the material it names.
+enum class MaterialMorphOperation : std::uint8_t {
+    Multiply = 0,
+    Add = 1,
+};
+
+/// A group or flip morph's member: a canonical morph index and its weight.
+/// A member that names nothing, or that would close a cycle, is dropped
+/// during canonicalization (PMX_CONTRACT.md §10).
+struct MorphMember {
+    std::int32_t morph = kNone;
+    float weight = 0.0f;
+
+    bool operator==(const MorphMember&) const = default;
+};
+
+/// A vertex morph's displacement: a vertex index and its offset in meters,
+/// in the USD basis (STAGE_CONTRACT.md §6.3).
+struct MorphVertexOffset {
+    std::int32_t vertex = 0;
+    Float3 offset{};
+
+    bool operator==(const MorphVertexOffset&) const = default;
+};
+
+/// A bone morph's delta, against a joint in canonical order: a translation in
+/// meters and a rotation quaternion (x, y, z, w), both converted.
+struct MorphBoneOffset {
+    std::int32_t joint = 0;
+    Float3 translation{};
+    Float4 rotation{0.0f, 0.0f, 0.0f, 1.0f};
+
+    bool operator==(const MorphBoneOffset&) const = default;
+};
+
+/// A UV or additional-UV morph's offset: a raw delta in the channel it
+/// modifies, never flipped (PMX_CONTRACT.md §10).
+struct MorphUvOffset {
+    std::int32_t vertex = 0;
+    Float4 delta{};
+
+    bool operator==(const MorphUvOffset&) const = default;
+};
+
+/// A material morph's modulation of one material, or of every material when
+/// `material` is kNone -- which is what PMX's -1 means here, and also what an
+/// out-of-range index the parser rejected (with MMD_PMX_INDEX_OUT_OF_RANGE)
+/// arrives as. Every value is the source's, unconverted: they are colors,
+/// tints and dimensionless factors (STAGE_CONTRACT.md §6.3).
+struct MorphMaterialOffset {
+    std::int32_t material = kNone;
+    MaterialMorphOperation operation = MaterialMorphOperation::Multiply;
+    Float4 diffuseColor{};
+    Float3 specularColor{};
+    float specularPower = 0.0f;
+    Float3 ambientColor{};
+    Float4 edgeColor{};
+    float edgeSize = 0.0f;
+    Float4 textureTint{};
+    Float4 sphereTint{};
+    Float4 toonTint{};
+
+    bool operator==(const MorphMaterialOffset&) const = default;
+};
+
+/// An impulse morph's push on a rigid body. Rigid bodies are not authored
+/// before Phase 6, so the body is kept by its source index; the velocity is a
+/// displacement and the torque an axial vector (STAGE_CONTRACT.md §6.3).
+/// Nothing here is ever executed.
+struct MorphImpulseOffset {
+    std::int32_t rigidBody = kNone;
+    bool local = false;
+    Float3 velocity{};
+    Float3 torque{};
+
+    bool operator==(const MorphImpulseOffset&) const = default;
+};
+
+/// One PMX morph, carried declaratively (STAGE_CONTRACT.md §11). Exactly one
+/// offset list is used, the one `type` selects; nothing is evaluated, and no
+/// group morph is expanded.
+struct Morph {
+    Name name;
+    std::size_t sourceIndex = 0;
+    MorphType type = MorphType::Group;
+    MorphPanel panel = MorphPanel::Other;
+    std::vector<MorphMember> members;                 ///< group and flip
+    std::vector<MorphVertexOffset> vertexOffsets;     ///< vertex
+    std::vector<MorphBoneOffset> boneOffsets;         ///< bone
+    std::vector<MorphUvOffset> uvOffsets;             ///< uv and additionalUv1-4
+    std::vector<MorphMaterialOffset> materialOffsets; ///< material
+    std::vector<MorphImpulseOffset> impulseOffsets;   ///< impulse
+
+    bool operator==(const Morph&) const = default;
+};
+
 struct Skeleton {
     std::vector<Bone> bones; ///< canonical joint order (STAGE_CONTRACT.md §9.1)
     /// Source bone index -> canonical index.
@@ -198,7 +320,8 @@ struct CanonicalDocument {
     std::vector<Texture> textures; ///< source texture-table order
     Mesh mesh;                     ///< empty when the model has no vertices
     std::vector<Material> materials;
-    Skeleton skeleton; ///< empty when the model has no bones
+    Skeleton skeleton;         ///< empty when the model has no bones
+    std::vector<Morph> morphs; ///< source morph-table order
 
     bool operator==(const CanonicalDocument&) const = default;
 };
