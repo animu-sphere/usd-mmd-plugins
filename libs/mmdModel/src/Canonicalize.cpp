@@ -93,6 +93,7 @@ public:
         _MeshAndSkinning(); // steps 2, 4 and 5
         _Materials();       // step 6
         _Morphs();          // step 7, for morphs
+        _Rig();             // step 7, for control
         return Result<CanonicalDocument>::Success(std::move(_out), _diagnostics.Take());
     }
 
@@ -683,6 +684,93 @@ private:
         for (Morph& m : _out.morphs) {
             std::erase_if(m.members,
                           [](const MorphMember& member) { return member.morph == kNone; });
+        }
+    }
+
+    /// Every bone's control semantics, in canonical joint order, and every IK
+    /// chain, in bone-table order: indices remapped, spatial values converted
+    /// once, and nothing solved or applied (PMX_CONTRACT.md §9 and §14 step 7,
+    /// STAGE_CONTRACT.md §12). A relation whose bone the parser rejected --
+    /// or that names none -- is dropped: the parser has already reported an
+    /// out-of-range one.
+    void _Rig()
+    {
+        const std::size_t n = _doc.bones.size();
+        const std::vector<std::int32_t>& jointOf = _out.skeleton.jointOfSourceBone;
+        const auto joint = [&](std::int32_t bone) {
+            return _InTable(bone, n) ? jointOf[static_cast<std::size_t>(bone)] : kNone;
+        };
+
+        _out.rig.bones.resize(n);
+        for (std::size_t c = 0; c < n; ++c) {
+            const pmx::Bone& source = _doc.bones[_out.skeleton.bones[c].sourceIndex];
+            const std::uint16_t f = source.flags;
+            BoneControl& b = _out.rig.bones[c];
+            b.transformLayer = source.transformLayer;
+            b.deformAfterPhysics = (f & pmx::BoneFlag::DeformAfterPhysics) != 0;
+            b.rotatable = (f & pmx::BoneFlag::Rotatable) != 0;
+            b.translatable = (f & pmx::BoneFlag::Translatable) != 0;
+            b.visible = (f & pmx::BoneFlag::Visible) != 0;
+            b.operable = (f & pmx::BoneFlag::Operable) != 0;
+            if (f & pmx::BoneFlag::TailIsBone) {
+                b.tailJoint = joint(source.tailBone);
+            } else {
+                b.tailOffset = basis::Displacement(ToFloat3(source.tailOffset));
+            }
+            if (f & (pmx::BoneFlag::AppendRotation | pmx::BoneFlag::AppendTranslation)) {
+                b.appendSource = joint(source.appendParent);
+                if (b.appendSource != kNone) {
+                    b.appendRatio = source.appendRatio;
+                    b.appendRotation = (f & pmx::BoneFlag::AppendRotation) != 0;
+                    b.appendTranslation = (f & pmx::BoneFlag::AppendTranslation) != 0;
+                    b.appendLocal = (f & pmx::BoneFlag::LocalAppend) != 0;
+                }
+            }
+            if (f & pmx::BoneFlag::FixedAxis) {
+                b.hasFixedAxis = true;
+                b.fixedAxis = basis::AxialVector(ToFloat3(source.fixedAxis));
+            }
+            if (f & pmx::BoneFlag::LocalAxes) {
+                const basis::LocalAxes axes =
+                    basis::Frame(ToFloat3(source.localAxisX), ToFloat3(source.localAxisZ));
+                b.hasLocalAxes = true;
+                b.localAxisX = axes.x;
+                b.localAxisZ = axes.z;
+            }
+            if (f & pmx::BoneFlag::ExternalParent) {
+                b.hasExternalParent = true;
+                b.externalParentKey = source.externalParentKey;
+            }
+        }
+
+        for (std::size_t i = 0; i < n; ++i) {
+            const pmx::Bone& source = _doc.bones[i];
+            // An IK bone with no effector brings nothing anywhere.
+            if (!(source.flags & pmx::BoneFlag::Ik) || joint(source.ik.target) == kNone) {
+                continue;
+            }
+            IkChain chain;
+            chain.joint = jointOf[i];
+            chain.effector = joint(source.ik.target);
+            chain.loopCount = source.ik.loopCount;
+            chain.limitAngle = source.ik.limitAngle;
+            chain.links.reserve(source.ik.links.size());
+            for (const pmx::IkLink& l : source.ik.links) {
+                if (joint(l.bone) == kNone) {
+                    continue;
+                }
+                IkLink link;
+                link.joint = joint(l.bone);
+                link.hasLimits = l.hasLimits;
+                if (l.hasLimits) {
+                    const basis::RotationLimits limits =
+                        basis::Limits(ToFloat3(l.lowerLimit), ToFloat3(l.upperLimit));
+                    link.lowerLimit = limits.lower;
+                    link.upperLimit = limits.upper;
+                }
+                chain.links.push_back(link);
+            }
+            _out.rig.ikChains.push_back(std::move(chain));
         }
     }
 

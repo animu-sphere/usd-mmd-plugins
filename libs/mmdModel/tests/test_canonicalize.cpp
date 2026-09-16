@@ -127,6 +127,30 @@ SampleDocument()
         MakeBone("左ひじ", "LeftElbow", {3.0f, 12.0f, 0.0f}, 1),
         MakeBone("左手首ＩＫ", "LeftWrist IK", {4.5f, 11.0f, 0.0f}, 0),
     };
+    using pmx::BoneFlag;
+    doc.bones[0].flags =
+        BoneFlag::Rotatable | BoneFlag::Translatable | BoneFlag::Visible | BoneFlag::Operable;
+    doc.bones[0].tailOffset = {0.0f, 1.0f, 2.0f};
+    doc.bones[1].flags = BoneFlag::TailIsBone | BoneFlag::Rotatable;
+    doc.bones[1].tailBone = 2;
+    doc.bones[2].flags = BoneFlag::Rotatable | BoneFlag::AppendRotation | BoneFlag::LocalAppend |
+                         BoneFlag::FixedAxis | BoneFlag::LocalAxes | BoneFlag::ExternalParent |
+                         BoneFlag::DeformAfterPhysics;
+    doc.bones[2].transformLayer = 1;
+    doc.bones[2].appendParent = 1;
+    doc.bones[2].appendRatio = 0.5f;
+    doc.bones[2].fixedAxis = {0.6f, 0.0f, 0.8f};
+    doc.bones[2].localAxisX = {1.0f, 0.0f, 0.5f};
+    doc.bones[2].localAxisZ = {0.0f, 0.5f, 1.0f};
+    doc.bones[2].externalParentKey = 3;
+    doc.bones[3].flags = BoneFlag::TailIsBone | BoneFlag::Ik;
+    doc.bones[3].tailBone = -1;
+    doc.bones[3].ik.target = 2;
+    doc.bones[3].ik.loopCount = 40;
+    doc.bones[3].ik.limitAngle = 2.0f;
+    doc.bones[3].ik.links = {{1, true, {-3.0f, -0.5f, -1.0f}, {-0.25f, 0.5f, 1.0f}},
+                             {-1, false, {}, {}},
+                             {0, false, {}, {}}};
     doc.rigidBodies.resize(2);
     doc.morphs = {
         MakeMorph("まばたき", "blink", 2, pmx::MorphType::Vertex),
@@ -540,6 +564,83 @@ TestMorphCycles()
 }
 
 void
+TestRig()
+{
+    const CanonicalDocument c = ExpectCanonical(SampleDocument(), {"MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    assert(c.rig.bones.size() == c.skeleton.bones.size());
+
+    // Flags and a tail offset: a displacement.
+    const BoneControl& center = c.rig.bones[0];
+    assert(center.rotatable && center.translatable && center.visible && center.operable);
+    assert(!center.deformAfterPhysics && center.transformLayer == 0);
+    assert(center.tailJoint == kNone);
+    assert((center.tailOffset == Float3{0.0f, M(1.0), M(-2.0)}));
+    assert(center.appendSource == kNone && !center.hasFixedAxis && !center.hasLocalAxes);
+
+    // A tail that is a bone, by canonical joint.
+    const BoneControl& arm = c.rig.bones[1];
+    assert(arm.tailJoint == c.skeleton.jointOfSourceBone[2]);
+    assert((arm.tailOffset == Float3{}));
+
+    // Append, axes, external parent, layer and after-physics.
+    const BoneControl& elbow = c.rig.bones[2];
+    assert(elbow.transformLayer == 1 && elbow.deformAfterPhysics);
+    assert(elbow.appendSource == c.skeleton.jointOfSourceBone[1]);
+    assert(elbow.appendRatio == 0.5f && elbow.appendRotation && !elbow.appendTranslation);
+    assert(elbow.appendLocal);
+    assert(elbow.hasFixedAxis && (elbow.fixedAxis == Float3{-0.6f, 0.0f, 0.8f}));
+    assert(elbow.hasLocalAxes);
+    assert((elbow.localAxisX == Float3{1.0f, 0.0f, -0.5f}));
+    assert((elbow.localAxisZ == Float3{0.0f, -0.5f, 1.0f}));
+    assert(elbow.hasExternalParent && elbow.externalParentKey == 3);
+
+    // The IK chain: its joints canonical, the link that names nothing
+    // dropped, limits mirrored about X and Y.
+    assert(c.rig.bones[3].tailJoint == kNone);
+    assert(c.rig.ikChains.size() == 1);
+    const IkChain& ik = c.rig.ikChains[0];
+    assert(ik.joint == c.skeleton.jointOfSourceBone[3]);
+    assert(ik.effector == c.skeleton.jointOfSourceBone[2]);
+    assert(ik.loopCount == 40 && ik.limitAngle == 2.0f);
+    assert(ik.links.size() == 2);
+    assert(ik.links[0].joint == c.skeleton.jointOfSourceBone[1] && ik.links[0].hasLimits);
+    assert((ik.links[0].lowerLimit == Float3{0.25f, -0.5f, -1.0f}));
+    assert((ik.links[0].upperLimit == Float3{3.0f, 0.5f, 1.0f}));
+    assert(ik.links[1].joint == 0 && !ik.links[1].hasLimits);
+    assert((ik.links[1].lowerLimit == Float3{}) && (ik.links[1].upperLimit == Float3{}));
+}
+
+void
+TestRigRepairs()
+{
+    // Relations whose bone the parser rejected arrive as none, and go.
+    pmx::Document doc = SampleDocument();
+    doc.bones[1].tailBone = -1;
+    doc.bones[2].appendParent = -1;
+    doc.bones[3].ik.target = -1;
+    const CanonicalDocument c = ExpectCanonical(doc, {"MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    assert(c.rig.bones[1].tailJoint == kNone);
+    const BoneControl& elbow = c.rig.bones[2];
+    assert(elbow.appendSource == kNone && elbow.appendRatio == 0.0f);
+    assert(!elbow.appendRotation && !elbow.appendLocal);
+    assert(elbow.hasFixedAxis); // the other relations stay
+    assert(c.rig.ikChains.empty());
+
+    // The rig follows the canonical joint order when it differs from the
+    // source's: bone 1 listed before its parent 3.
+    pmx::Document reordered = SampleDocument();
+    reordered.bones[1].parent = 3;
+    const CanonicalDocument r =
+        ExpectCanonical(reordered, {"MMD_SKEL_JOINTS_REORDERED", "MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    const std::vector<std::int32_t>& jointOf = r.skeleton.jointOfSourceBone;
+    assert(jointOf[1] != 1);
+    assert(r.rig.bones[static_cast<std::size_t>(jointOf[1])].tailJoint == jointOf[2]);
+    assert(r.rig.bones[static_cast<std::size_t>(jointOf[2])].appendSource == jointOf[1]);
+    assert(r.rig.ikChains.size() == 1 && r.rig.ikChains[0].joint == jointOf[3]);
+    assert(r.rig.ikChains[0].links[0].joint == jointOf[1]);
+}
+
+void
 TestDeterminism()
 {
     const pmx::Document doc = SampleDocument();
@@ -562,5 +663,7 @@ TestCanonicalize()
     TestMorphs();
     TestMorphPanel();
     TestMorphCycles();
+    TestRig();
+    TestRigRepairs();
     TestDeterminism();
 }
