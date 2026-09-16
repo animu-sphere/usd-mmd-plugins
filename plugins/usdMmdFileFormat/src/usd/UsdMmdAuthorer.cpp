@@ -4,6 +4,7 @@
 #include "usd/UsdMmdCodes.h"
 
 #include "pxr/base/gf/matrix4d.h"
+#include "pxr/base/gf/quatf.h"
 #include "pxr/base/gf/vec2f.h"
 #include "pxr/base/gf/vec3d.h"
 #include "pxr/base/gf/vec3f.h"
@@ -33,6 +34,7 @@
 #include "pxr/usd/usdShade/shader.h"
 #include "pxr/usd/usdShade/tokens.h"
 #include "pxr/usd/usdSkel/bindingAPI.h"
+#include "pxr/usd/usdSkel/blendShape.h"
 #include "pxr/usd/usdSkel/root.h"
 #include "pxr/usd/usdSkel/skeleton.h"
 
@@ -72,6 +74,7 @@ const SdfPath kMeshPath("/Asset/geo/Mesh");
 const SdfPath kMtlPath("/Asset/mtl");
 const SdfPath kSkelPath("/Asset/skel");
 const SdfPath kSkeletonPath("/Asset/skel/Skeleton");
+const SdfPath kMorphPath("/Asset/morph");
 
 template <class GfType, class Source>
 VtArray<GfType>
@@ -136,6 +139,54 @@ SphereModeName(mmd::SphereMode mode)
 }
 
 const char*
+MorphTypeName(mmd::MorphType type)
+{
+    switch (type) {
+    case mmd::MorphType::Group:
+        return "group";
+    case mmd::MorphType::Vertex:
+        return "vertex";
+    case mmd::MorphType::Bone:
+        return "bone";
+    case mmd::MorphType::Uv:
+        return "uv";
+    case mmd::MorphType::AdditionalUv1:
+        return "uv1";
+    case mmd::MorphType::AdditionalUv2:
+        return "uv2";
+    case mmd::MorphType::AdditionalUv3:
+        return "uv3";
+    case mmd::MorphType::AdditionalUv4:
+        return "uv4";
+    case mmd::MorphType::Material:
+        return "material";
+    case mmd::MorphType::Flip:
+        return "flip";
+    case mmd::MorphType::Impulse:
+        return "impulse";
+    }
+    return "other";
+}
+
+const char*
+MorphPanelName(mmd::MorphPanel panel)
+{
+    switch (panel) {
+    case mmd::MorphPanel::Hidden:
+        return "hidden";
+    case mmd::MorphPanel::Eyebrow:
+        return "eyebrow";
+    case mmd::MorphPanel::Eye:
+        return "eye";
+    case mmd::MorphPanel::Mouth:
+        return "mouth";
+    case mmd::MorphPanel::Other:
+        break;
+    }
+    return "other";
+}
+
+const char*
 ToonSourceName(mmd::ToonSource source)
 {
     switch (source) {
@@ -197,6 +248,10 @@ public:
         if (skinned) {
             UsdGeomScope::Define(_stage, kSkelPath);
             _Skeleton();
+        }
+        if (!_doc.morphs.empty()) {
+            UsdGeomScope::Define(_stage, kMorphPath);
+            _Morphs(mesh, skinned);
         }
 
         _ImporterDiagnostics(skinned);
@@ -622,6 +677,245 @@ private:
                   SdfVariabilityUniform);
     }
 
+    /// Every morph, one prim under /Asset/morph in morph-table order
+    /// (STAGE_CONTRACT.md §11): a UsdSkelBlendShape for a vertex morph, a
+    /// typeless prim carrying `mmd:morph:*` for every other type. Nothing is
+    /// evaluated -- no group is expanded, no bone morph moves the rest
+    /// skeleton, no material morph edits a material.
+    void _Morphs(const UsdGeomMesh& mesh, bool skinned)
+    {
+        // Blend shapes deform only beneath a SkelRoot, which a model with no
+        // bones does not author, and only a mesh can name them
+        // (STAGE_CONTRACT.md §4.1, §11.1). Either way the vertex morph falls
+        // back to a typeless prim, and _ImporterDiagnostics records it.
+        _blendShapes = skinned && bool(mesh);
+        VtTokenArray names;
+        SdfPathVector targets;
+        for (const mmd::Morph& m : _doc.morphs) {
+            const SdfPath path = kMorphPath.AppendChild(TfToken(m.name.stableId));
+            const bool vertex = m.type == mmd::MorphType::Vertex;
+            const UsdSkelBlendShape shape = vertex && _blendShapes
+                                                ? UsdSkelBlendShape::Define(_stage, path)
+                                                : UsdSkelBlendShape();
+            const UsdPrim prim = shape ? shape.GetPrim() : _stage->DefinePrim(path);
+            // The mesh must never name a blend shape that is not there, so
+            // nothing is listed before the prim exists.
+            if (!prim) {
+                continue;
+            }
+            if (shape) {
+                VtVec3fArray offsets;
+                VtIntArray points;
+                offsets.reserve(m.vertexOffsets.size());
+                points.reserve(m.vertexOffsets.size());
+                for (const mmd::MorphVertexOffset& o : m.vertexOffsets) {
+                    offsets.push_back(GfVec3f(o.offset[0], o.offset[1], o.offset[2]));
+                    points.push_back(o.vertex);
+                }
+                shape.CreateOffsetsAttr(VtValue(offsets));
+                shape.CreatePointIndicesAttr(VtValue(points));
+                names.push_back(TfToken(m.name.stableId));
+                targets.push_back(path);
+            }
+            prim.SetCustomDataByKey(kSourceNameKey, VtValue(m.name.source));
+            prim.SetCustomDataByKey(kSourceEnglishNameKey, VtValue(m.name.english));
+            prim.SetCustomDataByKey(kSourceIndexKey, VtValue(static_cast<int>(m.sourceIndex)));
+            _MorphToken(prim, "mmd:morph:type", MorphTypeName(m.type));
+            _MorphToken(prim, "mmd:morph:panel", MorphPanelName(m.panel));
+
+            switch (m.type) {
+            case mmd::MorphType::Group:
+            case mmd::MorphType::Flip:
+                _MorphMembers(prim, m);
+                break;
+            case mmd::MorphType::Vertex:
+                // The schema's own offsets when it is a blend shape, the same
+                // two arrays under `mmd:morph:*` when it cannot be one.
+                if (!shape) {
+                    _MorphVertexOffsets(prim, m);
+                }
+                break;
+            case mmd::MorphType::Bone:
+                _MorphBoneOffsets(prim, m);
+                break;
+            case mmd::MorphType::Uv:
+            case mmd::MorphType::AdditionalUv1:
+            case mmd::MorphType::AdditionalUv2:
+            case mmd::MorphType::AdditionalUv3:
+            case mmd::MorphType::AdditionalUv4:
+                _MorphUvOffsets(prim, m);
+                break;
+            case mmd::MorphType::Material:
+                _MorphMaterialOffsets(prim, m);
+                break;
+            case mmd::MorphType::Impulse:
+                _MorphImpulseOffsets(prim, m);
+                break;
+            }
+        }
+        if (names.empty()) {
+            return;
+        }
+        // The mesh names its blend shapes in the same order as the prims it
+        // targets (STAGE_CONTRACT.md §11).
+        const UsdSkelBindingAPI binding = UsdSkelBindingAPI::Apply(mesh.GetPrim());
+        binding.CreateBlendShapesAttr(VtValue(names));
+        binding.CreateBlendShapeTargetsRel().SetTargets(targets);
+    }
+
+    void _MorphToken(const UsdPrim& prim, const char* name, const char* value)
+    {
+        SetCustom(
+            prim, name, SdfValueTypeNames->Token, VtValue(TfToken(value)), SdfVariabilityUniform);
+    }
+
+    /// A morph's declarative payload: an array per field, parallel, in the
+    /// source's offset order, and uniform because a PMX stage has no time
+    /// samples (STAGE_CONTRACT.md §3).
+    template <class Array>
+    void _MorphArray(const UsdPrim& prim, const char* name, const SdfValueTypeName& type,
+                     const Array& values)
+    {
+        SetCustom(prim, name, type, VtValue(values), SdfVariabilityUniform);
+    }
+
+    void _MorphMembers(const UsdPrim& prim, const mmd::Morph& m)
+    {
+        SdfPathVector members;
+        VtFloatArray weights;
+        members.reserve(m.members.size());
+        weights.reserve(m.members.size());
+        for (const mmd::MorphMember& member : m.members) {
+            const mmd::Morph& target = _doc.morphs[static_cast<std::size_t>(member.morph)];
+            members.push_back(kMorphPath.AppendChild(TfToken(target.name.stableId)));
+            weights.push_back(member.weight);
+        }
+        prim.CreateRelationship(TfToken("mmd:morph:members"), /*custom=*/true).SetTargets(members);
+        _MorphArray(prim, "mmd:morph:weights", SdfValueTypeNames->FloatArray, weights);
+    }
+
+    /// A vertex morph of a model with no skeleton: the same data a
+    /// UsdSkelBlendShape would carry, preserved on a typeless prim.
+    void _MorphVertexOffsets(const UsdPrim& prim, const mmd::Morph& m)
+    {
+        VtVec3fArray offsets;
+        VtIntArray points;
+        offsets.reserve(m.vertexOffsets.size());
+        points.reserve(m.vertexOffsets.size());
+        for (const mmd::MorphVertexOffset& o : m.vertexOffsets) {
+            offsets.push_back(GfVec3f(o.offset[0], o.offset[1], o.offset[2]));
+            points.push_back(o.vertex);
+        }
+        _MorphArray(prim, "mmd:morph:offsets", SdfValueTypeNames->Vector3fArray, offsets);
+        _MorphArray(prim, "mmd:morph:pointIndices", SdfValueTypeNames->IntArray, points);
+    }
+
+    void _MorphBoneOffsets(const UsdPrim& prim, const mmd::Morph& m)
+    {
+        VtIntArray joints;
+        VtVec3fArray translations;
+        VtQuatfArray rotations;
+        joints.reserve(m.boneOffsets.size());
+        translations.reserve(m.boneOffsets.size());
+        rotations.reserve(m.boneOffsets.size());
+        for (const mmd::MorphBoneOffset& o : m.boneOffsets) {
+            joints.push_back(o.joint);
+            translations.push_back(GfVec3f(o.translation[0], o.translation[1], o.translation[2]));
+            rotations.push_back(
+                GfQuatf(o.rotation[3], o.rotation[0], o.rotation[1], o.rotation[2]));
+        }
+        _MorphArray(prim, "mmd:morph:joints", SdfValueTypeNames->IntArray, joints);
+        _MorphArray(prim, "mmd:morph:translations", SdfValueTypeNames->Vector3fArray, translations);
+        _MorphArray(prim, "mmd:morph:rotations", SdfValueTypeNames->QuatfArray, rotations);
+    }
+
+    void _MorphUvOffsets(const UsdPrim& prim, const mmd::Morph& m)
+    {
+        VtIntArray points;
+        VtVec4fArray deltas;
+        points.reserve(m.uvOffsets.size());
+        deltas.reserve(m.uvOffsets.size());
+        for (const mmd::MorphUvOffset& o : m.uvOffsets) {
+            points.push_back(o.vertex);
+            deltas.push_back(GfVec4f(o.delta[0], o.delta[1], o.delta[2], o.delta[3]));
+        }
+        _MorphArray(prim, "mmd:morph:pointIndices", SdfValueTypeNames->IntArray, points);
+        _MorphArray(prim, "mmd:morph:uvOffsets", SdfValueTypeNames->Float4Array, deltas);
+    }
+
+    void _MorphMaterialOffsets(const UsdPrim& prim, const mmd::Morph& m)
+    {
+        const std::size_t n = m.materialOffsets.size();
+        VtIntArray materials;
+        VtTokenArray operations;
+        VtVec4fArray diffuse;
+        VtVec3fArray specular;
+        VtFloatArray specularPower;
+        VtVec3fArray ambient;
+        VtVec4fArray edgeColor;
+        VtFloatArray edgeSize;
+        VtVec4fArray textureTint;
+        VtVec4fArray sphereTint;
+        VtVec4fArray toonTint;
+        materials.reserve(n);
+        operations.reserve(n);
+        for (const mmd::MorphMaterialOffset& o : m.materialOffsets) {
+            // -1 is "every material", as it is in the source (PMX §10).
+            materials.push_back(o.material);
+            operations.push_back(
+                TfToken(o.operation == mmd::MaterialMorphOperation::Add ? "add" : "multiply"));
+            diffuse.push_back(GfVec4f(
+                o.diffuseColor[0], o.diffuseColor[1], o.diffuseColor[2], o.diffuseColor[3]));
+            specular.push_back(GfVec3f(o.specularColor[0], o.specularColor[1], o.specularColor[2]));
+            specularPower.push_back(o.specularPower);
+            ambient.push_back(GfVec3f(o.ambientColor[0], o.ambientColor[1], o.ambientColor[2]));
+            edgeColor.push_back(
+                GfVec4f(o.edgeColor[0], o.edgeColor[1], o.edgeColor[2], o.edgeColor[3]));
+            edgeSize.push_back(o.edgeSize);
+            textureTint.push_back(
+                GfVec4f(o.textureTint[0], o.textureTint[1], o.textureTint[2], o.textureTint[3]));
+            sphereTint.push_back(
+                GfVec4f(o.sphereTint[0], o.sphereTint[1], o.sphereTint[2], o.sphereTint[3]));
+            toonTint.push_back(GfVec4f(o.toonTint[0], o.toonTint[1], o.toonTint[2], o.toonTint[3]));
+        }
+        _MorphArray(prim, "mmd:morph:materialIndices", SdfValueTypeNames->IntArray, materials);
+        _MorphArray(
+            prim, "mmd:morph:materialOperations", SdfValueTypeNames->TokenArray, operations);
+        _MorphArray(prim, "mmd:morph:diffuseColors", SdfValueTypeNames->Color4fArray, diffuse);
+        _MorphArray(prim, "mmd:morph:specularColors", SdfValueTypeNames->Color3fArray, specular);
+        _MorphArray(prim, "mmd:morph:specularPowers", SdfValueTypeNames->FloatArray, specularPower);
+        _MorphArray(prim, "mmd:morph:ambientColors", SdfValueTypeNames->Color3fArray, ambient);
+        _MorphArray(prim, "mmd:morph:edgeColors", SdfValueTypeNames->Color4fArray, edgeColor);
+        _MorphArray(prim, "mmd:morph:edgeSizes", SdfValueTypeNames->FloatArray, edgeSize);
+        _MorphArray(prim, "mmd:morph:textureTints", SdfValueTypeNames->Float4Array, textureTint);
+        _MorphArray(prim, "mmd:morph:sphereTints", SdfValueTypeNames->Float4Array, sphereTint);
+        _MorphArray(prim, "mmd:morph:toonTints", SdfValueTypeNames->Float4Array, toonTint);
+    }
+
+    /// An impulse morph names rigid bodies, which are Phase 6's: until
+    /// /Asset/physics exists, each one is kept by its source-table index.
+    void _MorphImpulseOffsets(const UsdPrim& prim, const mmd::Morph& m)
+    {
+        VtIntArray bodies;
+        VtBoolArray local;
+        VtVec3fArray velocities;
+        VtVec3fArray torques;
+        bodies.reserve(m.impulseOffsets.size());
+        local.reserve(m.impulseOffsets.size());
+        velocities.reserve(m.impulseOffsets.size());
+        torques.reserve(m.impulseOffsets.size());
+        for (const mmd::MorphImpulseOffset& o : m.impulseOffsets) {
+            bodies.push_back(o.rigidBody);
+            local.push_back(o.local);
+            velocities.push_back(GfVec3f(o.velocity[0], o.velocity[1], o.velocity[2]));
+            torques.push_back(GfVec3f(o.torque[0], o.torque[1], o.torque[2]));
+        }
+        _MorphArray(prim, "mmd:morph:rigidBodyIndices", SdfValueTypeNames->IntArray, bodies);
+        _MorphArray(prim, "mmd:morph:impulseLocal", SdfValueTypeNames->BoolArray, local);
+        _MorphArray(prim, "mmd:morph:velocities", SdfValueTypeNames->Vector3fArray, velocities);
+        _MorphArray(prim, "mmd:morph:torques", SdfValueTypeNames->Vector3fArray, torques);
+    }
+
     /// What the stage approximates or leaves out, said once per import.
     void _ImporterDiagnostics(bool skinned)
     {
@@ -646,6 +940,32 @@ private:
                                         " QDEF, skinned here by linear blending; no "
                                         "dual-quaternion consumer has been verified against it",
                                     onVertices));
+        }
+        // Vertex morphs are blend shapes only beneath a SkelRoot that holds a
+        // mesh to name them: a model with no bones authors none, and neither
+        // does one with no mesh (STAGE_CONTRACT.md §4.1, §11.1). The
+        // condition is the one _Morphs authored by, so the fallback is never
+        // silent.
+        if (!_blendShapes) {
+            std::size_t preserved = 0;
+            for (const mmd::Morph& morph : _doc.morphs) {
+                if (morph.type == mmd::MorphType::Vertex) {
+                    ++preserved;
+                }
+            }
+            if (preserved > 0) {
+                mmd::Location where;
+                where.table = "morphs";
+                _diagnostics.push_back(mmd::MakeDiagnostic(
+                    codes::MorphNoSkeleton,
+                    (preserved == 1 ? std::string("1 vertex morph is")
+                                    : std::to_string(preserved) + " vertex morphs are") +
+                        " preserved without a UsdSkelBlendShape: " +
+                        (skinned ? "the model has no mesh to name one"
+                                 : "the model has no bones, so /Asset is no SkelRoot") +
+                        " and a blend shape would not deform",
+                    std::move(where)));
+            }
         }
         // Rigid bodies and joints are Phase 6's and raise nothing yet: they
         // are reserved, not refused (PMX_CONTRACT.md §12).
@@ -678,6 +998,9 @@ private:
     const mmd::CanonicalDocument& _doc;
     std::vector<mmd::Diagnostic>& _diagnostics;
     UsdStageRefPtr _stage;
+    /// Whether _Morphs authored vertex morphs as UsdSkelBlendShapes; false
+    /// until it runs, which is only when the model has a morph.
+    bool _blendShapes = false;
 };
 
 } // namespace

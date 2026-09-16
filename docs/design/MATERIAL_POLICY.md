@@ -227,7 +227,11 @@ generic renderer's transparency handling will differ from MMD's.
 ## 11. Material morphs
 
 Material morphs stay declarative modulation on their morph prim
-([STAGE_CONTRACT.md §11](STAGE_CONTRACT.md#11-morphs)). The stage never
+([STAGE_CONTRACT.md §11.2](STAGE_CONTRACT.md#112-every-other-morph-type)):
+from Phase 4 each one authors `mmd:morph:materialIndices` (with `−1` keeping
+PMX's "every material"), `mmd:morph:materialOperations`, and one parallel
+array per modulated value — diffuse, specular, specular power, ambient, edge
+color and size, and the texture, sphere and toon tints. The stage never
 contains a precomputed material per morph, and a morph never edits the
 material prims.
 

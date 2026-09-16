@@ -8,7 +8,8 @@
 // that are all punctuation or padded with U+0000, texture paths built from
 // the pieces that make a path unsafe. Each generated document is
 // canonicalized twice and checked against the promises CanonicalDocument.h
-// makes. The generator is a fixed-seed PRNG with its own arithmetic, so the
+// makes -- morphs included, whose members are generated to cycle freely
+// through each other. The generator is a fixed-seed PRNG with its own arithmetic, so the
 // run is the same on every platform.
 #include "mmdModel/Canonicalize.h"
 
@@ -18,6 +19,7 @@
 #include <cstdio>
 #include <limits>
 #include <set>
+#include <utility>
 #include <string>
 #include <vector>
 
@@ -218,6 +220,62 @@ Generate(Random& r)
         left -= faces;
         doc.materials.push_back(m);
     }
+    doc.rigidBodies.resize(r.Below(4));
+    // Morphs of every type, with members that name later morphs, earlier
+    // ones, or themselves: a group graph with any cycle in it.
+    const std::size_t morphs = r.OneIn(5) ? 0 : r.Below(10);
+    doc.morphs.resize(morphs);
+    for (std::size_t i = 0; i < morphs; ++i) {
+        pmx::Morph& m = doc.morphs[i];
+        m.name = WildName(r);
+        m.englishName = WildName(r);
+        m.panel = static_cast<std::uint8_t>(r.Below(8)); // 5-7 are undefined
+        m.type = static_cast<pmx::MorphType>(r.Below(11));
+        const std::size_t offsets = r.Below(4);
+        for (std::size_t k = 0; k < offsets; ++k) {
+            switch (m.type) {
+            case pmx::MorphType::Group:
+            case pmx::MorphType::Flip:
+                m.groupOffsets.push_back({Index(r, morphs), WildFloat(r)});
+                break;
+            case pmx::MorphType::Vertex:
+                m.vertexOffsets.push_back({Index(r, vertices), WildVec3(r)});
+                break;
+            case pmx::MorphType::Bone:
+                m.boneOffsets.push_back({Index(r, bones),
+                                         WildVec3(r),
+                                         {WildFloat(r), WildFloat(r), WildFloat(r), WildFloat(r)}});
+                break;
+            case pmx::MorphType::Uv:
+            case pmx::MorphType::AdditionalUv1:
+            case pmx::MorphType::AdditionalUv2:
+            case pmx::MorphType::AdditionalUv3:
+            case pmx::MorphType::AdditionalUv4: {
+                pmx::UvOffset o;
+                o.vertex = Index(r, vertices);
+                o.delta = {WildFloat(r), WildFloat(r), WildFloat(r), WildFloat(r)};
+                m.uvOffsets.push_back(o);
+                break;
+            }
+            case pmx::MorphType::Material: {
+                pmx::MaterialOffset o;
+                o.material = Index(r, materials);
+                o.operation = static_cast<std::uint8_t>(r.Below(3)); // 2 is undefined
+                o.diffuse = {WildFloat(r), WildFloat(r), WildFloat(r), WildFloat(r)};
+                o.specularPower = WildFloat(r);
+                o.edgeSize = WildFloat(r);
+                m.materialOffsets.push_back(o);
+                break;
+            }
+            case pmx::MorphType::Impulse:
+                m.impulseOffsets.push_back({Index(r, doc.rigidBodies.size()),
+                                            static_cast<std::uint8_t>(r.Below(2)),
+                                            WildVec3(r),
+                                            WildVec3(r)});
+                break;
+            }
+        }
+    }
     doc.softBodies.resize(r.Below(2));
     return doc;
 }
@@ -247,6 +305,41 @@ Lower(std::string s)
         }
     }
     return s;
+}
+
+/// Whether expanding every group and flip morph terminates: no member
+/// reaches its own morph (PMX_CONTRACT.md §10). Written as its own walk, so
+/// it is not the canonicalizer's algorithm checking itself.
+bool
+MorphMembersTerminate(const std::vector<mmd::Morph>& morphs)
+{
+    std::vector<std::uint8_t> state(morphs.size(), 0); // 0 unvisited, 1 on the walk, 2 settled
+    std::vector<std::pair<std::size_t, std::size_t>> walk;
+    for (std::size_t start = 0; start < morphs.size(); ++start) {
+        if (state[start] != 0) {
+            continue;
+        }
+        state[start] = 1;
+        walk.assign(1, {start, 0});
+        while (!walk.empty()) {
+            const std::size_t morph = walk.back().first;
+            if (walk.back().second >= morphs[morph].members.size()) {
+                state[morph] = 2;
+                walk.pop_back();
+                continue;
+            }
+            const std::size_t k = walk.back().second++;
+            const std::size_t to = static_cast<std::size_t>(morphs[morph].members[k].morph);
+            if (state[to] == 1) {
+                return false;
+            }
+            if (state[to] == 0) {
+                state[to] = 1;
+                walk.push_back({to, 0});
+            }
+        }
+    }
+    return true;
 }
 
 /// The first promise of CanonicalDocument.h the result breaks, or "".
@@ -366,6 +459,60 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
     }
     if (mesh.materialsCoverFaces != (next == mesh.FaceCount())) {
         return "materialsCoverFaces disagrees with the ranges";
+    }
+
+    // Morphs: one per source morph, in source order, with every kept index
+    // naming an element and no group member reaching its own morph.
+    if (c.morphs.size() != doc.morphs.size()) {
+        return "the morph table changed size";
+    }
+    std::set<std::string> morphIds;
+    for (std::size_t i = 0; i < c.morphs.size(); ++i) {
+        const mmd::Morph& m = c.morphs[i];
+        if (m.sourceIndex != i) {
+            return "a morph is not in morph-table order";
+        }
+        if (!IsIdentifier(m.name.stableId) || !morphIds.insert(Lower(m.name.stableId)).second) {
+            return "a morph identifier is invalid or not unique";
+        }
+        if (static_cast<std::uint8_t>(m.panel) > 4) {
+            return "a morph panel is not one of the five";
+        }
+        for (const mmd::MorphMember& member : m.members) {
+            if (member.morph < 0 || static_cast<std::size_t>(member.morph) >= c.morphs.size()) {
+                return "a group member names no morph";
+            }
+        }
+        for (const mmd::MorphVertexOffset& o : m.vertexOffsets) {
+            if (o.vertex < 0 || static_cast<std::size_t>(o.vertex) >= nv) {
+                return "a vertex morph offset names no vertex";
+            }
+        }
+        for (const mmd::MorphBoneOffset& o : m.boneOffsets) {
+            if (o.joint < 0 || static_cast<std::size_t>(o.joint) >= nb) {
+                return "a bone morph offset names no joint";
+            }
+        }
+        for (const mmd::MorphUvOffset& o : m.uvOffsets) {
+            if (o.vertex < 0 || static_cast<std::size_t>(o.vertex) >= nv) {
+                return "a UV morph offset names no vertex";
+            }
+        }
+        for (const mmd::MorphMaterialOffset& o : m.materialOffsets) {
+            if (o.material != mmd::kNone &&
+                (o.material < 0 || static_cast<std::size_t>(o.material) >= c.materials.size())) {
+                return "a material morph offset names no material";
+            }
+        }
+        for (const mmd::MorphImpulseOffset& o : m.impulseOffsets) {
+            if (o.rigidBody < 0 ||
+                static_cast<std::size_t>(o.rigidBody) >= doc.rigidBodies.size()) {
+                return "an impulse morph offset names no rigid body";
+            }
+        }
+    }
+    if (!MorphMembersTerminate(c.morphs)) {
+        return "a group morph reaches its own morph";
     }
 
     // Textures: an authored path is anchored, relative, and stays inside.

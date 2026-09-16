@@ -9,8 +9,9 @@
 > mesh with its UVs, per-vertex data and material subsets, double-sidedness,
 > the skeleton, joint provenance, skinning and weight normalization, and the
 > material prims with the part of their semantics §10 names — and the §14
-> checklist, which the integration tests assert on every fixture.
-> **Proposed**: §11 (Phase 4), §12 (Phase 5), and §13 (Phase 6). The material
+> checklist, which the integration tests assert on every fixture. **Binding**
+> since Phase 4: §11, the morph prims with every property it names.
+> **Proposed**: §12 (Phase 5) and §13 (Phase 6). The material
 > semantics and `preview`/`mtlx` graph boundaries are binding from Phase 3;
 > their interior shader node names remain realization-local.
 >
@@ -197,6 +198,7 @@ With `S = diag(1, 1, −1)`:
 | direction, normal | `(x, y, z) → (x, y, −z)`, renormalized |
 | displacement (morph offset, translation) | `(x, y, z) → s · (x, y, −z)` |
 | unit quaternion `(x, y, z, w)` | `→ (−x, −y, z, w)` |
+| axial vector (an impulse morph's torque) | `(x, y, z) → (−x, −y, z)`, unscaled — a mirror reverses rotation about X and Y |
 | rotation matrix `R` | `→ S · R · S` |
 | affine matrix | rotation part `S · R · S`, translation part as a point |
 | Euler angles (rigid bodies, joints) | compose to a matrix in the source's rotation order, convert the matrix, keep it as a quaternion; the source order is fixed in [PMX_CONTRACT.md §13](PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
@@ -433,28 +435,56 @@ that need draw order read it from there.
 ## 11. Morphs
 
 Authored from Phase 4. Every PMX morph becomes one prim under `/Asset/morph`,
-named by its stable identifier, in morph-table order:
-
-- A **vertex morph** is a `UsdSkelBlendShape` — `offsets` (§6.3 displacement)
-  and sparse `pointIndices` — and the mesh lists it in `skel:blendShapes` /
-  `skel:blendShapeTargets` under the same identifier.
-- Every **other** morph type is a typeless prim carrying its declarative
-  semantics as `mmd:morph:*` attributes (STAGE-O4): group and flip morphs as
-  relationships to their member morph prims plus parallel weights; bone morphs
-  as per-joint translations and rotations; UV morphs as per-vertex offsets;
-  material morphs as the operation and parameter deltas; impulse morphs as
-  their rigid-body targets and vectors.
+named by its stable identifier, in morph-table order. The scope exists only
+when the model has a morph.
 
 Every morph prim carries:
 
 | Property | Kind | Content |
 | --- | --- | --- |
-| `mmd:morph:type` | attribute, `token` | `group`, `vertex`, `bone`, `uv`, `uv1`–`uv4`, `material`, `flip`, `impulse` |
-| `mmd:morph:panel` | attribute, `token` | `hidden`, `eyebrow`, `eye`, `mouth`, `other` |
+| `mmd:morph:type` | attribute, `uniform token` | `group`, `vertex`, `bone`, `uv`, `uv1`–`uv4`, `material`, `flip`, `impulse` |
+| `mmd:morph:panel` | attribute, `uniform token` | `hidden`, `eyebrow`, `eye`, `mouth`, `other` |
 | `mmd:sourceName`, `mmd:sourceEnglishName`, `mmd:sourceIndex` | customData | provenance |
 
-Nothing is evaluated: no group expands into geometry, no bone morph moves the
-rest skeleton, no material morph becomes a material variant.
+### 11.1 Vertex morphs
+
+A vertex morph is a `UsdSkelBlendShape` with the schema's own `offsets`
+(§6.3 displacement) and sparse `pointIndices`, and the mesh lists it in
+`skel:blendShapes` / `skel:blendShapeTargets` under the same identifier, in
+the same order as the prims it targets. An offset whose vertex the parser
+rejected is dropped rather than repaired.
+
+A model with **no bones** authors no SkelRoot, and a blend shape outside one
+deforms nothing (§4.1); a model with **no mesh** has nothing to name one, and
+a blend shape nothing names deforms nothing either. In both cases the morph
+is a typeless prim carrying the same two arrays as `mmd:morph:offsets`
+(`vector3f[]`) and `mmd:morph:pointIndices` (`int[]`), and the import records
+`MMD_MORPH_NO_SKELETON`.
+
+### 11.2 Every other morph type
+
+A morph of any other type is a **typeless** prim carrying its declarative
+semantics as `mmd:morph:*` properties (STAGE-O4). Each is `uniform`, and each
+list is parallel to the others of its type, in the source's offset order. An
+offset whose target the parser rejected is dropped; a material morph's
+`−1` keeps its source meaning, **every material**.
+
+| Type | Properties |
+| --- | --- |
+| `group`, `flip` | `mmd:morph:members` (`rel`, to morph prims) and `mmd:morph:weights` (`float[]`) |
+| `bone` | `mmd:morph:joints` (`int[]`, canonical joint indices), `mmd:morph:translations` (`vector3f[]`, §6.3 displacement), `mmd:morph:rotations` (`quatf[]`, §6.3 quaternion) |
+| `uv`, `uv1`–`uv4` | `mmd:morph:pointIndices` (`int[]`) and `mmd:morph:uvOffsets` (`float4[]`, **raw**: a primary-UV delta is against source `v`, so a consumer applying it to `primvars:st` negates the `v` component) |
+| `material` | `mmd:morph:materialIndices` (`int[]`, `−1` = every material), `mmd:morph:materialOperations` (`token[]`: `multiply`, `add`), and one array per modulated value: `diffuseColors` (`color4f[]`), `specularColors` (`color3f[]`), `specularPowers` (`float[]`), `ambientColors` (`color3f[]`), `edgeColors` (`color4f[]`), `edgeSizes` (`float[]`), `textureTints`, `sphereTints`, `toonTints` (`float4[]`) |
+| `impulse` | `mmd:morph:rigidBodyIndices` (`int[]`, the **source** rigid-body table, until §13 authors `/Asset/physics`), `mmd:morph:impulseLocal` (`bool[]`), `mmd:morph:velocities` (`vector3f[]`, §6.3 displacement), `mmd:morph:torques` (`vector3f[]`, §6.3 axial vector) |
+
+### 11.3 Nothing is evaluated
+
+No group or flip morph expands into geometry, no bone morph moves the rest
+skeleton, no material morph becomes a material variant or edits a material
+prim, and no impulse is ever applied. A group or flip member that reaches its
+own morph — directly or through other group morphs — is dropped with
+`MMD_MORPH_GROUP_CYCLE`, so a consumer that does expand one terminates; that
+is a validation, not an evaluation.
 
 ## 12. Control rig — reserved
 
@@ -510,7 +540,6 @@ is.
 
 | Id | Question | Proposed answer | Resolve by |
 | --- | --- | --- | --- |
-| STAGE-O4 | Encoding of non-vertex morph semantics | typeless prims with `mmd:morph:*` attributes and relationships (§11) | Phase 4 |
 | STAGE-O6 | Rig and physics prim shapes | decided under the schema admission test | Phases 5, 6 |
 
 Resolved:
@@ -521,3 +550,4 @@ Resolved:
 | STAGE-O2 | Mesh prim name and the one-mesh rule | `/Asset/geo/Mesh`, one mesh (§8.1) | Phase 2, 2026-09-15 |
 | STAGE-O3 | Double-sidedness | the mesh is double-sided if any material that draws a face is no-cull (§8.5) | Phase 2, 2026-09-15 |
 | STAGE-O5 | Weight normalization tolerance and zero-weight rule | `1e-5`; zero weights bind to the first bone that names one (§9.5) | Phase 2, 2026-09-15 |
+| STAGE-O4 | Encoding of non-vertex morph semantics | typeless prims, one uniform `mmd:morph:*` array per field and a relationship for group and flip members (§11.2) | Phase 4, 2026-09-16 |

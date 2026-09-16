@@ -46,14 +46,14 @@ bundle's `plugInfo.json` expects it, and `mmd_inspect` into
 | `mmdPmx_robustness` | every byte of the sample models overwritten, and every prefix read: no crash, and no document that breaks its invariants |
 | `mmdPmx_boundaries` | `mmdPmx`'s sources include no OpenUSD, its link line is empty, and a binary linking it imports no OpenUSD library |
 | `mmdPmx_boundaries_selftest` | the boundary check's own rules reject what they must |
-| `mmdModel_unit` | canonicalization over documents stated as data — the basis conversion, identifiers, joint order and its repairs, weight normalization, texture paths, face ranges — and the diagnostic each repair raises |
-| `mmdModel_robustness` | 20,000 generated documents with wild parents, weights, names and paths, each canonicalized twice: no crash, the same bits both times, every promise of `CanonicalDocument.h` kept |
+| `mmdModel_unit` | canonicalization over documents stated as data — the basis conversion, identifiers, joint order and its repairs, weight normalization, texture paths, face ranges, every morph type and its index remapping — and the diagnostic each repair raises |
+| `mmdModel_robustness` | 20,000 generated documents with wild parents, weights, names, paths and morph graphs, each canonicalized twice: no crash, the same bits both times, every promise of `CanonicalDocument.h` kept — expanding the group morphs always terminates |
 | `mmdModel_boundaries` | `mmdModel`'s sources include no OpenUSD, it links `mmdPmx` and nothing else, and a binary linking it imports no OpenUSD library |
 | `mmd_inspect_fixtures` | `mmd_inspect` reads every generated fixture as `fixtures.json` says, from an ASCII and a non-ASCII directory |
 | `mmd_inspect_boundaries` | `mmd_inspect` links `mmdPmx` and nothing else, and imports no OpenUSD library |
 | `workspace_fixtures` | the committed fixtures and texture files are exactly what the generator writes |
 | `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees; the diagnostic catalog matches the declared codes |
-| `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says; each stage that opens holds what `fixtures.json` says it must — identifiers, joint paths, bind translations, material subsets, texture asset paths and whether they resolve, a vertex through the conversion — passes the stage checklist, and passes every validator OpenUSD registers |
+| `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says; each stage that opens holds what `fixtures.json` says it must — identifiers, joint paths, bind translations, material subsets, texture asset paths and whether they resolve, a vertex through the conversion, every morph prim and, for each blend shape, the points UsdSkel moves when it is driven to weight 1 — passes the stage checklist, and passes every validator OpenUSD registers |
 | `usdMmdFileFormat_unicode_paths` | the same, with the fixture directory and its texture files copied under `ユニコード-é/`, from a Python host |
 | `usdMmdFileFormat_notice_listeners` | every Python entry point that reaches the importer (`Usd.Stage.Open`, `Sdf.Layer.Reload`, `Sdf.Layer.OpenAsAnonymous`) returns while a global Python notice listener is registered |
 | `workspace_installed_consumer` | the installed-consumer lane (below) |

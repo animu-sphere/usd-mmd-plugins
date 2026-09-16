@@ -33,6 +33,23 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   MMD-specific semantics remain on the material prim for an MMD-aware
   renderer. Unsafe texture paths remain provenance-only, and alpha mode uses
   the source texture-slot contract without decoding image pixels.
+- **Phase 4 morphs.** Every PMX morph is now a prim under `/Asset/morph`, in
+  morph-table order and named by its stable identifier, carrying
+  `mmd:morph:type`, `mmd:morph:panel` and its provenance. A vertex morph is a
+  `UsdSkelBlendShape` with sparse `pointIndices`, listed by the mesh in
+  `skel:blendShapes` / `skel:blendShapeTargets`, so a consumer that authors
+  weights deforms the mesh with it; a model with no bones is no SkelRoot,
+  and one with no mesh has nothing to name a blend shape, so there it is
+  preserved on a typeless prim with `MMD_MORPH_NO_SKELETON`.
+  Group, flip, bone, UV, material and impulse morphs are typeless prims whose
+  uniform `mmd:morph:*` arrays and member relationship carry the source
+  semantics — a group is never expanded, a bone morph never moves the rest
+  skeleton, a material morph never edits a material, an impulse is never
+  applied. A member that reaches its own morph is dropped with
+  `MMD_MORPH_GROUP_CYCLE`, and a panel outside 0–4 is preserved as `other`
+  with `MMD_MORPH_UNKNOWN_PANEL`. STAGE-O4 is resolved as proposed; the
+  torque of an impulse morph adds the axial-vector row to the conversion
+  table.
 - **`mmdModel`** (`libs/mmdModel/`), a plain static library with no OpenUSD:
   `mmd::Canonicalize(const pmx::Document&)` applies the one source-to-USD
   conversion (right-handed, facing +Z, 0.08 m per MMD unit), assigns stable

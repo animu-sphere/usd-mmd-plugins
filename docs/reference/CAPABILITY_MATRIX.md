@@ -4,12 +4,14 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-16 the tree holds Phases 0–3 in progress:** `.pmx` is registered, every
+**As of 2026-09-16 the tree holds Phases 0–4:** `.pmx` is registered, every
 table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
 by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
 canonical stage — mesh, UVs, material prims and subsets, skeleton and
 skinning. Phase 3 adds MMD material semantics plus unlit-compatible preview
-and MaterialX graphs; morphs, control and physics semantics are not authored.
+and MaterialX graphs, and Phase 4 every morph: vertex morphs as blend shapes,
+every other type preserved declaratively. Control and physics semantics are
+not authored.
 The *intended* column is the
 claim the design makes for the first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
@@ -83,12 +85,15 @@ Each claim is backed by the generated fixtures and the parser's unit tests.
 | Sphere textures | — | preserved | 3 | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
 | Toon ramps (individual and shared) | — | preserved | 3 | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
 | Edge / outline | — | preserved | 3 | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
-| Vertex morph | — | supported | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| Group, flip morph | — | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| Bone morph | — | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| UV and additional-UV morph | — | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| Material morph | — | preserved | 4 | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
-| Impulse morph | — | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| Vertex morph (`UsdSkelBlendShape`) | supported | supported | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| Group, flip morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| Bone morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| UV and additional-UV morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| Material morph | preserved | preserved | 4 | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
+| Impulse morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| A vertex morph nothing can drive: no bones, or no mesh (preserved, no blend shape) | supported | supported | 4 | [STAGE §11.1](../design/STAGE_CONTRACT.md#111-vertex-morphs) |
+| Group and flip morph cycles | supported | supported | 4 | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
+| Japanese morph names preserved | supported | supported | 4 | [TEXT §5](../design/TEXT_ENCODING_POLICY.md#5-identity-versus-display) |
 | IK chains | — | preserved | 5 | [STAGE §12](../design/STAGE_CONTRACT.md#12-control-rig--reserved) |
 | Append transforms, fixed and local axes, external parent | — | preserved | 5 | [STAGE §12](../design/STAGE_CONTRACT.md#12-control-rig--reserved) |
 | Display frames | — (parsed; contract v1 authors none) | unsupported (parsed, not authored) | 1 | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |

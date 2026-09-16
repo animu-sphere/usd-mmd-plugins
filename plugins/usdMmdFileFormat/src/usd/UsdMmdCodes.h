@@ -17,6 +17,9 @@ inline constexpr mmd::Code SkelSdefApproximated{"MMD_SKEL_SDEF_APPROXIMATED",
 inline constexpr mmd::Code SkelQdefApproximated{"MMD_SKEL_QDEF_APPROXIMATED",
                                                 mmd::Severity::Warning};
 
+// Morphs -- docs/design/STAGE_CONTRACT.md §4.1.
+inline constexpr mmd::Code MorphNoSkeleton{"MMD_MORPH_NO_SKELETON", mmd::Severity::Warning};
+
 // Physics -- docs/design/PMX_CONTRACT.md §12.
 inline constexpr mmd::Code PhysicsSoftBodyUnsupported{"MMD_PHYSICS_SOFT_BODY_UNSUPPORTED",
                                                       mmd::Severity::Warning};

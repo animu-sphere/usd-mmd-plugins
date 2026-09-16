@@ -6,9 +6,10 @@
 > and deform), are **binding** since
 > Phase 2, where `mmdModel` implements them for what the stage authors: the
 > model's metadata, textures, vertices, faces, materials' face ranges and
-> texture slots, and bones' names, positions and parents. The rest of the
-> "Canonical" columns and §14 step 7 (morphs, control, physics) stay
-> **proposed** until the Phase that authors each. This document
+> texture slots, and bones' names, positions and parents. §8's "Canonical"
+> column is binding since Phase 3, and §10 with the morph part of §14 step 7
+> since Phase 4. The control and physics parts of step 7 stay **proposed**
+> until the Phase that authors each. This document
 > fixes how PMX 2.0 and 2.1 bytes are read and what each source concept
 > becomes in the canonical model. It records *decisions*; the byte layout
 > below is a summary for orientation, and the parser's fixtures —
@@ -293,7 +294,11 @@ Decisions:
   group morphs, is `MMD_MORPH_GROUP_CYCLE` (recoverable): the cyclic member is
   dropped. Nothing is expanded, so this is a validation, not an evaluation.
 - Out-of-range offset targets are recoverable: the offset is dropped with
-  `MMD_PMX_INDEX_OUT_OF_RANGE`.
+  `MMD_PMX_INDEX_OUT_OF_RANGE`. A **material** morph is the one exception —
+  §4 reads a rejected index as none, and none is `−1`, which is a material
+  morph's "every material" rather than an absence. Such an offset is
+  therefore kept, and reads as every material; the parser's diagnostic is
+  what records that the source named a material that is not there.
 
 ## 11. Display frames
 

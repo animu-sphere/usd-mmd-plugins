@@ -560,6 +560,22 @@ def point_d(v: tuple) -> list[float]:
             -(f32(v[2]) * METERS_PER_UNIT) + 0.0]
 
 
+def quaternion(q: tuple) -> list[float]:
+    """A PMX rotation as the stage's quatf: (x, y, z, w) -> (-x, -y, z, w)."""
+    return [-f32(q[0]) + 0.0, -f32(q[1]) + 0.0, f32(q[2]) + 0.0, f32(q[3]) + 0.0]
+
+
+def axial(v: tuple) -> list[float]:
+    """An axial vector -- a torque: (x, y, z) -> (-x, -y, z), unscaled."""
+    return [-f32(v[0]) + 0.0, -f32(v[1]) + 0.0, f32(v[2]) + 0.0]
+
+
+def in_table(index: int, size: int) -> bool:
+    """Whether an index names an element. The parser replaces an out-of-range
+    one with -1, and the offset that held it is dropped (PMX §4, §10)."""
+    return 0 <= index < size
+
+
 def display_name(text) -> str:
     """A decoded name with trailing U+0000 padding dropped; text that does not
     decode is read as empty."""
@@ -643,6 +659,101 @@ def asset_path(source) -> str | None:
     return "./" + "/".join(segments)
 
 
+MORPH_TYPE_NAMES = {"group": "group", "vertex": "vertex", "bone": "bone", "uv": "uv",
+                    "additionalUv1": "uv1", "additionalUv2": "uv2",
+                    "additionalUv3": "uv3", "additionalUv4": "uv4",
+                    "material": "material", "flip": "flip", "impulse": "impulse"}
+MORPH_PANELS = ("hidden", "eyebrow", "eye", "mouth", "other")
+
+
+def break_group_cycles(members: list[list[int]], composite: list[bool]) -> None:
+    """Drop every member that closes a cycle through group or flip morphs
+    (PMX_CONTRACT.md §10), in the walk order the canonicalizer uses: morphs in
+    order, each one's members in theirs."""
+    state = [0] * len(members)  # 0 unvisited, 1 on the walk, 2 settled
+    for start in range(len(members)):
+        if state[start] != 0 or not composite[start]:
+            continue
+        state[start] = 1
+        walk = [[start, 0]]
+        while walk:
+            morph, nxt = walk[-1]
+            if nxt >= len(members[morph]):
+                state[morph] = 2
+                walk.pop()
+                continue
+            walk[-1][1] += 1
+            target = members[morph][nxt]
+            if target == -1 or not composite[target]:
+                continue
+            if state[target] == 1:
+                members[morph][nxt] = -1
+                continue
+            if state[target] == 2:
+                continue
+            state[target] = 1
+            walk.append([target, 0])
+
+
+def morph_expectation(model: dict, canonical_of: list[int]) -> list[dict]:
+    """What each morph prim holds (STAGE_CONTRACT.md §11): its identity, its
+    type and panel, and the offsets of the type it is, with every index
+    remapped and every spatial value converted."""
+    morphs = model["morphs"]
+    ids = identifiers("morph", [display_name(m["englishName"]) for m in morphs])
+    composite = [m["type"] in ("group", "flip") for m in morphs]
+    vertices, bones = len(model["vertices"]), len(model["bones"])
+    materials, bodies = len(model["materials"]), len(model["rigidBodies"])
+
+    # Group and flip members, kept only where they name a morph, then with
+    # every cycle broken.
+    members = [[o[0] for o in m["offsets"] if in_table(o[0], len(morphs))]
+               if composite[i] else [] for i, m in enumerate(morphs)]
+    weights = [[o[1] for o in m["offsets"] if in_table(o[0], len(morphs))]
+               if composite[i] else [] for i, m in enumerate(morphs)]
+    break_group_cycles(members, composite)
+
+    out = []
+    for i, m in enumerate(morphs):
+        kind = m["type"]
+        panel = m["panel"]
+        want = {"id": ids[i], "sourceIndex": i, "name": display_name(m["name"]),
+                "englishName": display_name(m["englishName"]),
+                "type": MORPH_TYPE_NAMES[kind],
+                "panel": MORPH_PANELS[panel] if panel < len(MORPH_PANELS) else "other"}
+        if kind in ("group", "flip"):
+            kept = [k for k, member in enumerate(members[i]) if member != -1]
+            want["members"] = [ids[members[i][k]] for k in kept]
+            want["weights"] = [f32(weights[i][k]) for k in kept]
+        elif kind == "vertex":
+            kept = [o for o in m["offsets"] if in_table(o[0], vertices)]
+            want["pointIndices"] = [o[0] for o in kept]
+            want["offsets"] = [point(o[1]) for o in kept]
+        elif kind == "bone":
+            kept = [o for o in m["offsets"] if in_table(o[0], bones)]
+            want["joints"] = [canonical_of[o[0]] for o in kept]
+            want["translations"] = [point(o[1]) for o in kept]
+            want["rotations"] = [quaternion(o[2]) for o in kept]
+        elif kind in MORPH_TYPE_NAMES and kind.startswith(("uv", "additionalUv")):
+            kept = [o for o in m["offsets"] if in_table(o[0], vertices)]
+            want["pointIndices"] = [o[0] for o in kept]
+            want["uvOffsets"] = [[f32(c) for c in o[1]] for o in kept]
+        elif kind == "material":
+            want["materialIndices"] = [o["material"] if in_table(o["material"], materials)
+                                       else -1 for o in m["offsets"]]
+            want["materialOperations"] = ["add" if o["operation"] == 1 else "multiply"
+                                          for o in m["offsets"]]
+            want["diffuseColors"] = [[f32(c) for c in o["diffuse"]] for o in m["offsets"]]
+        elif kind == "impulse":
+            kept = [o for o in m["offsets"] if in_table(o[0], bodies)]
+            want["rigidBodyIndices"] = [o[0] for o in kept]
+            want["impulseLocal"] = [bool(o[1]) for o in kept]
+            want["velocities"] = [point(o[2]) for o in kept]
+            want["torques"] = [axial(o[3]) for o in kept]
+        out.append(want)
+    return out
+
+
 def stage_expectation(model: dict, relative: str) -> dict:
     """What the canonical stage of `model`, written at `relative`, holds."""
     bones = model["bones"]
@@ -712,9 +823,15 @@ def stage_expectation(model: dict, relative: str) -> dict:
             "vertex1": {"point": point(v1["position"]), "normal": normal,
                         "st": [f32(v1["uv"][0]), f32(1.0 - f32(v1["uv"][1]))]},
         }
+    joint_of_source = [canonical_of[i] for i in range(len(bones))]
+    morphs = morph_expectation(model, joint_of_source)
+    if mesh is not None:
+        # Blend shapes deform only beneath a SkelRoot (STAGE_CONTRACT.md §4.1).
+        mesh["blendShapes"] = [m["id"] for m in morphs
+                               if m["type"] == "vertex"] if skinned else []
     return {"skinned": skinned, "mesh": mesh, "materials": materials,
-            "joints": joints,
-            "jointOfSourceBone": [canonical_of[i] for i in range(len(bones))]}
+            "joints": joints, "morphs": morphs,
+            "jointOfSourceBone": joint_of_source}
 
 
 # --- the fixtures ------------------------------------------------------------------
@@ -825,6 +942,16 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
                           "toon\\\u0085.bmp"]
     unsafe["materials"][1]["sphereTexture"] = 4  # a C0 control, a tab
     unsafe["materials"][1]["toon"] = ("texture", 5)  # a C1 control, U+0085
+    panel = sample_model(2.0, UTF16LE, 1, 0)
+    panel["morphs"][3]["panel"] = 7  # only 0-4 are defined
+    cycles = sample_model(2.0, UTF16LE, 1, 0)
+    cycles["morphs"][1]["offsets"] = [(1, 1.0), (0, 1.0)]  # names itself, then a vertex morph
+    cycles["morphs"] += [
+        {"name": "輪1", "englishName": "", "panel": 4, "type": "group",
+         "offsets": [(7, 1.0)]},
+        {"name": "輪2", "englishName": "", "panel": 4, "type": "group",
+         "offsets": [(6, 1.0)]},  # 6 -> 7 -> 6
+    ]
     boneless = sample_model(2.0, UTF16LE, 1, 0)
     boneless["bones"] = []
     boneless["morphs"] = []
@@ -836,6 +963,27 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
     boneless["vertices"] = boneless["vertices"][:3]
     boneless["faces"] = [0, 1, 2]
     boneless["materials"] = boneless["materials"][:1]
+    morphs_unskinned = {**boneless, "morphs": [
+        {"name": "まばたき", "englishName": "blink", "panel": 2, "type": "vertex",
+         "offsets": [(0, (0.0, -0.1, 0.0)), (2, (0.0, -0.05, 0.02))]},
+        {"name": "材質", "englishName": "material", "panel": 4, "type": "material",
+         "offsets": [{"material": 0, "operation": 1,
+                      "diffuse": (0.0, 0.0, 0.0, -0.5), "specular": (0.0, 0.0, 0.0),
+                      "specularPower": 0.0, "ambient": (0.0, 0.0, 0.0),
+                      "edgeColor": (0.0, 0.0, 0.0, 0.0), "edgeSize": 0.0,
+                      "textureTint": (0.0, 0.0, 0.0, 0.0),
+                      "sphereTint": (0.0, 0.0, 0.0, 0.0),
+                      "toonTint": (0.0, 0.0, 0.0, 0.0)}]},
+    ]}
+    # Bones but no mesh: /Asset is a SkelRoot, and there is still nothing to
+    # name a blend shape (STAGE_CONTRACT.md §11.1).
+    morphs_no_mesh = sample_model(2.0, UTF16LE, 1, 0)
+    morphs_no_mesh.update({"vertices": [], "faces": [], "materials": [], "textures": [],
+                           "displayFrames": [], "rigidBodies": [], "joints": []})
+    morphs_no_mesh["morphs"] = [
+        {"name": "まばたき", "englishName": "blink", "panel": 2, "type": "vertex",
+         "offsets": [(0, (0.0, -0.1, 0.0))]},  # vertex 0 of an empty table
+    ]
     entries.update({
         "bones-reordered.pmx": opens(
             reordered, "a bone listed before its parent: the joints are reordered",
@@ -862,6 +1010,24 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
             boneless, "a mesh and a material, and no bones: /Asset is an Xform "
             "and the mesh is unskinned",
             parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 3),
+        "recoverable/morph-unknown-panel.pmx": opens(
+            panel, "a morph panel of 7: preserved as \"other\"",
+            canonical=["MMD_MORPH_UNKNOWN_PANEL"], importer=sdef),
+        "recoverable/morph-group-cycle.pmx": opens(
+            cycles, "a group morph that names itself, and two that name each "
+            "other: each cyclic member is dropped",
+            canonical=["MMD_MORPH_GROUP_CYCLE"] * 2, importer=sdef),
+        "recoverable/morph-no-skeleton.pmx": opens(
+            morphs_unskinned, "a vertex morph in a model with no bones: "
+            "preserved without a UsdSkelBlendShape",
+            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 3,
+            importer=["MMD_MORPH_NO_SKELETON"]),
+        "recoverable/morph-no-mesh.pmx": opens(
+            morphs_no_mesh, "a vertex morph in a model with bones and no "
+            "mesh: nothing can name a blend shape, and the offset of a "
+            "vertex the empty table does not hold is dropped",
+            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"],
+            importer=["MMD_MORPH_NO_SKELETON"]),
     })
 
     # Recoverable: the model opens, and the stage records why it is not exact.

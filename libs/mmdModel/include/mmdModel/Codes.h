@@ -24,6 +24,10 @@ inline constexpr Code SkelJointsReordered{"MMD_SKEL_JOINTS_REORDERED", Severity:
 inline constexpr Code SkelWeightsNormalized{"MMD_SKEL_WEIGHTS_NORMALIZED", Severity::Info};
 inline constexpr Code SkelZeroWeights{"MMD_SKEL_ZERO_WEIGHTS", Severity::Warning};
 
+// Morphs -- docs/design/PMX_CONTRACT.md §10.
+inline constexpr Code MorphUnknownPanel{"MMD_MORPH_UNKNOWN_PANEL", Severity::Warning};
+inline constexpr Code MorphGroupCycle{"MMD_MORPH_GROUP_CYCLE", Severity::Error};
+
 // Materials -- docs/design/PMX_CONTRACT.md §8.
 inline constexpr Code MaterialUnsupportedSphereMode{"MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE",
                                                     Severity::Warning};

@@ -65,6 +65,8 @@ not a distributed model"""
             texCoord2f[] primvars:st = [(0, 0), (0.125, 0.125), (0.25, 0.25), (0.375, 0.375), (0.5, 0.5), (0.625, 0.625)] (
                 interpolation = "vertex"
             )
+            uniform token[] skel:blendShapes = ["blink"]
+            rel skel:blendShapeTargets = </Asset/morph/blink>
             rel skel:skeleton = </Asset/skel/Skeleton>
             uniform token subdivisionScheme = "none"
             uniform token subsetFamily:materialBind:familyType = "partition"
@@ -248,6 +250,118 @@ not a distributed model"""
             custom uniform int[] mmd:bone:sourceIndex = [0, 1, 2, 3]
             custom uniform string[] mmd:bone:sourceName = ["センター", "左腕", "左ひじ", "左手首ＩＫ"]
             uniform matrix4d[] restTransforms = [( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0.64, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.12, 0.4, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.12, -0.08, 0, 1) ), ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0.36, 0.24, 0, 1) )]
+        }
+    }
+
+    def Scope "morph"
+    {
+        def BlendShape "blink" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = "blink"
+                    int sourceIndex = 0
+                    string sourceName = "まばたき"
+                }
+            }
+        )
+        {
+            custom uniform token mmd:morph:panel = "eye"
+            custom uniform token mmd:morph:type = "vertex"
+            uniform vector3f[] offsets = [(0, -0.008, 0), (0, -0.004, -0.0016)]
+            uniform int[] pointIndices = [0, 5]
+        }
+
+        def "smile" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = "smile"
+                    int sourceIndex = 1
+                    string sourceName = "笑い"
+                }
+            }
+        )
+        {
+            custom rel mmd:morph:members = [
+                </Asset/morph/blink>,
+                </Asset/morph/morph_0002>,
+            ]
+            custom uniform token mmd:morph:panel = "mouth"
+            custom uniform token mmd:morph:type = "group"
+            custom uniform float[] mmd:morph:weights = [1, 0.5]
+        }
+
+        def "morph_0002" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = ""
+                    int sourceIndex = 2
+                    string sourceName = "肩"
+                }
+            }
+        )
+        {
+            custom uniform int[] mmd:morph:joints = [1]
+            custom uniform token mmd:morph:panel = "other"
+            custom uniform quatf[] mmd:morph:rotations = [(0.9914449, 0, 0, 0.1305262)]
+            custom uniform vector3f[] mmd:morph:translations = [(0, 0.016, 0)]
+            custom uniform token mmd:morph:type = "bone"
+        }
+
+        def "uv" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = "uv"
+                    int sourceIndex = 3
+                    string sourceName = "UV"
+                }
+            }
+        )
+        {
+            custom uniform token mmd:morph:panel = "other"
+            custom uniform int[] mmd:morph:pointIndices = [3]
+            custom uniform token mmd:morph:type = "uv"
+            custom uniform float4[] mmd:morph:uvOffsets = [(0.1, 0, 0, 0)]
+        }
+
+        def "morph_0004" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = ""
+                    int sourceIndex = 4
+                    string sourceName = "追加UV"
+                }
+            }
+        )
+        {
+            custom uniform token mmd:morph:panel = "hidden"
+            custom uniform int[] mmd:morph:pointIndices = [4]
+            custom uniform token mmd:morph:type = "uv1"
+            custom uniform float4[] mmd:morph:uvOffsets = [(0, 0.5, 0, 0)]
+        }
+
+        def "material" (
+            customData = {
+                dictionary mmd = {
+                    string sourceEnglishName = "material"
+                    int sourceIndex = 5
+                    string sourceName = "材質"
+                }
+            }
+        )
+        {
+            custom uniform color3f[] mmd:morph:ambientColors = [(1, 1, 1)]
+            custom uniform color4f[] mmd:morph:diffuseColors = [(1, 1, 1, 0.5)]
+            custom uniform color4f[] mmd:morph:edgeColors = [(1, 1, 1, 1)]
+            custom uniform float[] mmd:morph:edgeSizes = [1]
+            custom uniform int[] mmd:morph:materialIndices = [-1]
+            custom uniform token[] mmd:morph:materialOperations = ["multiply"]
+            custom uniform token mmd:morph:panel = "other"
+            custom uniform color3f[] mmd:morph:specularColors = [(1, 1, 1)]
+            custom uniform float[] mmd:morph:specularPowers = [1]
+            custom uniform float4[] mmd:morph:sphereTints = [(1, 1, 1, 1)]
+            custom uniform float4[] mmd:morph:textureTints = [(1, 1, 1, 1)]
+            custom uniform float4[] mmd:morph:toonTints = [(1, 1, 1, 1)]
+            custom uniform token mmd:morph:type = "material"
         }
     }
 }

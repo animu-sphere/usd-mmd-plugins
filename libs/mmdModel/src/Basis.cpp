@@ -62,6 +62,12 @@ Direction(const Float3& source)
             static_cast<float>(z / length) + 0.0f};
 }
 
+Float3
+AxialVector(const Float3& source)
+{
+    return {Mirror(source[0]), Mirror(source[1]), source[2] + 0.0f};
+}
+
 Float4
 Quaternion(const Float4& source)
 {

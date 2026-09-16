@@ -4,14 +4,15 @@ Documentation is organized by responsibility: each category answers one class
 of question. The layout is the one `usd-vrm-plugins`, `open-strata` and
 `hydra-merlin` use, so the repositories read the same way.
 
-**The tree holds Phases 0–3 in progress (2026-09-16):** the PMX structural parser reads
+**The tree holds Phases 0–4 (2026-09-16):** the PMX structural parser reads
 every table of a PMX 2.0 or 2.1 file, `mmd_inspect` reports on it, and `.pmx`
 opens as the canonical stage — mesh, UVs, material prims and subsets,
 skeleton and skinning, Y-up, in meters. Phase 3 adds canonical MMD material
-semantics and unlit-compatible `preview` and `mtlx` realizations. Morphs,
-control and physics semantics are not authored. Everything else in `design/`
-is intended behavior; [reference/](reference/) is the only place that says
-what is implemented.
+semantics and unlit-compatible `preview` and `mtlx` realizations, and Phase 4
+every morph: vertex morphs as blend shapes, every other type preserved
+declaratively. Control and physics semantics are not authored. Everything
+else in `design/` is intended behavior; [reference/](reference/) is the only
+place that says what is implemented.
 
 | Category | Answers | Start here |
 | --- | --- | --- |
@@ -22,7 +23,7 @@ what is implemented.
 | [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
 | [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
 | `releases/` | Immutable per-version release records. | added with the first release |
-| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) |
+| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) |
 
 ## Canonical documents
 

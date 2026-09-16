@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The current milestone — Phase 3, the material triad — and what remains of it. |
+| [current.md](current.md) | The current milestone — Phase 5, control semantics — and what remains of it. |
 
 ## One sequence
 
@@ -30,8 +30,8 @@ in.** No other document states a version for a Phase.
 | 0 | workspace skeleton | ✅ done | unassigned |
 | 1 | PMX structural parser | ✅ done | unassigned |
 | 2 | canonical stage | ✅ done | unassigned |
-| 3 | material triad | 🚧 in progress | unassigned |
-| 4 | morphs | ⬜ | unassigned |
+| 3 | material triad | ✅ done | unassigned |
+| 4 | morphs | ✅ done | unassigned |
 | 5 | control semantics | ⬜ | unassigned |
 | 6 | physics preservation | ⬜ | unassigned |
 | 7 | VMD | ⬜ | unassigned |
@@ -40,9 +40,10 @@ in.** No other document states a version for a Phase.
 No release number is assigned yet. The first release that claims PMX import is
 the one that meets
 [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
-— Phases 0–4 plus the preservation parts of 5 and 6 it names. Whether earlier
-Phases get releases of their own is decided here; Phases 0 and 1 are done and
-the question is still open.
+— Phases 0–4 plus the preservation parts of 5 and 6 it names. Phases 0–4 are
+done, so what that definition still wants is Phase 5's and Phase 6's
+preservation. Whether earlier Phases get releases of their own is decided
+here, and the question is still open.
 
 Where things stand, as of 2026-09-16:
 
@@ -55,22 +56,26 @@ Where things stand, as of 2026-09-16:
 - Phase 1, the PMX structural parser, is done: every table of PMX 2.0 and 2.1
   is parsed, `mmd_inspect` reports on it, and CI is green on every cell,
   including the parser's sanitizer and fuzzing lane.
-- Phase 2, the canonical stage, is complete: `mmdModel` canonicalizes, the
+- Phase 2, the canonical stage, is done: `mmdModel` canonicalizes, the
   importer authors the mesh, material prims and subsets, skeleton and
   skinning, and the workspace, standalone, sanitizer and documentation lanes
   cover the implementation.
-- Of the five places where the design departs from the 2026-09-15
-  implementation policy
-  ([DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy)),
-  four are authored with fixtures and binding; the material graphs of the
-  fifth are now implemented as the Phase 3 material triad: canonical MMD
-  semantics, a VRM-like unlit `UsdPreviewSurface` fallback, and an unlit
-  MaterialX `gltf_pbr` path. MMD-specific sphere, toon, edge and source
-  values remain on the material prim for an MMD-aware consumer.
-- Phase 3 is the current milestone. Its portable realizations and canonical
-  semantics are implemented; remaining work is the final CI/golden pass,
-  visual quality review across real models, and a future MMD-aware renderer
-  for sphere, toon and edge realization.
+- Phase 3, the material triad, is done: canonical MMD material semantics on
+  every material prim, plus the unlit `preview` and MaterialX `mtlx`
+  realizations. Its last two items closed on 2026-09-16 — the standalone
+  golden agrees on every supported platform, and three distributed models
+  render through Storm with their source colors
+  ([report](../reports/2026-09-16-phase4-local-models.md)).
+- Phase 4, morphs, is done: every PMX morph is a prim under `/Asset/morph`,
+  vertex morphs as `UsdSkelBlendShape` the mesh names and every other type
+  preserved declaratively, with STAGE-O4 resolved and the group-cycle,
+  unknown-panel and no-skeleton diagnostics behind fixtures.
+- All five places where the design departs from the 2026-09-15 implementation
+  policy
+  ([DESIGN_POLICY.md §19](../design/DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy))
+  are now authored with fixtures and binding.
+- Phase 5, control semantics, is the current milestone, and nothing of it is
+  implemented: `/Asset/rig` is still reserved and empty.
 
 ## Open decisions
 
@@ -84,7 +89,7 @@ schedules them.
 | MAT-O1 | Roughness from specular power | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
 | MAT-O2 | Alpha mode without decoding images | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
 | MAT-O3 | Missing individual toon texture | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved in Phase 3 |
-| STAGE-O4 | Encoding of non-vertex morph semantics | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phase 4 |
+| STAGE-O4 | Encoding of non-vertex morph semantics | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | resolved in Phase 4 |
 | STAGE-O6 | Rig and physics prim shapes | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | Phases 5, 6 |
 | PMX-O1 | Euler order of rigid-body and joint rotations | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | Phase 6 |
 | MOT-O1 | Home of the shared basis-conversion functions | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | Phase 7 |
