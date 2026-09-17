@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -37,6 +38,7 @@ FIXTURE = REPO / "plugins" / "usdMmdFileFormat" / "tests" / "fixtures" / "sample
 
 STAGE_CHECK = r'''
 import json, pathlib, sys
+sys.stdout.reconfigure(errors="backslashreplace")
 prefix = pathlib.Path(sys.argv[1]).resolve()
 bundle = prefix / "bundles" / "usdMmdFileFormat"
 sys.path.insert(0, str(bundle))
@@ -61,7 +63,10 @@ print(f"stage: /Asset opened through {where}; buildInfo names {stamp['projectVer
 
 def run(command: list[str], **kwargs) -> subprocess.CompletedProcess:
     print("$ " + " ".join(command), flush=True)
-    return subprocess.run(command, check=False, **kwargs)
+    # Every Python this starts -- the fixture generator, the stage check --
+    # prints those paths too.
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    return subprocess.run(command, check=False, env=env, **kwargs)
 
 
 def tool(prefix: pathlib.Path, name: str) -> pathlib.Path:
@@ -83,6 +88,9 @@ def inspect(executable: pathlib.Path, source: pathlib.Path) -> None:
 
 
 def main() -> int:
+    # The scratch paths are non-ASCII on purpose, and a hosted Windows
+    # runner's console is cp1252: printing them must not be what fails.
+    sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--product", type=pathlib.Path, required=True,
