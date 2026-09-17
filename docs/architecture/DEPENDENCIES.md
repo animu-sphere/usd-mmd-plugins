@@ -6,14 +6,15 @@ components are [WORKSPACE.md §2](WORKSPACE.md#2-dependency-directions)'s.
 
 Status (2026-09-15): the Phase 0 decisions are closed, and every value below
 is what the workspace builds with. The OpenUSD pin is enforced at configure
-time.
+time. §6, `usd-motion-plugins`, was added on 2026-09-17 and is planned: no
+component links it yet.
 
 ## 1. OpenUSD
 
 | | |
 | --- | --- |
 | Pin | OpenUSD **26.08**, exactly (`PXR_VERSION` 2608), enforced by [cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake) for `ost` and plain-CMake builds alike and declared as `runtime.openusd: "==26.08"` in the bundle manifest; the release the rest of the ecosystem pins (`usd-vrm-plugins` too), because `usd-avatar-runtime` composes every plugin into one OpenUSD process |
-| Used by | `usdMmdFileFormat` (and later `mmdSchema`, `usdVmdFileFormat`) only |
+| Used by | `usdMmdFileFormat` (and later `mmdSchema`, `usdVmdFileFormat`) only; later `mmdMotionAdapter` too, for the foundation types (`gf`, `tf`, `vt`) `usd-motion-plugins`' `motion-core` exposes, and no stage (§6) |
 | Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `usdPhysics`, `usdShade`, `usdSkel`, `kind` (`usdShade` and `usdSkel` since Phase 2, `usdPhysics` since Phase 6) |
 | Not used | OpenExec, Hydra, `usdImaging` — nothing is evaluated or rendered here, so unlike `usd-vrm-plugins`' pin module this one probes for no OpenExec |
 | CI runtimes | the OpenUSD 26.08 leaves of OpenStrata's runtime matrix, the same digests `usd-vrm-plugins` pins ([openstrata.ci.yaml](../../openstrata.ci.yaml)) |
@@ -48,7 +49,9 @@ calls the MaterialX library. The MaterialX document version it declares
 | An image decoder in the importer | the importer never reads texture pixels; authoring stays independent of image content and of whether files exist ([TEXT_ENCODING_POLICY.md §7.3](../design/TEXT_ENCODING_POLICY.md#73-no-filesystem-access-while-authoring)) |
 | ICU, `iconv`, OS code-page APIs | PMX text is UTF-8 or UTF-16LE, decoded by the parser; CP932 (for VMD, PMD) uses a table the project owns ([TEXT_ENCODING_POLICY.md §9](../design/TEXT_ENCODING_POLICY.md#9-pmd-and-vmd)) |
 | A third-party PMX parser, by default | PMX is a bounded format; a purpose-built parser avoids inheriting an application's semantics ([DESIGN_POLICY.md §10](../design/DESIGN_POLICY.md#10-parser-strategy)) — adoption is possible only through §4 |
-| OpenExec, Hydra, `hydra-toon`, `usd-stage-runner` | the importer neither evaluates nor renders ([WORKSPACE.md §2.2](WORKSPACE.md#22-forbidden-edges)) |
+| OpenExec, Hydra, `hydra-toon`, `usd-stage-runner` | the importer neither evaluates nor renders ([WORKSPACE.md §2.2](WORKSPACE.md#22-forbidden-edges)); `mmdControl` evaluates as a plain library, and a runtime that wants it as an OpenExec node wraps it there |
+| `motion-connectors`, device SDKs, network transports | live input reaches this repository only as the shared core's types, if at all ([WORKSPACE.md §2.2](WORKSPACE.md#22-forbidden-edges)) |
+| A copy of any `usd-motion-plugins` algorithm | generic motion is consumed, never duplicated ([WORKSPACE.md §7](WORKSPACE.md#7-invariants), invariant 9) |
 
 ## 4. Third-party code
 
@@ -86,3 +89,25 @@ exact version, and listed in `THIRD_PARTY_NOTICES.md`.
   Python's — and nothing is vendored, so `THIRD_PARTY_NOTICES.md` lists
   nothing for it. Python is a build-time tool here, as it is for the
   fixtures.
+
+## 6. usd-motion-plugins
+
+The shared motion core: vendor- and avatar-format-neutral poses and clips,
+humanoid joint semantics, sampling, retargeting, recording and the
+`UsdSkelAnimation` bridge. Planned, not linked: the repository has published
+no package yet.
+
+| | |
+| --- | --- |
+| Packages | `motion-core` (`MotionPose`, `MotionClip`, `HumanJoint`, `SkeletonDescriptor`, `RetargetMap`); `motion-retarget` and `motion-usd` only where [WORKSPACE.md §2.4](WORKSPACE.md#24-edges-out-of-this-repository) allows them |
+| Used by | `mmdMotionAdapter`; later perhaps `usdVmdFileFormat` (MOT-O2) |
+| Consumed as | an installed package, by `find_package` with a version range admitting the release it was verified against, the way siblings are ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
+| Version | unset until its first release; its `v0.1.0` (core contract) is the earliest usable, and `v0.2.0` (rest-pose-aware retarget, VRM/MMD integration hooks) the one Phase 9 is designed against |
+| OpenUSD | the same exact pin as §1 |
+| Direction | one way: `usd-motion-plugins` never depends on this repository |
+
+**Why a dependency and not a copy.** The motion policy places generic
+motion in one repository so that VRM, MMD and live sources share one
+retarget and one USD mapping; a private MMD copy would be the permanent
+duplication that policy forbids (its §37). What stays here is what needs MMD
+to be understood ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md)).
