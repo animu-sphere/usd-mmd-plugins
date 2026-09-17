@@ -14,6 +14,10 @@
 # (`generate_fixtures.py --check`), and the generator writes '\n'.
 fixtures.json text eol=lf
 
+# The generated CP932 table is compared byte for byte with what its generator
+# writes (`generate_cp932_table.py --check`), and the generator writes '\n'.
+Cp932Table.inc text eol=lf
+
 # USDA goldens and fixtures check out with LF everywhere. A CRLF smudge changes
 # the *content* of a multi-line (triple-quoted) string -- the \r becomes part of
 # the parsed value -- so a Windows checkout would flatten to different bytes

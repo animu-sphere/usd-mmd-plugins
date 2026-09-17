@@ -1,0 +1,18 @@
+# OpenStrata workspace-tool descriptor.
+#
+# vmd_inspect reports what a VMD contains, with motionVmd and without a model
+# or USD (docs/architecture/WORKSPACE.md §1, §2.1). It ships in the product
+# beside mmd_inspect: a motion question should be answerable from the package
+# a user already has.
+schema: openstrata.tool/v1alpha1
+tool:
+  id: vmd_inspect
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.0.0
+  license: Apache-2.0
+executables: [vmd_inspect]
+directories: [bin]
+requires:
+  libraries:
+    - id: motionVmd
+      version: ">=0.0,<0.1"
