@@ -13,13 +13,15 @@
 > since Phase 4: §11, the morph prims with every property it names.
 > **Binding** since Phase 5: §12, the control rig with every property it
 > names, and the §6.3 rows for fixed axes and local axes.
-> **Proposed**: §13 (Phase 6). The material semantics and `preview`/`mtlx`
+> **Binding** since Phase 6: §13, the rigid bodies and joints with every
+> property it names, and the §6.3 rows for Euler angles, lengths and
+> translation limits. The material semantics and `preview`/`mtlx`
 > graph boundaries are binding from Phase 3; their interior shader node names
 > remain realization-local.
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
 > stage metadata, prim hierarchy, types, names, the coordinate conversion, and
-> the layout of skeleton, materials, morphs and control rig. Material graphs are detailed in
+> the layout of skeleton, materials, morphs, control rig and physics. Material graphs are detailed in
 > [MATERIAL_POLICY.md](MATERIAL_POLICY.md) and identifier rules in
 > [TEXT_ENCODING_POLICY.md](TEXT_ENCODING_POLICY.md); on those topics they win.
 >
@@ -98,9 +100,12 @@ consumer can ignore.
 │  ├─ Bones                     typeless: every joint's control semantics, parallel to the Skeleton's joints
 │  └─ ik                        Scope
 │     └─ <boneId>               typeless: one IK chain, named by its IK bone
-└─ physics                      Scope                                       (reserved, Phase 6)
-   ├─ rigidBodies/<rigidBodyId>
-   └─ joints/<jointId>
+└─ physics                      Scope — rigid bodies and joints             (Phase 6)
+   ├─ rigidBodies                Scope
+   │  └─ <rigidBodyId>           Xform + PhysicsRigidBodyAPI, PhysicsMassAPI
+   │     └─ collider             Sphere, Cube or Capsule + PhysicsCollisionAPI, purpose = guide
+   └─ joints                     Scope
+      └─ <jointId>               PhysicsJoint; typeless for a type UsdPhysics has none for
 ```
 
 A scope is authored only when it has children: a PMX with no morphs has no
@@ -208,13 +213,13 @@ With `S = diag(1, 1, −1)`:
 | affine matrix | rotation part `S · R · S`, translation part as a point |
 | fixed axis (the one axis a bone rotates about) | `(x, y, z) → (−x, −y, z)`, as an axial vector; unscaled and not normalized |
 | local axes (a bone's X and Z) | the frame as a rotation, `S · R · S`: X `→ (x, y, −z)`, Z `→ (−x, −y, z)`; unscaled and not normalized, and `Y = Z × X` in both bases |
-| Euler angles (rigid bodies, joints) | compose to a matrix in the source's rotation order, convert the matrix, keep it as a quaternion; the source order is fixed in [PMX_CONTRACT.md §13](PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
+| Euler angles `(x, y, z)` (rigid bodies, joints) | compose as `R = Ry · Rx · Rz` acting on column vectors — Z first, then X, then Y ([PMX_CONTRACT.md §13](PMX_CONTRACT.md#13-rigid-bodies-and-joints), PMX-O1) — convert as `S · R · S`, and keep it as a quaternion with `w ≥ 0`; computed in double and rounded once |
 | rotation limits about X, Y (IK links, joints) | `[min, max] → [−max, −min]` — a Z mirror reverses rotation about X and Y |
 | rotation limits about Z | unchanged |
 | translation limits along Z | `[min, max] → s · [−max, −min]`; along X and Y, `× s` |
 | triangle winding | `(i0, i1, i2) → (i0, i2, i1)` |
 | UV | `(u, v) → (u, 1 − v)` for `primvars:st` only (§8.3) |
-| scalar lengths (rigid-body sizes, edge offsets in units) | `× s` |
+| scalar lengths (rigid-body sizes, edge offsets in units) | `× s`, never mirrored |
 | dimensionless values (weights, ratios, colors) | unchanged |
 
 Winding is reversed because the Z mirror changes handedness: a face that was
@@ -483,7 +488,7 @@ offset whose target the parser rejected is dropped; a material morph's
 | `bone` | `mmd:morph:joints` (`int[]`, canonical joint indices), `mmd:morph:translations` (`vector3f[]`, §6.3 displacement), `mmd:morph:rotations` (`quatf[]`, §6.3 quaternion) |
 | `uv`, `uv1`–`uv4` | `mmd:morph:pointIndices` (`int[]`) and `mmd:morph:uvOffsets` (`float4[]`, **raw**: a primary-UV delta is against source `v`, so a consumer applying it to `primvars:st` negates the `v` component) |
 | `material` | `mmd:morph:materialIndices` (`int[]`, `−1` = every material), `mmd:morph:materialOperations` (`token[]`: `multiply`, `add`), and one array per modulated value: `diffuseColors` (`color4f[]`), `specularColors` (`color3f[]`), `specularPowers` (`float[]`), `ambientColors` (`color3f[]`), `edgeColors` (`color4f[]`), `edgeSizes` (`float[]`), `textureTints`, `sphereTints`, `toonTints` (`float4[]`) |
-| `impulse` | `mmd:morph:rigidBodyIndices` (`int[]`, the **source** rigid-body table, until §13 authors `/Asset/physics`), `mmd:morph:impulseLocal` (`bool[]`), `mmd:morph:velocities` (`vector3f[]`, §6.3 displacement), `mmd:morph:torques` (`vector3f[]`, §6.3 axial vector) |
+| `impulse` | `mmd:morph:rigidBodyIndices` (`int[]`, indices into `/Asset/physics/rigidBodies`, which keeps the source order, §13), `mmd:morph:impulseLocal` (`bool[]`), `mmd:morph:velocities` (`vector3f[]`, §6.3 displacement), `mmd:morph:torques` (`vector3f[]`, §6.3 axial vector) |
 
 ### 11.3 Nothing is evaluated
 
@@ -564,12 +569,99 @@ reconstructs every IK chain and append relation from these properties alone,
 which is Phase 5's acceptance
 ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
 
-## 13. Physics — reserved
+## 13. Physics
 
-`/Asset/physics/rigidBodies` and `/Asset/physics/joints` are reserved for
-Phase 6. Standard `UsdPhysics` is used where its semantics match; unmatched
-PMX parameters (collision groups and masks, physics mode, spring constants) are
-preserved as `mmd:physics:*`. No simulation state is ever authored.
+Authored from Phase 6, whenever the model has a rigid body. `/Asset/physics`
+holds PMX's rigid bodies and joints: as standard `UsdPhysics` where its
+semantics match
+([DESIGN_POLICY.md §8](DESIGN_POLICY.md#8-physics-policy)), and with every PMX
+value as a `uniform` `mmd:physics:*` attribute beside it, so a consumer that
+reads only `mmd:physics:*` recovers every body and joint. No MMD API schema
+is applied (STAGE-O6). Rigid-body indices are indices into
+`/Asset/physics/rigidBodies`' children, which keep the source table's order,
+and joint indices are canonical joint indices (§9.1); `−1` names none.
+
+### 13.1 Rigid bodies
+
+One `UsdGeomXform` per rigid body at `/Asset/physics/rigidBodies/<id>`, in
+source order, with `PhysicsRigidBodyAPI` and `PhysicsMassAPI` applied and the
+body's provenance as `customData`.
+
+| Property | Content |
+| --- | --- |
+| `xformOp:translate` (`double3`), `xformOp:orient` (`quatf`) | the rest frame: §6.3 point, and the Euler angles through §6.3 (`w` never negative) |
+| `physics:kinematicEnabled` | `true` exactly when the body follows its bone |
+| `physics:mass` | the source's mass, only when it is positive: `UsdPhysics` reads 0 as "not given" |
+| `mmd:physics:bone` (`int`) | the canonical joint of the bone the body is attached to |
+| `mmd:physics:shape` (`token`) | `sphere`, `box`, `capsule` |
+| `mmd:physics:size` (`float3`) | meters, `× s` and never mirrored: a sphere's radius in x; a box's half extents; a capsule's radius in x and cylinder length in y |
+| `mmd:physics:collisionGroup`, `mmd:physics:collisionMask` (`int`) | as stored: the body is in group `g` (0–15), and collides with group `h` when bit `h` of the mask is set |
+| `mmd:physics:mass`, `linearDamping`, `angularDamping`, `restitution`, `friction` (`float`) | as stored |
+| `mmd:physics:mode` (`token`) | `followBone` (kinematic), `dynamic`, `dynamicWithBone` (simulated, the bone's position kept) |
+
+Its child `collider` is the shape — `UsdGeomSphere` (`radius`),
+`UsdGeomCube` (`size = 2` scaled by the half extents), or `UsdGeomCapsule`
+(`radius`, `height` the cylinder length, `axis = "Y"`) — with `extent`,
+`PhysicsCollisionAPI`, and `purpose = "guide"`: collision geometry, not
+something to render. Its lengths are converted in double (§6.2).
+
+Collision filtering is **not** authored as `PhysicsCollisionGroup`: a PMX body
+filters by its own group against the other body's mask, and bodies of one
+group may carry different masks — which `UsdPhysics`' group-to-group filter
+cannot say. Damping, restitution and friction have no body-level
+`UsdPhysics` counterpart and are preserved only.
+
+### 13.2 Joints
+
+One prim per joint whose two bodies both exist at `/Asset/physics/joints/<id>`,
+in source order, with the joint's provenance as `customData`. A `spring6Dof`
+or `sixDof` joint is a `PhysicsJoint` — the generic 6-DOF joint — with:
+
+| Property | Content |
+| --- | --- |
+| `physics:body0`, `physics:body1` | the rigid-body prims A and B |
+| `physics:localPos0`, `localRot0`, `localPos1`, `localRot1` | the joint's frame in each body's rest frame |
+| `PhysicsLimitAPI:transX` … `rotZ` | `physics:low` and `physics:high` per degree of freedom, meters or **degrees**, authored only where the source's lower limit is not above its upper one |
+
+A lower limit above the upper one leaves that axis free in PMX (Bullet's
+convention) and would lock it in `UsdPhysics`, so a free axis authors no
+limit; equal limits lock it in both. Spring constants have no `UsdPhysics`
+counterpart: `PhysicsDriveAPI` stiffness is in different units and the
+conversion is a runtime's.
+
+A PMX 2.1 `pointToPoint`, `coneTwist`, `slider` or `hinge` joint has no
+documented mapping of its limits onto a `UsdPhysics` joint, so it is a
+typeless prim carrying only the properties below, and the import raises
+`MMD_PHYSICS_JOINT_UNMAPPED`, once, with the count. Every joint carries:
+
+| Attribute | Type | Content |
+| --- | --- | --- |
+| `mmd:physics:type` | `token` | `spring6Dof`, `sixDof`, `pointToPoint`, `coneTwist`, `slider`, `hinge` |
+| `mmd:physics:rigidBodyA`, `rigidBodyB` | `int` | the two bodies |
+| `mmd:physics:position` | `point3d` | §6.3 point |
+| `mmd:physics:orientation` | `quatf` | the Euler angles through §6.3 |
+| `mmd:physics:translationLowerLimit`, `translationUpperLimit` | `vector3f` | meters, §6.3 translation limits |
+| `mmd:physics:rotationLowerLimit`, `rotationUpperLimit` | `vector3f` | radians, §6.3 rotation limits |
+| `mmd:physics:translationSpring`, `rotationSpring` | `vector3f` | as stored: their unit depends on the length scale ([PMX_CONTRACT.md §13](PMX_CONTRACT.md#13-rigid-bodies-and-joints)) |
+
+### 13.3 Repairs
+
+A body whose bone the parser rejected keeps `mmd:physics:bone = −1`. A joint
+either of whose bodies is rejected, or `−1` in the source, authors no prim: it
+joins nothing. A shape, physics mode or joint type the source's version does
+not define is authored as `sphere`, `followBone` or `spring6Dof`, with
+`MMD_PHYSICS_UNKNOWN_SHAPE`, `MMD_PHYSICS_UNKNOWN_MODE` or
+`MMD_PHYSICS_UNKNOWN_JOINT_TYPE`
+([PMX_CONTRACT.md §13](PMX_CONTRACT.md#13-rigid-bodies-and-joints)).
+
+### 13.4 Nothing is simulated
+
+No `PhysicsScene` is authored, no body carries a velocity, and nothing moves a
+body off its rest frame or a bone after a body. A consumer recovers every
+rigid body — its bone, shape and parameters — and every joint and the bodies
+it joins from these properties alone, which is Phase 6's acceptance
+([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). Simulating them belongs
+to `usd-stage-runner` or another runtime.
 
 ## 14. Validation checklist
 
@@ -592,6 +684,12 @@ The stage tests assert, for every fixture that reaches the relevant Phase:
 - `/Asset/rig` exists exactly when the model has bones, every
   `/Asset/rig/Bones` array is sized to `joints`, and every IK chain and append
   relation the source holds is reconstructed from the stage alone;
+- `/Asset/physics` exists exactly when the model has a rigid body, every rigid
+  body and every joint that joins two is one prim with the values §13 names,
+  every `UsdPhysics` joint's `body0` and `body1` agree with its
+  `mmd:physics:rigidBodyA` and `rigidBodyB`, no `PhysicsScene` is authored,
+  and every body's bone and every joint's bodies are recovered from the stage
+  alone;
 - no attribute has time samples.
 
 Golden `.usda` baselines cover the compact fixtures; the checklist is asserted
@@ -611,7 +709,7 @@ is.
 
 | Id | Question | Proposed answer | Resolve by |
 | --- | --- | --- | --- |
-| STAGE-O6 | Physics prim shapes | typeless prims with uniform `mmd:physics:*` attributes beside standard `UsdPhysics` where it matches, as the rig's were decided | Phase 6 |
+| — | none open | | |
 
 Resolved:
 
@@ -623,3 +721,4 @@ Resolved:
 | STAGE-O5 | Weight normalization tolerance and zero-weight rule | `1e-5`; zero weights bind to the first bone that names one (§9.5) | Phase 2, 2026-09-15 |
 | STAGE-O4 | Encoding of non-vertex morph semantics | typeless prims, one uniform `mmd:morph:*` array per field and a relationship for group and flip members (§11.2) | Phase 4, 2026-09-16 |
 | STAGE-O6, rig half | Rig prim shapes | typeless prims with uniform `mmd:rig:*` attributes and no API schema, since no consumer has asked for one ([DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test)): per-joint arrays parallel to the Skeleton's `joints` on `/Asset/rig/Bones`, and one prim per IK chain, whose links vary in length (§12). The physics half stays open. | Phase 5, 2026-09-16 |
+| STAGE-O6, physics half | Physics prim shapes | `UsdPhysics` where its semantics match — an `Xform` with `PhysicsRigidBodyAPI` and `PhysicsMassAPI` per body, a guide-purpose collider child, a `PhysicsJoint` with per-axis `PhysicsLimitAPI` for both 6-DOF joint types — and every PMX value as uniform `mmd:physics:*` beside it, with no MMD API schema. Collision groups, damping, friction, restitution and springs have no exact `UsdPhysics` counterpart and are preserved only; PMX 2.1's other joint types are typeless prims (§13). | Phase 6, 2026-09-17 |

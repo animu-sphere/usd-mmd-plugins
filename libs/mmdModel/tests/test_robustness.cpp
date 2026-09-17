@@ -749,8 +749,7 @@ public:
                 std::to_string(b.collisionGroup) + "," + std::to_string(b.collisionMask) + "," +
                     std::to_string(static_cast<int>(b.shape)) + "," +
                     std::to_string(static_cast<int>(b.mode)));
-            Raw(std::vector<mmd::Float3>{b.size});
-            Raw(std::vector<mmd::Double3>{b.position});
+            Raw(std::vector<mmd::Double3>{b.size, b.position});
             Raw(std::vector<mmd::Float4>{b.orientation});
             Raw(std::vector<float>{
                 b.mass, b.linearDamping, b.angularDamping, b.restitution, b.friction});

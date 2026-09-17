@@ -71,8 +71,8 @@ std::array<double, 4> EulerRotationD(const Float3& radians);
 Float4 EulerRotation(const Float3& radians);
 
 /// Scalar lengths -- a rigid body's radius, half extents, capsule height:
-/// `* s` each, never mirrored.
-Float3 Lengths(const Float3& source);
+/// `* s` each, never mirrored, in double: UsdGeom authors them as doubles.
+Double3 Lengths(const Float3& source);
 
 /// Per-axis translation limits, [lower, upper]: along X and Y scaled, along Z
 /// mirrored, so it becomes s * [-upper, -lower].

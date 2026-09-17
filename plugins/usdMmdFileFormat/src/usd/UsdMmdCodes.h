@@ -24,4 +24,8 @@ inline constexpr mmd::Code MorphNoSkeleton{"MMD_MORPH_NO_SKELETON", mmd::Severit
 inline constexpr mmd::Code PhysicsSoftBodyUnsupported{"MMD_PHYSICS_SOFT_BODY_UNSUPPORTED",
                                                       mmd::Severity::Warning};
 
+// Physics -- docs/design/STAGE_CONTRACT.md §13.2.
+inline constexpr mmd::Code PhysicsJointUnmapped{"MMD_PHYSICS_JOINT_UNMAPPED",
+                                                mmd::Severity::Warning};
+
 } // namespace usdmmd::codes

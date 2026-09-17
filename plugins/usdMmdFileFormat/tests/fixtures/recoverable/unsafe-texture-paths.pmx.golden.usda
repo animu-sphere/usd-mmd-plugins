@@ -414,5 +414,213 @@ not a distributed model"""
             }
         }
     }
+
+    def Scope "physics"
+    {
+        def Scope "rigidBodies"
+        {
+            def Xform "head" (
+                apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                customData = {
+                    dictionary mmd = {
+                        string sourceEnglishName = "head"
+                        int sourceIndex = 0
+                        string sourceName = "頭"
+                    }
+                }
+            )
+            {
+                custom uniform float mmd:physics:angularDamping = 0.25
+                custom uniform int mmd:physics:bone = 1
+                custom uniform int mmd:physics:collisionGroup = 1
+                custom uniform int mmd:physics:collisionMask = 65533
+                custom uniform float mmd:physics:friction = 0.75
+                custom uniform float mmd:physics:linearDamping = 0.5
+                custom uniform float mmd:physics:mass = 1
+                custom uniform token mmd:physics:mode = "followBone"
+                custom uniform float mmd:physics:restitution = 0.125
+                custom uniform token mmd:physics:shape = "sphere"
+                custom uniform float3 mmd:physics:size = (0.12, 0, 0)
+                bool physics:kinematicEnabled = 1
+                float physics:mass = 1
+                quatf xformOp:orient = (0.98185617, -0.14357218, 0.10602051, 0.06407135)
+                double3 xformOp:translate = (0.12, 1.12, 0.04)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+                def Sphere "collider" (
+                    apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    float3[] extent = [(-0.12, -0.12, -0.12), (0.12, 0.12, 0.12)]
+                    uniform token purpose = "guide"
+                    double radius = 0.12
+                }
+            }
+
+            def Xform "rigidBody_0001" (
+                apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                customData = {
+                    dictionary mmd = {
+                        string sourceEnglishName = ""
+                        int sourceIndex = 1
+                        string sourceName = "髪"
+                    }
+                }
+            )
+            {
+                custom uniform float mmd:physics:angularDamping = 0.25
+                custom uniform int mmd:physics:bone = -1
+                custom uniform int mmd:physics:collisionGroup = 2
+                custom uniform int mmd:physics:collisionMask = 65531
+                custom uniform float mmd:physics:friction = 0.75
+                custom uniform float mmd:physics:linearDamping = 0.5
+                custom uniform float mmd:physics:mass = 0.5
+                custom uniform token mmd:physics:mode = "dynamic"
+                custom uniform float mmd:physics:restitution = 0.125
+                custom uniform token mmd:physics:shape = "capsule"
+                custom uniform float3 mmd:physics:size = (0.04, 0.16, 0)
+                bool physics:kinematicEnabled = 0
+                float physics:mass = 0.5
+                quatf xformOp:orient = (0.95754904, -0.23744933, -0.13589515, -0.09083023)
+                double3 xformOp:translate = (0.16, 1, -0.06)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+                def Capsule "collider" (
+                    apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    uniform token axis = "Y"
+                    float3[] extent = [(-0.04, -0.12, -0.04), (0.04, 0.12, 0.04)]
+                    double height = 0.16
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                }
+            }
+
+            def Xform "chest" (
+                apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                customData = {
+                    dictionary mmd = {
+                        string sourceEnglishName = "chest"
+                        int sourceIndex = 2
+                        string sourceName = "胸"
+                    }
+                }
+            )
+            {
+                custom uniform float mmd:physics:angularDamping = 0.25
+                custom uniform int mmd:physics:bone = 2
+                custom uniform int mmd:physics:collisionGroup = 2
+                custom uniform int mmd:physics:collisionMask = 65531
+                custom uniform float mmd:physics:friction = 0.75
+                custom uniform float mmd:physics:linearDamping = 0.5
+                custom uniform float mmd:physics:mass = 0
+                custom uniform token mmd:physics:mode = "dynamicWithBone"
+                custom uniform float mmd:physics:restitution = 0.125
+                custom uniform token mmd:physics:shape = "box"
+                custom uniform float3 mmd:physics:size = (0.08, 0.04, 0.02)
+                bool physics:kinematicEnabled = 0
+                quatf xformOp:orient = (0.7213781, -0.03572738, -0.5760614, 0.38274065)
+                double3 xformOp:translate = (0.24, 0.96, 0.02)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+                def Cube "collider" (
+                    apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                    uniform token purpose = "guide"
+                    double size = 2
+                    double3 xformOp:scale = (0.08, 0.04, 0.02)
+                    uniform token[] xformOpOrder = ["xformOp:scale"]
+                }
+            }
+        }
+
+        def Scope "joints"
+        {
+            def PhysicsJoint "joint_0000" (
+                apiSchemas = ["PhysicsLimitAPI:transX", "PhysicsLimitAPI:transZ", "PhysicsLimitAPI:rotX", "PhysicsLimitAPI:rotY", "PhysicsLimitAPI:rotZ"]
+                customData = {
+                    dictionary mmd = {
+                        string sourceEnglishName = ""
+                        int sourceIndex = 0
+                        string sourceName = "頭-髪"
+                    }
+                }
+            )
+            {
+                float limit:rotX:physics:high = 11.459156
+                float limit:rotX:physics:low = -5.729578
+                float limit:rotY:physics:high = 17.188734
+                float limit:rotY:physics:low = -11.459156
+                float limit:rotZ:physics:high = 17.188734
+                float limit:rotZ:physics:low = -22.918312
+                float limit:transX:physics:high = 0.04
+                float limit:transX:physics:low = -0.04
+                float limit:transZ:physics:high = 0.08
+                float limit:transZ:physics:low = -0.02
+                custom uniform quatf mmd:physics:orientation = (0.9833474, -0.06407135, -0.09115755, 0.14357218)
+                custom uniform point3d mmd:physics:position = (0.14, 1.06, -0.02)
+                custom uniform int mmd:physics:rigidBodyA = 0
+                custom uniform int mmd:physics:rigidBodyB = 1
+                custom uniform vector3f mmd:physics:rotationLowerLimit = (-0.1, -0.2, -0.4)
+                custom uniform vector3f mmd:physics:rotationSpring = (5, 6, 7)
+                custom uniform vector3f mmd:physics:rotationUpperLimit = (0.2, 0.3, 0.3)
+                custom uniform vector3f mmd:physics:translationLowerLimit = (-0.04, 0.08, -0.02)
+                custom uniform vector3f mmd:physics:translationSpring = (0, 10, 20)
+                custom uniform vector3f mmd:physics:translationUpperLimit = (0.04, 0, 0.08)
+                custom uniform token mmd:physics:type = "spring6Dof"
+                rel physics:body0 = </Asset/physics/rigidBodies/head>
+                rel physics:body1 = </Asset/physics/rigidBodies/rigidBody_0001>
+                point3f physics:localPos0 = (0.0272592, -0.04405812, -0.07011289)
+                point3f physics:localPos1 = (-0.013360529, 0.030272339, 0.067119904)
+                quatf physics:localRot0 = (0.97423893, 0.057210304, -0.21026644, 0.058082268)
+                quatf physics:localRot1 = (0.9561643, 0.19993436, 0.0064335936, 0.21385677)
+            }
+
+            def PhysicsJoint "joint_0001" (
+                apiSchemas = ["PhysicsLimitAPI:transX", "PhysicsLimitAPI:transY", "PhysicsLimitAPI:transZ", "PhysicsLimitAPI:rotX", "PhysicsLimitAPI:rotY", "PhysicsLimitAPI:rotZ"]
+                customData = {
+                    dictionary mmd = {
+                        string sourceEnglishName = ""
+                        int sourceIndex = 1
+                        string sourceName = "髪-胸"
+                    }
+                }
+            )
+            {
+                float limit:rotX:physics:high = 57.29578
+                float limit:rotX:physics:low = -57.29578
+                float limit:rotY:physics:high = 28.64789
+                float limit:rotY:physics:low = -28.64789
+                float limit:rotZ:physics:high = 0
+                float limit:rotZ:physics:low = 0
+                float limit:transX:physics:high = 0
+                float limit:transX:physics:low = 0
+                float limit:transY:physics:high = 0
+                float limit:transY:physics:low = 0
+                float limit:transZ:physics:high = 0
+                float limit:transZ:physics:low = 0
+                custom uniform quatf mmd:physics:orientation = (0.86022997, 0.26610032, -0.12854111, 0.41553843)
+                custom uniform point3d mmd:physics:position = (0.2, 0.98, -0.02)
+                custom uniform int mmd:physics:rigidBodyA = 1
+                custom uniform int mmd:physics:rigidBodyB = 2
+                custom uniform vector3f mmd:physics:rotationLowerLimit = (-1, -0.5, 0)
+                custom uniform vector3f mmd:physics:rotationSpring = (0, 0, 0)
+                custom uniform vector3f mmd:physics:rotationUpperLimit = (1, 0.5, 0)
+                custom uniform vector3f mmd:physics:translationLowerLimit = (0, 0, 0)
+                custom uniform vector3f mmd:physics:translationSpring = (0, 0, 0)
+                custom uniform vector3f mmd:physics:translationUpperLimit = (0, 0, 0)
+                custom uniform token mmd:physics:type = "spring6Dof"
+                rel physics:body0 = </Asset/physics/rigidBodies/rigidBody_0001>
+                rel physics:body1 = </Asset/physics/rigidBodies/chest>
+                point3f physics:localPos0 = (0.052186348, -0.025077378, 0.015738819)
+                point3f physics:localPos1 = (-0.022016453, 0.054231297, 0.013200086)
+                quatf physics:localRot0 = (0.7402517, 0.52721024, -0.080682695, 0.4093496)
+                quatf physics:localRot1 = (0.84413505, 0.41287047, 0.28612506, -0.18736722)
+            }
+        }
+    }
 }
 

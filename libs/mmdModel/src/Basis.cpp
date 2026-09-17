@@ -111,10 +111,12 @@ EulerRotation(const Float3& radians)
     return detail::Rounded(EulerRotationD(radians));
 }
 
-Float3
+Double3
 Lengths(const Float3& source)
 {
-    return {Scaled(source[0]), Scaled(source[1]), Scaled(source[2])};
+    return {source[0] * kMetersPerUnit + 0.0,
+            source[1] * kMetersPerUnit + 0.0,
+            source[2] * kMetersPerUnit + 0.0};
 }
 
 TranslationRange

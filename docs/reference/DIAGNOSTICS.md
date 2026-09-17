@@ -191,6 +191,7 @@ raises; every other code is reserved.
 | `MMD_MATERIAL_UNSUPPORTED_SPHERE_MODE` *emitted* | warning | `mmdModel` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
 | `MMD_MATERIAL_UNSUPPORTED_TOON_SLOT` *emitted* | warning | `mmdModel` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
 | `MMD_PHYSICS_SOFT_BODY_UNSUPPORTED` *emitted* | warning | `usdMmdFileFormat` | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
+| `MMD_PHYSICS_JOINT_UNMAPPED` *emitted* | warning | `usdMmdFileFormat` | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
 | `MMD_PHYSICS_UNKNOWN_SHAPE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 | `MMD_PHYSICS_UNKNOWN_MODE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 | `MMD_PHYSICS_UNKNOWN_JOINT_TYPE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |

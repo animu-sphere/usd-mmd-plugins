@@ -108,8 +108,8 @@ TestRotationsAndTexCoords()
     assert(PositiveZero(identity4[0]) && PositiveZero(identity4[1]) && identity4[3] == 1.0f);
 
     // Lengths scale and never mirror; translation limits mirror along Z.
-    const Float3 lengths = basis::Lengths({1.0f, 2.0f, 3.0f});
-    assert(lengths[0] == M(1.0) && lengths[1] == M(2.0) && lengths[2] == M(3.0));
+    const Double3 lengths = basis::Lengths({1.0f, 2.0f, -3.0f});
+    assert(lengths[0] == 0.08 && lengths[1] == 2.0 * 0.08 && lengths[2] == -3.0 * 0.08);
     const basis::TranslationRange range =
         basis::TranslationLimits({-1.0f, -2.0f, -3.0f}, {0.5f, 0.25f, 0.125f});
     assert(range.lower[0] == -M(1.0) && range.lower[1] == -M(2.0) && range.lower[2] == -M(0.125));

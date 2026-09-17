@@ -436,7 +436,7 @@ struct RigidBody {
     /// x, a box's half extents, a capsule's radius in x and the length of its
     /// cylinder, along its Y axis, in y. The components a shape does not use
     /// are kept as they are.
-    Float3 size{};
+    Double3 size{};
     Double3 position{}; ///< meters, a point
     /// The body's frame (x, y, z, w), composed from the source's Euler angles
     /// (PMX-O1) and converted as a rotation; w is never negative.

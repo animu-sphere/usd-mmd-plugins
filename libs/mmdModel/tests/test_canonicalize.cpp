@@ -703,7 +703,7 @@ TestPhysics()
     assert(head.bone == c.skeleton.jointOfSourceBone[1]);
     assert(head.collisionGroup == 3 && head.collisionMask == 0xFFF7);
     assert(head.shape == RigidBodyShape::Box);
-    assert((head.size == Float3{M(1.0), M(2.0), M(3.0)})); // lengths: never mirrored
+    assert((head.size == Double3{0.08, 2.0 * 0.08, 3.0 * 0.08})); // lengths: never mirrored
     assert((head.position == Double3{0.0, 10.0 * 0.08, -0.08}));
     // 90 degrees about Z: the sense about Z survives the mirror.
     const float half = std::sqrt(0.5f);

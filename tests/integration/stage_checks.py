@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import pathlib
 
-from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdShade, UsdSkel, UsdValidation, Vt
+from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade, UsdSkel, UsdValidation, Vt
 
 STAGE_CONTRACT_VERSION = 1
 WEIGHT_TOLERANCE = 1e-5
@@ -65,6 +65,7 @@ class Checker:
         self.skeleton(mesh)
         self.morphs(mesh)
         self.rig()
+        self.physics()
         for prim in self.stage.Traverse():
             for attr in prim.GetAttributes():
                 self.expect(attr.GetNumTimeSamples() == 0,
@@ -121,7 +122,8 @@ class Checker:
             ("mtl", bool(self.shape["materials"])),
             ("skel", self.shape["skinned"]),
             ("morph", bool(self.shape["morphs"])),
-            ("rig", self.shape["rig"] is not None)) if present]
+            ("rig", self.shape["rig"] is not None),
+            ("physics", self.shape["physics"] is not None)) if present]
         children = [child.GetName() for child in asset.GetChildren()]
         expect(children == scopes, f"/Asset's children are {children}, expected {scopes}")
         for name in scopes:
@@ -597,6 +599,193 @@ class Checker:
         self.expect(appends == sorted(want["appends"]),
                     f"the stage reconstructs appends {appends}, the source has "
                     f"{sorted(want['appends'])}")
+
+    # --- /Asset/physics (§13) ----------------------------------------------------------
+
+    BODY_ATTRIBUTES = ("bone", "shape", "collisionGroup", "collisionMask", "mass",
+                       "linearDamping", "angularDamping", "restitution", "friction", "mode")
+    JOINT_ATTRIBUTES = ("type", "rigidBodyA", "rigidBodyB")
+    JOINT_VECTORS = ("translationLowerLimit", "translationUpperLimit", "rotationLowerLimit",
+                     "rotationUpperLimit", "translationSpring", "rotationSpring")
+    LIMIT_AXES = ("transX", "transY", "transZ", "rotX", "rotY", "rotZ")
+
+    def uniform(self, prim: Usd.Prim, name: str):
+        attr = prim.GetAttribute(f"mmd:physics:{name}")
+        self.expect(attr.IsValid() and attr.GetVariability() == Sdf.VariabilityUniform,
+                    f"{prim.GetPath()} has no uniform mmd:physics:{name}")
+        value = attr.Get()
+        return str(value) if isinstance(value, str) else value
+
+    @staticmethod
+    def quat(q) -> list[float]:
+        return [*q.GetImaginary(), q.GetReal()]
+
+    def provenance(self, prim: Usd.Prim, want: dict) -> None:
+        custom = prim.GetCustomDataByKey
+        self.expect(custom("mmd:sourceName") == want["name"]
+                    and custom("mmd:sourceEnglishName") == want["englishName"]
+                    and custom("mmd:sourceIndex") == want["sourceIndex"],
+                    f"{prim.GetPath()} provenance is {prim.GetCustomData()}")
+
+    def physics(self) -> None:
+        """Every rigid body and joint: UsdPhysics where it matches, every PMX
+        value as `mmd:physics:*` beside it, each the bits the generator
+        computed -- and nothing that steps a simulation."""
+        expect = self.expect
+        want = self.shape["physics"]
+        scope = self.stage.GetPrimAtPath("/Asset/physics")
+        if want is None:
+            expect(not scope.IsValid(), "a physics scope is authored for a model with no rigid body")
+            return
+        children = [child.GetName() for child in scope.GetChildren()]
+        wanted = ["rigidBodies"] + (["joints"] if want["joints"] else [])
+        expect(children == wanted, f"/Asset/physics holds {children}, expected {wanted}")
+        for name in wanted:
+            expect(scope.GetChild(name).GetTypeName() == "Scope",
+                   f"/Asset/physics/{name} is no Scope")
+        for prim in self.stage.Traverse():
+            expect(prim.GetTypeName() != "PhysicsScene", f"{prim.GetPath()} is a PhysicsScene")
+
+        bodies = self.stage.GetPrimAtPath("/Asset/physics/rigidBodies")
+        names = [child.GetName() for child in bodies.GetChildren()]
+        expect(names == [b["id"] for b in want["rigidBodies"]],
+               f"/Asset/physics/rigidBodies holds {names}")
+        for b in want["rigidBodies"]:
+            self.rigid_body(b)
+
+        if want["joints"]:
+            joints = self.stage.GetPrimAtPath("/Asset/physics/joints")
+            names = [child.GetName() for child in joints.GetChildren()]
+            expect(names == [j["id"] for j in want["joints"]],
+                   f"/Asset/physics/joints holds {names}")
+        for j in want["joints"]:
+            self.physics_joint(j)
+        self.physics_recovery(want["sourceRelations"])
+
+    def rigid_body(self, b: dict) -> None:
+        expect = self.expect
+        path = f"/Asset/physics/rigidBodies/{b['id']}"
+        prim = self.stage.GetPrimAtPath(path)
+        expect(prim.GetTypeName() == "Xform", f"{path} is a {prim.GetTypeName()!r}")
+        expect(prim.HasAPI(UsdPhysics.RigidBodyAPI) and prim.HasAPI(UsdPhysics.MassAPI),
+               f"{path} lacks PhysicsRigidBodyAPI or PhysicsMassAPI")
+        self.provenance(prim, b)
+        ops = UsdGeom.Xformable(prim).GetOrderedXformOps()
+        expect([op.GetOpType() for op in ops] ==
+               [UsdGeom.XformOp.TypeTranslate, UsdGeom.XformOp.TypeOrient],
+               f"{path} xformOps are {[op.GetOpName() for op in ops]}")
+        expect(list(ops[0].Get()) == b["position"], f"{path} is at {ops[0].Get()}")
+        expect(self.quat(ops[1].Get()) == b["orientation"],
+               f"{path} is turned {ops[1].Get()}, expected {b['orientation']}")
+        body = UsdPhysics.RigidBodyAPI(prim)
+        expect(body.GetKinematicEnabledAttr().Get() == b["kinematic"],
+               f"{path} physics:kinematicEnabled")
+        mass = UsdPhysics.MassAPI(prim).GetMassAttr()
+        expect(mass.HasAuthoredValue() == (b["mass"] > 0.0)
+               and (not mass.HasAuthoredValue() or mass.Get() == b["mass"]),
+               f"{path} physics:mass is {mass.Get()}, the source's {b['mass']}")
+        for name in self.BODY_ATTRIBUTES:
+            got = self.uniform(prim, name)
+            expect(got == b[name], f"{path} mmd:physics:{name} is {got!r}, expected {b[name]!r}")
+        got = list(self.uniform(prim, "size"))
+        expect(got == b["sizeFloat"], f"{path} mmd:physics:size is {got}")
+
+        collider = prim.GetChild("collider")
+        kind = {"sphere": "Sphere", "box": "Cube", "capsule": "Capsule"}[b["shape"]]
+        expect(collider.GetTypeName() == kind, f"{path}/collider is a {collider.GetTypeName()!r}")
+        expect(collider.HasAPI(UsdPhysics.CollisionAPI), f"{path}/collider has no CollisionAPI")
+        expect(UsdGeom.Imageable(collider).GetPurposeAttr().Get() == UsdGeom.Tokens.guide,
+               f"{path}/collider is not guide purpose")
+        size = b["size"]
+        if kind == "Sphere":
+            expect(collider.GetAttribute("radius").Get() == size[0], f"{path}/collider radius")
+        elif kind == "Capsule":
+            capsule = UsdGeom.Capsule(collider)
+            expect(capsule.GetRadiusAttr().Get() == size[0]
+                   and capsule.GetHeightAttr().Get() == size[1]
+                   and capsule.GetAxisAttr().Get() == UsdGeom.Tokens.y,
+                   f"{path}/collider is not a Y capsule of radius {size[0]}, height {size[1]}")
+        else:
+            cube = UsdGeom.Cube(collider)
+            scale = cube.GetOrderedXformOps()
+            expect(cube.GetSizeAttr().Get() == 2.0 and len(scale) == 1
+                   and list(scale[0].Get()) == size,
+                   f"{path}/collider is not a cube of half extents {size}")
+
+    def physics_joint(self, j: dict) -> None:
+        expect = self.expect
+        path = f"/Asset/physics/joints/{j['id']}"
+        prim = self.stage.GetPrimAtPath(path)
+        type_name = "PhysicsJoint" if j["usdPhysics"] else ""
+        expect(prim.GetTypeName() == type_name,
+               f"{path} is a {prim.GetTypeName()!r}, expected {type_name!r}")
+        self.provenance(prim, j)
+        for name in self.JOINT_ATTRIBUTES:
+            got = self.uniform(prim, name)
+            expect(got == j[name], f"{path} mmd:physics:{name} is {got!r}, expected {j[name]!r}")
+        expect(list(self.uniform(prim, "position")) == j["position"],
+               f"{path} mmd:physics:position")
+        expect(self.quat(self.uniform(prim, "orientation")) == j["orientation"],
+               f"{path} mmd:physics:orientation")
+        for name in self.JOINT_VECTORS:
+            got = list(self.uniform(prim, name))
+            expect(got == j[name], f"{path} mmd:physics:{name} is {got}, expected {j[name]}")
+        if not j["usdPhysics"]:
+            expect(not prim.GetAppliedSchemas(), f"{path} applies {prim.GetAppliedSchemas()}")
+            return
+        joint = UsdPhysics.Joint(prim)
+        for rel, body in ((joint.GetBody0Rel(), j["body0"]), (joint.GetBody1Rel(), j["body1"])):
+            targets = [str(t) for t in rel.GetTargets()]
+            expect(targets == [f"/Asset/physics/rigidBodies/{body}"],
+                   f"{path} {rel.GetName()} is {targets}")
+        expect(list(joint.GetLocalPos0Attr().Get()) == j["localPos0"]
+               and list(joint.GetLocalPos1Attr().Get()) == j["localPos1"],
+               f"{path} local positions are {joint.GetLocalPos0Attr().Get()}, "
+               f"{joint.GetLocalPos1Attr().Get()}")
+        expect(self.quat(joint.GetLocalRot0Attr().Get()) == j["localRot0"]
+               and self.quat(joint.GetLocalRot1Attr().Get()) == j["localRot1"],
+               f"{path} local rotations are {joint.GetLocalRot0Attr().Get()}, "
+               f"{joint.GetLocalRot1Attr().Get()}")
+        limited = {}
+        for axis in self.LIMIT_AXES:
+            if prim.HasAPI(UsdPhysics.LimitAPI, axis):
+                limit = UsdPhysics.LimitAPI(prim, axis)
+                limited[axis] = [limit.GetLowAttr().Get(), limit.GetHighAttr().Get()]
+        expect(limited == j["limits"], f"{path} limits are {limited}, expected {j['limits']}")
+
+    def physics_recovery(self, want: dict) -> None:
+        """Phase 6's acceptance (DESIGN_POLICY.md §14): every rigid body and
+        joint is recovered from the stage alone -- each body's bone through
+        the Skeleton's own provenance, each joint's bodies through the
+        UsdPhysics relationships where they are authored -- and compared with
+        what the source says."""
+        skeleton = self.stage.GetPrimAtPath("/Asset/skel/Skeleton")
+        source_of = list(skeleton.GetAttribute("mmd:bone:sourceIndex").Get()) \
+            if skeleton.IsValid() else []
+        bodies = self.stage.GetPrimAtPath("/Asset/physics/rigidBodies").GetChildren()
+        index_of = {str(b.GetPath()): b.GetCustomDataByKey("mmd:sourceIndex") for b in bodies}
+        recovered = []
+        for body in bodies:
+            bone = body.GetAttribute("mmd:physics:bone").Get()
+            recovered.append([body.GetCustomDataByKey("mmd:sourceIndex"),
+                              source_of[bone] if bone != -1 else -1])
+        self.expect(recovered == want["rigidBodies"],
+                    f"the stage recovers rigid bodies {recovered}, the source has "
+                    f"{want['rigidBodies']}")
+        joints = self.stage.GetPrimAtPath("/Asset/physics/joints")
+        recovered = []
+        for prim in (joints.GetChildren() if joints.IsValid() else []):
+            stored = [prim.GetAttribute("mmd:physics:rigidBodyA").Get(),
+                      prim.GetAttribute("mmd:physics:rigidBodyB").Get()]
+            if prim.GetTypeName() == "PhysicsJoint":
+                joint = UsdPhysics.Joint(prim)
+                pair = [index_of[str(joint.GetBody0Rel().GetTargets()[0])],
+                        index_of[str(joint.GetBody1Rel().GetTargets()[0])]]
+                self.expect(pair == stored,
+                            f"{prim.GetPath()}: body0 and body1 disagree with mmd:physics")
+            recovered.append([prim.GetCustomDataByKey("mmd:sourceIndex"), *stored])
+        self.expect(recovered == want["joints"],
+                    f"the stage recovers joints {recovered}, the source has {want['joints']}")
 
     # --- /Asset/skel and the skin binding (§9) ----------------------------------------
 
