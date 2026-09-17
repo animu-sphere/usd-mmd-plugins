@@ -120,6 +120,23 @@ DecodeCp932(std::span<const std::byte> bytes)
     return out;
 }
 
+std::string
+ReplaceInvalidUtf8(std::string_view bytes)
+{
+    std::string out;
+    std::size_t i = 0;
+    while (i < bytes.size()) {
+        const std::size_t start = i;
+        if (NextCodePoint(bytes, i)) {
+            out.append(bytes.substr(start, i - start));
+        } else {
+            out += "\xEF\xBF\xBD"; // U+FFFD
+            i = start + 1;
+        }
+    }
+    return out;
+}
+
 std::optional<std::string>
 EncodeCp932(std::string_view utf8)
 {

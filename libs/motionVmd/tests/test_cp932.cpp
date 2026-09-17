@@ -127,6 +127,19 @@ TestEveryDecodedCharacterEncodes()
     assert(characters == 9604);
 }
 
+void
+TestReplaceInvalidUtf8()
+{
+    const std::string replacement = "\xEF\xBF\xBD";
+    assert(ReplaceInvalidUtf8("") == "");
+    assert(ReplaceInvalidUtf8("ユニコード-é/a\xF0\x9F\x98\x80") ==
+           "ユニコード-é/a\xF0\x9F\x98\x80");
+    // A CP932 path, as a POSIX filesystem may hand it over.
+    assert(ReplaceInvalidUtf8(kCenter.substr(0, 2) + ".vmd") == replacement + "Z.vmd");
+    assert(ReplaceInvalidUtf8("x\xE5\xB7") == "x" + replacement + replacement);
+    assert(ReplaceInvalidUtf8("\xE5\xB7\xA6\xFF") == "左" + replacement);
+}
+
 } // namespace
 
 void
@@ -136,4 +149,5 @@ TestCp932()
     TestMalformed();
     TestEncode();
     TestEveryDecodedCharacterEncodes();
+    TestReplaceInvalidUtf8();
 }

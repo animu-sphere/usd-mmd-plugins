@@ -71,8 +71,13 @@ filesystem's encoding. Concretely:
   plugin runs inside a host process whose code page is not the project's;
   `usd-vrm-plugins` measured that a `.vrm` under a non-ASCII directory could not
   be opened from any host until its importer read through `Ar`.
-- Executables (`mmd_inspect`, later tools) embed a UTF-8 `activeCodePage`
+- Executables (`mmd_inspect`, `vmd_inspect`) embed a UTF-8 `activeCodePage`
   manifest on Windows.
+- A diagnostic message that quotes text from outside the file — a path, which
+  on POSIX is bytes and need not be UTF-8, or an OS error message — has every
+  byte that starts no well-formed UTF-8 sequence replaced by U+FFFD, so a
+  tool's report, JSON included, is always valid UTF-8. That is message text,
+  never data: text read from a file is still rejected, never repaired (§3).
 - A Unicode-path test runs the importer, from a Python host, and every tool
   under a directory whose name no single ANSI code page can spell (for example
   `ユニコード-é`), and compares each result with an ASCII-directory twin. The

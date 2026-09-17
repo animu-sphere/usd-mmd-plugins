@@ -417,11 +417,13 @@ Result<Document>
 ReadFile(const std::filesystem::path& path)
 {
     const auto unreadable = [&](const std::string& why) {
+        // On POSIX a path is bytes, and need not be UTF-8; nor need an OS
+        // error message be.
         const std::u8string utf8 = path.u8string();
-        return Result<Document>::Failure(MakeDiagnostic(
-            codes::MotionFileUnreadable,
-            "'" + std::string(reinterpret_cast<const char*>(utf8.data()), utf8.size()) + "' " +
-                why));
+        const std::string text(reinterpret_cast<const char*>(utf8.data()), utf8.size());
+        return Result<Document>::Failure(
+            MakeDiagnostic(codes::MotionFileUnreadable,
+                           "'" + ReplaceInvalidUtf8(text) + "' " + ReplaceInvalidUtf8(why)));
     };
 
     std::error_code error;

@@ -95,6 +95,22 @@ TestUtf8()
 }
 
 void
+TestReplaceInvalidUtf8()
+{
+    using mmd::pmx::detail::ReplaceInvalidUtf8;
+    const std::string replacement = "\xEF\xBF\xBD";
+    assert(ReplaceInvalidUtf8("") == "");
+    assert(ReplaceInvalidUtf8("ユニコード-é/a\xF0\x9F\x98\x80") ==
+           "ユニコード-é/a\xF0\x9F\x98\x80");
+    assert(ReplaceInvalidUtf8(std::string("a\0b", 3)) == std::string("a\0b", 3));
+    // A CP932 path, as a POSIX filesystem may hand it over.
+    assert(ReplaceInvalidUtf8("\x83\x5A.pmx") == replacement + "Z.pmx");
+    assert(ReplaceInvalidUtf8("x\xE5\xB7") == "x" + replacement + replacement);
+    assert(ReplaceInvalidUtf8("\xED\xA0\x80") == replacement + replacement + replacement);
+    assert(ReplaceInvalidUtf8("\xE5\xB7\xA6\xFF") == "左" + replacement);
+}
+
+void
 ExpectUtf16(const std::vector<std::byte>& in, const std::string& utf8)
 {
     std::string out;
@@ -141,5 +157,6 @@ void
 TestText()
 {
     TestUtf8();
+    TestReplaceInvalidUtf8();
     TestUtf16();
 }

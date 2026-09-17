@@ -31,4 +31,9 @@ Cp932Decoded DecodeCp932(std::span<const std::byte> bytes);
 /// cannot encode.
 std::optional<std::string> EncodeCp932(std::string_view utf8);
 
+/// `bytes` with every byte that starts no well-formed UTF-8 sequence replaced
+/// by U+FFFD: for text a diagnostic quotes from outside the file -- a path, an
+/// OS error -- never for a name, which is refused rather than repaired.
+std::string ReplaceInvalidUtf8(std::string_view bytes);
+
 } // namespace motionVmd
