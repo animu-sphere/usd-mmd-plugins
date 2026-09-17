@@ -6,11 +6,10 @@
 // normalized -- and nothing a PMX reader would have to explain
 // (docs/design/DESIGN_POLICY.md §5.2, docs/design/PMX_CONTRACT.md §14).
 //
-// It holds what the current stage authors: metadata, textures, the mesh, the
+// It holds what the stage authors: metadata, textures, the mesh, the
 // materials' identity, face ranges and texture slots, the deformation
-// skeleton and its control semantics, and every morph's declarative
-// semantics. Physics semantics join it with the Phase that authors them
-// (DESIGN_POLICY.md §14).
+// skeleton and its control semantics, every morph's declarative semantics,
+// and the rigid bodies and joints.
 //
 // No OpenUSD type appears here: a tool with no USD in the process can consume
 // canonical MMD (docs/architecture/WORKSPACE.md §2).
@@ -277,10 +276,11 @@ struct MorphMaterialOffset {
     bool operator==(const MorphMaterialOffset&) const = default;
 };
 
-/// An impulse morph's push on a rigid body. Rigid bodies are not authored
-/// before Phase 6, so the body is kept by its source index; the velocity is a
-/// displacement and the torque an axial vector (STAGE_CONTRACT.md §6.3).
-/// Nothing here is ever executed.
+/// An impulse morph's push on a rigid body, by its index into
+/// CanonicalDocument::physics.rigidBodies -- which keeps the source's order,
+/// so it is also the source index. The velocity is a displacement and the
+/// torque an axial vector (STAGE_CONTRACT.md §6.3). Nothing here is ever
+/// executed.
 struct MorphImpulseOffset {
     std::int32_t rigidBody = kNone;
     bool local = false;
@@ -392,6 +392,110 @@ struct Rig {
     bool operator==(const Rig&) const = default;
 };
 
+/// A rigid body's collision shape (PMX_CONTRACT.md §13). The values are the
+/// PMX ones; one the source does not define becomes `Sphere`, with
+/// MMD_PHYSICS_UNKNOWN_SHAPE.
+enum class RigidBodyShape : std::uint8_t {
+    Sphere = 0,
+    Box = 1,
+    Capsule = 2,
+};
+
+/// How a rigid body relates to its bone. A value the source does not define
+/// becomes `FollowBone`, with MMD_PHYSICS_UNKNOWN_MODE.
+enum class PhysicsMode : std::uint8_t {
+    FollowBone = 0,      ///< kinematic: the bone moves the body
+    Dynamic = 1,         ///< simulated: the body moves the bone
+    DynamicWithBone = 2, ///< simulated, the bone's position kept
+};
+
+/// A joint's constraint kind. PMX 2.0 defines only `Spring6Dof`; 2.1 adds the
+/// rest. A value the source's version does not define becomes `Spring6Dof`,
+/// with MMD_PHYSICS_UNKNOWN_JOINT_TYPE.
+enum class PhysicsJointType : std::uint8_t {
+    Spring6Dof = 0,
+    SixDof = 1,
+    PointToPoint = 2,
+    ConeTwist = 3,
+    Slider = 4,
+    Hinge = 5,
+};
+
+/// A PMX rigid body (PMX_CONTRACT.md §13, STAGE_CONTRACT.md §13), in the USD
+/// basis. Nothing here is simulated.
+struct RigidBody {
+    Name name;
+    std::size_t sourceIndex = 0;
+    /// The canonical joint of the bone the body is attached to, or kNone.
+    std::int32_t bone = kNone;
+    std::int32_t collisionGroup = 0; ///< as stored; 0-15 in a well-formed model
+    /// As stored: bit g set means the body collides with group g.
+    std::int32_t collisionMask = 0;
+    RigidBodyShape shape = RigidBodyShape::Sphere;
+    /// Meters, never mirrored -- extents are lengths: a sphere's radius in
+    /// x, a box's half extents, a capsule's radius in x and the length of its
+    /// cylinder, along its Y axis, in y. The components a shape does not use
+    /// are kept as they are.
+    Float3 size{};
+    Double3 position{}; ///< meters, a point
+    /// The body's frame (x, y, z, w), composed from the source's Euler angles
+    /// (PMX-O1) and converted as a rotation; w is never negative.
+    Float4 orientation{0.0f, 0.0f, 0.0f, 1.0f};
+    float mass = 0.0f;
+    float linearDamping = 0.0f;
+    float angularDamping = 0.0f;
+    float restitution = 0.0f;
+    float friction = 0.0f;
+    PhysicsMode mode = PhysicsMode::FollowBone;
+
+    bool operator==(const RigidBody&) const = default;
+};
+
+/// A PMX joint between two rigid bodies, in the USD basis. Its limits are
+/// about and along the axes of its own frame, and a lower limit above its
+/// upper one leaves that axis free, as the source's does. Nothing here is
+/// simulated.
+struct PhysicsJoint {
+    Name name;
+    std::size_t sourceIndex = 0;
+    PhysicsJointType type = PhysicsJointType::Spring6Dof;
+    /// Indices into Physics::rigidBodies; both name a body.
+    std::int32_t rigidBodyA = kNone;
+    std::int32_t rigidBodyB = kNone;
+    Double3 position{};                         ///< meters, a point
+    Float4 orientation{0.0f, 0.0f, 0.0f, 1.0f}; ///< as a rigid body's
+    /// Meters: along X and Y scaled, along Z [min, max] -> s * [-max, -min]
+    /// (STAGE_CONTRACT.md §6.3).
+    Float3 translationLowerLimit{};
+    Float3 translationUpperLimit{};
+    /// Radians: about X and Y [min, max] -> [-max, -min], about Z unchanged.
+    Float3 rotationLowerLimit{};
+    Float3 rotationUpperLimit{};
+    /// Spring constants per axis, in source units: their unit depends on the
+    /// length scale, and converting them is a physics runtime's decision.
+    Float3 translationSpring{};
+    Float3 rotationSpring{};
+    /// The joint's frame in each body's frame, from their rest transforms:
+    /// what a two-body constraint is built from.
+    Float3 localPositionA{};
+    Float4 localOrientationA{0.0f, 0.0f, 0.0f, 1.0f};
+    Float3 localPositionB{};
+    Float4 localOrientationB{0.0f, 0.0f, 0.0f, 1.0f};
+
+    bool operator==(const PhysicsJoint&) const = default;
+};
+
+/// Rigid bodies and joints (STAGE_CONTRACT.md §13).
+struct Physics {
+    /// Every rigid body, in source order: none is dropped, and a body whose
+    /// bone the parser rejected is unattached.
+    std::vector<RigidBody> rigidBodies;
+    /// Every joint whose two bodies both name one, in source order.
+    std::vector<PhysicsJoint> joints;
+
+    bool operator==(const Physics&) const = default;
+};
+
 struct CanonicalDocument {
     Metadata metadata;
     std::vector<Texture> textures; ///< source texture-table order
@@ -400,6 +504,7 @@ struct CanonicalDocument {
     Skeleton skeleton;         ///< empty when the model has no bones
     Rig rig;                   ///< empty when the model has no bones
     std::vector<Morph> morphs; ///< source morph-table order
+    Physics physics;           ///< empty when the model has no rigid bodies
 
     bool operator==(const CanonicalDocument&) const = default;
 };

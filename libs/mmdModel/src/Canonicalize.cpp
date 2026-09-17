@@ -5,6 +5,7 @@
 #include "mmdModel/Codes.h"
 
 #include "Identifiers.h"
+#include "Quaternion.h"
 #include "Skeleton.h"
 #include "TexturePaths.h"
 
@@ -94,6 +95,7 @@ public:
         _Materials();       // step 6
         _Morphs();          // step 7, for morphs
         _Rig();             // step 7, for control
+        _Physics();         // steps 2 and 7, for physics
         return Result<CanonicalDocument>::Success(std::move(_out), _diagnostics.Take());
     }
 
@@ -117,6 +119,8 @@ private:
         _materialNames = _Names(_doc.materials, "materials", "material");
         _boneNames = _Names(_doc.bones, "bones", "bone");
         _morphNames = _Names(_doc.morphs, "morphs", "morph");
+        _rigidBodyNames = _Names(_doc.rigidBodies, "rigidBodies", "rigidBody");
+        _jointNames = _Names(_doc.joints, "joints", "joint");
     }
 
     template <class Element>
@@ -774,12 +778,128 @@ private:
         }
     }
 
+    /// Every rigid body and every joint whose bodies both exist, in source
+    /// order: bones remapped to canonical joints, positions and Euler
+    /// rotations converted once, each joint's frame expressed in its bodies'
+    /// frames, and nothing simulated (PMX_CONTRACT.md §13,
+    /// STAGE_CONTRACT.md §13).
+    void _Physics()
+    {
+        const std::size_t bones = _doc.bones.size();
+        const std::size_t bodies = _doc.rigidBodies.size();
+        // The bodies' rest frames in double, for the joints' relative frames.
+        std::vector<detail::QuatD> bodyRotation(bodies);
+        std::vector<Double3> bodyPosition(bodies);
+
+        _out.physics.rigidBodies.reserve(bodies);
+        for (std::size_t i = 0; i < bodies; ++i) {
+            const pmx::RigidBody& source = _doc.rigidBodies[i];
+            RigidBody b;
+            b.name = _rigidBodyNames[i];
+            b.sourceIndex = i;
+            b.bone = _InTable(source.bone, bones)
+                         ? _out.skeleton.jointOfSourceBone[static_cast<std::size_t>(source.bone)]
+                         : kNone;
+            b.collisionGroup = source.group;
+            b.collisionMask = source.nonCollisionMask;
+            if (source.shape <= 2) {
+                b.shape = static_cast<RigidBodyShape>(source.shape);
+            } else {
+                _diagnostics.Add(codes::PhysicsUnknownShape,
+                                 "shape " + std::to_string(source.shape) +
+                                     " is not one of 0-2 and is treated as a sphere",
+                                 At("rigidBodies", i, "shape"));
+            }
+            b.size = basis::Lengths(ToFloat3(source.size));
+            bodyPosition[i] =
+                basis::PointD({source.position[0], source.position[1], source.position[2]});
+            b.position = bodyPosition[i];
+            bodyRotation[i] = basis::EulerRotationD(ToFloat3(source.rotation));
+            b.orientation = detail::Rounded(bodyRotation[i]);
+            b.mass = source.mass;
+            b.linearDamping = source.linearDamping;
+            b.angularDamping = source.angularDamping;
+            b.restitution = source.restitution;
+            b.friction = source.friction;
+            if (source.physicsMode <= 2) {
+                b.mode = static_cast<PhysicsMode>(source.physicsMode);
+            } else {
+                _diagnostics.Add(codes::PhysicsUnknownMode,
+                                 "physics mode " + std::to_string(source.physicsMode) +
+                                     " is not one of 0-2 and is treated as following the bone",
+                                 At("rigidBodies", i, "physicsMode"));
+            }
+            _out.physics.rigidBodies.push_back(std::move(b));
+        }
+
+        const std::uint8_t lastType = _doc.header.version == pmx::Version::V2_1 ? 5 : 0;
+        for (std::size_t i = 0; i < _doc.joints.size(); ++i) {
+            const pmx::Joint& source = _doc.joints[i];
+            // A joint that does not join two bodies constrains nothing: the
+            // parser has reported an out-of-range body, and -1 names none.
+            if (!_InTable(source.rigidBodyA, bodies) || !_InTable(source.rigidBodyB, bodies)) {
+                continue;
+            }
+            PhysicsJoint j;
+            j.name = _jointNames[i];
+            j.sourceIndex = i;
+            if (source.type <= lastType) {
+                j.type = static_cast<PhysicsJointType>(source.type);
+            } else {
+                _diagnostics.Add(codes::PhysicsUnknownJointType,
+                                 "joint type " + std::to_string(source.type) +
+                                     " is not defined in PMX " +
+                                     std::string(pmx::ToString(_doc.header.version)) +
+                                     " and is treated as a spring 6-DOF constraint",
+                                 At("joints", i, "type"));
+            }
+            j.rigidBodyA = source.rigidBodyA;
+            j.rigidBodyB = source.rigidBodyB;
+            const Double3 position =
+                basis::PointD({source.position[0], source.position[1], source.position[2]});
+            const detail::QuatD rotation = basis::EulerRotationD(ToFloat3(source.rotation));
+            j.position = position;
+            j.orientation = detail::Rounded(rotation);
+            const basis::TranslationRange translation = basis::TranslationLimits(
+                ToFloat3(source.translationMin), ToFloat3(source.translationMax));
+            j.translationLowerLimit = translation.lower;
+            j.translationUpperLimit = translation.upper;
+            const basis::RotationLimits limits =
+                basis::Limits(ToFloat3(source.rotationMin), ToFloat3(source.rotationMax));
+            j.rotationLowerLimit = limits.lower;
+            j.rotationUpperLimit = limits.upper;
+            j.translationSpring = ToFloat3(source.translationSpring);
+            j.rotationSpring = ToFloat3(source.rotationSpring);
+
+            // The joint's frame in a body's: q_body^-1 * q_joint, and the
+            // offset from the body rotated into it.
+            const auto local = [&](std::size_t body, Float3& outPosition, Float4& outOrientation) {
+                const detail::QuatD inverse = detail::Conjugate(bodyRotation[body]);
+                const Double3 offset{position[0] - bodyPosition[body][0],
+                                     position[1] - bodyPosition[body][1],
+                                     position[2] - bodyPosition[body][2]};
+                const Double3 p = detail::Rotate(inverse, offset);
+                outPosition = {static_cast<float>(p[0]) + 0.0f,
+                               static_cast<float>(p[1]) + 0.0f,
+                               static_cast<float>(p[2]) + 0.0f};
+                outOrientation = detail::Rounded(detail::Multiply(inverse, rotation));
+            };
+            local(
+                static_cast<std::size_t>(source.rigidBodyA), j.localPositionA, j.localOrientationA);
+            local(
+                static_cast<std::size_t>(source.rigidBodyB), j.localPositionB, j.localOrientationB);
+            _out.physics.joints.push_back(std::move(j));
+        }
+    }
+
     const pmx::Document& _doc;
     CanonicalDocument _out;
     DiagnosticList _diagnostics;
     std::vector<Name> _materialNames;
     std::vector<Name> _boneNames;
     std::vector<Name> _morphNames;
+    std::vector<Name> _rigidBodyNames;
+    std::vector<Name> _jointNames;
 };
 
 } // namespace

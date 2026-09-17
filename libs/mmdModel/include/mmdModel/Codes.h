@@ -34,6 +34,11 @@ inline constexpr Code MaterialUnsupportedSphereMode{"MMD_MATERIAL_UNSUPPORTED_SP
 inline constexpr Code MaterialUnsupportedToonSlot{"MMD_MATERIAL_UNSUPPORTED_TOON_SLOT",
                                                   Severity::Warning};
 
+// Physics -- docs/design/PMX_CONTRACT.md §13.
+inline constexpr Code PhysicsUnknownShape{"MMD_PHYSICS_UNKNOWN_SHAPE", Severity::Warning};
+inline constexpr Code PhysicsUnknownMode{"MMD_PHYSICS_UNKNOWN_MODE", Severity::Warning};
+inline constexpr Code PhysicsUnknownJointType{"MMD_PHYSICS_UNKNOWN_JOINT_TYPE", Severity::Warning};
+
 // The source -> USD boundary -- docs/design/TEXT_ENCODING_POLICY.md §6.1.
 inline constexpr Code UsdIdentifierCollision{"MMD_USD_IDENTIFIER_COLLISION", Severity::Info};
 

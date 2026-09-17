@@ -83,6 +83,38 @@ TestRotationsAndTexCoords()
     assert(limits.upper[0] == 3.0f && limits.upper[1] == 2.0f && limits.upper[2] == 0.125f);
     assert(PositiveZero(basis::Limits({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}).lower[0]));
 
+    // Euler angles: R = Ry * Rx * Rz, then mirrored as a rotation. About Y
+    // alone the sense reverses; about Z alone it does not.
+    const auto near = [](const Float4& q, double x, double y, double z, double w) {
+        return std::abs(q[0] - x) < 1e-6 && std::abs(q[1] - y) < 1e-6 &&
+               std::abs(q[2] - z) < 1e-6 && std::abs(q[3] - w) < 1e-6;
+    };
+    assert(
+        near(basis::EulerRotation({0.0f, 0.5f, 0.0f}), 0.0, -std::sin(0.25), 0.0, std::cos(0.25)));
+    assert(
+        near(basis::EulerRotation({0.0f, 0.0f, 0.5f}), 0.0, 0.0, std::sin(0.25), std::cos(0.25)));
+    // X then Y: q = qy * qx = (cy sx, sy cx, -sy sx, cy cx); the order is in
+    // the sign of z, which Rx * Ry would flip.
+    {
+        const double sx = std::sin(0.25), cx = std::cos(0.25);
+        const double sy = std::sin(0.125), cy = std::cos(0.125);
+        assert(
+            near(basis::EulerRotation({0.5f, 0.25f, 0.0f}), -cy * sx, -cx * sy, -sy * sx, cy * cx));
+    }
+    // w is never negative, and no zero is negative.
+    const Float4 turned = basis::EulerRotation({0.0f, 0.0f, 6.0f});
+    assert(turned[3] >= 0.0f && PositiveZero(turned[0]) && PositiveZero(turned[1]));
+    const Float4 identity4 = basis::EulerRotation({0.0f, 0.0f, 0.0f});
+    assert(PositiveZero(identity4[0]) && PositiveZero(identity4[1]) && identity4[3] == 1.0f);
+
+    // Lengths scale and never mirror; translation limits mirror along Z.
+    const Float3 lengths = basis::Lengths({1.0f, 2.0f, 3.0f});
+    assert(lengths[0] == M(1.0) && lengths[1] == M(2.0) && lengths[2] == M(3.0));
+    const basis::TranslationRange range =
+        basis::TranslationLimits({-1.0f, -2.0f, -3.0f}, {0.5f, 0.25f, 0.125f});
+    assert(range.lower[0] == -M(1.0) && range.lower[1] == -M(2.0) && range.lower[2] == -M(0.125));
+    assert(range.upper[0] == M(0.5) && range.upper[1] == M(0.25) && range.upper[2] == M(3.0));
+
     const Float2 st = basis::St({0.25f, 0.125f});
     assert(st[0] == 0.25f && st[1] == 0.875f);
     assert(PositiveZero(basis::St({0.0f, 1.0f})[1]));
