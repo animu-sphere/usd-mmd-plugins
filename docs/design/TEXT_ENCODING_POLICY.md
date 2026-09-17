@@ -4,8 +4,9 @@
 > say, with fixtures, and `mmd_inspect` and the importer read paths as §4
 > says. §5–§7 since Phase 2: the canonical model forms identifiers and
 > normalizes texture paths as they say, and the stage tests prove Japanese
-> names survive and Japanese texture filenames resolve. §9 is PMD's and VMD's,
-> neither of which exists yet. It fixes how PMX text is decoded, how a source
+> names survive and Japanese texture filenames resolve. §9 binds VMD since
+> Phase 7, whose names `motionVmd` decodes through the project's CP932 table;
+> no PMD reader exists. It fixes how PMX text is decoded, how a source
 > name relates to a USD identifier, how collisions are resolved, and how a
 > texture string becomes an `SdfAssetPath`. Japanese names and Japanese
 > filenames are the ordinary case here, not an edge case. Section numbers are

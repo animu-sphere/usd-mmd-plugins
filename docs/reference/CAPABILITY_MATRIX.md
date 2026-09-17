@@ -4,7 +4,7 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-17 the tree holds Phases 0–6:** `.pmx` is registered, every
+**As of 2026-09-17 the tree holds Phases 0–7:** `.pmx` is registered, every
 table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
 by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
 canonical stage — mesh, UVs, material prims and subsets, skeleton and
@@ -14,7 +14,9 @@ every other type preserved declaratively. Phase 5 preserves every bone's
 control semantics under `/Asset/rig` — IK chains, append relations, axes,
 external parents, tails, transform layers — with nothing solved, and Phase 6
 every rigid body and joint under `/Asset/physics`, as `UsdPhysics` where it
-matches and `mmd:physics:*` throughout, with nothing simulated.
+matches and `mmd:physics:*` throughout, with nothing simulated. Phase 7 reads
+VMD motion (`motionVmd`, reported by `vmd_inspect`) and binds it to a
+canonical model by MMD's name rule (`mmdMotionBinding`), baking nothing.
 The *intended* column is the
 claim the design makes for the first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
@@ -53,6 +55,34 @@ Each claim is backed by the generated fixtures and the parser's unit tests.
 | Malformed-input rejection: truncation, counts, layout bytes, face structure | supported | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
 | Fuzzing under ASan and UBSan | supported | [DESIGN_POLICY §13](../design/DESIGN_POLICY.md#13-testing-policy) |
 | Reading a file by a non-ASCII path (`ReadFile`, `mmd_inspect`) | supported | [TEXT §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere) |
+
+## VMD reading (`motionVmd`, `vmd_inspect`)
+
+What the reader holds in a `motionVmd::Document` and groups into a
+`motionVmd::Motion` — source facts in the source basis, not a stage. Each
+claim is backed by the reader's unit and robustness tests and the VMD
+fixtures `tests/fixtures/generate_vmd_fixtures.py` writes.
+
+| Capability | Current | Contract |
+| --- | :---: | --- |
+| Both signatures (`… 0002`, 20-byte model name; `… file`, 10-byte) | supported | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| Bone, morph, camera, light, self-shadow and IK / visibility keyframes | supported | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| A file that ends after any section | supported | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| CP932 names through the project's table; the bytes kept; a cut character dropped, an unmapped sequence refused | supported | [MOTION §4](../design/MOTION_CONTRACT.md#4-text) |
+| Tracks per name, sorted by frame; duplicate frames resolved to the last | supported | [MOTION §5](../design/MOTION_CONTRACT.md#5-time) |
+| Bézier curves of bone and camera keyframes, including files whose physics toggle overwrites bytes 2 and 3 | supported | [MOTION §6](../design/MOTION_CONTRACT.md#6-interpolation) |
+| Malformed-input rejection: signature, truncation, counts | supported | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| Reading a file by a non-ASCII path (`ReadFile`, `vmd_inspect`) | supported | [TEXT §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere) |
+| Camera, light and self-shadow tracks | preserved (parsed, not mapped) | [MOTION §1](../design/MOTION_CONTRACT.md#1-scope) |
+
+## Motion binding (`mmdMotionBinding`)
+
+| Capability | Current | Contract |
+| --- | :---: | --- |
+| Bone, morph and IK tracks bound by source name, as CP932 bytes cut to the field | supported | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
+| Unmatched, ambiguous and unencodable names | supported | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
+| Bone keys converted to the USD basis and meters with the model's conversion | supported | [MOTION §7](../design/MOTION_CONTRACT.md#7-coordinates) |
+| The visibility track | preserved | [MOTION §8.3](../design/MOTION_CONTRACT.md#83-the-ik--visibility-track) |
 
 ## PMX model import
 
@@ -118,8 +148,8 @@ Each claim is backed by the generated fixtures and the parser's unit tests.
 | IK solving, append-transform evaluation | unsupported by design | a runtime ([DESIGN_POLICY.md §2.2](../design/DESIGN_POLICY.md#22-the-static-importer-boundary)) |
 | Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
 | Toon rendering | unsupported by design | `hydra-toon` |
-| VMD parsing | — (Phase 7) | `motionVmd` ([MOTION_CONTRACT.md](../design/MOTION_CONTRACT.md)) |
-| VMD playback / bake | outside the PMX importer | a motion or avatar runtime ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
+| Opening a `.vmd` as a stage (`usdVmdFileFormat`) | — (waits for MOT-O2) | [MOTION §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries) |
+| VMD playback / bake | unsupported by design | the Phase 8 motion or avatar runtime ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
 | PMD | — (not planned) | `mmdPmd`, if ever |
 | PMX / VMD writing | — (not planned) | [DESIGN_POLICY.md §2.4](../design/DESIGN_POLICY.md#24-reader-first) |
 

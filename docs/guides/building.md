@@ -35,8 +35,9 @@ ctest --preset windows-release
 The Windows preset names no generator, so CMake picks the newest Visual Studio
 installed. The build tree is `build/windows-msvc/`. The plugin library is
 staged into the bundle itself, `plugins/usdMmdFileFormat/lib/`, where the
-bundle's `plugInfo.json` expects it, and `mmd_inspect` into
-`tools/mmdInspect/bin/` ([inspecting.md](inspecting.md) says how to use it).
+bundle's `plugInfo.json` expects it, `mmd_inspect` into
+`tools/mmdInspect/bin/`, and `vmd_inspect` into `tools/vmdInspect/bin/`
+([inspecting.md](inspecting.md) says how to use them).
 
 `ctest` runs every test in the workspace:
 
@@ -49,8 +50,16 @@ bundle's `plugInfo.json` expects it, and `mmd_inspect` into
 | `mmdModel_unit` | canonicalization over documents stated as data — the basis conversion, identifiers, joint order and its repairs, weight normalization, texture paths, face ranges, every morph type and its index remapping — and the diagnostic each repair raises |
 | `mmdModel_robustness` | 20,000 generated documents with wild parents, weights, names, paths and morph graphs, each canonicalized twice: no crash, the same bits both times, every promise of `CanonicalDocument.h` kept — expanding the group morphs always terminates |
 | `mmdModel_boundaries` | `mmdModel`'s sources include no OpenUSD, it links `mmdPmx` and nothing else, and a binary linking it imports no OpenUSD library |
+| `motionVmd_unit` | the VMD reader section by section — both signatures, a file ending after any section, every truncation, counts, names cut inside a character or unmapped, the diagnostic limit — the CP932 table in both directions, and the track grouping, duplicate frames and interpolation bytes |
+| `motionVmd_robustness` | every byte of the sample motions overwritten, and every prefix read: no crash, and no document or motion that breaks its invariants |
+| `motionVmd_boundaries` | `motionVmd`'s sources include no OpenUSD and no `mmdPmx` or `mmdModel` header, its link line is empty, and a binary linking it imports no OpenUSD library |
+| `motionVmd_cp932_table` | the committed CP932 table is exactly what its generator writes |
+| `mmdMotionBinding_unit` | binding a motion to a canonicalized model: CP932 field bytes, matching per field width, unmatched, ambiguous and unencodable names, the basis conversion of a key, and carrying a `motionVmd` diagnostic into the workspace record |
+| `mmdMotionBinding_boundaries` | `mmdMotionBinding`'s sources include no OpenUSD, it links `mmdModel` and `motionVmd` and nothing else, and a binary linking it imports no OpenUSD library |
 | `mmd_inspect_fixtures` | `mmd_inspect` reads every generated fixture as `fixtures.json` says, from an ASCII and a non-ASCII directory |
 | `mmd_inspect_boundaries` | `mmd_inspect` links `mmdPmx` and nothing else, and imports no OpenUSD library |
+| `vmd_inspect_fixtures` | `vmd_inspect` reads every generated VMD fixture as its `fixtures.json` says, from an ASCII and a non-ASCII directory |
+| `vmd_inspect_boundaries` | `vmd_inspect` links `motionVmd` and nothing else, includes no model library, and imports no OpenUSD library |
 | `workspace_fixtures` | the committed fixtures and texture files are exactly what the generator writes |
 | `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees; the diagnostic catalog matches the declared codes |
 | `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says; each stage that opens holds what `fixtures.json` says it must — identifiers, joint paths, bind translations, material subsets, texture asset paths and whether they resolve, a vertex through the conversion, every morph prim and, for each blend shape, the points UsdSkel moves when it is driven to weight 1 — passes the stage checklist, and passes every validator OpenUSD registers |
@@ -118,7 +127,24 @@ ost library verify-consumer libs/mmdPmx
 ost library build libs/mmdModel
 ost library test libs/mmdModel
 ost library verify-consumer libs/mmdModel
+ost library build libs/motionVmd
+ost library test libs/motionVmd
+ost library verify-consumer libs/motionVmd
+ost library build libs/mmdMotionBinding
+ost library test libs/mmdMotionBinding
+ost library verify-consumer libs/mmdMotionBinding
 ```
+
+`mmdMotionBinding` requires `mmdModel` and `motionVmd`, so `ost` builds and
+installs its closure of four libraries first.
+
+A root build and `ost build` both stage the plugin library into the same
+`plugins/usdMmdFileFormat/lib/`. On 2026-09-17 one `ost` build tree held an
+object whose recorded header dependencies were empty (`ninja -t deps` printed
+`#deps 0`), so it was never rebuilt after `CanonicalDocument.h` changed, and
+every stage-opening test crashed in the Python host. Deleting that object —
+or the build tree — and running `ost build` again fixed it; a fresh checkout
+never showed it.
 
 [opening.md](opening.md) shows what to do with the stage once the plugin is
 built.
@@ -146,8 +172,13 @@ cmake --build ~/mmd-san-model
 ctest --test-dir ~/mmd-san-model --output-on-failure
 ```
 
-The fuzz target needs Clang's libFuzzer: `-DMMDPMX_BUILD_FUZZER=ON` with
-`clang++`, and the sanitizers on. It has run only in CI;
+`motionVmd` and `mmdMotionBinding` declare the same options
+(`MOTIONVMD_SANITIZERS`, `MOTIONVMD_BUILD_FUZZER`,
+`MMDMOTIONBINDING_SANITIZERS`); instrumented, they have run only in CI.
+
+The fuzz targets need Clang's libFuzzer: `-DMMDPMX_BUILD_FUZZER=ON` or
+`-DMOTIONVMD_BUILD_FUZZER=ON` with `clang++`, and the sanitizers on. They have
+run only in CI;
 [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) is the
 record of its commands, including how the corpus is seeded from the generated
 fixtures.
@@ -159,8 +190,10 @@ installs a build tree into a temporary prefix, checks that the prefix holds
 what each package promises and names no source or build location, builds
 [tests/installed_consumer/](../../tests/installed_consumer/) — copied out of the
 repository — against that prefix alone, runs the installed `mmd_inspect` over
-every fixture, and opens a PMX from a Python host whose only plugin path is
-the prefix's. `ctest` runs it as
+every fixture, reads every generated VMD fixture through the installed
+`motionVmd` and `vmd_inspect`, binds one to a PMX fixture through the
+installed `mmdMotionBinding`, and opens a PMX from a Python host whose only
+plugin path is the prefix's. `ctest` runs it as
 `workspace_installed_consumer`.
 
 ## Fixtures
@@ -181,6 +214,23 @@ python tests/fixtures/generate_fixtures.py --check
 ```
 
 and commit the result; `workspace_fixtures` fails until the two agree.
+
+VMD fixtures are written by
+[tests/fixtures/generate_vmd_fixtures.py](../../tests/fixtures/generate_vmd_fixtures.py)
+into whatever directory a test gives it, with their own `fixtures.json`, and
+are never committed:
+
+```powershell
+python tests/fixtures/generate_vmd_fixtures.py --out build/vmd-fixtures
+```
+
+The CP932 table `motionVmd` decodes with is generated too. After changing its
+generator:
+
+```powershell
+python libs/motionVmd/tools/generate_cp932_table.py
+python libs/motionVmd/tools/generate_cp932_table.py --check
+```
 
 The two L5 goldens, `minimal.pmx.golden.usda` and
 `recoverable/unsafe-texture-paths.pmx.golden.usda`, are the importer's output

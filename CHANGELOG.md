@@ -86,6 +86,36 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   the linked modules, `recoverable/physics-repairs.pmx` joins the fixtures
   (39), and the stage checks recover every rigid body and joint from the stage
   alone.
+- **Phase 7 VMD.** `motionVmd` (`libs/motionVmd/`), a plain static library
+  with no dependency at all, reads VMD: `motionVmd::Read` holds the header
+  and every section — bone, morph, camera, light, self-shadow and IK /
+  visibility keyframes — in file order, in the source basis, for both
+  signatures and for a file that ends after any section; `BuildMotion` groups
+  the records into tracks per name, sorted by frame, keeps the last record of
+  a duplicate frame (`MMD_MOTION_DUPLICATE_KEYFRAME`), and decodes the Bézier
+  curves, reading Z's and rotation's `x1` from the row a physics toggle does
+  not overwrite. Names are CP932, decoded through a table the project
+  generates from Microsoft's code page (`generate_cp932_table.py`, checked by
+  a test), with their bytes kept; a cut character is dropped
+  (`MMD_TEXT_TRUNCATED_CP932`) and an unmapped one refused
+  (`MMD_TEXT_INVALID_CP932`). Malformed files fail with
+  `MMD_MOTION_BAD_SIGNATURE`, `MMD_MOTION_TRUNCATED_BUFFER` or
+  `MMD_MOTION_COUNT_EXCEEDS_BUFFER`, bytes after the last section are
+  `MMD_MOTION_TRAILING_BYTES`, and `ReadFile` raises
+  `MMD_MOTION_FILE_UNREADABLE`. `vmd_inspect` reports on a VMD, as text or
+  JSON. `mmdMotionBinding` (`libs/mmdMotionBinding/`) binds a motion to a
+  canonical model: names compared as CP932 bytes cut to the VMD field, as MMD
+  does, with `MMD_MOTION_UNMATCHED_BONE`, `MMD_MOTION_UNMATCHED_MORPH`,
+  `MMD_MOTION_AMBIGUOUS_NAME` and `MMD_MOTION_UNENCODABLE_NAME`, and bone keys
+  converted with `mmdModel`'s basis functions. Nothing is baked: MOT-O1 is
+  resolved (the conversion lives in `mmdModel` and is applied by binding) and
+  MOT-O3 (the Phase 8 runtime evaluates IK and append transforms). Tests: the
+  reader's unit, robustness and boundary tests and fuzz target, the table
+  check, binding's unit and boundary tests, `vmd_inspect` over nine generated
+  VMD fixtures from two directories, and the installed-consumer lane reading
+  and binding through the installed packages. `check_library_boundaries.py`
+  gains `--forbid-include`. A report records the reader and binding against
+  three distributed motions and 25 models.
 - **`mmdModel`** (`libs/mmdModel/`), a plain static library with no OpenUSD:
   `mmd::Canonicalize(const pmx::Document&)` applies the one source-to-USD
   conversion (right-handed, facing +Z, 0.08 m per MMD unit), assigns stable

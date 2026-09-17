@@ -1,4 +1,4 @@
-# Inspecting a PMX
+# Inspecting a PMX or a VMD
 
 `mmd_inspect` reports what a PMX file contains — header, model names, table
 sizes, every element if asked, and every diagnostic — using the parser alone,
@@ -79,10 +79,71 @@ reads them — and messages are not: compare codes.
 | `2` | not read: a fatal diagnostic, including a file that cannot be opened (`MMD_PMX_FILE_UNREADABLE`) |
 | `3` | a usage error |
 
+## Inspecting a VMD
+
+`vmd_inspect` does the same for a motion, with `motionVmd` alone — no model,
+no OpenUSD — and, like `mmd_inspect`, converts nothing
+([MOTION_CONTRACT.md](../design/MOTION_CONTRACT.md)). The build puts it in
+`tools/vmdInspect/bin/`. The commands below were run on Windows 11 in
+PowerShell on 2026-09-17, over the fixtures the VMD generator writes:
+
+```powershell
+python tests/fixtures/generate_vmd_fixtures.py --out build/vmd-fixtures
+tools\vmdInspect\bin\vmd_inspect.exe --tracks build\vmd-fixtures\sample.vmd
+```
+
+```text
+file:      build\vmd-fixtures\sample.vmd
+signature: Vocaloid Motion Data 0002
+model:     サンプル
+sections:  6 of 6
+bone keyframes: 5 keyframes in 3 tracks
+  センター  3 keys, frames 0-60
+  右足ＩＫ  1 key, frame 15
+  左ひじ  1 key, frame 0
+morph keyframes: 3 keyframes in 2 tracks
+  まばたき  2 keys, frames 0-10
+  あ  1 key, frame 5
+camera keyframes: 1 keyframe (frame 0)
+light keyframes: 1 keyframe (frame 0)
+self-shadow keyframes: 1 keyframe (frame 0)
+visibility keyframes: 2 keyframes (frames 0-120)
+IK states: 4 keyframes in 2 tracks
+  右足ＩＫ  2 keys, frames 0-120
+  左足ＩＫ  2 keys, frames 0-120
+diagnostics: none
+```
+
+`sections` says how many of the six sections the file holds — an older file
+ends early, and the rest read as empty. Records are grouped into one track
+per name, sorted by frame; `--tracks` lists them. A name CP932 cannot decode
+is shown as its bytes.
+
+A file that cannot be read says so:
+
+```text
+file:      build\vmd-fixtures\malformed\truncated.vmd
+status:    not read
+diagnostics:
+  fatal  MMD_MOTION_COUNT_EXCEEDS_BUFFER: 5 records of at least 111 bytes do not fit in the 66 bytes that remain (boneKeyframes.count at byte 50)
+```
+
+`--json` prints one object: `ok`; `header` (`signature`, `modelName`,
+`sectionsPresent`); `counts`, the records in each section; `tracks`, with
+every bone, morph and IK track — its `name` as `text` and as `bytes`, the
+field's CP932 bytes in hex, which is what binding compares — and its `keys`,
+`firstFrame` and `lastFrame`, and the `visibility`, `camera`, `light` and
+`selfShadow` tracks; `diagnostics`, the reader's and then the track
+grouping's; and `fatal`. The keys are stable — the tool's test,
+[tools/vmdInspect/tests/test_vmd_inspect.py](../../tools/vmdInspect/tests/test_vmd_inspect.py),
+reads them. The exit status is `mmd_inspect`'s, with
+`MMD_MOTION_FILE_UNREADABLE` for a file that cannot be opened.
+
 ## Paths and consoles
 
-The path may name any directory, Japanese included: on Windows the executable
-runs with a UTF-8 code page, so its arguments arrive in UTF-8, and the file is
+For either tool, the path may name any directory, Japanese included: on
+Windows each executable runs with a UTF-8 code page, so its arguments arrive
+in UTF-8, and the file is
 opened through a `std::filesystem::path` built from them
 ([TEXT_ENCODING_POLICY.md §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere)).
 The report is UTF-8 too; when it is written to a console, the console's output
