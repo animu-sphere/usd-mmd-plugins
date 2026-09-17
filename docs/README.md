@@ -15,7 +15,9 @@ chains, append relations, axes — under `/Asset/rig`, solving nothing, and
 Phase 6 every rigid body and joint under `/Asset/physics`, as `UsdPhysics`
 where it matches, simulating nothing. Phase 7 reads VMD motion without a
 model (`motionVmd`, `vmd_inspect`) and binds it to one by MMD's name rule
-(`mmdMotionBinding`), baking nothing. Everything
+(`mmdMotionBinding`), baking nothing. Phase 9, next, evaluates MMD's control
+rig over a bound motion and hands the result to `usd-motion-plugins`, the
+shared motion core this repository consumes. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
 place that says what is implemented.
 
@@ -36,8 +38,9 @@ place that says what is implemented.
   the central rule (parse MMD, normalize it once, author conventional OpenUSD,
   keep evaluation and rendering outside the importer), the component
   responsibilities, the schema admission test, the testing policy, the
-  **Phase 0–8** sequence, the decisions frozen early, and where the design
-  departs from the 2026-09-15 implementation policy it was distilled from.
+  **Phase 0–9** sequence, the decisions frozen early, where the design
+  departs from the 2026-09-15 implementation policy it was distilled from, and
+  how it aligns with the `usd-motion-plugins` design policy (§20).
 - Five focused contracts own one area each, and on that area they win over the
   design policy:
   - [design/STAGE_CONTRACT.md](design/STAGE_CONTRACT.md) — the exact authored
@@ -50,8 +53,9 @@ place that says what is implemented.
   - [design/TEXT_ENCODING_POLICY.md](design/TEXT_ENCODING_POLICY.md) — text
     decoding, source names versus USD identifiers, collisions, texture paths;
   - [design/MOTION_CONTRACT.md](design/MOTION_CONTRACT.md) — the MMD-specific
-    motion boundary: how VMD bytes are read, and how a motion binds to a
-    model.
+    motion boundary: how VMD bytes are read, how a motion binds to a
+    model, how MMD's control rig is evaluated, and how the result enters the
+    shared motion core of `usd-motion-plugins`.
 - [architecture/WORKSPACE.md](architecture/WORKSPACE.md) is the binding
   **workspace contract**. When a document disagrees with it about structure, it
   wins, and structural changes go there first, in their own pull request.

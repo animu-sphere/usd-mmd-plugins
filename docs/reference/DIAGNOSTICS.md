@@ -72,8 +72,8 @@ before it.
 
 `motionVmd` declares the same record and `Result<T>` in its own namespace
 ([motionVmd/Diagnostic.h](../../libs/motionVmd/include/motionVmd/Diagnostic.h)),
-with `section` where this record has `table`: it is extraction-ready and may
-not depend on `mmdPmx`
+with `section` where this record has `table`: a VMD parses without a model,
+so it may not depend on `mmdPmx`
 ([MOTION_CONTRACT.md §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries)).
 Its codes follow this catalog all the same, and
 `mmd::binding::ToDiagnostic` carries one into this record field for field.
