@@ -14,7 +14,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
          _mmd_inspect_version LIMIT_COUNT 1)
     string(STRIP "${_mmd_inspect_version}" _mmd_inspect_version)
 else()
-    set(_mmd_inspect_version "0.0.0")  # mirrors openstrata.tool.yaml
+    set(_mmd_inspect_version "0.1.0")  # mirrors openstrata.tool.yaml
 endif()
 
 project(mmdInspect

@@ -15,7 +15,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
          _mmd_plugin_version LIMIT_COUNT 1)
     string(STRIP "${_mmd_plugin_version}" _mmd_plugin_version)
 else()
-    set(_mmd_plugin_version "0.0.0")  # mirrors openstrata.plugin.yaml
+    set(_mmd_plugin_version "0.1.0")  # mirrors openstrata.plugin.yaml
 endif()
 
 project(UsdMmdFileFormatPlugin

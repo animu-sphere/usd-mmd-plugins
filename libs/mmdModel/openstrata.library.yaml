@@ -12,11 +12,11 @@ schema: openstrata.library/v1alpha1
 library:
   id: mmdModel
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.0.0
+  version: 0.1.0
 requires:
   libraries:
     - id: mmdPmx
-      version: ">=0.0,<0.1"
+      version: ">=0.1,<0.2"
 cmake:
   # The find_package() name and the imported target consumers link against.
   package: mmdModel

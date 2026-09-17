@@ -11,13 +11,13 @@ schema: openstrata.library/v1alpha1
 library:
   id: mmdMotionBinding
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.0.0
+  version: 0.1.0
 requires:
   libraries:
     - id: mmdModel
-      version: ">=0.0,<0.1"
+      version: ">=0.1,<0.2"
     - id: motionVmd
-      version: ">=0.0,<0.1"
+      version: ">=0.1,<0.2"
 cmake:
   # The find_package() name and the imported target consumers link against.
   package: mmdMotionBinding

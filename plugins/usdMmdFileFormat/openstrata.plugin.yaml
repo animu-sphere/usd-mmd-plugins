@@ -6,7 +6,7 @@ manifest:
 plugin:
   name: usdMmdFileFormat
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.0.0
+  version: 0.1.0
   kind: usd-fileformat
 license: Apache-2.0
 runtime:
@@ -28,9 +28,9 @@ requires:
   # (WORKSPACE.md §2.1, §2.3).
   libraries:
     - id: mmdPmx
-      version: ">=0.0,<0.1"
+      version: ">=0.1,<0.2"
     - id: mmdModel
-      version: ">=0.0,<0.1"
+      version: ">=0.1,<0.2"
 usd:
   # Where this bundle's plugInfo.json lives, relative to the bundle root.
   plug_info: plugin/resources/usdMmdFileFormat/plugInfo.json

@@ -112,12 +112,12 @@ fixtures `tests/fixtures/generate_vmd_fixtures.py` writes.
 | Stable ASCII identifiers | supported | supported | 2 | [TEXT §6](../design/TEXT_ENCODING_POLICY.md#6-stable-identifiers) |
 | Japanese texture filenames | supported | supported | 2 | [TEXT §7](../design/TEXT_ENCODING_POLICY.md#7-texture-paths) |
 | Unsafe texture paths | unsupported (refused, preserved) | unsupported (refused, preserved) | 2 | [TEXT §7.2](../design/TEXT_ENCODING_POLICY.md#72-unsafe-paths) |
-| `UsdPreviewSurface` | — | approximated | 3 | [MATERIAL §5](../design/MATERIAL_POLICY.md#5-usdpreviewsurface-realization) |
-| MaterialX `gltf_pbr` | — | approximated | 3 | [MATERIAL §6](../design/MATERIAL_POLICY.md#6-materialx-gltf_pbr-realization) |
-| Native MMD material semantics | — | preserved | 3 | [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
-| Sphere textures | — | preserved | 3 | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
-| Toon ramps (individual and shared) | — | preserved | 3 | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
-| Edge / outline | — | preserved | 3 | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
+| `UsdPreviewSurface` | approximated | approximated | 3 | [MATERIAL §5](../design/MATERIAL_POLICY.md#5-usdpreviewsurface-realization) |
+| MaterialX `gltf_pbr` | approximated | approximated | 3 | [MATERIAL §6](../design/MATERIAL_POLICY.md#6-materialx-gltf_pbr-realization) |
+| Native MMD material semantics | preserved | preserved | 3 | [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
+| Sphere textures | preserved | preserved | 3 | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
+| Toon ramps (individual and shared) | preserved | preserved | 3 | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
+| Edge / outline | preserved | preserved | 3 | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
 | Vertex morph (`UsdSkelBlendShape`) | supported | supported | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
 | Group, flip morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
 | Bone morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
