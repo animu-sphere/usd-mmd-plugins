@@ -88,3 +88,11 @@ specific sphere, toon, edge and other semantics remain on the material prim.
   chain, named by its IK bone, whose `mmd:rig:effector` and
   `mmd:rig:linkJoints` are joint indices too
   ([STAGE_CONTRACT.md §12](../design/STAGE_CONTRACT.md#12-control-rig)).
+- `/Asset/physics` holds the rigid bodies and joints, never simulated: each
+  body is an `Xform` with `PhysicsRigidBodyAPI` and a guide-purpose collider
+  (hidden unless guides are shown), each joint a `PhysicsJoint` between two
+  of them, and every PMX value — collision group and mask, mode, damping,
+  springs — is an `mmd:physics:*` attribute beside the standard ones. No
+  `PhysicsScene` is authored, so opening the stage in a physics-aware
+  application simulates nothing until one is added
+  ([STAGE_CONTRACT.md §13](../design/STAGE_CONTRACT.md#13-physics)).

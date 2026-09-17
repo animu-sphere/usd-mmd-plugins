@@ -1,8 +1,9 @@
 # usd-mmd-plugins — design policy
 
-> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–4
+> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–6
 > are implemented — the workspace skeleton, the PMX structural parser, the
-> canonical stage, the material triad and morphs; every other behavior
+> canonical stage, the material triad, morphs, control semantics and physics
+> preservation; every other behavior
 > described here is intended, and
 > [reference/CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md) is the
 > only document that says what is implemented.
@@ -319,7 +320,9 @@ standard constraint representation that matches, it is preferred.
 PMX rigid bodies and joints are preserved; nothing is simulated.
 
 1. Standard `UsdPhysics` schemas are used where the semantics match, evaluated
-   against the OpenUSD release in use when Phase 6 begins.
+   against the OpenUSD release in use when Phase 6 begins — 26.08; which ones
+   match is fixed in
+   [STAGE_CONTRACT.md §13](STAGE_CONTRACT.md#13-physics).
 2. PMX values with no standard counterpart are preserved as MMD semantics.
 3. No physics engine (Bullet or otherwise) is ever a parser or importer
    dependency.

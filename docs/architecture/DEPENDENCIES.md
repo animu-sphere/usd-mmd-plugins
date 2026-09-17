@@ -14,7 +14,7 @@ time.
 | --- | --- |
 | Pin | OpenUSD **26.08**, exactly (`PXR_VERSION` 2608), enforced by [cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake) for `ost` and plain-CMake builds alike and declared as `runtime.openusd: "==26.08"` in the bundle manifest; the release the rest of the ecosystem pins (`usd-vrm-plugins` too), because `usd-avatar-runtime` composes every plugin into one OpenUSD process |
 | Used by | `usdMmdFileFormat` (and later `mmdSchema`, `usdVmdFileFormat`) only |
-| Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `usdShade`, `usdSkel`, `kind` (`usdShade` and `usdSkel` since Phase 2); `usdPhysics` joins in Phase 6 |
+| Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `usdPhysics`, `usdShade`, `usdSkel`, `kind` (`usdShade` and `usdSkel` since Phase 2, `usdPhysics` since Phase 6) |
 | Not used | OpenExec, Hydra, `usdImaging` — nothing is evaluated or rendered here, so unlike `usd-vrm-plugins`' pin module this one probes for no OpenExec |
 | CI runtimes | the OpenUSD 26.08 leaves of OpenStrata's runtime matrix, the same digests `usd-vrm-plugins` pins ([openstrata.ci.yaml](../../openstrata.ci.yaml)) |
 

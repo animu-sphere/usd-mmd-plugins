@@ -65,6 +65,27 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   schema. `recoverable/rig-broken-relations.pmx` joins the fixtures (38), and
   the stage checks reconstruct every IK chain and append relation from the
   stage alone and compare them with the source.
+- **Phase 6 physics preservation.** A model with rigid bodies now authors
+  `/Asset/physics`. Each rigid body is an `Xform` at its rest frame with
+  `PhysicsRigidBodyAPI` (kinematic exactly when it follows its bone) and
+  `PhysicsMassAPI`, and a guide-purpose `collider` child — a sphere, a cube
+  scaled to the half extents, or a Y capsule — with `PhysicsCollisionAPI`.
+  Each joint between two bodies is a `PhysicsJoint` with its bodies, its frame
+  in each body's, and a `PhysicsLimitAPI` per limited axis; a free axis
+  (lower above upper) authors none. Every PMX value is also a uniform
+  `mmd:physics:*` attribute: bone, shape, size, collision group and mask,
+  mass, damping, restitution, friction and mode on a body; type, bodies,
+  position, orientation, limits and springs on a joint. PMX-O1 is resolved:
+  Euler angles compose as `Ry · Rx · Rz`, from distributed models' capsules.
+  The physics half of STAGE-O6 is decided. A PMX 2.1 joint type `UsdPhysics`
+  has no counterpart for is a typeless prim with `MMD_PHYSICS_JOINT_UNMAPPED`;
+  an undefined shape, mode or joint type falls back with
+  `MMD_PHYSICS_UNKNOWN_SHAPE`, `MMD_PHYSICS_UNKNOWN_MODE` or
+  `MMD_PHYSICS_UNKNOWN_JOINT_TYPE`; a joint whose body is missing is dropped.
+  Nothing is simulated and no `PhysicsScene` is authored. `usdPhysics` joins
+  the linked modules, `recoverable/physics-repairs.pmx` joins the fixtures
+  (39), and the stage checks recover every rigid body and joint from the stage
+  alone.
 - **`mmdModel`** (`libs/mmdModel/`), a plain static library with no OpenUSD:
   `mmd::Canonicalize(const pmx::Document&)` applies the one source-to-USD
   conversion (right-handed, facing +Z, 0.08 m per MMD unit), assigns stable

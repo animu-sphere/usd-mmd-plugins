@@ -355,15 +355,34 @@ Decisions:
 
 - Everything is **preserved** (Phase 6), converted per the stage contract's
   §6.3; nothing is simulated.
-- **Euler rotations** are composed to a matrix before conversion. The PMX
-  Euler composition order (PMX-O1) is fixed by a fixture built against a
-  reference implementation before Phase 6; until then rotations are carried in
-  the canonical model as the source triple, unconverted, and not authored.
-- Sizes are lengths (`× s`). Spring constants are preserved in source units:
-  their unit depends on the length scale, and converting them is a physics
-  runtime's decision, not the importer's.
+- **Euler rotations** `(x, y, z)` compose as `R = Ry · Rx · Rz`, acting on
+  column vectors: Z first, then X, then Y — Direct3D's yaw-pitch-roll, which
+  MMD is built on (PMX-O1). The evidence is distributed models: a capsule is
+  laid along the bone it follows, and of the 437 capsules in fifteen locally
+  held models whose long axis lies exactly along their bone, 434 do so under
+  this order and no other
+  ([report](../reports/2026-09-17-phase6-local-models.md)). The fixtures turn
+  every body and joint about all three axes, so another order cannot pass.
+  The matrix is converted as a rotation (stage contract §6.3).
+- Sizes are lengths (`× s`, never mirrored): a sphere's radius in x, a box's
+  half extents, a capsule's radius in x and the length of its cylinder, along
+  its Y axis, in y. Spring constants are preserved in source units: their unit
+  depends on the length scale, and converting them is a physics runtime's
+  decision, not the importer's.
+- The **non-collision mask** is, despite its name, a collision mask as MMD's
+  Bullet world reads it: bit `h` set means the body collides with group `h`.
+  Distributed models clear their own group's bit and set most others.
+- A **lower limit above its upper one** leaves the axis free, as in Bullet;
+  equal limits lock it.
 - An out-of-range bone or rigid-body reference is recoverable: the rigid body
-  is unattached, or the joint is dropped, with `MMD_PMX_INDEX_OUT_OF_RANGE`.
+  is unattached, or the joint is dropped, with `MMD_PMX_INDEX_OUT_OF_RANGE`. A
+  joint whose body is `−1` in the source is dropped too: it joins nothing.
+- A shape, physics mode or joint type outside the values the file's version
+  defines is recoverable: it is read as a sphere, a body that follows its
+  bone, or a spring 6-DOF joint — the only type PMX 2.0 defines — with
+  `MMD_PHYSICS_UNKNOWN_SHAPE`, `MMD_PHYSICS_UNKNOWN_MODE` or
+  `MMD_PHYSICS_UNKNOWN_JOINT_TYPE` (warning). The collision group is kept as
+  stored.
 
 ## 14. Canonicalization
 
@@ -388,9 +407,10 @@ bit, and nothing in a document the parser accepted is fatal to it: every
 repair is a recoverable diagnostic.
 
 Each step covers only the tables the stage authors so far: step 1 names
-materials and bones; step 6 normalizes texture references, and toon ramps and
+materials, bones, morphs, rigid bodies and joints; step 6 normalizes texture references, and toon ramps and
 sphere modes with Phase 3; step 7 carries morphs from Phase 4 and control
-semantics from Phase 5. An element kind joins
+semantics from Phase 5, and rigid bodies and joints from Phase 6. An
+element kind joins
 identity and provenance with the Phase that authors it, so no diagnostic is
 raised about something the stage does not contain.
 
@@ -414,7 +434,12 @@ and the import continues. Codes and severities are catalogued in
 
 | Id | Question | Resolve by |
 | --- | --- | --- |
-| PMX-O1 | Euler composition order of rigid-body and joint rotations | fixture against a reference implementation, before Phase 6 |
 | PMX-O2 | Whether QDEF can be claimed against any verified consumer | a dual-quaternion consumer to verify against |
 | PMX-O3 | Whether a globals count above 8 occurs in the wild, and what the extra bytes mean | evidence from real files |
 | PMX-O4 | Whether display frames should author a morph category | a consumer that needs one |
+
+Resolved:
+
+| Id | Question | Decision | Resolved |
+| --- | --- | --- | --- |
+| PMX-O1 | Euler composition order of rigid-body and joint rotations | `R = Ry · Rx · Rz` (§13), from distributed models' capsules and Direct3D's yaw-pitch-roll | Phase 6, 2026-09-17 |
