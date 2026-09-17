@@ -2,14 +2,18 @@
 
 > Status: **binding** since Phase 7 for §2–§8.1 and §8.3: `motionVmd` reads
 > VMD as §3–§6 say, `vmd_inspect` reports on it, and `mmdMotionBinding` binds
-> a motion to a model as §7 and §8.1 say, each with fixtures. §8.2 is a
-> boundary, not an implementation: nothing here bakes. This document holds
+> a motion to a model as §7 and §8.1 say, each with fixtures. §8.2 and §10
+> are **accepted** and not implemented: they are Phase 9. This document holds
 > only what is specific to MMD motion — VMD's source facts, its text encoding,
-> and where it meets a PMX model. Generic motion concepts (canonical poses,
-> clips, retarget, recording, the USD bridge) belong to the shared motion
-> architecture and are expected to move to `usd-motion-plugins`; this
-> document defers to that contract wherever it exists. Section numbers are
-> stable.
+> where it meets a PMX model, how MMD's control rig is evaluated, and how the
+> result enters the shared motion core. Generic motion concepts (`MotionPose`,
+> `MotionClip`, humanoid joint semantics, sampling, retarget, recording, the
+> `UsdSkelAnimation` bridge) are owned by `usd-motion-plugins` and consumed
+> from it; VMD itself stays here, because it is MMD's format (the
+> `usd-motion-plugins` design policy, §26). Section numbers are stable.
+>
+> Revised 2026-09-17 to that policy: MOT-O3 is superseded (§8.2), `motionVmd`
+> is no longer described as leaving this repository (§2), and §10 is new.
 
 ---
 
@@ -20,8 +24,10 @@
 - **Recorded, not mapped:** VMD camera, light and self-shadow tracks. They are
   scene motion, not model motion; they are parsed and kept in the source
   representation, and no USD mapping is defined until a consumer needs one.
-- **Out:** VMD writing; live motion; motion generation; VRM ↔ MMD retargeting;
-  baking (§8.2).
+- **In, from Phase 9:** evaluating a bound motion over the model's control
+  rig, and handing the result to the shared motion core (§8.2, §10).
+- **Out:** VMD writing; live motion; motion generation; retargeting itself —
+  VRM ↔ MMD or any other — which is `usd-motion-plugins`' (§10.6); recording.
 
 ## 2. Components and boundaries
 
@@ -32,27 +38,32 @@ VMD bytes ─Read─→ motionVmd::Document ─BuildMotion─→ motionVmd::Moti
                                                           ▼
                                    mmdMotionBinding::Bind ─→ BoundMotion
                                                           │
-                     (a motion or avatar runtime: IK, append, bake) ─→ UsdSkelAnimation
+                            (Phase 9, §10)  mmdControl ───┤  IK, append, bone morphs
+                                                          ▼
+                            mmdMotionAdapter ─→ MotionClip (usd-motion-plugins)
+                                                          │
+                            retarget, recording, UsdSkelAnimation — usd-motion-plugins
 ```
 
 - **`motionVmd`** is a plain library: VMD syntax, CP932 decoding, and the
   source representation. It has **no dependency at all** — no OpenUSD, and
   nothing in this repository.
-- It is **extraction-ready**: it may depend on the shared motion contract and
-  nothing else. Never `usdMmdFileFormat`, never `mmdModel`, never `mmdPmx`
-  ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)).
-  No installable shared motion contract exists yet, so today it depends on
-  nothing, and carries its own diagnostic record and `Result<T>` rather than
-  reach `mmdPmx`'s
-  ([WORKSPACE.md §7](../architecture/WORKSPACE.md#7-invariants)).
+- It is **model-independent**: never `usdMmdFileFormat`, never `mmdModel`,
+  never `mmdPmx`
+  ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)),
+  and never `usd-motion-plugins` either — the source representation is
+  MMD's, and only `mmdMotionAdapter` speaks the shared core's types (§10.1).
+  It carries its own diagnostic record and `Result<T>` rather than reach
+  `mmdPmx`'s ([WORKSPACE.md §7](../architecture/WORKSPACE.md#7-invariants)).
 - **Parsing a VMD never requires a PMX.** `vmd_inspect` reports on a VMD with
   `motionVmd` alone.
 - **`mmdMotionBinding`** is where a motion and a model meet: it depends on
   `mmdModel` and `motionVmd`, so neither of them depends on the other (§8).
 - **`usdVmdFileFormat`** — opening a `.vmd` directly with `UsdStage::Open` — is
-  added only once the shared motion contract says what an avatar-independent
-  motion stage looks like (MOT-O2). It would be a thin bundle over
-  `motionVmd`, re-implementing no parsing.
+  added only once MOT-O2 is resolved against the standalone motion stage
+  `usd-motion-plugins` defines (`/Animation`, with the body as a
+  `UsdSkelAnimation`). It would be a thin bundle over `motionVmd`,
+  re-implementing no parsing.
 
 **The basis conversion (MOT-O1, resolved in Phase 7).** `motionVmd` converts
 nothing: its values are in the source basis and units, as the file states
@@ -222,37 +233,189 @@ into a `UsdSkelAnimation`, without evaluating IK and append transforms, moves
 the IK targets and leaves the legs in their rest pose.
 
 The consequence is structural: **baking VMD to a correct `UsdSkelAnimation`
-requires evaluating MMD control semantics**, which is runtime work under the
-static importer boundary
+requires evaluating MMD control semantics**, which is never done at import,
+under the static importer boundary
 ([DESIGN_POLICY.md §2.2](DESIGN_POLICY.md#22-the-static-importer-boundary)).
+The same holds for a `MotionClip`: a raw bone track is control-rig motion,
+not body motion, so it does not enter the shared core unevaluated (§10.2).
 
-**Who evaluates (MOT-O3, resolved in Phase 7): not this repository.** The
-bake lives in the motion or avatar runtime that composes this repository
-with the shared motion architecture — Phase 8, under `usd-avatar-runtime`
-([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)) — implementing MMD's IK
-and append semantics over the `/Asset/rig` contract (Phase 5) and consuming a
-`BoundMotion`. Neither `motionVmd`, `mmdMotionBinding` nor a file-format
-plugin solves IK or evaluates an append, and nothing here offers a bake that
-skips that evaluation. A runtime that does skip it must say so in its output
-and its diagnostics, and must not present the result as equivalent.
+**Who evaluates (MOT-O3, superseded 2026-09-17): this repository, in
+`mmdControl`, a plain library outside the importer.** Phase 7 had given the
+evaluation to the Phase 8 motion or avatar runtime. The `usd-motion-plugins`
+design policy then placed everything that depends on MMD IK conventions,
+bone flags or morph semantics in this repository (its §3.2 and §38), and
+expects body motion to leave it already normalized (its §19.2) — which, for
+MMD, cannot happen before IK and append transforms are evaluated. So the
+evaluator is an MMD semantic, owned here; a runtime **schedules** it — per
+frame, in a thread, as an OpenExec node it wraps — and never re-implements it
+([DESIGN_POLICY.md §20](DESIGN_POLICY.md#20-alignment-with-the-usd-motion-plugins-design-policy)).
+
+What does not change: `motionVmd`, `mmdMotionBinding` and every file-format
+plugin still solve nothing, opening a file still evaluates nothing, and
+nothing offers a bake that skips the evaluation. A consumer that does skip it
+must say so in its output and its diagnostics, and must not present the
+result as equivalent.
 
 ### 8.3 The IK / visibility track
 
-IK-enable keyframes switch an IK chain on or off over time; they are runtime
-input to the same evaluator, preserved and bound by bone name like any other
-track. Model visibility keyframes are preserved likewise, bound to the model
+IK-enable keyframes switch an IK chain on or off over time; they are input to
+the same evaluator, `mmdControl` (§10.3), preserved and bound by bone name
+like any other track. Model visibility keyframes are preserved likewise, bound to the model
 as a whole.
 
 ## 9. Open questions
 
 | Id | Question | Resolve by |
 | --- | --- | --- |
-| MOT-O2 | What a directly opened `.vmd` stage looks like | the shared motion contract (`usd-motion-plugins`) |
+| MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motion-usd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
+| MOT-O5 | Root motion: which MMD bones (`全ての親`, `センター`, `グルーブ`) become `RootMotion` and which stay hips-local motion, given the shared core keeps the two apart (§10.5) | Phase 9, against distributed motions |
+| MOT-O6 | The humanoid role table: which MMD bone names map to which `HumanJoint`, how English names and common variants are matched, and how the table is versioned (§10.4) | Phase 9 |
+| MOT-O7 | Morphs: which morph types `mmdControl` evaluates before the pose is emitted (bone morphs change the skeleton; group morphs expand into both) and which reach `MotionChannelSet` as source weights (§10.7) | Phase 9 |
+| MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
 
 Resolved:
 
 | Id | Question | Decision | Resolved |
 | --- | --- | --- | --- |
 | MOT-O1 | Where the shared basis-conversion functions live, so `mmdModel` and `motionVmd` share them without depending on each other | in `mmdModel`, applied by `mmdMotionBinding`; `motionVmd` converts nothing (§2) | Phase 7, 2026-09-17 |
-| MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | the Phase 8 motion or avatar runtime, over `/Asset/rig` and a `BoundMotion`; nothing in this repository bakes (§8.2) | Phase 7, 2026-09-17 |
+| MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | ~~the Phase 8 motion or avatar runtime~~ — **superseded 2026-09-17:** this repository, in the plain library `mmdControl`, scheduled by a runtime but never re-implemented by one (§8.2) | Phase 7, 2026-09-17; superseded the same day |
+
+## 10. Normalizing into the shared motion core
+
+Accepted, not implemented: this section is Phase 9
+([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)), and it waits for
+`usd-motion-plugins` to publish `motion-core`. Names of that repository's
+types (`MotionPose`, `MotionClip`, `HumanJoint`, `SkeletonDescriptor`,
+`RetargetMap`, `RootMotion`, `MotionChannelSet`) are its design policy's, and
+where its published contract differs, the published contract wins and this
+section is revised.
+
+### 10.1 Components
+
+| Component | Input | Output | Depends on |
+| --- | --- | --- | --- |
+| `mmdControl` | a `BoundMotion`, the `CanonicalDocument` it was bound to, a time | the local transform of every deformation joint at that time, in the USD basis and meters, plus the morph weights §10.7 leaves as channels | `mmdMotionBinding`, `mmdModel` |
+| `mmdMotionAdapter` | a `CanonicalDocument`; `mmdControl` evaluated over a time range at an explicit rate | a `SkeletonDescriptor`, a humanoid `RetargetMap`, and a `MotionClip` | `mmdControl`, `mmdModel`, `usd-motion-plugins` `motion-core` |
+
+Neither links more of OpenUSD than `motion-core`'s foundation types, and
+neither authors a stage. The edges are
+[WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)'s;
+`mmdMotionAdapter` is the only component that crosses into
+`usd-motion-plugins`
+([WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository)).
+
+### 10.2 The pipeline
+
+```text
+VMD bytes → motionVmd → mmdMotionBinding ─→ BoundMotion           MMD source tracks
+                              (+ mmdModel)        │
+                                                  ▼
+                        mmdControl, per sample time t:
+                          1. sample every bound track's Bézier curve at t (§6)
+                          2. apply bone morphs (MOT-O7)
+                          3. evaluate every bone in MMD's evaluation order —
+                             transform layer, then after-physics flag, never
+                             the canonical joint order — applying appends and
+                             solving IK (with the IK-enable track) as the
+                             control semantics of STAGE_CONTRACT.md §12 say
+                                                  │
+                                                  ▼
+                        deformation-joint local transforms at t
+                                                  │
+                        mmdMotionAdapter          ▼
+                          SkeletonDescriptor + RetargetMap (from the model)
+                          MotionPose per t → MotionClip
+                                                  │
+                                                  ▼
+                        usd-motion-plugins: sampling, retarget, recording,
+                        UsdSkelAnimation authoring
+```
+
+A `MotionClip` from MMD is always **evaluated** motion: every pose holds
+deformation-joint rotations after IK and append transforms, never the raw
+rotation of an IK target. A clip built by skipping step 3 is not a lesser
+clip; it is a wrong one, and no API here produces it.
+
+Evaluation is **deterministic**: the same bound motion, model, time and rate
+produce the same bits, as the importer's same-bytes rule requires
+([DESIGN_POLICY.md §2.5](DESIGN_POLICY.md#25-determinism-over-cleverness)).
+
+### 10.3 Evaluation
+
+- **Where the semantics come from.** `mmdControl` reads the control
+  semantics `mmdModel` canonicalizes — the same facts the importer authors
+  under `/Asset/rig` in Phase 5 — so the stage and the evaluator cannot
+  disagree about a chain. Evaluating from the stage alone is MOT-O8.
+- **Physics.** Bones MMD drives by rigid bodies are not simulated. Their
+  pose is what keyframes, appends and IK give them; bones flagged to deform
+  after physics are evaluated in that position of the order with no
+  simulation before them, and the clip's metadata says physics was not run.
+  Physics stays a runtime's
+  ([DESIGN_POLICY.md §8](DESIGN_POLICY.md#8-physics-policy)).
+- **External parents** name another model in the scene; with one model there
+  is nothing to resolve, so the relation is ignored and reported once per
+  bone.
+- **Sampling rate.** Evaluation happens at explicit times. The adapter's
+  default is the VMD frame grid, 30 samples per second (§5); any other rate
+  is the caller's explicit choice. Between keyframes the MMD Bézier curve is
+  authoritative; the shared core's linear and shortest-path interpolation
+  (its §8) applies only between the evaluated samples.
+- **State.** An evaluator holds precomputed chain and order data built once
+  per model, so a realtime caller reuses it across frames (the motion
+  policy's §31). It owns no thread and no clock.
+
+### 10.4 Skeleton and humanoid map
+
+- **`SkeletonDescriptor`** is built from the canonical skeleton: joint names
+  are the **source** names, Japanese kept
+  ([TEXT_ENCODING_POLICY.md §5](TEXT_ENCODING_POLICY.md#5-identity-versus-display)),
+  joint order and parents are the canonical joint order
+  ([STAGE_CONTRACT.md §9](STAGE_CONTRACT.md#9-skeleton-and-skinning)), and
+  rest transforms are the model's, with identity rest rotations.
+- **`RetargetMap`** assigns `HumanJoint`s to deformation joints by MMD's
+  conventional bone names (`上半身`, `左腕`, `右ひざ`, …) — a heuristic table
+  this repository owns, never a humanoid claim about the model. A model that
+  names its bones otherwise gets a partial map and a diagnostic per required
+  joint left unmapped; missing optional joints are valid (the motion
+  policy's §5.2). An explicitly authored map always wins over the table.
+- The table maps into **retarget data**, not into USD identifiers, so it does
+  not become the stage ABI that
+  [TEXT_ENCODING_POLICY.md §6.3](TEXT_ENCODING_POLICY.md#63-what-contract-v1-deliberately-does-not-do)
+  refuses to freeze. Its contents and version are MOT-O6.
+
+### 10.5 Time, coordinates and root motion
+
+| Shared core | From MMD |
+| --- | --- |
+| time in seconds | `timestamp = frame / 30`; `nominalFrameRate = 30` is descriptive, the timestamps are authoritative |
+| Y-up, meters, right-handed | already true after binding (§7); nothing is converted again |
+| local joint rotations | the evaluated deformation-joint rotations, relative to identity rest rotations ([STAGE_CONTRACT.md §9.2](STAGE_CONTRACT.md#92-the-skeleton-prim)); rest-pose normalization against another skeleton is the retarget's |
+| root motion separate from hips | which bones feed `RootMotion` is MOT-O5; until it is resolved, the adapter emits no `RootMotion` and says so, rather than guessing |
+| provenance | `SourceMetadata` and clip metadata name the format (`vmd`) and the VMD's model name; they never change behavior |
+
+### 10.6 What this repository does not do with the result
+
+Retargeting, clip sampling, blending, recording and `UsdSkelAnimation`
+authoring are `usd-motion-plugins`'. VRM ↔ MMD is not a pair this repository
+knows: a `MotionClip` from a VMD reaches a VRM, and one from a VRMA reaches a
+PMX, through the shared retarget and the other format's own descriptors. No
+component here keeps a private copy of any of it
+([WORKSPACE.md §7](../architecture/WORKSPACE.md#7-invariants), invariant 9).
+
+### 10.7 Morphs as channels
+
+Morph tracks that are not evaluated into the pose (MOT-O7) reach
+`MotionChannelSet` under the namespaced semantic `mmd:<source name>`, with
+the bound weight as a scalar — preserved, never interpreted by the shared
+core (the motion policy's §5.3). Promoting a channel to a common semantic
+such as `face/blinkLeft` is the shared core's standardization, not a mapping
+this repository invents.
+
+### 10.8 Diagnostics
+
+MMD-side events keep this repository's `MMD_MOTION_*` family
+([reference/DIAGNOSTICS.md](../reference/DIAGNOSTICS.md)); codes are added to
+its catalog with the code that raises them. Diagnostics the shared core
+raises (`MOTION-E####`, `MOTION-W####`, `MOTION-I####`) are passed through
+unchanged, never re-coded.

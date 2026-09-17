@@ -10,7 +10,9 @@
 >
 > This is the canonical, long-form policy: why the project is shaped the way it
 > is, where its boundaries are, and the order it is built in. It is distilled
-> from the 2026-09-15 implementation policy. Five focused documents own the
+> from the 2026-09-15 implementation policy, and aligned on 2026-09-17 with the
+> `usd-motion-plugins` design policy, the ecosystem's motion architecture
+> (§20). Five focused documents own the
 > detail of one area each, and **on its own area the focused document wins**:
 >
 > | Area | Owning document |
@@ -19,7 +21,7 @@
 > | PMX source → canonical semantics | [PMX_CONTRACT.md](PMX_CONTRACT.md) |
 > | Materials and their realizations | [MATERIAL_POLICY.md](MATERIAL_POLICY.md) |
 > | Text, names, identifiers and paths | [TEXT_ENCODING_POLICY.md](TEXT_ENCODING_POLICY.md) |
-> | The MMD motion boundary | [MOTION_CONTRACT.md](MOTION_CONTRACT.md) |
+> | The MMD motion boundary, MMD control evaluation, and the hand-off to the shared motion core | [MOTION_CONTRACT.md](MOTION_CONTRACT.md) |
 > | Component identities and dependency edges | [architecture/WORKSPACE.md](../architecture/WORKSPACE.md) |
 >
 > Section numbers are stable so other documents can cite them ("design policy
@@ -40,8 +42,10 @@ The whole policy reduces to one rule:
 > evaluation and rendering outside the file-format importer.**
 
 The first implementation target is **PMX model import**. VMD motion is a
-separate concern behind a motion boundary (§9) that is compatible with the
-future `usd-motion-plugins` split.
+separate concern behind a motion boundary (§9): VMD and MMD's control rig
+stay here, and the body motion they produce is handed to the shared motion
+core of `usd-motion-plugins`, which this repository consumes and never
+duplicates (§20).
 
 The project is the MMD sibling of
 [`usd-vrm-plugins`](https://github.com/animu-sphere/usd-vrm-plugins), shaped so
@@ -141,8 +145,11 @@ What deliberately does **not** carry over:
 - **No schema bundle by default.** `vrmSchema` exists because VRM has typed
   semantics consumers read. `mmdSchema` must pass its own admission test (§6).
 - **No humanoid assumption.** MMD bone names are a community convention, not a
-  humanoid specification; humanoid mapping is a runtime or retarget concern
-  (§9.3), not an importer one.
+  humanoid specification, so the importer authors no humanoid semantics.
+  Retargeting still needs a humanoid map, and the shared motion core leaves
+  building one to the format repository; this repository builds it outside
+  the importer, as retarget data, from a heuristic role table (§9.3,
+  [MOTION_CONTRACT.md §10.4](MOTION_CONTRACT.md#104-skeleton-and-humanoid-map)).
 
 ## 4. Pipeline and testable transitions
 
@@ -260,6 +267,25 @@ importer in the way. `vmd_inspect` does the same for a VMD, with `motionVmd`
 alone. `mmd_convert` (PMX → `.usda`/`.usdc` on disk) follows only
 when `usdcat` over the file format proves insufficient.
 
+### 5.6 `mmdControl` — MMD control evaluation (Phase 9)
+
+A plain C++ library, outside the importer and with no OpenUSD. It samples a
+bound motion's Bézier curves at an explicit time and evaluates MMD's control
+rig — transform layers, appends, IK, bone morphs — into deformation-joint
+transforms. It is the one place in the ecosystem that implements MMD IK and
+append semantics; a runtime schedules it and never re-implements it. It has
+no clock, no thread and no update loop
+([MOTION_CONTRACT.md §10.3](MOTION_CONTRACT.md#103-evaluation)).
+
+### 5.7 `mmdMotionAdapter` — the hand-off to the shared motion core (Phase 9)
+
+The only component that depends on `usd-motion-plugins`. It builds a
+`SkeletonDescriptor` and a humanoid `RetargetMap` from a canonical model,
+and turns `mmdControl`'s evaluated motion into a `MotionClip`. It owns no
+generic algorithm: sampling, retargeting, recording and `UsdSkelAnimation`
+authoring are used from the shared core
+([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
+
 ## 6. The schema admission test
 
 `mmdSchema` is not created because `vrmSchema` exists. A candidate API schema
@@ -333,30 +359,46 @@ Execution belongs to `usd-stage-runner` or another runtime.
 
 ## 9. Motion boundary
 
-VMD belongs to the broader motion architecture, not to the PMX importer. The
-boundary is fixed in [MOTION_CONTRACT.md](MOTION_CONTRACT.md); its principles:
+VMD belongs to the motion architecture, not to the PMX importer — but it is
+MMD's format, so it stays in this repository while generic motion lives in
+`usd-motion-plugins`. The boundary is fixed in
+[MOTION_CONTRACT.md](MOTION_CONTRACT.md); its principles:
 
-### 9.1 Extraction-ready
+### 9.1 Model-independent, and staying
 
-`motionVmd` may live here first so work can progress, but it is written as a
-plain library that can leave: it depends on a shared motion contract, never on
-`usdMmdFileFormat` and never on `mmdModel`.
+`motionVmd` is a plain library that depends on nothing: never on
+`usdMmdFileFormat`, `mmdModel` or `mmdPmx`, and not on `usd-motion-plugins`
+either, because its source representation is MMD's. Until 2026-09-17 it was
+described as extraction-ready, on the expectation that it would move to the
+shared motion repository; the motion policy keeps VMD here (its §26), and the
+dependency-free shape stays for its own sake.
 
 ### 9.2 A VMD opens without a model
 
-A future `usdVmdFileFormat` may open a `.vmd` directly. Its output is an
-avatar-independent motion representation or `UsdSkelAnimation`, per the shared
-motion contract. Parsing a VMD never requires a PMX.
+A future `usdVmdFileFormat` may open a `.vmd` directly, in the standalone
+motion stage `usd-motion-plugins` defines. Parsing a VMD never requires a
+PMX. A VMD without a model carries control-rig tracks only, which nothing can
+evaluate into body motion, so what such a stage holds is still open (MOT-O2).
 
 ### 9.3 Binding motion to a model is a separate operation
 
 ```text
-VMD ─→ canonical motion ─→ MMD semantic mapping ─→ retarget ─→ target UsdSkelSkeleton
+VMD ─→ bound motion ─→ MMD control evaluation ─→ MotionClip ─→ shared retarget ─→ target skeleton
+       (this repository ──────────────────────────────────)    (usd-motion-plugins)
 ```
 
 MMD bone naming is a convention, not a skeleton specification, so binding a
 clip to a skeleton is its own step with its own diagnostics, never an implicit
 side effect of loading either file.
+
+### 9.4 Evaluate, then normalize
+
+MMD motion drives a control rig, so it becomes body motion only once IK and
+append transforms are evaluated. That evaluation is an MMD semantic and
+happens here, in `mmdControl` (§5.6), never at import; only its result enters
+the shared core, through `mmdMotionAdapter` (§5.7). No component produces a
+`MotionClip` from unevaluated bone tracks
+([MOTION_CONTRACT.md §10.2](MOTION_CONTRACT.md#102-the-pipeline)).
 
 ## 10. Parser strategy
 
@@ -435,7 +477,7 @@ may describe what they showed.
 
 ## 14. Phases
 
-This repository has **one** phase sequence, written `Phase 0`–`Phase 8`, and
+This repository has **one** phase sequence, written `Phase 0`–`Phase 9`, and
 this section is its source of truth. A phase is not a release; which release
 carries a phase is decided in the
 [roadmap](../roadmap/README.md#status-at-a-glance), never here. Should a second
@@ -450,8 +492,14 @@ sequence ever appear, both get a qualifier, as they do in `usd-vrm-plugins`.
 | **4 — morphs** | Vertex morph → `UsdSkelBlendShape`; the preservation encoding for every other morph type; stable naming. | Blend shapes drive in `usdview`; every PMX morph is recoverable from `/Asset/morph`. |
 | **5 — control semantics** | Narrow MMD semantics for IK, append transforms, axes, morph composition and material morphs — schema only where §6 admits one. | A consumer can reconstruct every IK chain and append relation from the stage alone. |
 | **6 — physics preservation** | Standard `UsdPhysics` where it matches; everything else preserved. | No simulation; every rigid body and joint recoverable. |
-| **7 — VMD** | Extraction-ready `libs/motionVmd`, integrated with the shared motion architecture; `usdVmdFileFormat` only once direct stage-open has a contract. | Per [MOTION_CONTRACT.md](MOTION_CONTRACT.md). |
+| **7 — VMD** | Model-independent `libs/motionVmd` (defined as extraction-ready; VMD stays here since 2026-09-17, §9.1), bound to a model by `mmdMotionBinding`; the hand-off to the shared motion core is Phase 9; `usdVmdFileFormat` only once direct stage-open has a contract. | Per [MOTION_CONTRACT.md](MOTION_CONTRACT.md). |
 | **8 — avatar runtime composition** | Composition through OpenStrata with `usd-vrm-plugins`, `usd-motion-plugins`, `motion-connectors`, `hydra-toon` and `usd-stage-runner`, under `usd-avatar-runtime`. | The runtime, not this repository, is the avatar execution environment. |
+| **9 — shared motion core adoption** | `mmdControl` evaluates a bound motion over the control rig; `mmdMotionAdapter` builds a `SkeletonDescriptor`, a humanoid `RetargetMap` and a `MotionClip` against `usd-motion-plugins`' installed `motion-core`; MOT-O5, MOT-O6 and MOT-O7 resolved ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)). | On synthetic rigs with known answers, IK and append evaluation match; the same inputs give the same bits; a VMD-derived `MotionClip`, authored by the shared core as `UsdSkelAnimation`, poses the PMX stage's skeleton with legs driven by IK; the same clip retargets to a non-MMD synthetic skeleton through the shared retarget with no MMD code on that path; no generic motion algorithm exists in this repository. |
+
+Phases are numbered in the order they were defined, not the order they run.
+Phase 9 was added on 2026-09-17, when the motion architecture was settled
+(§20), and it runs **before** the MMD half of Phase 8: the runtime composes
+this repository's evaluated motion rather than evaluating MMD itself.
 
 ### 14.1 First substantial release — definition of done
 
@@ -498,22 +546,26 @@ structural ones, a change to WORKSPACE.md first.
 | 8 | parser → canonical → authorer dependency direction | [WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions) |
 | 9 | The static importer / runtime evaluator boundary | §2.2 |
 | 10 | VMD is never hard-wired into PMX loading | §9 |
+| 11 | This repository consumes `usd-motion-plugins`, through one component, and is never consumed by it | [WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository) |
 
 ## 16. Decisions deliberately left flexible
 
 Not frozen, and not to be frozen until at least two plausible consumers or one
 real implementation demonstrate the need: custom MMD API schema names; the
-physics backend; the runtime IK implementation; an SDEF GPU implementation; the
-toon renderer's architecture; the final VMD retarget API; Python or JavaScript
-bindings; USD export policy; PMD support.
+physics backend; `mmdControl`'s public API, until Phase 9 has a consumer; an
+SDEF GPU implementation; the toon renderer's architecture; the humanoid role
+table's contents (MOT-O6); Python or JavaScript bindings; USD export policy;
+PMD support. The retarget API is not on this list: it is
+`usd-motion-plugins`', not this repository's to freeze or leave open.
 
 ## 17. Non-goals for the first releases
 
-Perfect MMD toon parity; live VMD playback; Bullet physics; IK solving; MMD
-editor features; PMX or VMD writing; renderer-specific shader compilation; a
-general format-conversion framework; WebXR; live tracking; VRM ↔ MMD semantic
-retargeting inside the PMX importer. Some of these exist elsewhere in the
-ecosystem (§18); none belongs here.
+Perfect MMD toon parity; live VMD playback; Bullet physics; IK solving at
+import (Phase 9 evaluates IK in a library, §5.6); MMD editor features; PMX or
+VMD writing; renderer-specific shader compilation; a general
+format-conversion framework; WebXR; live tracking; retargeting of any kind —
+VRM ↔ MMD included — which is the shared motion core's; recording motion.
+Some of these exist elsewhere in the ecosystem (§18); none belongs here.
 
 ## 18. Place in the ecosystem
 
@@ -528,11 +580,13 @@ ecosystem (§18); none belongs here.
               ┌──────────────────┴──────────────────┐
       usdMmdFileFormat                         usdVmdFileFormat (later)
               │                                     │
-          mmdModel ── mmdSchema (only if §6)    motionVmd ── shared motion contract
+          mmdModel ── mmdSchema (only if §6)    motionVmd
               │    \                              /
            mmdPmx   └──── mmdMotionBinding ──────┘
-              │
-             PMX
+              │                   │
+             PMX             mmdControl (Phase 9)
+                                  │
+                          mmdMotionAdapter (Phase 9) ─→ usd-motion-plugins
 ```
 
 Every arrow points toward a more general contract. The PMX parser knows nothing
@@ -542,17 +596,22 @@ than forcing them into one library.
 
 | Repository | Owns |
 | --- | --- |
-| `usd-vrm-plugins` | VRM file semantics |
-| `usd-mmd-plugins` | PMX/MMD file semantics |
-| `usd-motion-plugins` | motion representation, retarget, recording, USD bridge |
-| `motion-connectors` | live external inputs |
+| `usd-vrm-plugins` | VRM and VRMA semantics |
+| `usd-mmd-plugins` | PMX and VMD semantics: MMD bones, morphs, IK and append evaluation, naming, and the MMD side of the humanoid map |
+| `usd-motion-plugins` | motion representation (`MotionPose`, `MotionClip`), humanoid joint semantics, sampling, retarget, recording, the `UsdSkelAnimation` bridge |
+| `motion-connectors` | live external inputs, normalized into `usd-motion-plugins`' types |
 | `hydra-toon` | toon rendering, consuming the USD contract — never PMX |
 | `usd-stage-runner` | the update and evaluation loop |
-| `usd-avatar-runtime` | OpenStrata composition and the cross-format avatar contract |
+| `usd-avatar-runtime` | OpenStrata composition, scheduling of evaluation, and the cross-format avatar contract |
 
-Cross-format avatar policy — canonical humanoid semantics, a runtime expression
-API, shared motion application, controller behavior, renderer selection — lives
-in `usd-avatar-runtime`. `usd-mmd-plugins` stays a format adapter.
+Dependencies point one way: `usd-mmd-plugins`, `usd-vrm-plugins` and
+`motion-connectors` depend on `usd-motion-plugins`, and `usd-avatar-runtime`
+on all of them; never the reverse.
+
+Cross-format avatar policy — a runtime expression API, controller behavior,
+renderer selection, when motion is applied — lives in `usd-avatar-runtime`;
+canonical humanoid joint semantics live in `usd-motion-plugins`.
+`usd-mmd-plugins` stays a format adapter.
 
 ## 19. Where this document departs from the implementation policy
 
@@ -568,3 +627,36 @@ the Phase that first authors it lands with a fixture, and binding from then.
 | §27 — `customLayerData.mmdSchemaContractVersion` | `/Asset.customData.mmd:stageContractVersion` | Layer metadata is not composed, so it is lost once the asset is referenced; `/Asset` customData travels with the reference, and matches `vrm:schemaContractVersion` ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)). | binding (Phase 0) |
 | §19 — `mmdModel` may or may not depend on `mmdPmx`; OpenUSD unspecified | `mmdModel → mmdPmx`; no OpenUSD in either | §26's `Canonicalize(const pmx::Document&)` settles the first; the second keeps canonical MMD usable by non-USD tools ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)). | binding (Phase 2) |
 | §15.2 — stable-ID precedence includes transliteration and recognized roles | Contract v1 uses the English name or an index fallback only | Both a transliteration table and a role table would become part of the stage ABI; they stay open until a consumer needs them ([TEXT_ENCODING_POLICY.md §6](TEXT_ENCODING_POLICY.md#6-stable-identifiers)). | binding (Phase 2) |
+
+## 20. Alignment with the usd-motion-plugins design policy
+
+On 2026-09-17 the ecosystem's motion architecture was settled in the
+`usd-motion-plugins` design policy: one vendor- and avatar-format-neutral
+motion core (`MotionPose`, `MotionStream`, `MotionClip`, humanoid joint
+semantics, sampling, retargeting, recording, the `UsdSkelAnimation` bridge),
+consumed by the format repositories and never depending on them. This
+repository follows it; "the motion policy §N" below cites that document.
+Where a contract here is more precise than the motion policy, the focused
+document records why.
+
+### 20.1 What this repository adopts
+
+| Motion policy | Here |
+| --- | --- |
+| §19.3, §39 (1–2) — format repositories depend on the core, never the reverse | [WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository); frozen decision 11 (§15) |
+| §26 — VMD is owned by `usd-mmd-plugins` | `motionVmd` stays, and is no longer described as extraction-ready (§9.1) |
+| §3.2, §38 — MMD IK conventions, bone flags, morph semantics stay in the format repository | `mmdControl` evaluates them here (§5.6); MOT-O3 superseded ([MOTION_CONTRACT.md §8.2](MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
+| §4.2, §11 — the format repository builds `SkeletonDescriptor` and `RetargetMap` | `mmdMotionAdapter` (§5.7), from a heuristic role table ([MOTION_CONTRACT.md §10.4](MOTION_CONTRACT.md#104-skeleton-and-humanoid-map)) |
+| §5.3 — format-specific channels travel namespaced, uninterpreted | morph weights as `mmd:<source name>` ([MOTION_CONTRACT.md §10.7](MOTION_CONTRACT.md#107-morphs-as-channels)) |
+| §9 — seconds, meters, Y-up, local rotations, explicit root motion | [MOTION_CONTRACT.md §10.5](MOTION_CONTRACT.md#105-time-coordinates-and-root-motion); root motion is MOT-O5 |
+| §17.3, §39 (11) — Unicode source names survive | the `SkeletonDescriptor` carries source names, as the stage does ([TEXT_ENCODING_POLICY.md §5](TEXT_ENCODING_POLICY.md#5-identity-versus-display)) |
+| §21 — OpenExec is an optional layer over plain libraries | `mmdControl` is plain; any OpenExec node wraps it outside this repository |
+| §37 Phase D — `usd-mmd-plugins` consumes the same core | Phase 9 (§14) |
+
+### 20.2 Where this repository is more precise
+
+| Motion policy | Here | Why | Status |
+| --- | --- | --- | --- |
+| §19.2 — the VMD decoder hands body transforms straight to `MotionClip` | Bone tracks are evaluated by `mmdControl` first, and only evaluated deformation-joint motion becomes a `MotionClip` | MMD motion drives a control rig: leg motion lives on IK bones, so raw bone transforms are not body motion ([MOTION_CONTRACT.md §8.2](MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) | accepted (Phase 9) |
+| §8 — the shared sampler's interpolation (linear, shortest-path) | VMD's Bézier curves are sampled here, at an explicit rate, before the clip exists | the curves are MMD's semantics; the shared sampler applies only between the evaluated samples ([MOTION_CONTRACT.md §10.3](MOTION_CONTRACT.md#103-evaluation)) | accepted (Phase 9) |
+| §38 — `usd-avatar-runtime` schedules and composes evaluation | the runtime schedules `mmdControl`, and owns no MMD evaluation of its own | the evaluator is an MMD semantic; one implementation serves offline tools and realtime callers alike | accepted (Phase 9) |

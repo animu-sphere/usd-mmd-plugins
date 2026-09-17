@@ -13,7 +13,9 @@ assets: PMX models, and VMD motion bound to them.
 > simulated — Y-up, in meters, Japanese names preserved beside ASCII
 > identifiers, and `mmd_inspect` reports what a file contains. A VMD is read
 > without a model and reported by `vmd_inspect`, and bound to a model by MMD's
-> own name rule; baking it into a `UsdSkelAnimation` is a runtime's work. The
+> own name rule. Next, Phase 9 evaluates MMD's IK and append transforms over
+> a bound motion and hands the result to the shared motion core of
+> `usd-motion-plugins`, which retargets and authors `UsdSkelAnimation`. The
 > [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the only page
 > that says what is implemented, and [the roadmap](docs/roadmap/current.md)
 > what comes next.
@@ -38,14 +40,21 @@ PMX bytes ─→ mmdPmx ─→ mmdModel ─→ usdMmdFileFormat ─→ USD stage
 
 ```text
 VMD bytes ─→ motionVmd ─→ mmdMotionBinding (+ mmdModel) ─→ a bound motion
-             syntax,      by source name, in the model's    ─→ a motion or avatar runtime
+             syntax,      by source name, in the model's
              tracks       basis
+          ─→ mmdControl ─→ mmdMotionAdapter ─→ MotionClip ─→ usd-motion-plugins
+             IK, append    (Phase 9, planned)                retarget, record, UsdSkelAnimation
 ```
 
 The importer authors data only. It never solves IK, evaluates bone constraints
 or morphs, simulates physics, performs toon shading, or plays motion — those
-belong to runtimes and renderers that read the stage. The same bytes always
+belong to runtimes and renderers that read the stage, and MMD's IK and append
+semantics to `mmdControl`, a library a runtime schedules. The same bytes always
 produce the same stage.
+
+Generic motion — poses, clips, retargeting, recording — belongs to
+`usd-motion-plugins`, which this repository depends on and never the reverse; VMD and everything
+that needs MMD to be understood stay here.
 
 ## Components
 
@@ -55,7 +64,7 @@ produce the same stage.
 | `mmdModel` | plain C++ library | canonical MMD semantics and the single source → USD coordinate conversion — no OpenUSD | identifiers, joint order, skinning, mesh, textures |
 | `usdMmdFileFormat` | OpenUSD `SdfFileFormat` bundle | `.pmx` → a USD stage | authors `geo`, `mtl`, `skel` ([guide](docs/guides/opening.md)) |
 | `mmd_inspect` | CLI | what a PMX contains, without USD | exists ([guide](docs/guides/inspecting.md)) |
-| `motionVmd` | plain C++ library | VMD syntax, CP932 names and tracks, extraction-ready for the shared motion architecture — no dependency at all | reads every section |
+| `motionVmd` | plain C++ library | VMD syntax, CP932 names and tracks — no dependency at all | reads every section |
 | `mmdMotionBinding` | plain C++ library | binds a VMD motion to a canonical model by source name, in the model's basis — no OpenUSD, nothing evaluated | exists |
 | `vmd_inspect` | CLI | what a VMD contains, without a model or USD | exists ([guide](docs/guides/inspecting.md)) |
 

@@ -145,11 +145,15 @@ fixtures `tests/fixtures/generate_vmd_fixtures.py` writes.
 
 | Capability | Status | Where it belongs |
 | --- | --- | --- |
-| IK solving, append-transform evaluation | unsupported by design | a runtime ([DESIGN_POLICY.md §2.2](../design/DESIGN_POLICY.md#22-the-static-importer-boundary)) |
+| IK solving, append-transform evaluation at import | unsupported by design | never the importer ([DESIGN_POLICY.md §2.2](../design/DESIGN_POLICY.md#22-the-static-importer-boundary)) |
+| IK solving, append-transform evaluation of a bound motion (`mmdControl`) | — (Phase 9) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
+| A VMD as a `MotionClip`, with a `SkeletonDescriptor` and humanoid `RetargetMap` (`mmdMotionAdapter`) | — (Phase 9; waits for `usd-motion-plugins`) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core) |
+| Retargeting, recording, `UsdSkelAnimation` authoring of motion | unsupported by design | `usd-motion-plugins` ([MOTION §10.6](../design/MOTION_CONTRACT.md#106-what-this-repository-does-not-do-with-the-result)) |
 | Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
 | Toon rendering | unsupported by design | `hydra-toon` |
 | Opening a `.vmd` as a stage (`usdVmdFileFormat`) | — (waits for MOT-O2) | [MOTION §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries) |
-| VMD playback / bake | unsupported by design | the Phase 8 motion or avatar runtime ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
+| VMD playback | unsupported by design | a runtime scheduling `mmdControl` (Phase 8) |
+| VMD bake | — (Phase 9) | `mmdControl` evaluates, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
 | PMD | — (not planned) | `mmdPmd`, if ever |
 | PMX / VMD writing | — (not planned) | [DESIGN_POLICY.md §2.4](../design/DESIGN_POLICY.md#24-reader-first) |
 

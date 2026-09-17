@@ -11,12 +11,12 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The current milestone — Phase 8, avatar runtime composition — and the part of it this repository owes or waits for. |
+| [current.md](current.md) | The remaining milestones — Phase 9, shared motion core adoption, then Phase 8, avatar runtime composition — and the part of each this repository owes or waits for. |
 | [../releases/](../releases/README.md) | What each released version shipped, and how a release is cut. |
 
 ## One sequence
 
-This repository has one phase sequence, `Phase 0`–`Phase 8`, defined in
+This repository has one phase sequence, `Phase 0`–`Phase 9`, defined in
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases). A phase is a
 unit of scope; a release is a scheduling decision. The mapping between them is
 made **only** in the table below.
@@ -37,6 +37,7 @@ in.** No other document states a version for a Phase.
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | avatar runtime composition | ⬜ | unassigned, and owned mostly outside this repository |
+| 9 | shared motion core adoption — runs before Phase 8 | ⬜ | unassigned; its adapter waits for `usd-motion-plugins`' first release |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -94,8 +95,16 @@ Where things stand, as of 2026-09-17:
   baked, and the reader and binding checked against three distributed motions
   and 25 models ([report](../reports/2026-09-17-phase7-local-motions.md)).
   `usdVmdFileFormat` was never part of it: it waits for MOT-O2.
-- Phase 8, avatar runtime composition, is the current milestone, and is owned
-  mostly outside this repository.
+- The motion architecture was settled on 2026-09-17 by the
+  `usd-motion-plugins` design policy, and the design documents were aligned
+  with it
+  ([DESIGN_POLICY.md §20](../design/DESIGN_POLICY.md#20-alignment-with-the-usd-motion-plugins-design-policy)):
+  VMD stays here, MMD IK and append evaluation moves here from the runtime
+  (MOT-O3 superseded), and Phase 9 was added for the hand-off to the shared
+  motion core.
+- Phase 9, shared motion core adoption, is the current milestone; Phase 8,
+  avatar runtime composition, follows it and is owned mostly outside this
+  repository.
 
 ## Open decisions
 
@@ -113,12 +122,16 @@ schedules them.
 | STAGE-O6 | Rig and physics prim shapes | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | resolved in Phases 5 and 6 |
 | PMX-O1 | Euler order of rigid-body and joint rotations | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | resolved in Phase 6 |
 | MOT-O1 | Home of the shared basis-conversion functions | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7 |
+| MOT-O7 | Morphs evaluated into the pose versus carried as channels | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdControl` (Phase 9) |
+| MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter` (Phase 9) |
+| MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter` (Phase 9) |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
-| MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7 |
+| MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
 | PMX-O4 | Morph category from display frames | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
 | MAT-O4 | How `hydra-toon` reads MMD semantics | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | `hydra-toon` |
 | MOT-O4 | Camera and light tracks | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer |
+| MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
 
 ## Quality bar (applies to every Phase)
 

@@ -19,7 +19,7 @@ Phase that creates it lands (Phases are
 records that. The two Phase 9 identities, `mmdControl` and `mmdMotionAdapter`,
 and the one edge out of this repository into `usd-motion-plugins` (§2.4), were
 reserved on 2026-09-17, when the motion architecture was settled
-([DESIGN_POLICY.md §20](../design/DESIGN_POLICY.md)).
+([DESIGN_POLICY.md §20](../design/DESIGN_POLICY.md#20-alignment-with-the-usd-motion-plugins-design-policy)).
 
 The shape follows `usd-vrm-plugins`' workspace contract on purpose — the same
 plugin/library split, the same manifests, the same two build modes — so that a
@@ -60,8 +60,8 @@ created ahead of that.
 | --- | --- | --- | --- | --- |
 | `mmdMaterial` | plain static CMake library | `libs/mmdMaterial/` | Canonical material semantics, extracted from `mmdModel` | material translation outgrows `mmdModel`, or a second consumer needs it alone ([DESIGN_POLICY.md §5.3](../design/DESIGN_POLICY.md#53-mmdmaterial--deferred)) |
 | `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | Narrow applied API schemas | an API passes the admission test ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)) |
-| `mmdControl` | plain static CMake library | `libs/mmdControl/` | MMD control evaluation: samples a bound motion's Bézier curves at an explicit time, and evaluates IK chains, append transforms and bone morphs over `mmdModel`'s control semantics into deformation-joint local transforms. No OpenUSD, no `usd-motion-plugins`. | Phase 9 begins ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md)) |
-| `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | The one bridge into `usd-motion-plugins`: a `SkeletonDescriptor` and humanoid `RetargetMap` from a canonical model, and evaluated MMD motion as a `MotionClip`. Owns no generic algorithm. | Phase 9, once `usd-motion-plugins` publishes an installable `motion-core` package ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md)) |
+| `mmdControl` | plain static CMake library | `libs/mmdControl/` | MMD control evaluation: samples a bound motion's Bézier curves at an explicit time, and evaluates IK chains, append transforms and bone morphs over `mmdModel`'s control semantics into deformation-joint local transforms. No OpenUSD, no `usd-motion-plugins`. | Phase 9 begins ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)) |
+| `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | The one bridge into `usd-motion-plugins`: a `SkeletonDescriptor` and humanoid `RetargetMap` from a canonical model, and evaluated MMD motion as a `MotionClip`. Owns no generic algorithm. | Phase 9, once `usd-motion-plugins` publishes an installable `motion-core` package ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)) |
 | `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | MOT-O2 is resolved against `usd-motion-plugins`' standalone motion stage (`/Animation`) ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)) |
 | `mmd_convert` | CLI executable | `tools/mmdConvert/` | PMX → `.usda`/`.usdc` on disk | `usdcat` over the file format proves insufficient |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |

@@ -15,6 +15,20 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ## [Unreleased]
 
+### Changed
+
+- **The design documents follow the `usd-motion-plugins` design policy.**
+  VMD stays in this repository and `motionVmd` is no longer described as
+  extraction-ready; MMD IK and append evaluation moves from the avatar
+  runtime to a planned plain library here, `mmdControl`, superseding MOT-O3;
+  a planned `mmdMotionAdapter` is the one component that depends on
+  `usd-motion-plugins`, building a `SkeletonDescriptor`, a humanoid
+  `RetargetMap` and a `MotionClip`. Phase 9, shared motion core adoption, is
+  added and runs before Phase 8; MOT-O5 to MOT-O8 are opened. Documentation
+  only: no component, manifest or authored stage changes
+  (`DESIGN_POLICY.md` §5.6, §5.7, §9, §14, §20; `MOTION_CONTRACT.md` §8.2,
+  §10; `WORKSPACE.md` §1.2, §2.4, §7; `DEPENDENCIES.md` §6).
+
 ## [0.1.0] - 2026-09-17
 
 The first release: `.pmx` opens as the canonical stage, every PMX 2.0 and 2.1

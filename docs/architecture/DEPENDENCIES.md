@@ -110,4 +110,4 @@ no package yet.
 motion in one repository so that VRM, MMD and live sources share one
 retarget and one USD mapping; a private MMD copy would be the permanent
 duplication that policy forbids (its §37). What stays here is what needs MMD
-to be understood ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md)).
+to be understood ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
