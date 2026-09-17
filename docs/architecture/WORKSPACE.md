@@ -150,7 +150,7 @@ root build before OpenUSD is resolved, as `mmdPmx` is.
 ```text
 usd-mmd-plugins/
 ├─ .github/workflows/          ost-source-ci.yml (generated from openstrata.ci.yaml); hand-written:
-│                              docs-check.yml, parser-sanitizers.yml
+│                              docs-check.yml, parser-sanitizers.yml, release.yml
 ├─ cmake/                      UsdMmdOpenUsd.cmake (the OpenUSD pin), UsdMmdTargets.cmake (per-target
 │                              compile flags, the UTF-8 code-page manifest helper), utf8-code-page.manifest
 ├─ docs/                       see docs/README.md
@@ -176,7 +176,8 @@ usd-mmd-plugins/
 │  │                           generate_vmd_fixtures.py, of every VMD byte (written, never committed)
 │  ├─ integration/             stage-open and Unicode-path tests
 │  └─ installed_consumer/      a project consumed from outside the tree
-├─ scripts/                    check_library_boundaries.py, check_installed_consumer.py, check_docs.py
+├─ scripts/                    check_library_boundaries.py, check_installed_consumer.py, check_docs.py;
+│                              make_release_notes.py, stage_release.py, product_smoke.py (release.yml)
 ├─ CMakeLists.txt  CMakePresets.json
 ├─ VERSION  CHANGELOG.md  LICENSE  THIRD_PARTY_NOTICES.md  README.md
 ├─ openstrata.toml  openstrata.ci.yaml

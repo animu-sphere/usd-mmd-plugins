@@ -116,6 +116,22 @@ its `buildInfo.json`, and `ost plugin package` then refuses with
 `PLUGIN_PACKAGE_OUTPUT_MISMATCH`, because the file no longer matches the last
 managed bundle build.
 
+The product a release ships — the bundle and both tools in one archive — as
+[release.yml](../../.github/workflows/release.yml) builds it, root tree first
+and bundle second for the same reason (run on 2026-09-17):
+
+```powershell
+ost build
+ost plugin build plugins/usdMmdFileFormat
+ost plugin package --workspace --product
+ost plugin product install --prefix <new directory> dist\products\usd-mmd-plugins\<version>\<target>
+python scripts\product_smoke.py --product dist\products\usd-mmd-plugins\<version>\<target>
+```
+
+`product_smoke.py` installs the product into a scratch prefix itself, runs
+both tools from it, and opens a fixture through the installed plugin with
+nothing from the build tree on the discovery path.
+
 Each library on its own, including a consumer `ost` generates from the
 [package contract](../architecture/PACKAGE_CONTRACT.md) — for `mmdModel`,
 `ost` builds and installs `mmdPmx` first, as its manifest requires:
