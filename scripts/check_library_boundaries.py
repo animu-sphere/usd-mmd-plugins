@@ -8,7 +8,8 @@ link-line and include gates for one library under libs/ (the graph gate is
 
   * the library's sources or CMakeLists.txt reach OpenUSD, a physics SDK, or
     plugin registration (`#include <pxr/...>`, `find_package(pxr ...)`,
-    `TF_REGISTRY_FUNCTION`, ...);
+    `TF_REGISTRY_FUNCTION`, ...), or include a header of a component
+    WORKSPACE.md §2.2 forbids it (`--forbid-include mmdPmx/`);
   * the library carries a plugin manifest or a plugInfo.json;
   * the library target's link line -- its LINK_LIBRARIES and
     INTERFACE_LINK_LIBRARIES, as CMake resolved them -- names anything but the
@@ -21,7 +22,7 @@ link-line and include gates for one library under libs/ (the graph gate is
 Usage:
   check_library_boundaries.py --name mmdPmx --source libs/mmdPmx
       --link-file <build>/mmdPmx_link.txt --binary <build>/mmdPmx_tests.exe
-      [--allow mmdPmx::mmdPmx ...]
+      [--allow mmdPmx::mmdPmx ...] [--forbid-include mmdModel/ ...]
 """
 
 from __future__ import annotations
@@ -48,6 +49,14 @@ FORBIDDEN_FILES = {"openstrata.plugin.yaml", "pluginfo.json", "pluginfo.json.in"
 USD_LIBRARY = re.compile(r"\b(?:lib)?usd_[A-Za-z0-9]+\.(?:dll|so|dylib)\b",
                          re.IGNORECASE)
 SOURCE_SUFFIXES = {".h", ".hpp", ".hh", ".inl", ".c", ".cc", ".cpp", ".cxx"}
+
+
+def _forbidden_include(prefixes: list[str]) -> re.Pattern | None:
+    """`#include <prefix...>` or `#include "prefix..."` for any prefix."""
+    if not prefixes:
+        return None
+    return re.compile(r"#\s*include\s*[<\"](?:" +
+                      "|".join(re.escape(p) for p in prefixes) + ")")
 
 
 def _find_dumpbin() -> str | None:
@@ -116,12 +125,16 @@ def check(args: argparse.Namespace) -> list[str]:
         if path.is_file() and path.name.lower() in FORBIDDEN_FILES:
             errors.append(f"plugin registration file is forbidden: {path}")
 
+    sibling = _forbidden_include(args.forbid_include)
     for area in (source / "include", source / "src"):
         for path in area.rglob("*"):
             if path.is_file() and path.suffix.lower() in SOURCE_SUFFIXES:
                 text = path.read_text(encoding="utf-8")
                 if FORBIDDEN_SOURCE.search(text):
                     errors.append(f"OpenUSD, physics or plugin API: {path}")
+                if sibling and sibling.search(text):
+                    errors.append(f"{args.name} includes a component WORKSPACE.md "
+                                  f"§2.2 forbids it: {path}")
 
     for cmake in [source / "CMakeLists.txt", *source.rglob("*.cmake"),
                   *source.rglob("*.cmake.in")]:
@@ -162,6 +175,14 @@ def selftest() -> int:
            "an angle-bracket pxr include is not caught")
     expect(not FORBIDDEN_SOURCE.search('#include "mmdPmx/Reader.h"'),
            "an own include is rejected")
+    sibling = _forbidden_include(["mmdPmx/", "mmdModel/"])
+    expect(bool(sibling.search("#include <mmdModel/Basis.h>")),
+           "a forbidden sibling include is not caught")
+    expect(bool(sibling.search('#include "mmdPmx/Diagnostic.h"')),
+           "a quoted forbidden sibling include is not caught")
+    expect(not sibling.search('#include "motionVmd/Reader.h"'),
+           "an allowed include is rejected as a sibling")
+    expect(_forbidden_include([]) is None, "no prefix still forbids something")
     expect(bool(FORBIDDEN_CMAKE.search("find_package(pxr REQUIRED CONFIG)")),
            "find_package(pxr) is not caught")
     for name in ("usd_tf.dll", "libusd_sdf.so", "libusd_usd.dylib",
@@ -201,6 +222,8 @@ def main() -> int:
     parser.add_argument("--binary", required=True, type=pathlib.Path)
     parser.add_argument("--allow", action="append", default=[],
                         help="a link item WORKSPACE.md §2.1 permits")
+    parser.add_argument("--forbid-include", action="append", default=[],
+                        help="a header prefix WORKSPACE.md §2.2 forbids, e.g. mmdPmx/")
     args = parser.parse_args()
 
     errors = check(args)

@@ -1,47 +1,45 @@
-# Phase 7 — VMD
+# Phase 8 — avatar runtime composition
 
 Status: ⬜ not started.
 
-Phase 7 reads VMD motion. `libs/motionVmd` is a plain, extraction-ready
-library — VMD syntax, CP932 decoding, the motion source representation, no
-OpenUSD and no dependency on the model libraries — integrated with the shared
-motion architecture, as
-[MOTION_CONTRACT.md](../design/MOTION_CONTRACT.md) describes. A `.vmd` opens
-directly as a stage only once that contract says what such a stage is.
+Phase 8 composes this repository with `usd-vrm-plugins`, `usd-motion-plugins`,
+`motion-connectors`, `hydra-toon` and `usd-stage-runner` through OpenStrata,
+under `usd-avatar-runtime`
+([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)). Most of it is
+owned outside this repository: the runtime, not this repository, is the avatar
+execution environment. What is listed here is only the part this repository
+owes, or waits for.
 
 ## Outcome
 
 ```text
-motionVmd::Read("motion.vmd")
-    → bone, morph, camera, light, self-shadow and IK/visibility tracks,
-      names decoded from CP932 with their raw bytes kept
-vmd_inspect motion.vmd
-    → what the file holds
+usd-avatar-runtime
+    → opens a .pmx through usdMmdFileFormat's installed package
+    → reads a .vmd through motionVmd and binds it through mmdMotionBinding
+    → evaluates MMD IK and append transforms over /Asset/rig, and bakes
+      (MOT-O3: the runtime's, not this repository's)
 ```
 
 ## What remains
 
-- ⬜ Decide where the shared basis-conversion functions live, so `mmdModel`
-  and `motionVmd` share them without depending on each other — MOT-O1, in
-  [MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions).
-- ⬜ Decide which runtime owns MMD IK and append evaluation for baking —
-  MOT-O3, in the same section.
-- ⬜ Create `libs/motionVmd`: every VMD section under the PMX reading rules,
-  CP932 through a table the project owns, `MMD_TEXT_TRUNCATED_CP932` and
-  `MMD_MOTION_DUPLICATE_KEYFRAME`, with synthetic fixtures and a fuzzing lane
-  like the parser's.
-- ⬜ Create `tools/vmdInspect`.
-- ⬜ Binding a VMD to a PMX model by name, as a separate operation
-  ([MOTION_CONTRACT.md §8](../design/MOTION_CONTRACT.md#8-binding-a-vmd-to-a-pmx-model)).
-- ⬜ `usdVmdFileFormat` waits for MOT-O2, the shared motion contract's answer
-  to what a directly opened `.vmd` stage looks like.
+- ⬜ Decide which version carries the first substantial release: every Phase
+  [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
+  names has landed ([README.md](README.md#status-at-a-glance)).
+- ⬜ Consume the packages from `usd-avatar-runtime` — `usdMmdFileFormat`, and
+  `motionVmd` and `mmdMotionBinding` for motion — and change a contract here
+  only if that consumer shows one is wrong
+  ([PACKAGE_CONTRACT.md](../architecture/PACKAGE_CONTRACT.md)).
+- ⛔ `usdVmdFileFormat` waits for MOT-O2, the shared motion contract's answer
+  to what a directly opened `.vmd` stage looks like
+  ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)).
+  When it is answered, the basis functions a model-free `.vmd` stage needs are
+  extracted from `mmdModel` with it (MOT-O1).
+- ⛔ `motionVmd` moves to `usd-motion-plugins`, or depends on its contract,
+  once that repository publishes an installable one
+  ([MOTION_CONTRACT.md §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries)).
 
 ## Completion criteria
 
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)'s acceptance for
-Phase 7: per [MOTION_CONTRACT.md](../design/MOTION_CONTRACT.md).
-
-Phases 0–6 are done, so every Phase
-[DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
-names for the first substantial release has landed; Phase 7 is not part of
-it.
+Phase 8: the runtime, not this repository, is the avatar execution
+environment.

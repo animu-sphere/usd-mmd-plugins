@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The current milestone — Phase 7, VMD — and what remains of it. |
+| [current.md](current.md) | The current milestone — Phase 8, avatar runtime composition — and the part of it this repository owes or waits for. |
 
 ## One sequence
 
@@ -34,13 +34,13 @@ in.** No other document states a version for a Phase.
 | 4 | morphs | ✅ done | unassigned |
 | 5 | control semantics | ✅ done | unassigned |
 | 6 | physics preservation | ✅ done | unassigned |
-| 7 | VMD | ⬜ | unassigned |
+| 7 | VMD | ✅ done | unassigned |
 | 8 | avatar runtime composition | ⬜ | unassigned, and owned mostly outside this repository |
 
 No release number is assigned yet. The first release that claims PMX import is
 the one that meets
 [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
-— Phases 0–4 plus the preservation parts of 5 and 6 it names. Phases 0–6 are
+— Phases 0–4 plus the preservation parts of 5 and 6 it names. Phases 0–7 are
 done, so every Phase that definition names has landed; its checklist is met
 in the tree, and which version carries it is decided here. Whether earlier
 Phases get releases of their own is also decided here, and both questions are
@@ -87,7 +87,15 @@ Where things stand, as of 2026-09-17:
   consumer able to recover every body and joint from the stage alone —
   asserted on every fixture and on sixteen distributed models
   ([report](../reports/2026-09-17-phase6-local-models.md)).
-- Phase 7, VMD, is the current milestone, and nothing of it is implemented.
+- Phase 7, VMD, is done: `motionVmd` reads every section of a VMD without a
+  model, through a CP932 table the project generates, `vmd_inspect` reports
+  on it, and `mmdMotionBinding` binds a motion to a canonical model by MMD's
+  byte rule, in the model's basis — with MOT-O1 and MOT-O3 resolved, nothing
+  baked, and the reader and binding checked against three distributed motions
+  and 25 models ([report](../reports/2026-09-17-phase7-local-motions.md)).
+  `usdVmdFileFormat` was never part of it: it waits for MOT-O2.
+- Phase 8, avatar runtime composition, is the current milestone, and is owned
+  mostly outside this repository.
 
 ## Open decisions
 
@@ -104,9 +112,9 @@ schedules them.
 | STAGE-O4 | Encoding of non-vertex morph semantics | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | resolved in Phase 4 |
 | STAGE-O6 | Rig and physics prim shapes | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | resolved in Phases 5 and 6 |
 | PMX-O1 | Euler order of rigid-body and joint rotations | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | resolved in Phase 6 |
-| MOT-O1 | Home of the shared basis-conversion functions | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | Phase 7 |
-| MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | Phase 7 |
-| MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | Phase 7 |
+| MOT-O1 | Home of the shared basis-conversion functions | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7 |
+| MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
+| MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7 |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
 | PMX-O4 | Morph category from display frames | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
 | MAT-O4 | How `hydra-toon` reads MMD semantics | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | `hydra-toon` |

@@ -4,8 +4,9 @@
 > say, with fixtures, and `mmd_inspect` and the importer read paths as §4
 > says. §5–§7 since Phase 2: the canonical model forms identifiers and
 > normalizes texture paths as they say, and the stage tests prove Japanese
-> names survive and Japanese texture filenames resolve. §9 is PMD's and VMD's,
-> neither of which exists yet. It fixes how PMX text is decoded, how a source
+> names survive and Japanese texture filenames resolve. §9 binds VMD since
+> Phase 7, whose names `motionVmd` decodes through the project's CP932 table;
+> no PMD reader exists. It fixes how PMX text is decoded, how a source
 > name relates to a USD identifier, how collisions are resolved, and how a
 > texture string becomes an `SdfAssetPath`. Japanese names and Japanese
 > filenames are the ordinary case here, not an edge case. Section numbers are
@@ -70,8 +71,13 @@ filesystem's encoding. Concretely:
   plugin runs inside a host process whose code page is not the project's;
   `usd-vrm-plugins` measured that a `.vrm` under a non-ASCII directory could not
   be opened from any host until its importer read through `Ar`.
-- Executables (`mmd_inspect`, later tools) embed a UTF-8 `activeCodePage`
+- Executables (`mmd_inspect`, `vmd_inspect`) embed a UTF-8 `activeCodePage`
   manifest on Windows.
+- A diagnostic message that quotes text from outside the file — a path, which
+  on POSIX is bytes and need not be UTF-8, or an OS error message — has every
+  byte that starts no well-formed UTF-8 sequence replaced by U+FFFD, so a
+  tool's report, JSON included, is always valid UTF-8. That is message text,
+  never data: text read from a file is still rejected, never repaired (§3).
 - A Unicode-path test runs the importer, from a Python host, and every tool
   under a directory whose name no single ANSI code page can spell (for example
   `ユニコード-é`), and compares each result with an ASCII-directory twin. The

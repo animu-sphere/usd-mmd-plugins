@@ -22,3 +22,13 @@ target_link_libraries(pmx_header_probe PRIVATE mmdModel::mmdModel)
 if(MSVC)
     target_compile_options(pmx_header_probe PRIVATE /utf-8)
 endif()
+
+# mmdMotionBinding alone: its package config must find both of its edges,
+# mmdModel and motionVmd, by itself.
+find_package(mmdMotionBinding 0.0 CONFIG REQUIRED)
+
+add_executable(vmd_probe vmd_probe.cpp)
+target_link_libraries(vmd_probe PRIVATE mmdMotionBinding::mmdMotionBinding)
+if(MSVC)
+    target_compile_options(vmd_probe PRIVATE /utf-8)
+endif()

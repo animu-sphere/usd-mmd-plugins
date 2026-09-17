@@ -1259,8 +1259,9 @@ private:
 std::string
 PathText(const std::filesystem::path& path)
 {
+    // On POSIX a path is bytes, and need not be UTF-8.
     const std::u8string text = path.u8string();
-    return std::string(text.begin(), text.end());
+    return detail::ReplaceInvalidUtf8(std::string(text.begin(), text.end()));
 }
 
 } // namespace
@@ -1276,7 +1277,8 @@ ReadFile(const std::filesystem::path& path)
 {
     const auto unreadable = [&](const std::string& why) {
         return Result<Document>::Failure(
-            MakeDiagnostic(codes::PmxFileUnreadable, "'" + PathText(path) + "' " + why));
+            MakeDiagnostic(codes::PmxFileUnreadable,
+                           "'" + PathText(path) + "' " + detail::ReplaceInvalidUtf8(why)));
     };
 
     std::error_code error;

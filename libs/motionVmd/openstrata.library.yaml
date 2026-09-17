@@ -1,0 +1,31 @@
+# OpenStrata plain-library descriptor.
+#
+# motionVmd reads VMD motion: syntax, CP932 names, and the motion source
+# representation (docs/design/MOTION_CONTRACT.md §2). A plain static CMake
+# library, NOT a plugin bundle, with no dependency at all: it is
+# extraction-ready, and may not reach OpenUSD, mmdPmx or mmdModel
+# (docs/architecture/WORKSPACE.md §1, §2).
+schema: openstrata.library/v1alpha1
+library:
+  id: motionVmd
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.0.0
+cmake:
+  # The find_package() name and the imported target consumers link against.
+  package: motionVmd
+  target: motionVmd::motionVmd
+# Built and installed on its own, and shipped inside the product as a
+# dependency of vmd_inspect.
+package:
+  standalone: true
+  aggregate_member: true
+# What the installed package promises a consumer (docs/architecture/
+# PACKAGE_CONTRACT.md). `ost library verify-consumer` builds a consumer that
+# includes the header and names the symbol, against the installed prefix only.
+package_contract:
+  package_name: motionVmd
+  exported_targets: [motionVmd::motionVmd]
+  public_headers: [include/motionVmd/**]
+  consumer:
+    include: motionVmd/Reader.h
+    symbol: motionVmd::Read

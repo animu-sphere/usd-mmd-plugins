@@ -7,8 +7,9 @@ installed-consumer lane
 ([WORKSPACE.md §6](WORKSPACE.md#6-tests)) builds against a clean prefix to
 keep it true.
 
-Status (2026-09-15): the two Phase 0 packages exist, `mmd_inspect` installs
-with the workspace since Phase 1, and `mmdModel` since Phase 2. Identities and
+Status (2026-09-17): the two Phase 0 packages exist, `mmd_inspect` installs
+with the workspace since Phase 1, `mmdModel` since Phase 2, and `motionVmd`,
+`mmdMotionBinding` and `vmd_inspect` since Phase 7. Identities and
 dependency edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not
 restate them.
 
@@ -50,6 +51,44 @@ prefix holding `mmdModel` and `mmdPmx` alone. The installed-consumer lane's
 C++ consumer finds `mmdModel` only, and reads and canonicalizes every fixture
 through it.
 
+## `motionVmd`
+
+| | |
+| --- | --- |
+| `find_package` | `find_package(motionVmd 0.0 CONFIG REQUIRED)` |
+| Imported target | `motionVmd::motionVmd` (static library) |
+| Headers | `include/motionVmd/` — `Reader.h`, `Document.h`, `Motion.h`, `Cp932.h`, `Diagnostic.h`, `Result.h`, `Codes.h` |
+| Required packages | none: the package's config names no `find_dependency` |
+| Language | C++20 (`cxx_std_20` is a usage requirement) |
+| Version compatibility | `SameMinorVersion`, as `mmdPmx` |
+| Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/motionVmd/`, and `include/motionVmd/` |
+
+The same surface is declared as `package_contract` in
+[libs/motionVmd/openstrata.library.yaml](../../libs/motionVmd/openstrata.library.yaml),
+and `ost library verify-consumer libs/motionVmd` builds a consumer that
+includes `motionVmd/Reader.h` and names `motionVmd::Read` against the
+installed prefix alone.
+
+## `mmdMotionBinding`
+
+| | |
+| --- | --- |
+| `find_package` | `find_package(mmdMotionBinding 0.0 CONFIG REQUIRED)` |
+| Imported target | `mmdMotionBinding::mmdMotionBinding` (static library), which links `mmdModel::mmdModel` and `motionVmd::motionVmd` publicly |
+| Headers | `include/mmdMotionBinding/` — `Bind.h`, `Codes.h` |
+| Required packages | `mmdModel` and `motionVmd`, found by the package's config (`find_dependency`) unless the consumer already has the targets; `mmdModel`'s finds `mmdPmx` |
+| Language | C++20 (`cxx_std_20` is a usage requirement) |
+| Version compatibility | `SameMinorVersion`, as `mmdPmx` |
+| Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdMotionBinding/`, and `include/mmdMotionBinding/` |
+
+Nothing in the product links it: it is a package for a motion or avatar
+runtime, so its manifest marks it `aggregate_member: false`. `ost library
+verify-consumer libs/mmdMotionBinding` builds a consumer that includes
+`mmdMotionBinding/Bind.h` and names `mmd::binding::Bind` against a prefix
+holding its closure of four packages alone. The installed-consumer lane's
+`vmd_probe` finds `mmdMotionBinding` only, reads every VMD fixture through it
+and binds one to a PMX fixture.
+
 ## `usdMmdFileFormat`
 
 A plugin bundle, found by OpenUSD's plug registry rather than by CMake. It
@@ -81,3 +120,14 @@ On Windows it embeds a UTF-8 `activeCodePage` manifest, so a path given on
 its command line may name any directory
 ([TEXT_ENCODING_POLICY.md §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere)).
 The installed-consumer lane runs it from the prefix over every fixture.
+
+## `vmd_inspect`
+
+An executable, found on `PATH` rather than by CMake, like `mmd_inspect`.
+
+| Installed path | Content |
+| --- | --- |
+| `${CMAKE_INSTALL_BINDIR}/vmd_inspect` (`.exe` on Windows) | the tool; `motionVmd` is linked in statically, so it needs no other file, no model library and no OpenUSD at run time |
+
+It embeds the same UTF-8 `activeCodePage` manifest on Windows. The
+installed-consumer lane runs it from the prefix over every VMD fixture.

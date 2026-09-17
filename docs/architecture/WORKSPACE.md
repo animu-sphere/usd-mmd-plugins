@@ -7,12 +7,14 @@ and the invariants every change preserves. **A structural change that
 contradicts this document changes this document first, in its own pull
 request** — never through a README, a roadmap entry, or code.
 
-Status (2026-09-15): contract adopted. Phases 0–2 exist: `mmdPmx` (the PMX
-structural parser: every table of 2.0 and 2.1), `mmdModel` (the canonical
-model), `mmd_inspect` (which reports on a PMX through the parser), and
-`usdMmdFileFormat` (which registers `.pmx` and authors the canonical stage),
-built by `ost` and by plain CMake. Every other identity below is *reserved*
-until the Phase that creates it lands (Phases are
+Status (2026-09-17): contract adopted. `mmdPmx` (the PMX structural parser:
+every table of 2.0 and 2.1), `mmdModel` (the canonical model), `mmd_inspect`
+(which reports on a PMX through the parser) and `usdMmdFileFormat` (which
+registers `.pmx` and authors the canonical stage) exist since Phases 0–2;
+`motionVmd` (the VMD reader), `mmdMotionBinding` (which binds a motion to a
+model) and `vmd_inspect` (which reports on a VMD) since Phase 7. All are built
+by `ost` and by plain CMake. Every other identity below is *reserved* until the
+Phase that creates it lands (Phases are
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)), and its row then
 records that.
 
@@ -36,6 +38,15 @@ The smallest tree that delivers the first substantial release
 | `usdMmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdMmdFileFormat/` | `openstrata.plugin.yaml` | `.pmx` `SdfFileFormat`: registration, read path, USD authoring, source → USD diagnostics. | Phase 0 | exists — the canonical stage |
 | `mmd_inspect` | CLI executable | `tools/mmdInspect/` | `openstrata.tool.yaml` | Reports what a PMX contains, without USD. | Phase 1 | exists |
 
+And the motion components Phase 7 created
+([MOTION_CONTRACT.md §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries)):
+
+| Identity | Kind | Directory | Manifest | Role | Created in | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `motionVmd` | plain static CMake library | `libs/motionVmd/` | `openstrata.library.yaml` | VMD syntax, CP932 decoding, the motion source representation. Extraction-ready: no dependency at all. | Phase 7 | exists — every section |
+| `mmdMotionBinding` | plain static CMake library | `libs/mmdMotionBinding/` | `openstrata.library.yaml` | Binds a `motionVmd` motion to an `mmdModel` model by source name, in the model's basis. No OpenUSD, no evaluation. | Phase 7 | exists |
+| `vmd_inspect` | CLI executable | `tools/vmdInspect/` | `openstrata.tool.yaml` | Reports what a VMD contains, without a model or USD. | Phase 7 | exists |
+
 ### 1.2 Later, only when their responsibility is real
 
 Named now so the boundaries are designed for them; created only when the
@@ -46,9 +57,7 @@ created ahead of that.
 | --- | --- | --- | --- | --- |
 | `mmdMaterial` | plain static CMake library | `libs/mmdMaterial/` | Canonical material semantics, extracted from `mmdModel` | material translation outgrows `mmdModel`, or a second consumer needs it alone ([DESIGN_POLICY.md §5.3](../design/DESIGN_POLICY.md#53-mmdmaterial--deferred)) |
 | `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | Narrow applied API schemas | an API passes the admission test ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)) |
-| `motionVmd` | plain static CMake library | `libs/motionVmd/` | VMD syntax, CP932 decoding, motion source representation; extraction-ready | Phase 7 ([MOTION_CONTRACT.md §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries)) |
 | `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | the shared motion contract defines a directly opened motion stage |
-| `vmd_inspect` | CLI executable | `tools/vmdInspect/` | Reports what a VMD contains | with `motionVmd` |
 | `mmd_convert` | CLI executable | `tools/mmdConvert/` | PMX → `.usda`/`.usdc` on disk | `usdcat` over the file format proves insufficient |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |
 
@@ -66,11 +75,14 @@ mmdModel ────────────→ mmdPmx                         
 usdMmdFileFormat ────→ mmdModel, mmdPmx, OpenUSD
                        mmdSchema                       (only if it exists)
 mmd_inspect ─────────→ mmdPmx                          (no OpenUSD)
+motionVmd ───────────→ nothing in this repository; later the shared motion
+                       contract only                   (no OpenUSD)
+mmdMotionBinding ────→ mmdModel, motionVmd             (no OpenUSD)
+vmd_inspect ─────────→ motionVmd                       (no OpenUSD)
 
                        (later)
 mmdMaterial ─────────→ nothing in this repository; mmdModel → mmdMaterial
 mmdSchema ───────────→ OpenUSD only
-motionVmd ───────────→ the shared motion contract only (no OpenUSD)
 usdVmdFileFormat ────→ motionVmd, OpenUSD
 mmd_convert ─────────→ usdMmdFileFormat's public entry point, OpenUSD
 ```
@@ -89,7 +101,9 @@ USD in the process
 | `mmdPmx → OpenUSD` | the parser exposes source facts, not USD policy |
 | `mmdPmx → mmdModel`, `mmdPmx → usdMmdFileFormat` | syntax never knows its consumers |
 | `mmdModel → OpenUSD`, `mmdModel → Hydra` | canonical semantics are renderer- and USD-independent |
-| `motionVmd → usdMmdFileFormat`, `motionVmd → mmdModel`, `motionVmd → mmdPmx` | motion is extraction-ready and never needs a model to parse |
+| `motionVmd → usdMmdFileFormat`, `motionVmd → mmdModel`, `motionVmd → mmdPmx`, `vmd_inspect → mmdModel`, `vmd_inspect → mmdPmx` | motion is extraction-ready and never needs a model to parse |
+| `mmdModel → motionVmd`, `mmdModel → mmdMotionBinding` | a model never knows the motions bound to it; binding is its own step ([MOTION_CONTRACT.md §8](../design/MOTION_CONTRACT.md#8-binding-a-vmd-to-a-pmx-model)) |
+| `mmdMotionBinding → OpenUSD` | binding produces data a runtime consumes, not a stage |
 | `usdMmdFileFormat → hydra-toon` | the renderer consumes the stage, never the reverse |
 | `usdMmdFileFormat → usd-stage-runner` | the importer has no update loop |
 | any component → a physics engine | nothing is simulated ([DESIGN_POLICY.md §8](../design/DESIGN_POLICY.md#8-physics-policy)) |
@@ -123,8 +137,13 @@ so a forbidden edge shows up in what links it); and
 must. The script takes the component's name and allowed edges as arguments,
 so other components reuse it rather than copying it (§7): `mmdModel_boundaries`
 runs it over `libs/mmdModel` and `mmd_inspect_boundaries` over
-`tools/mmdInspect`, each with `mmdPmx::mmdPmx` as the one allowed edge. Both
-are added to the root build before OpenUSD is resolved, as `mmdPmx` is.
+`tools/mmdInspect`, each with `mmdPmx::mmdPmx` as the one allowed edge;
+`motionVmd_boundaries` over `libs/motionVmd` with none, and
+`vmd_inspect_boundaries` over `tools/vmdInspect` with `motionVmd::motionVmd`,
+both also refusing any `mmdPmx/` or `mmdModel/` include (`--forbid-include`);
+and `mmdMotionBinding_boundaries` over `libs/mmdMotionBinding` with
+`mmdModel::mmdModel` and `motionVmd::motionVmd`. All of them are added to the
+root build before OpenUSD is resolved, as `mmdPmx` is.
 
 ## 3. Directory layout
 
@@ -137,7 +156,10 @@ usd-mmd-plugins/
 ├─ docs/                       see docs/README.md
 ├─ libs/
 │  ├─ mmdPmx/                  include/ src/ tests/ fuzz/ cmake/ CMakeLists.txt openstrata.library.yaml
-│  └─ mmdModel/                include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
+│  ├─ mmdModel/                include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
+│  ├─ motionVmd/               include/ src/ tests/ fuzz/ cmake/ CMakeLists.txt openstrata.library.yaml;
+│  │                           tools/generate_cp932_table.py, the one author of src/Cp932Table.inc
+│  └─ mmdMotionBinding/        include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
 ├─ plugins/
 │  └─ usdMmdFileFormat/
 │     ├─ plugin/resources/usdMmdFileFormat/   plugInfo.json.in, buildInfo.json.in (the build writes both .json)
@@ -147,9 +169,11 @@ usd-mmd-plugins/
 │     ├─ CMakeLists.txt
 │     └─ openstrata.plugin.yaml
 ├─ tools/
-│  └─ mmdInspect/              src/ tests/ CMakeLists.txt openstrata.tool.yaml (the build stages bin/)
+│  ├─ mmdInspect/              src/ tests/ CMakeLists.txt openstrata.tool.yaml (the build stages bin/)
+│  └─ vmdInspect/              src/ tests/ CMakeLists.txt openstrata.tool.yaml (the build stages bin/)
 ├─ tests/
-│  ├─ fixtures/                generate_fixtures.py, the one author of every PMX byte
+│  ├─ fixtures/                generate_fixtures.py, the one author of every PMX byte;
+│  │                           generate_vmd_fixtures.py, of every VMD byte (written, never committed)
 │  ├─ integration/             stage-open and Unicode-path tests
 │  └─ installed_consumer/      a project consumed from outside the tree
 ├─ scripts/                    check_library_boundaries.py, check_installed_consumer.py, check_docs.py
@@ -247,16 +271,16 @@ target, header root and required packages — is
 
 | Layer | Where | Proves | Exists |
 | --- | --- | --- | --- |
-| unit | `libs/*/tests/`, `plugins/*/tests/` | each transition — bytes → document, document → canonical, canonical → USD — in isolation | `mmdPmx_unit`, `mmdModel_unit` |
-| robustness | `libs/*/tests/` | the parser: every byte of the sample models overwritten, and every prefix read — no crash, no fatal diagnostic reported as recoverable, no document that breaks its invariants. The canonical model: thousands of generated documents within the parser's invariants, each canonicalized twice — no crash, the same bits both times, every promise of `CanonicalDocument.h` kept | `mmdPmx_robustness`, `mmdModel_robustness` |
-| boundary | `libs/*/tests/`, `tools/*/tests/` | §2.3's link-line and include gates | `mmdPmx_boundaries`, `mmdModel_boundaries`, `mmd_inspect_boundaries` |
-| tool | `tools/*/tests/` | each tool against the generated fixtures, from an ASCII and a non-ASCII directory | `mmd_inspect_fixtures` |
-| fixtures | `tests/fixtures/` | the committed fixtures and texture files are exactly what the generator writes | `workspace_fixtures` |
+| unit | `libs/*/tests/`, `plugins/*/tests/` | each transition — bytes → document, document → canonical, canonical → USD, VMD bytes → document → motion, motion and model → bound motion — in isolation | `mmdPmx_unit`, `mmdModel_unit`, `motionVmd_unit`, `mmdMotionBinding_unit` |
+| robustness | `libs/*/tests/` | the parsers: every byte of the sample models and motions overwritten, and every prefix read — no crash, no fatal diagnostic reported as recoverable, no document (or motion) that breaks its invariants. The canonical model: thousands of generated documents within the parser's invariants, each canonicalized twice — no crash, the same bits both times, every promise of `CanonicalDocument.h` kept | `mmdPmx_robustness`, `mmdModel_robustness`, `motionVmd_robustness` |
+| boundary | `libs/*/tests/`, `tools/*/tests/` | §2.3's link-line and include gates | `mmdPmx_boundaries`, `mmdModel_boundaries`, `motionVmd_boundaries`, `mmdMotionBinding_boundaries`, `mmd_inspect_boundaries`, `vmd_inspect_boundaries` |
+| tool | `tools/*/tests/` | each tool against the generated fixtures, from an ASCII and a non-ASCII directory | `mmd_inspect_fixtures`, `vmd_inspect_fixtures` |
+| fixtures | `tests/fixtures/`, `libs/motionVmd/tools/` | the committed fixtures and texture files are exactly what the generator writes, and so is the CP932 table | `workspace_fixtures`, `motionVmd_cp932_table` |
 | integration | `tests/integration/` | `Usd.Stage.Open("*.pmx")` through the registered plugin, against the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist) and the stage `fixtures.json` states for each fixture, and under a non-ASCII directory | `usdMmdFileFormat_stage_open`, `usdMmdFileFormat_unicode_paths`, `usdMmdFileFormat_notice_listeners` |
 | pyramid | the bundle manifest's `tests:` | `ost plugin test` L0–L5, from the build tree and from the package | — (`ost`) |
 | baseline | the bundle's `tests/fixtures/` | compact goldens do not change silently | the L5 goldens of `minimal.pmx` and `recoverable/unsafe-texture-paths.pmx` |
 | installed consumer | `tests/installed_consumer/` | installed packages work from a clean prefix outside the repository | `workspace_installed_consumer` |
-| fuzz | `libs/mmdPmx/fuzz/` | malformed input never crashes or over-reads, under ASan and UBSan | `mmdPmx_fuzz` in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml), which also runs both libraries' unit and robustness tests instrumented |
+| fuzz | `libs/mmdPmx/fuzz/`, `libs/motionVmd/fuzz/` | malformed input never crashes or over-reads, under ASan and UBSan | `mmdPmx_fuzz` and `motionVmd_fuzz` in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml), which also runs every plain library's unit and robustness tests instrumented |
 
 Fixtures are generated by committed code, never copied from distributed
 models ([DESIGN_POLICY.md §13](../design/DESIGN_POLICY.md#13-testing-policy)).
@@ -277,5 +301,10 @@ first.
 5. The authored stage does not change meaning without a stage-contract bump.
 6. Both build modes work, and every bundle builds against installed siblings.
 7. No component keeps a private copy of a facility another component owns.
+   One exception, and its reason: `motionVmd` declares its own diagnostic
+   record, `Result<T>` and diagnostic list, the same shape as `mmdPmx`'s,
+   because it is extraction-ready and §2.2 forbids it `mmdPmx`; binding carries
+   its diagnostics into `mmdPmx`'s record field for field
+   ([DIAGNOSTICS.md §1](../reference/DIAGNOSTICS.md#1-the-record)).
 8. A capability is claimed only with a fixture behind it
    ([CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md)).

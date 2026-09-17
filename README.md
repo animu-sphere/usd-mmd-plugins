@@ -5,16 +5,18 @@
 [![OpenUSD 26.08](https://img.shields.io/badge/OpenUSD-26.08-1f6feb)](docs/architecture/DEPENDENCIES.md#1-openusd)
 
 OpenUSD plugins for [MikuMikuDance](https://sites.google.com/view/vpvp/) (MMD)
-assets: PMX models first, VMD motion later.
+assets: PMX models, and VMD motion bound to them.
 
-> **Status: canonical stage.** `Usd.Stage.Open("model.pmx")` authors the
-> model's mesh, UVs, material prims and subsets, skeleton and skinning — Y-up,
-> in meters, Japanese names preserved beside ASCII identifiers, Japanese
-> texture filenames resolving — and `mmd_inspect` reports what a file
-> contains. Materials have no shading network yet (Phase 3), and morphs are
-> Phase 4. The [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the
-> only page that says what is implemented, and
-> [the roadmap](docs/roadmap/current.md) what comes next.
+> **Status: Phases 0–7.** `Usd.Stage.Open("model.pmx")` authors the model —
+> mesh, UVs, materials with `preview` and `mtlx` graphs, skeleton and
+> skinning, morphs, and the rig and physics preserved without being solved or
+> simulated — Y-up, in meters, Japanese names preserved beside ASCII
+> identifiers, and `mmd_inspect` reports what a file contains. A VMD is read
+> without a model and reported by `vmd_inspect`, and bound to a model by MMD's
+> own name rule; baking it into a `UsdSkelAnimation` is a runtime's work. The
+> [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the only page
+> that says what is implemented, and [the roadmap](docs/roadmap/current.md)
+> what comes next.
 
 `usd-mmd-plugins` is the MMD sibling of
 [`usd-vrm-plugins`](https://github.com/animu-sphere/usd-vrm-plugins): the
@@ -34,6 +36,12 @@ PMX bytes ─→ mmdPmx ─→ mmdModel ─→ usdMmdFileFormat ─→ USD stage
                        semantics
 ```
 
+```text
+VMD bytes ─→ motionVmd ─→ mmdMotionBinding (+ mmdModel) ─→ a bound motion
+             syntax,      by source name, in the model's    ─→ a motion or avatar runtime
+             tracks       basis
+```
+
 The importer authors data only. It never solves IK, evaluates bone constraints
 or morphs, simulates physics, performs toon shading, or plays motion — those
 belong to runtimes and renderers that read the stage. The same bytes always
@@ -47,7 +55,9 @@ produce the same stage.
 | `mmdModel` | plain C++ library | canonical MMD semantics and the single source → USD coordinate conversion — no OpenUSD | identifiers, joint order, skinning, mesh, textures |
 | `usdMmdFileFormat` | OpenUSD `SdfFileFormat` bundle | `.pmx` → a USD stage | authors `geo`, `mtl`, `skel` ([guide](docs/guides/opening.md)) |
 | `mmd_inspect` | CLI | what a PMX contains, without USD | exists ([guide](docs/guides/inspecting.md)) |
-| `motionVmd` | plain C++ library | VMD syntax, extraction-ready for the shared motion architecture | Phase 7 |
+| `motionVmd` | plain C++ library | VMD syntax, CP932 names and tracks, extraction-ready for the shared motion architecture — no dependency at all | reads every section |
+| `mmdMotionBinding` | plain C++ library | binds a VMD motion to a canonical model by source name, in the model's basis — no OpenUSD, nothing evaluated | exists |
+| `vmd_inspect` | CLI | what a VMD contains, without a model or USD | exists ([guide](docs/guides/inspecting.md)) |
 
 `mmdSchema` exists only if an MMD API schema passes the
 [admission test](docs/design/DESIGN_POLICY.md#6-the-schema-admission-test); the
@@ -94,7 +104,7 @@ installed-consumer lane — every command in it run.
 | --- | --- |
 | [docs/design/](docs/design/) | What the importer authors and why — start with [DESIGN_POLICY.md](docs/design/DESIGN_POLICY.md) |
 | [docs/architecture/](docs/architecture/) | The binding workspace contract, external dependencies, and installed packages |
-| [docs/guides/](docs/guides/) | How to build, test and package, how to open a PMX as a stage, and how to inspect one |
+| [docs/guides/](docs/guides/) | How to build, test and package, how to open a PMX as a stage, and how to inspect a PMX or a VMD |
 | [docs/reference/](docs/reference/) | What is implemented, diagnostics, and where each PMX field lands |
 | [docs/roadmap/](docs/roadmap/) | What is planned next (incomplete work only) |
 | [docs/contributing/](docs/contributing/) | How the documentation is maintained |

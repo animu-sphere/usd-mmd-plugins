@@ -50,13 +50,16 @@ if(USDMMD_BUILD_TESTS)
     enable_testing()
 endif()
 
-# The PMX syntax parser, the canonical model and the tool that reports on a
-# PMX link no OpenUSD (WORKSPACE.md §2), so they are added before the one
-# workspace-wide OpenUSD resolution below. Their position is the statement:
-# nothing they configure can see pxr.
+# The PMX syntax parser, the canonical model, the VMD reader and the tools that
+# report on a PMX and a VMD link no OpenUSD (WORKSPACE.md §2), so they are
+# added before the one workspace-wide OpenUSD resolution below. Their position
+# is the statement: nothing they configure can see pxr.
 add_subdirectory("libs/mmdPmx")
 add_subdirectory("libs/mmdModel")
+add_subdirectory("libs/motionVmd")
+add_subdirectory("libs/mmdMotionBinding")
 add_subdirectory("tools/mmdInspect")
+add_subdirectory("tools/vmdInspect")
 
 # Resolve OpenUSD once for the whole project; bundles reuse the result.
 find_package(pxr REQUIRED CONFIG)

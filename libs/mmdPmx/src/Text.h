@@ -10,6 +10,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 
 namespace mmd::pmx::detail {
 
@@ -23,6 +24,12 @@ struct DecodeError {
 /// overlong form, no encoded surrogate, nothing above U+10FFFF, no truncated
 /// sequence) and copies it to `out`. On failure `out` is empty.
 std::optional<DecodeError> DecodeUtf8(std::span<const std::byte> bytes, std::string& out);
+
+/// `bytes` with every byte that starts no well-formed UTF-8 sequence replaced
+/// by U+FFFD. For text a diagnostic message quotes from outside the file -- a
+/// path, an OS error -- which a report must still be able to print as UTF-8.
+/// Never for text read from a PMX, which is rejected, never repaired (§3).
+std::string ReplaceInvalidUtf8(std::string_view bytes);
 
 /// Decodes `bytes` as UTF-16LE into UTF-8 in `out`. The length must be even
 /// and every surrogate paired. On failure `out` is empty.

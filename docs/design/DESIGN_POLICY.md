@@ -1,9 +1,9 @@
 # usd-mmd-plugins — design policy
 
-> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–6
+> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–7
 > are implemented — the workspace skeleton, the PMX structural parser, the
-> canonical stage, the material triad, morphs, control semantics and physics
-> preservation; every other behavior
+> canonical stage, the material triad, morphs, control semantics, physics
+> preservation, and VMD reading and binding; every other behavior
 > described here is intended, and
 > [reference/CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md) is the
 > only document that says what is implemented.
@@ -256,7 +256,8 @@ clock.
 
 `mmd_inspect` reports what a PMX contains — header, counts, names, flags,
 diagnostics — without USD, so a parser question can be answered without an
-importer in the way. `mmd_convert` (PMX → `.usda`/`.usdc` on disk) follows only
+importer in the way. `vmd_inspect` does the same for a VMD, with `motionVmd`
+alone. `mmd_convert` (PMX → `.usda`/`.usdc` on disk) follows only
 when `usdcat` over the file format proves insufficient.
 
 ## 6. The schema admission test
@@ -528,8 +529,8 @@ ecosystem (§18); none belongs here.
       usdMmdFileFormat                         usdVmdFileFormat (later)
               │                                     │
           mmdModel ── mmdSchema (only if §6)    motionVmd ── shared motion contract
-              │
-           mmdPmx
+              │    \                              /
+           mmdPmx   └──── mmdMotionBinding ──────┘
               │
              PMX
 ```

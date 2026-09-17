@@ -1,0 +1,38 @@
+# OpenStrata plain-library descriptor.
+#
+# mmdMotionBinding binds a VMD motion to a PMX model by source name, in the
+# model's basis (docs/design/MOTION_CONTRACT.md §8). A plain static CMake
+# library, NOT a plugin bundle, with no OpenUSD dependency
+# (docs/architecture/WORKSPACE.md §1, §2).
+#
+# Two edges, the only ones permitted: mmdMotionBinding -> mmdModel, and
+# mmdMotionBinding -> motionVmd (WORKSPACE.md §2.1).
+schema: openstrata.library/v1alpha1
+library:
+  id: mmdMotionBinding
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.0.0
+requires:
+  libraries:
+    - id: mmdModel
+      version: ">=0.0,<0.1"
+    - id: motionVmd
+      version: ">=0.0,<0.1"
+cmake:
+  # The find_package() name and the imported target consumers link against.
+  package: mmdMotionBinding
+  target: mmdMotionBinding::mmdMotionBinding
+# Built and installed on its own; nothing in the product links it yet, so it
+# ships as a package for a motion runtime to consume.
+package:
+  standalone: true
+  aggregate_member: false
+# What the installed package promises a consumer (docs/architecture/
+# PACKAGE_CONTRACT.md).
+package_contract:
+  package_name: mmdMotionBinding
+  exported_targets: [mmdMotionBinding::mmdMotionBinding]
+  public_headers: [include/mmdMotionBinding/**]
+  consumer:
+    include: mmdMotionBinding/Bind.h
+    symbol: mmd::binding::Bind

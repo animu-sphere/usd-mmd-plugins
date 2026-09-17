@@ -5,15 +5,18 @@ a tool reports carries a **stable code** with a **fixed severity**. The code is
 the contract; the message is human-readable detail and may change at any time.
 Tests assert codes, never prose.
 
-Status (2026-09-16): the record below is code, and every code marked
+Status (2026-09-17): the record below is code, and every code marked
 *emitted* in §5 is raised by the current tree — the parser raises all of its
 PMX-syntax and text-decoding codes, the canonical model its identifier, path,
-skeleton, weight, material and morph codes, and the importer its skinning,
-blend-shape and soft-body ones. Every other code is *reserved* by a design document,
-which is where its meaning is fixed. A code joins its component's
-declarations —
+skeleton, weight, material and morph codes, the importer its skinning,
+blend-shape and soft-body ones, the VMD reader its motion-syntax and CP932
+ones, and binding its name-matching ones. Every other code is *reserved* by a
+design document, which is where its meaning is fixed. A code joins its
+component's declarations —
 [libs/mmdPmx/include/mmdPmx/Codes.h](../../libs/mmdPmx/include/mmdPmx/Codes.h),
 [libs/mmdModel/include/mmdModel/Codes.h](../../libs/mmdModel/include/mmdModel/Codes.h),
+[libs/motionVmd/include/motionVmd/Codes.h](../../libs/motionVmd/include/motionVmd/Codes.h),
+[libs/mmdMotionBinding/include/mmdMotionBinding/Codes.h](../../libs/mmdMotionBinding/include/mmdMotionBinding/Codes.h),
 [plugins/usdMmdFileFormat/src/usd/UsdMmdCodes.h](../../plugins/usdMmdFileFormat/src/usd/UsdMmdCodes.h)
 — with the code that raises it, and
 [scripts/check_docs.py](../../scripts/check_docs.py) fails when those
@@ -67,6 +70,14 @@ and the recoverable diagnostics raised while producing it, or the fatal
 diagnostic that prevented one together with the recoverable ones raised
 before it.
 
+`motionVmd` declares the same record and `Result<T>` in its own namespace
+([motionVmd/Diagnostic.h](../../libs/motionVmd/include/motionVmd/Diagnostic.h)),
+with `section` where this record has `table`: it is extraction-ready and may
+not depend on `mmdPmx`
+([MOTION_CONTRACT.md §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries)).
+Its codes follow this catalog all the same, and
+`mmd::binding::ToDiagnostic` carries one into this record field for field.
+
 ## 2. Severity
 
 Most severe first. Tools exit non-zero on any `error` or `fatal`.
@@ -116,11 +127,12 @@ severity. An event that needs a different severity gets a new code.
   else, as that code with the table as its location and the number not listed
   as its message. A malformed file can otherwise raise one diagnostic per
   vertex, and each recorded diagnostic is a string on the stage. Every element
-  is still repaired as its section says, listed or not. The parser and the
-  canonical model bound their lists with the same
-  [`mmd::DiagnosticList`](../../libs/mmdPmx/include/mmdPmx/DiagnosticList.h).
-- **Tools** (`mmd_inspect`) print every diagnostic and set their exit status by
-  the most severe one.
+  is still repaired as its section says, listed or not. The parser, the
+  canonical model and binding bound their lists with the same
+  [`mmd::DiagnosticList`](../../libs/mmdPmx/include/mmdPmx/DiagnosticList.h);
+  `motionVmd` bounds its own the same way, per section.
+- **Tools** (`mmd_inspect`, `vmd_inspect`) print every diagnostic and set their
+  exit status by the most severe one.
 - **Validation** codes are raised by checks over an already-imported stage, not
   by the importer.
 
@@ -160,7 +172,8 @@ raises; every other code is reserved.
 | `MMD_TEXT_INVALID_UTF8` *emitted* | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_INVALID_UTF16` *emitted* | error | `mmdPmx` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
 | `MMD_TEXT_TRAILING_NUL` *emitted* | info | `mmdModel` | [TEXT §3](../design/TEXT_ENCODING_POLICY.md#3-decoding-pmx-text) |
-| `MMD_TEXT_TRUNCATED_CP932` | info | `motionVmd` | [MOTION §4](../design/MOTION_CONTRACT.md#4-text) |
+| `MMD_TEXT_TRUNCATED_CP932` *emitted* | info | `motionVmd` | [MOTION §4](../design/MOTION_CONTRACT.md#4-text) |
+| `MMD_TEXT_INVALID_CP932` *emitted* | error | `motionVmd` | [MOTION §4](../design/MOTION_CONTRACT.md#4-text) |
 
 ### 5.3 Paths
 
@@ -200,9 +213,16 @@ raises; every other code is reserved.
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_MOTION_DUPLICATE_KEYFRAME` | warning | `motionVmd` | [MOTION §5](../design/MOTION_CONTRACT.md#5-time) |
-| `MMD_MOTION_UNMATCHED_BONE` | info | binding | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
-| `MMD_MOTION_AMBIGUOUS_NAME` | warning | binding | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
+| `MMD_MOTION_BAD_SIGNATURE` *emitted* | fatal | `motionVmd` | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| `MMD_MOTION_TRUNCATED_BUFFER` *emitted* | fatal | `motionVmd` | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| `MMD_MOTION_COUNT_EXCEEDS_BUFFER` *emitted* | fatal | `motionVmd` | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| `MMD_MOTION_TRAILING_BYTES` *emitted* | warning | `motionVmd` | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| `MMD_MOTION_FILE_UNREADABLE` *emitted* | fatal | `motionVmd` (`ReadFile`) | [MOTION §3](../design/MOTION_CONTRACT.md#3-vmd-source-facts) |
+| `MMD_MOTION_DUPLICATE_KEYFRAME` *emitted* | warning | `motionVmd` (`BuildMotion`) | [MOTION §5](../design/MOTION_CONTRACT.md#5-time) |
+| `MMD_MOTION_UNMATCHED_BONE` *emitted* | info | `mmdMotionBinding` | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
+| `MMD_MOTION_UNMATCHED_MORPH` *emitted* | info | `mmdMotionBinding` | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
+| `MMD_MOTION_AMBIGUOUS_NAME` *emitted* | warning | `mmdMotionBinding` | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
+| `MMD_MOTION_UNENCODABLE_NAME` *emitted* | info | `mmdMotionBinding` | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
 
 ### 5.7 USD boundary
 

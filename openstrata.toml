@@ -15,11 +15,15 @@ members = [
   "plugins/usdMmdFileFormat",
   "libs/mmdPmx",
   "libs/mmdModel",
+  "libs/motionVmd",
+  "libs/mmdMotionBinding",
   "tools/mmdInspect",
+  "tools/vmdInspect",
 ]
 # The aggregate product: every bundle and tool that ships. A library ships as
 # a dependency of the bundle that links it, never as a member of its own.
 release_members = [
   "usdMmdFileFormat",
   "mmd_inspect",
+  "vmd_inspect",
 ]

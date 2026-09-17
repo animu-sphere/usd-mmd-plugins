@@ -42,6 +42,35 @@ Fail(std::string& out, std::size_t offset, const char* reason)
 
 } // namespace
 
+std::string
+ReplaceInvalidUtf8(std::string_view text)
+{
+    const std::span<const std::byte> bytes(reinterpret_cast<const std::byte*>(text.data()),
+                                           text.size());
+    std::string out;
+    std::string piece;
+    std::size_t i = 0;
+    while (i < bytes.size()) {
+        // The shortest slice that decodes is the one well-formed sequence
+        // starting at i, if there is one.
+        std::size_t length = 0;
+        for (std::size_t n = 1; n <= 4 && i + n <= bytes.size(); ++n) {
+            if (!DecodeUtf8(bytes.subspan(i, n), piece)) {
+                length = n;
+                break;
+            }
+        }
+        if (length == 0) {
+            out += "\xEF\xBF\xBD"; // U+FFFD
+            ++i;
+        } else {
+            out.append(text.substr(i, length));
+            i += length;
+        }
+    }
+    return out;
+}
+
 std::optional<DecodeError>
 DecodeUtf8(std::span<const std::byte> bytes, std::string& out)
 {
