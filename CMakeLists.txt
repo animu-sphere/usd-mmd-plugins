@@ -57,6 +57,7 @@ endif()
 add_subdirectory("libs/mmdPmx")
 add_subdirectory("libs/mmdModel")
 add_subdirectory("libs/motionVmd")
+add_subdirectory("libs/mmdMotionBinding")
 add_subdirectory("tools/mmdInspect")
 add_subdirectory("tools/vmdInspect")
 

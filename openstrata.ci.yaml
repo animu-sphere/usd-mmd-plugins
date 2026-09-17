@@ -5,9 +5,10 @@
 # in the generated workflow YAML -- change this file and regenerate. Two
 # workflows are hand-written, each for what this matrix cannot express:
 # docs-check.yml checks documentation and builds nothing, and
-# parser-sanitizers.yml builds mmdPmx and mmdModel on their own -- no
-# runtime, since neither links OpenUSD -- under ASan and UBSan, and fuzzes
-# the parser (docs/architecture/WORKSPACE.md §3, §6).
+# parser-sanitizers.yml builds mmdPmx, mmdModel, motionVmd and
+# mmdMotionBinding on their own -- no runtime, since none links OpenUSD --
+# under ASan and UBSan, and fuzzes both readers (docs/architecture/
+# WORKSPACE.md §3, §6).
 #
 # Lanes: one, `pull_request`, on GitHub-hosted runners. Each runner bootstraps
 # the pinned `ost` below and pulls the runtime SDK from its OCI reference.
@@ -41,8 +42,9 @@
 #   * workspace-graph-pr: the WORKSPACE.md §2 dependency gate, before anything
 #     builds.
 #   * workspace-pr-{windows,macos-arm64,linux}: the root CMake tree and its
-#     whole CTest suite -- the mmdPmx and mmdModel unit, robustness and
-#     boundary tests, the mmd_inspect fixture and boundary tests, the fixture
+#     whole CTest suite -- the mmdPmx, mmdModel, motionVmd and
+#     mmdMotionBinding unit, robustness, boundary and table tests, the
+#     mmd_inspect and vmd_inspect fixture and boundary tests, the fixture
 #     check, the stage-open, Unicode-path and notice-listener integration
 #     tests, and the installed-consumer lane (workspace_installed_consumer).
 #   * usdmmdfileformat-pr-*: the only lanes that configure the bundle

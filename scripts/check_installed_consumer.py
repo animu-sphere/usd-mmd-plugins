@@ -8,9 +8,12 @@ proves the prefix works on its own:
   1. the prefix holds what each package promises, and no file in it names the
      source tree or the build tree;
   2. tests/installed_consumer/, copied out of the repository, configures
-     against the prefix alone -- finding mmdModel, whose package finds mmdPmx
-     --, builds, and reads and canonicalizes every fixture;
-  3. the installed mmd_inspect reads every fixture from the prefix's bin/;
+     against the prefix alone -- finding mmdModel, whose package finds mmdPmx,
+     and mmdMotionBinding, whose package finds mmdModel and motionVmd --,
+     builds, reads and canonicalizes every PMX fixture, and reads every VMD
+     fixture and binds one to a PMX;
+  3. the installed mmd_inspect and vmd_inspect read every fixture from the
+     prefix's bin/;
   4. a Python host whose only plugin path is the prefix's opens a PMX through
      the installed usdMmdFileFormat.
 
@@ -32,6 +35,7 @@ import tempfile
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 FIXTURES = REPO / "plugins" / "usdMmdFileFormat" / "tests" / "fixtures"
+VMD_GENERATOR = REPO / "tests" / "fixtures" / "generate_vmd_fixtures.py"
 PLUGIN_RESOURCES = pathlib.Path("plugin", "resources", "usdMmdFileFormat")
 
 
@@ -56,7 +60,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     # The libraries install under CMAKE_INSTALL_LIBDIR, which GNUInstallDirs
     # makes lib64 on some Linux distributions; the plugin bundle's lib/ is
     # fixed by its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
-    for package in ("mmdPmx", "mmdModel"):
+    for package in ("mmdPmx", "mmdModel", "motionVmd", "mmdMotionBinding"):
         config_dirs = sorted(p.parent for p in prefix.glob(
             f"lib*/cmake/{package}/{package}Config.cmake"))
         if len(config_dirs) != 1:
@@ -70,7 +74,10 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     expected = [
         pathlib.Path("include", "mmdPmx", "Reader.h"),
         pathlib.Path("include", "mmdModel", "Canonicalize.h"),
+        pathlib.Path("include", "motionVmd", "Reader.h"),
+        pathlib.Path("include", "mmdMotionBinding", "Bind.h"),
         pathlib.Path("bin", executable("mmd_inspect")),
+        pathlib.Path("bin", executable("vmd_inspect")),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
         PLUGIN_RESOURCES / "plugInfo.json",
         PLUGIN_RESOURCES / "buildInfo.json",
@@ -207,6 +214,49 @@ def main() -> int:
                       f"{report['ok']}", file=sys.stderr)
                 return 1
         print(f"ok  the installed mmd_inspect reads all {len(manifest)} fixtures")
+
+        # VMD: the installed motionVmd and mmdMotionBinding through the
+        # consumer, and the installed vmd_inspect, over the generated fixtures.
+        vmd_fixtures = work / "vmd-fixtures"
+        run([sys.executable, VMD_GENERATOR, "--out", vmd_fixtures],
+            stdout=subprocess.DEVNULL)
+        vmd_manifest = json.loads(
+            (vmd_fixtures / "fixtures.json").read_text(encoding="utf-8"))
+        vmd_probes = sorted(build.rglob(executable("vmd_probe")))
+        if not vmd_probes:
+            print("the consumer built no vmd_probe", file=sys.stderr)
+            return 1
+        vmd_tool = prefix / "bin" / executable("vmd_inspect")
+        for relative, expectation in sorted(vmd_manifest.items()):
+            path = vmd_fixtures / relative
+            result = subprocess.run([str(vmd_probes[0]), str(path)], text=True,
+                                    encoding="utf-8", stdout=subprocess.PIPE)
+            if expectation["opens"]:
+                tracks = expectation["tracks"]
+                want = f"tracks={tracks['bones']} {tracks['morphs']} {tracks['ik']}"
+            else:
+                want = f"fatal={expectation['fatal']}"
+            if want not in result.stdout.splitlines():
+                print(f"{relative}: the installed motionVmd printed "
+                      f"{result.stdout!r}, expected {want}", file=sys.stderr)
+                return 1
+            report = json.loads(subprocess.run(
+                [str(vmd_tool), "--json", str(path)], stdout=subprocess.PIPE).stdout)
+            if report["ok"] != expectation["opens"]:
+                print(f"{relative}: the installed vmd_inspect reported ok="
+                      f"{report['ok']}", file=sys.stderr)
+                return 1
+        # The sample model has センター and 左ひじ of the sample motion's three
+        # bones, one of its two morphs, and neither IK bone.
+        bound = subprocess.run([str(vmd_probes[0]), str(vmd_fixtures / "sample.vmd"),
+                                str(fixtures / "sample-2.1-utf8.pmx")], text=True,
+                               encoding="utf-8", stdout=subprocess.PIPE)
+        if bound.returncode != 0 or "bound=2 1 0" not in bound.stdout.splitlines():
+            print(f"the installed mmdMotionBinding printed {bound.stdout!r}",
+                  file=sys.stderr)
+            return 1
+        print(f"ok  the installed motionVmd, mmdMotionBinding and vmd_inspect read all "
+              f"{len(vmd_manifest)} VMD fixtures")
 
         # The Python host, with only the prefix on the plugin path.
         env = dict(os.environ)

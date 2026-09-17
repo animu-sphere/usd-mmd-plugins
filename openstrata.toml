@@ -16,6 +16,7 @@ members = [
   "libs/mmdPmx",
   "libs/mmdModel",
   "libs/motionVmd",
+  "libs/mmdMotionBinding",
   "tools/mmdInspect",
   "tools/vmdInspect",
 ]

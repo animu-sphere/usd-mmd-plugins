@@ -1,0 +1,13 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+# The two edges (docs/architecture/WORKSPACE.md §2.1). A composed build that
+# already has a target does not resolve it twice.
+if(NOT TARGET mmdModel::mmdModel)
+    find_dependency(mmdModel CONFIG)
+endif()
+if(NOT TARGET motionVmd::motionVmd)
+    find_dependency(motionVmd CONFIG)
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/mmdMotionBindingTargets.cmake")
+check_required_components(mmdMotionBinding)
