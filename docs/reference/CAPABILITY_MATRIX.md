@@ -4,7 +4,7 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-16 the tree holds Phases 0–5:** `.pmx` is registered, every
+**As of 2026-09-17 the tree holds Phases 0–6:** `.pmx` is registered, every
 table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
 by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
 canonical stage — mesh, UVs, material prims and subsets, skeleton and
@@ -12,8 +12,9 @@ skinning. Phase 3 adds MMD material semantics plus unlit-compatible preview
 and MaterialX graphs, and Phase 4 every morph: vertex morphs as blend shapes,
 every other type preserved declaratively. Phase 5 preserves every bone's
 control semantics under `/Asset/rig` — IK chains, append relations, axes,
-external parents, tails, transform layers — with nothing solved. Physics
-semantics are not authored.
+external parents, tails, transform layers — with nothing solved, and Phase 6
+every rigid body and joint under `/Asset/physics`, as `UsdPhysics` where it
+matches and `mmd:physics:*` throughout, with nothing simulated.
 The *intended* column is the
 claim the design makes for the first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
@@ -102,7 +103,12 @@ Each claim is backed by the generated fixtures and the parser's unit tests.
 | Transform layer, deform after physics, tail, rotatable / translatable / visible / operable | preserved | preserved | 5 | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
 | A control relation that names no bone (dropped, the rest kept) | supported | supported | 5 | [STAGE §12.3](../design/STAGE_CONTRACT.md#123-repairs) |
 | Display frames | — (parsed; contract v1 authors none) | unsupported (parsed, not authored) | 1 | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |
-| Rigid bodies and joints | — | preserved | 6 | [STAGE §13](../design/STAGE_CONTRACT.md#13-physics--reserved) |
+| Rigid bodies: shape, size, rest frame, mass, kinematic mode (`UsdPhysics`) | supported | supported | 6 | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
+| Rigid bodies: bone, collision group and mask, damping, restitution, friction, physics mode | preserved | preserved | 6 | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
+| Spring 6-DOF and 6-DOF joints: bodies, frames, limits (`UsdPhysics`) | supported | supported | 6 | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
+| Joint springs, free axes, every joint value | preserved | preserved | 6 | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
+| PMX 2.1 point-to-point, cone-twist, slider, hinge joints (no `UsdPhysics` joint) | preserved | preserved | 6 | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
+| Undefined shape, mode or joint type; a joint whose body is missing | supported | supported | 6 | [STAGE §13.3](../design/STAGE_CONTRACT.md#133-repairs) |
 | Soft bodies (2.1) | unsupported (parsed, not authored) | unsupported (parsed, not authored) | 1 | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
 
 ## Outside the PMX importer

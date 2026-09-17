@@ -63,7 +63,7 @@ are fixed in [docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md).
   skel/Skeleton           UsdSkelSkeleton in canonical joint order
   morph/<morph>           UsdSkelBlendShape for vertex morphs; others preserved declaratively
   rig/Bones, rig/ik/<bone> MMD control semantics: IK chains, append relations, axes — never solved
-  physics/                rigid bodies and joints, preserved, never simulated — later
+  physics/                rigid bodies and joints: UsdPhysics + mmd:physics:*, never simulated
 ```
 
 Japanese names are preserved exactly, beside stable ASCII identifiers used for

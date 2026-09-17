@@ -152,6 +152,36 @@ SampleDocument()
                              {-1, false, {}, {}},
                              {0, false, {}, {}}};
     doc.rigidBodies.resize(2);
+    doc.rigidBodies[0].name = "頭";
+    doc.rigidBodies[0].englishName = "head";
+    doc.rigidBodies[0].bone = 1;
+    doc.rigidBodies[0].group = 3;
+    doc.rigidBodies[0].nonCollisionMask = 0xFFF7;
+    doc.rigidBodies[0].shape = 1;
+    doc.rigidBodies[0].size = {1.0f, 2.0f, 3.0f};
+    doc.rigidBodies[0].position = {0.0f, 10.0f, 1.0f};
+    doc.rigidBodies[0].rotation = {0.0f, 0.0f, 1.5707963f};
+    doc.rigidBodies[0].mass = 2.0f;
+    doc.rigidBodies[0].linearDamping = 0.25f;
+    doc.rigidBodies[0].angularDamping = 0.5f;
+    doc.rigidBodies[0].restitution = 0.125f;
+    doc.rigidBodies[0].friction = 0.75f;
+    doc.rigidBodies[1].name = "髪";
+    doc.rigidBodies[1].shape = 2;
+    doc.rigidBodies[1].physicsMode = 2;
+    doc.rigidBodies[1].position = {0.0f, 10.0f, 1.0f};
+    doc.joints.resize(1);
+    doc.joints[0].name = "頭-髪";
+    doc.joints[0].rigidBodyA = 0;
+    doc.joints[0].rigidBodyB = 1;
+    doc.joints[0].type = 3;
+    doc.joints[0].position = {1.0f, 10.0f, 1.0f};
+    doc.joints[0].translationMin = {-1.0f, -2.0f, -3.0f};
+    doc.joints[0].translationMax = {1.0f, 2.0f, 4.0f};
+    doc.joints[0].rotationMin = {-0.5f, -0.25f, -0.125f};
+    doc.joints[0].rotationMax = {0.1f, 0.2f, 0.3f};
+    doc.joints[0].translationSpring = {10.0f, 20.0f, 30.0f};
+    doc.joints[0].rotationSpring = {1.0f, 2.0f, 3.0f};
     doc.morphs = {
         MakeMorph("まばたき", "blink", 2, pmx::MorphType::Vertex),
         MakeMorph("笑い", "smile", 3, pmx::MorphType::Group),
@@ -640,6 +670,114 @@ TestRigRepairs()
     assert(r.rig.ikChains[0].links[0].joint == jointOf[1]);
 }
 
+bool
+Near(const Float4& q, const Float4& want)
+{
+    for (std::size_t k = 0; k < 4; ++k) {
+        if (std::abs(q[k] - want[k]) > 1e-6f) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool
+Near(const Float3& v, const Float3& want)
+{
+    for (std::size_t k = 0; k < 3; ++k) {
+        if (std::abs(v[k] - want[k]) > 1e-6f) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void
+TestPhysics()
+{
+    const CanonicalDocument c = ExpectCanonical(SampleDocument(), {"MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    assert(c.physics.rigidBodies.size() == 2);
+
+    const RigidBody& head = c.physics.rigidBodies[0];
+    assert(head.name.source == "頭" && head.name.stableId == "head" && head.sourceIndex == 0);
+    assert(head.bone == c.skeleton.jointOfSourceBone[1]);
+    assert(head.collisionGroup == 3 && head.collisionMask == 0xFFF7);
+    assert(head.shape == RigidBodyShape::Box);
+    assert((head.size == Double3{0.08, 2.0 * 0.08, 3.0 * 0.08})); // lengths: never mirrored
+    assert((head.position == Double3{0.0, 10.0 * 0.08, -0.08}));
+    // 90 degrees about Z: the sense about Z survives the mirror.
+    const float half = std::sqrt(0.5f);
+    assert(Near(head.orientation, {0.0f, 0.0f, half, half}));
+    assert(head.mass == 2.0f && head.linearDamping == 0.25f && head.angularDamping == 0.5f);
+    assert(head.restitution == 0.125f && head.friction == 0.75f);
+    assert(head.mode == PhysicsMode::FollowBone);
+
+    const RigidBody& hair = c.physics.rigidBodies[1];
+    assert(hair.name.stableId == "rigidBody_0001" && hair.bone == kNone); // the bone was -1
+    assert(hair.shape == RigidBodyShape::Capsule && hair.mode == PhysicsMode::DynamicWithBone);
+    assert((hair.orientation == Float4{0.0f, 0.0f, 0.0f, 1.0f}));
+
+    assert(c.physics.joints.size() == 1);
+    const PhysicsJoint& j = c.physics.joints[0];
+    assert(j.name.stableId == "joint_0000" && j.type == PhysicsJointType::ConeTwist);
+    assert(j.rigidBodyA == 0 && j.rigidBodyB == 1);
+    assert((j.position == Double3{0.08, 10.0 * 0.08, -0.08}));
+    // Translation along Z and rotation about X and Y mirror; springs do not.
+    assert((j.translationLowerLimit == Float3{-M(1.0), -M(2.0), -M(4.0)}));
+    assert((j.translationUpperLimit == Float3{M(1.0), M(2.0), M(3.0)}));
+    assert((j.rotationLowerLimit == Float3{-0.1f, -0.2f, -0.125f}));
+    assert((j.rotationUpperLimit == Float3{0.5f, 0.25f, 0.3f}));
+    assert((j.translationSpring == Float3{10.0f, 20.0f, 30.0f}));
+    assert((j.rotationSpring == Float3{1.0f, 2.0f, 3.0f}));
+    // In the head's frame, turned 90 degrees about Z, the joint's +X offset
+    // lies along -Y and its frame is turned back.
+    assert(Near(j.localPositionA, {0.0f, -M(1.0), 0.0f}));
+    assert(Near(j.localOrientationA, {0.0f, 0.0f, -half, half}));
+    assert(Near(j.localPositionB, {M(1.0), 0.0f, 0.0f}));
+    assert((j.localOrientationB == Float4{0.0f, 0.0f, 0.0f, 1.0f}));
+}
+
+void
+TestPhysicsRepairs()
+{
+    // Values the source does not define fall back, each with a warning; a
+    // joint whose body is none goes; a body whose bone is none stays.
+    pmx::Document doc = SampleDocument();
+    doc.rigidBodies[0].shape = 3;
+    doc.rigidBodies[0].physicsMode = 7;
+    doc.rigidBodies[0].bone = -1;
+    doc.joints[0].type = 6;
+    doc.joints.push_back(doc.joints[0]);
+    doc.joints[1].type = 0;
+    doc.joints[1].rigidBodyB = -1;
+    CanonicalDocument c = ExpectCanonical(doc,
+                                          {"MMD_PATH_UNSAFE_TEXTURE_PATH",
+                                           "MMD_PHYSICS_UNKNOWN_SHAPE",
+                                           "MMD_PHYSICS_UNKNOWN_MODE",
+                                           "MMD_PHYSICS_UNKNOWN_JOINT_TYPE"});
+    assert(c.physics.rigidBodies.size() == 2);
+    assert(c.physics.rigidBodies[0].shape == RigidBodyShape::Sphere);
+    assert(c.physics.rigidBodies[0].mode == PhysicsMode::FollowBone);
+    assert(c.physics.rigidBodies[0].bone == kNone);
+    assert(c.physics.joints.size() == 1 && c.physics.joints[0].sourceIndex == 0);
+    assert(c.physics.joints[0].type == PhysicsJointType::Spring6Dof);
+
+    // PMX 2.0 defines only the spring 6-DOF joint.
+    doc = SampleDocument();
+    doc.header.version = pmx::Version::V2_0;
+    doc.softBodies.clear();
+    doc.joints[0].type = 1;
+    c = ExpectCanonical(doc, {"MMD_PATH_UNSAFE_TEXTURE_PATH", "MMD_PHYSICS_UNKNOWN_JOINT_TYPE"});
+    assert(c.physics.joints[0].type == PhysicsJointType::Spring6Dof);
+
+    // The body keeps its bone through the canonical joint order.
+    doc = SampleDocument();
+    doc.bones[1].parent = 3;
+    c = ExpectCanonical(doc, {"MMD_SKEL_JOINTS_REORDERED", "MMD_PATH_UNSAFE_TEXTURE_PATH"});
+    assert(c.skeleton.jointOfSourceBone[1] != 1);
+    assert(c.physics.rigidBodies[0].bone == c.skeleton.jointOfSourceBone[1]);
+}
+
 void
 TestDeterminism()
 {
@@ -665,5 +803,7 @@ TestCanonicalize()
     TestMorphCycles();
     TestRig();
     TestRigRepairs();
+    TestPhysics();
+    TestPhysicsRepairs();
     TestDeterminism();
 }

@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import heapq
 import json
+import math
 import pathlib
 import re
 import struct
@@ -378,13 +379,20 @@ def bone(name: str, english: str, position: tuple, parent: int, flags: int,
             "flags": flags, "tail": tail, **extra}
 
 
-def rigid_body(name: str, bone_index: int, shape: int, mode: int) -> dict:
-    return {"name": name, "englishName": "", "bone": bone_index, "group": 0,
-            "nonCollisionMask": 0xFFFF, "shape": shape,
-            "size": (0.5, 1.0, 0.0), "position": (0.0, 15.0, 0.0),
-            "rotation": (0.0, 0.0, 0.1), "mass": 1.0, "linearDamping": 0.5,
-            "angularDamping": 0.5, "restitution": 0.0, "friction": 0.5,
-            "physicsMode": mode}
+def rigid_body(name: str, english: str, bone_index: int, group: int, shape: int,
+               size: tuple, position: tuple, rotation: tuple, mass: float,
+               mode: int) -> dict:
+    return {"name": name, "englishName": english, "bone": bone_index, "group": group,
+            "nonCollisionMask": 0xFFFF & ~(1 << group), "shape": shape,
+            "size": size, "position": position, "rotation": rotation, "mass": mass,
+            "linearDamping": 0.5, "angularDamping": 0.25, "restitution": 0.125,
+            "friction": 0.75, "physicsMode": mode}
+
+
+def joint(name: str, kind: int, bodies: tuple, position: tuple, rotation: tuple,
+          translation: tuple, rotation_limits: tuple, springs: tuple) -> dict:
+    return {"name": name, "englishName": "", "type": kind, "rigidBodies": bodies,
+            "vectors": [position, rotation, *translation, *rotation_limits, *springs]}
 
 
 def sample_model(version: float, encoding: int, width: int, extra: int) -> dict:
@@ -468,15 +476,26 @@ def sample_model(version: float, encoding: int, width: int, extra: int) -> dict:
         {"name": "左腕", "englishName": "LeftArm", "special": 0,
          "elements": [(0, 1), (0, 2), (0, 3)]},
     ]
+    # One body of each shape and mode, each turned about all three axes, so a
+    # wrong Euler order or a missing mirror cannot pass (PMX-O1).
     model["rigidBodies"] = [
-        rigid_body("頭", 0, 0, 0),
-        rigid_body("髪", -1, 2, 2),
+        rigid_body("頭", "head", 1, 1, 0, (1.5, 0.0, 0.0), (1.5, 14.0, -0.5),
+                   (0.3, -0.2, 0.1), 1.0, 0),
+        rigid_body("髪", "", -1, 2, 2, (0.5, 2.0, 0.0), (2.0, 12.5, 0.75),
+                   (0.5, 0.25, -0.125), 0.5, 1),
+        rigid_body("胸", "chest", 2, 2, 1, (1.0, 0.5, 0.25), (3.0, 12.0, -0.25),
+                   (-0.4, 1.2, 0.7), 0.0, 2),
     ]
     model["joints"] = [
-        {"name": "頭-髪", "englishName": "", "type": 0, "rigidBodies": (0, 1),
-         "vectors": [(0.0, 15.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0),
-                     (0.0, 0.0, 0.0), (-0.2, -0.2, -0.2), (0.2, 0.2, 0.2),
-                     (0.0, 0.0, 0.0), (5.0, 5.0, 5.0)]},
+        # Translation along Y is free: its lower limit is above its upper.
+        joint("頭-髪", 0, (0, 1), (1.75, 13.25, 0.25), (0.1, 0.2, 0.3),
+              ((-0.5, 1.0, -1.0), (0.5, 0.0, 0.25)),
+              ((-0.2, -0.3, -0.4), (0.1, 0.2, 0.3)),
+              ((0.0, 10.0, 20.0), (5.0, 6.0, 7.0))),
+        joint("髪-胸", 1 if v21 else 0, (1, 2), (2.5, 12.25, 0.25), (-0.6, 0.0, 0.9),
+              ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
+              ((-1.0, -0.5, 0.0), (1.0, 0.5, 0.0)),
+              ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0))),
     ]
     if v21:
         model["softBodies"] = [{
@@ -840,6 +859,137 @@ def rig_expectation(model: dict, canonical_of: list[int], order: list[int],
     return {"bones": controls, "ikChains": chains, "sourceRelations": relations}
 
 
+RIGID_BODY_SHAPES = ("sphere", "box", "capsule")
+PHYSICS_MODES = ("followBone", "dynamic", "dynamicWithBone")
+JOINT_TYPES = ("spring6Dof", "sixDof", "pointToPoint", "coneTwist", "slider", "hinge")
+
+
+def quat_mul(a: list, b: list) -> list:
+    """Hamilton product, (x, y, z, w), acting on column vectors."""
+    return [a[3] * b[0] + b[3] * a[0] + (a[1] * b[2] - a[2] * b[1]),
+            a[3] * b[1] + b[3] * a[1] + (a[2] * b[0] - a[0] * b[2]),
+            a[3] * b[2] + b[3] * a[2] + (a[0] * b[1] - a[1] * b[0]),
+            a[3] * b[3] - (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])]
+
+
+def quat_conj(q: list) -> list:
+    return [-q[0], -q[1], -q[2], q[3]]
+
+
+def euler_rotation(v: tuple) -> list:
+    """A PMX Euler triple as the converted rotation, in double: R = Ry * Rx *
+    Rz (PMX_CONTRACT.md §13, PMX-O1), then mirrored as S * R * S."""
+    def about(axis: int, angle: float) -> list:
+        half = f32(angle) * 0.5
+        q = [0.0, 0.0, 0.0, math.cos(half)]
+        q[axis] = math.sin(half)
+        return q
+    q = quat_mul(quat_mul(about(1, v[1]), about(0, v[0])), about(2, v[2]))
+    return [-q[0], -q[1], q[2], q[3]]
+
+
+def rounded(q: list) -> list[float]:
+    """A quaternion as the stage's quatf: w never negative, no zero negative."""
+    sign = -1.0 if q[3] < 0.0 else 1.0
+    return [f32(sign * c) + 0.0 for c in q]
+
+
+def scaled(v: float) -> float:
+    return f32(f32(v) * METERS_PER_UNIT) + 0.0
+
+
+def physics_expectation(model: dict, canonical_of: list[int]) -> dict | None:
+    """What /Asset/physics holds (STAGE_CONTRACT.md §13): every rigid body in
+    source order, and every joint whose bodies both exist, with every value
+    through the conversion and the UsdPhysics realization beside it."""
+    bodies = model["rigidBodies"]
+    if not bodies:
+        return None
+    v21 = model["version"] == 2.1
+    body_ids = identifiers("rigidBody", [display_name(b["englishName"]) for b in bodies])
+    joint_ids = identifiers("joint", [display_name(j["englishName"]) for j in model["joints"]])
+    frames = []
+    out_bodies = []
+    for i, b in enumerate(bodies):
+        position = point_d(b["position"])
+        rotation = euler_rotation(b["rotation"])
+        frames.append((position, rotation))
+        shape = b["shape"] if b["shape"] <= 2 else 0
+        mode = b["physicsMode"] if b["physicsMode"] <= 2 else 0
+        size = [f32(c) * METERS_PER_UNIT + 0.0 for c in b["size"]]
+        out_bodies.append({
+            "id": body_ids[i], "sourceIndex": i, "name": display_name(b["name"]),
+            "englishName": display_name(b["englishName"]),
+            "bone": canonical_of[b["bone"]] if in_table(b["bone"], len(canonical_of)) else -1,
+            "shape": RIGID_BODY_SHAPES[shape], "size": size,
+            "sizeFloat": [f32(c) for c in size],
+            "position": position, "orientation": rounded(rotation),
+            "collisionGroup": b["group"], "collisionMask": b["nonCollisionMask"],
+            "mass": f32(b["mass"]), "linearDamping": f32(b["linearDamping"]),
+            "angularDamping": f32(b["angularDamping"]),
+            "restitution": f32(b["restitution"]), "friction": f32(b["friction"]),
+            "mode": PHYSICS_MODES[mode], "kinematic": mode == 0,
+        })
+
+    out_joints = []
+    for i, j in enumerate(model["joints"]):
+        a, b = j["rigidBodies"]
+        if not in_table(a, len(bodies)) or not in_table(b, len(bodies)):
+            continue
+        position_src, rotation_src, tmin, tmax, rmin, rmax, tspring, rspring = j["vectors"]
+        kind = j["type"] if j["type"] <= (5 if v21 else 0) else 0
+        position = point_d(position_src)
+        rotation = euler_rotation(rotation_src)
+
+        def local(body: int) -> tuple[list[float], list[float]]:
+            body_position, body_rotation = frames[body]
+            inverse = quat_conj(body_rotation)
+            offset = [position[k] - body_position[k] for k in range(3)]
+            p = quat_mul(quat_mul(inverse, [*offset, 0.0]), quat_conj(inverse))
+            return [f32(c) + 0.0 for c in p[:3]], rounded(quat_mul(inverse, rotation))
+
+        pos0, rot0 = local(a)
+        pos1, rot1 = local(b)
+        translation_lower = [scaled(tmin[0]), scaled(tmin[1]), -scaled(tmax[2]) + 0.0]
+        translation_upper = [scaled(tmax[0]), scaled(tmax[1]), -scaled(tmin[2]) + 0.0]
+        rotation_lower = [-f32(rmax[0]) + 0.0, -f32(rmax[1]) + 0.0, f32(rmin[2]) + 0.0]
+        rotation_upper = [-f32(rmin[0]) + 0.0, -f32(rmin[1]) + 0.0, f32(rmax[2]) + 0.0]
+        # UsdPhysics limits: only where the source's axis is not free, and
+        # rotations in degrees.
+        limits = {}
+        for k, axis in enumerate(("transX", "transY", "transZ", "rotX", "rotY", "rotZ")):
+            rotation_axis = k >= 3
+            lower = (rotation_lower if rotation_axis else translation_lower)[k % 3]
+            upper = (rotation_upper if rotation_axis else translation_upper)[k % 3]
+            if lower <= upper:
+                scale = 180.0 / math.pi if rotation_axis else 1.0
+                limits[axis] = [f32(lower * scale) + 0.0, f32(upper * scale) + 0.0]
+        out_joints.append({
+            "id": joint_ids[i], "sourceIndex": i, "name": display_name(j["name"]),
+            "englishName": display_name(j["englishName"]),
+            "type": JOINT_TYPES[kind], "usdPhysics": kind <= 1,
+            "rigidBodyA": a, "rigidBodyB": b, "body0": body_ids[a], "body1": body_ids[b],
+            "position": position, "orientation": rounded(rotation),
+            "translationLowerLimit": translation_lower,
+            "translationUpperLimit": translation_upper,
+            "rotationLowerLimit": rotation_lower, "rotationUpperLimit": rotation_upper,
+            "translationSpring": [f32(c) for c in tspring],
+            "rotationSpring": [f32(c) for c in rspring],
+            "localPos0": pos0, "localRot0": rot0, "localPos1": pos1, "localRot1": rot1,
+            "limits": limits,
+        })
+
+    # Phase 6's acceptance in the source's own terms: every rigid body as
+    # (index, bone) and every joint as (index, body A, body B), by table
+    # index, for a check that recovers them from the stage.
+    relations = {
+        "rigidBodies": [[i, b["bone"] if in_table(b["bone"], len(canonical_of)) else -1]
+                        for i, b in enumerate(bodies)],
+        "joints": [[j["sourceIndex"], j["rigidBodyA"], j["rigidBodyB"]] for j in out_joints],
+    }
+    return {"rigidBodies": out_bodies, "joints": out_joints, "sourceRelations": relations}
+
+
 def stage_expectation(model: dict, relative: str) -> dict:
     """What the canonical stage of `model`, written at `relative`, holds."""
     bones = model["bones"]
@@ -916,8 +1066,9 @@ def stage_expectation(model: dict, relative: str) -> dict:
         mesh["blendShapes"] = [m["id"] for m in morphs
                                if m["type"] == "vertex"] if skinned else []
     rig = rig_expectation(model, joint_of_source, order, bone_ids) if skinned else None
+    physics = physics_expectation(model, joint_of_source)
     return {"skinned": skinned, "mesh": mesh, "materials": materials,
-            "joints": joints, "morphs": morphs, "rig": rig,
+            "joints": joints, "morphs": morphs, "rig": rig, "physics": physics,
             "jointOfSourceBone": joint_of_source}
 
 
@@ -1083,7 +1234,31 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
         bone("つま先ＩＫ", "ToeIK", (1.0, 0.0, -1.0), 0, TAIL_IS_BONE | IK, -1,
              ik={"target": -1, "loopCount": 3, "limitAngle": 4.0, "links": []}),
     ]
+    # Physics the source does not define or cannot connect: a body whose bone
+    # the table does not hold stays, unattached; a shape, a mode and a joint
+    # type out of range fall back; a joint UsdPhysics has no type for is
+    # preserved without one; a joint whose body is missing, or none, goes.
+    physics = sample_model(2.1, UTF8, 1, 0)
+    physics["rigidBodies"][0]["bone"] = 9
+    physics["rigidBodies"][1]["shape"] = 3
+    physics["rigidBodies"][2]["physicsMode"] = 5
+    physics["joints"][1]["type"] = 6
+    hinge = physics["joints"][0]
+    physics["joints"] += [
+        {**hinge, "name": "蝶番", "englishName": "hinge", "type": 5, "rigidBodies": (0, 2)},
+        {**hinge, "name": "無し", "type": 0, "rigidBodies": (0, 7)},
+        {**hinge, "name": "空", "type": 0, "rigidBodies": (-1, 1)},
+    ]
     entries.update({
+        "recoverable/physics-repairs.pmx": opens(
+            physics, "a rigid body whose bone is missing, a shape, a physics mode and "
+            "a joint type out of range, a hinge joint, and joints whose body is "
+            "missing or none: each repaired, preserved or dropped",
+            parser=["MMD_PMX_INDEX_OUT_OF_RANGE"] * 2,
+            canonical=["MMD_PHYSICS_UNKNOWN_SHAPE", "MMD_PHYSICS_UNKNOWN_MODE",
+                       "MMD_PHYSICS_UNKNOWN_JOINT_TYPE"],
+            importer=sdef + ["MMD_SKEL_QDEF_APPROXIMATED", "MMD_PHYSICS_JOINT_UNMAPPED",
+                             "MMD_PHYSICS_SOFT_BODY_UNSUPPORTED"]),
         "recoverable/rig-broken-relations.pmx": opens(
             broken, "a tail, an append source, an IK link and an IK effector "
             "that name no bone, and an IK bone whose effector is none: each "

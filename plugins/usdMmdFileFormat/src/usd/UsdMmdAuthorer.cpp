@@ -21,13 +21,21 @@
 #include "pxr/usd/usd/modelAPI.h"
 #include "pxr/usd/usd/prim.h"
 #include "pxr/usd/usd/stage.h"
+#include "pxr/usd/usdGeom/capsule.h"
+#include "pxr/usd/usdGeom/cube.h"
 #include "pxr/usd/usdGeom/mesh.h"
 #include "pxr/usd/usdGeom/metrics.h"
 #include "pxr/usd/usdGeom/primvarsAPI.h"
 #include "pxr/usd/usdGeom/scope.h"
+#include "pxr/usd/usdGeom/sphere.h"
 #include "pxr/usd/usdGeom/subset.h"
 #include "pxr/usd/usdGeom/tokens.h"
 #include "pxr/usd/usdGeom/xform.h"
+#include "pxr/usd/usdPhysics/collisionAPI.h"
+#include "pxr/usd/usdPhysics/joint.h"
+#include "pxr/usd/usdPhysics/limitAPI.h"
+#include "pxr/usd/usdPhysics/massAPI.h"
+#include "pxr/usd/usdPhysics/rigidBodyAPI.h"
 #include "pxr/usd/usdShade/material.h"
 #include "pxr/usd/usdShade/materialBindingAPI.h"
 #include "pxr/usd/usdShade/nodeGraph.h"
@@ -78,6 +86,73 @@ const SdfPath kMorphPath("/Asset/morph");
 const SdfPath kRigPath("/Asset/rig");
 const SdfPath kRigBonesPath("/Asset/rig/Bones");
 const SdfPath kRigIkPath("/Asset/rig/ik");
+const SdfPath kPhysicsPath("/Asset/physics");
+const SdfPath kRigidBodiesPath("/Asset/physics/rigidBodies");
+const SdfPath kJointsPath("/Asset/physics/joints");
+
+const char*
+RigidBodyShapeName(mmd::RigidBodyShape shape)
+{
+    switch (shape) {
+    case mmd::RigidBodyShape::Box:
+        return "box";
+    case mmd::RigidBodyShape::Capsule:
+        return "capsule";
+    case mmd::RigidBodyShape::Sphere:
+        break;
+    }
+    return "sphere";
+}
+
+const char*
+PhysicsModeName(mmd::PhysicsMode mode)
+{
+    switch (mode) {
+    case mmd::PhysicsMode::Dynamic:
+        return "dynamic";
+    case mmd::PhysicsMode::DynamicWithBone:
+        return "dynamicWithBone";
+    case mmd::PhysicsMode::FollowBone:
+        break;
+    }
+    return "followBone";
+}
+
+const char*
+PhysicsJointTypeName(mmd::PhysicsJointType type)
+{
+    switch (type) {
+    case mmd::PhysicsJointType::SixDof:
+        return "sixDof";
+    case mmd::PhysicsJointType::PointToPoint:
+        return "pointToPoint";
+    case mmd::PhysicsJointType::ConeTwist:
+        return "coneTwist";
+    case mmd::PhysicsJointType::Slider:
+        return "slider";
+    case mmd::PhysicsJointType::Hinge:
+        return "hinge";
+    case mmd::PhysicsJointType::Spring6Dof:
+        break;
+    }
+    return "spring6Dof";
+}
+
+/// Whether UsdPhysics represents a joint type: a generic PhysicsJoint with a
+/// limit per degree of freedom is exactly the 6-DOF constraint of both PMX
+/// spring types. The other PMX 2.1 types have no documented mapping of their
+/// limits (STAGE_CONTRACT.md §13.2).
+bool
+IsSixDof(mmd::PhysicsJointType type)
+{
+    return type == mmd::PhysicsJointType::Spring6Dof || type == mmd::PhysicsJointType::SixDof;
+}
+
+GfQuatf
+ToQuatf(const mmd::Float4& q)
+{
+    return GfQuatf(q[3], q[0], q[1], q[2]);
+}
 
 template <class GfType, class Source>
 VtArray<GfType>
@@ -259,6 +334,10 @@ public:
         if (skinned) {
             UsdGeomScope::Define(_stage, kRigPath);
             _Rig();
+        }
+        if (!_doc.physics.rigidBodies.empty()) {
+            UsdGeomScope::Define(_stage, kPhysicsPath);
+            _Physics();
         }
 
         _ImporterDiagnostics(skinned);
@@ -899,8 +978,8 @@ private:
         _MorphArray(prim, "mmd:morph:toonTints", SdfValueTypeNames->Float4Array, toonTint);
     }
 
-    /// An impulse morph names rigid bodies, which are Phase 6's: until
-    /// /Asset/physics exists, each one is kept by its source-table index.
+    /// An impulse morph names rigid bodies by their index among
+    /// /Asset/physics/rigidBodies, which keeps the source order.
     void _MorphImpulseOffsets(const UsdPrim& prim, const mmd::Morph& m)
     {
         VtIntArray bodies;
@@ -1031,6 +1110,219 @@ private:
         }
     }
 
+    /// Rigid bodies and joints (STAGE_CONTRACT.md §13): standard UsdPhysics
+    /// where its semantics match, and every PMX value as `mmd:physics:*`
+    /// beside it. Nothing is simulated: no PhysicsScene is authored, and no
+    /// body carries a velocity.
+    void _Physics()
+    {
+        UsdGeomScope::Define(_stage, kRigidBodiesPath);
+        for (const mmd::RigidBody& b : _doc.physics.rigidBodies) {
+            _RigidBody(b);
+        }
+        if (_doc.physics.joints.empty()) {
+            return;
+        }
+        UsdGeomScope::Define(_stage, kJointsPath);
+        for (const mmd::PhysicsJoint& j : _doc.physics.joints) {
+            _Joint(j);
+        }
+    }
+
+    static void _Provenance(const UsdPrim& prim, const mmd::Name& name, std::size_t sourceIndex)
+    {
+        prim.SetCustomDataByKey(kSourceNameKey, VtValue(name.source));
+        prim.SetCustomDataByKey(kSourceEnglishNameKey, VtValue(name.english));
+        prim.SetCustomDataByKey(kSourceIndexKey, VtValue(static_cast<int>(sourceIndex)));
+    }
+
+    static void _Uniform(const UsdPrim& prim, const char* name, const SdfValueTypeName& type,
+                         const VtValue& value)
+    {
+        SetCustom(prim, name, type, value, SdfVariabilityUniform);
+    }
+
+    /// One rigid body: an Xform at its rest frame with PhysicsRigidBodyAPI
+    /// and PhysicsMassAPI, and its shape as a guide-purpose collider child.
+    void _RigidBody(const mmd::RigidBody& b)
+    {
+        const SdfPath path = kRigidBodiesPath.AppendChild(TfToken(b.name.stableId));
+        const UsdGeomXform xform = UsdGeomXform::Define(_stage, path);
+        const UsdPrim prim = xform.GetPrim();
+        if (!prim) {
+            return;
+        }
+        _Provenance(prim, b.name, b.sourceIndex);
+        xform.AddTranslateOp(UsdGeomXformOp::PrecisionDouble)
+            .Set(GfVec3d(b.position[0], b.position[1], b.position[2]));
+        xform.AddOrientOp(UsdGeomXformOp::PrecisionFloat).Set(ToQuatf(b.orientation));
+
+        const UsdPhysicsRigidBodyAPI body = UsdPhysicsRigidBodyAPI::Apply(prim);
+        // A body that follows its bone is moved, not simulated.
+        body.CreateKinematicEnabledAttr(VtValue(b.mode == mmd::PhysicsMode::FollowBone));
+        const UsdPhysicsMassAPI mass = UsdPhysicsMassAPI::Apply(prim);
+        // UsdPhysics reads a zero mass as "not given"; only a positive one
+        // means what the source's does.
+        if (std::isfinite(b.mass) && b.mass > 0.0f) {
+            mass.CreateMassAttr(VtValue(b.mass));
+        }
+
+        _Uniform(prim, "mmd:physics:bone", SdfValueTypeNames->Int, VtValue(b.bone));
+        _Uniform(prim,
+                 "mmd:physics:shape",
+                 SdfValueTypeNames->Token,
+                 VtValue(TfToken(RigidBodyShapeName(b.shape))));
+        _Uniform(prim,
+                 "mmd:physics:size",
+                 SdfValueTypeNames->Float3,
+                 VtValue(GfVec3f(static_cast<float>(b.size[0]),
+                                 static_cast<float>(b.size[1]),
+                                 static_cast<float>(b.size[2]))));
+        _Uniform(
+            prim, "mmd:physics:collisionGroup", SdfValueTypeNames->Int, VtValue(b.collisionGroup));
+        _Uniform(
+            prim, "mmd:physics:collisionMask", SdfValueTypeNames->Int, VtValue(b.collisionMask));
+        _Uniform(prim, "mmd:physics:mass", SdfValueTypeNames->Float, VtValue(b.mass));
+        _Uniform(
+            prim, "mmd:physics:linearDamping", SdfValueTypeNames->Float, VtValue(b.linearDamping));
+        _Uniform(prim,
+                 "mmd:physics:angularDamping",
+                 SdfValueTypeNames->Float,
+                 VtValue(b.angularDamping));
+        _Uniform(prim, "mmd:physics:restitution", SdfValueTypeNames->Float, VtValue(b.restitution));
+        _Uniform(prim, "mmd:physics:friction", SdfValueTypeNames->Float, VtValue(b.friction));
+        _Uniform(prim,
+                 "mmd:physics:mode",
+                 SdfValueTypeNames->Token,
+                 VtValue(TfToken(PhysicsModeName(b.mode))));
+
+        // The collider: Bullet's shapes, which UsdGeom has exactly -- a box
+        // by its half extents, a capsule along its Y axis with the length of
+        // its cylinder as the height.
+        const SdfPath colliderPath = path.AppendChild(TfToken("collider"));
+        UsdGeomGprim collider;
+        VtVec3fArray extent(2);
+        switch (b.shape) {
+        case mmd::RigidBodyShape::Box: {
+            const UsdGeomCube cube = UsdGeomCube::Define(_stage, colliderPath);
+            cube.CreateSizeAttr(VtValue(2.0));
+            cube.AddScaleOp(UsdGeomXformOp::PrecisionDouble)
+                .Set(GfVec3d(b.size[0], b.size[1], b.size[2]));
+            UsdGeomCube::ComputeExtent(2.0, &extent);
+            collider = cube;
+            break;
+        }
+        case mmd::RigidBodyShape::Capsule: {
+            const UsdGeomCapsule capsule = UsdGeomCapsule::Define(_stage, colliderPath);
+            capsule.CreateRadiusAttr(VtValue(b.size[0]));
+            capsule.CreateHeightAttr(VtValue(b.size[1]));
+            capsule.CreateAxisAttr(VtValue(UsdGeomTokens->y));
+            UsdGeomCapsule::ComputeExtent(b.size[1], b.size[0], UsdGeomTokens->y, &extent);
+            collider = capsule;
+            break;
+        }
+        case mmd::RigidBodyShape::Sphere: {
+            const UsdGeomSphere sphere = UsdGeomSphere::Define(_stage, colliderPath);
+            sphere.CreateRadiusAttr(VtValue(b.size[0]));
+            UsdGeomSphere::ComputeExtent(b.size[0], &extent);
+            collider = sphere;
+            break;
+        }
+        }
+        if (!collider) {
+            return;
+        }
+        collider.CreateExtentAttr(VtValue(extent));
+        // Collision geometry, not something to render.
+        collider.CreatePurposeAttr(VtValue(UsdGeomTokens->guide));
+        UsdPhysicsCollisionAPI::Apply(collider.GetPrim());
+    }
+
+    /// One joint: a PhysicsJoint between its bodies, with a PhysicsLimitAPI
+    /// per limited degree of freedom, when UsdPhysics represents its type;
+    /// a typeless prim otherwise. Every PMX value is on it either way.
+    void _Joint(const mmd::PhysicsJoint& j)
+    {
+        const SdfPath path = kJointsPath.AppendChild(TfToken(j.name.stableId));
+        const bool sixDof = IsSixDof(j.type);
+        const UsdPhysicsJoint joint =
+            sixDof ? UsdPhysicsJoint::Define(_stage, path) : UsdPhysicsJoint();
+        const UsdPrim prim = joint ? joint.GetPrim() : _stage->DefinePrim(path);
+        if (!prim) {
+            return;
+        }
+        _Provenance(prim, j.name, j.sourceIndex);
+
+        const auto vec = [](const mmd::Float3& v) { return GfVec3f(v[0], v[1], v[2]); };
+        if (joint) {
+            const auto bodyPath = [this](std::int32_t index) {
+                return kRigidBodiesPath.AppendChild(TfToken(
+                    _doc.physics.rigidBodies[static_cast<std::size_t>(index)].name.stableId));
+            };
+            joint.CreateBody0Rel().SetTargets({bodyPath(j.rigidBodyA)});
+            joint.CreateBody1Rel().SetTargets({bodyPath(j.rigidBodyB)});
+            joint.CreateLocalPos0Attr(VtValue(vec(j.localPositionA)));
+            joint.CreateLocalRot0Attr(VtValue(ToQuatf(j.localOrientationA)));
+            joint.CreateLocalPos1Attr(VtValue(vec(j.localPositionB)));
+            joint.CreateLocalRot1Attr(VtValue(ToQuatf(j.localOrientationB)));
+
+            // A lower limit above the upper one leaves the axis free in the
+            // source, and would lock it in UsdPhysics: a free axis authors no
+            // limit. Rotation limits are in degrees there.
+            static const TfToken kAxes[6] = {TfToken("transX"),
+                                             TfToken("transY"),
+                                             TfToken("transZ"),
+                                             TfToken("rotX"),
+                                             TfToken("rotY"),
+                                             TfToken("rotZ")};
+            for (std::size_t k = 0; k < 6; ++k) {
+                const bool rotation = k >= 3;
+                const std::size_t axis = k % 3;
+                const double lower =
+                    rotation ? j.rotationLowerLimit[axis] : j.translationLowerLimit[axis];
+                const double upper =
+                    rotation ? j.rotationUpperLimit[axis] : j.translationUpperLimit[axis];
+                if (!(lower <= upper)) {
+                    continue;
+                }
+                const double scale = rotation ? 180.0 / 3.14159265358979323846 : 1.0;
+                const UsdPhysicsLimitAPI limit = UsdPhysicsLimitAPI::Apply(prim, kAxes[k]);
+                limit.CreateLowAttr(VtValue(static_cast<float>(lower * scale) + 0.0f));
+                limit.CreateHighAttr(VtValue(static_cast<float>(upper * scale) + 0.0f));
+            }
+        }
+
+        _Uniform(prim,
+                 "mmd:physics:type",
+                 SdfValueTypeNames->Token,
+                 VtValue(TfToken(PhysicsJointTypeName(j.type))));
+        _Uniform(prim, "mmd:physics:rigidBodyA", SdfValueTypeNames->Int, VtValue(j.rigidBodyA));
+        _Uniform(prim, "mmd:physics:rigidBodyB", SdfValueTypeNames->Int, VtValue(j.rigidBodyB));
+        _Uniform(prim,
+                 "mmd:physics:position",
+                 SdfValueTypeNames->Point3d,
+                 VtValue(GfVec3d(j.position[0], j.position[1], j.position[2])));
+        _Uniform(prim,
+                 "mmd:physics:orientation",
+                 SdfValueTypeNames->Quatf,
+                 VtValue(ToQuatf(j.orientation)));
+        const SdfValueTypeName& vector = SdfValueTypeNames->Vector3f;
+        _Uniform(prim,
+                 "mmd:physics:translationLowerLimit",
+                 vector,
+                 VtValue(vec(j.translationLowerLimit)));
+        _Uniform(prim,
+                 "mmd:physics:translationUpperLimit",
+                 vector,
+                 VtValue(vec(j.translationUpperLimit)));
+        _Uniform(
+            prim, "mmd:physics:rotationLowerLimit", vector, VtValue(vec(j.rotationLowerLimit)));
+        _Uniform(
+            prim, "mmd:physics:rotationUpperLimit", vector, VtValue(vec(j.rotationUpperLimit)));
+        _Uniform(prim, "mmd:physics:translationSpring", vector, VtValue(vec(j.translationSpring)));
+        _Uniform(prim, "mmd:physics:rotationSpring", vector, VtValue(vec(j.rotationSpring)));
+    }
+
     /// What the stage approximates or leaves out, said once per import.
     void _ImporterDiagnostics(bool skinned)
     {
@@ -1082,8 +1374,23 @@ private:
                     std::move(where)));
             }
         }
-        // Rigid bodies and joints are Phase 6's and raise nothing yet: they
-        // are reserved, not refused (PMX_CONTRACT.md §12).
+        // A joint UsdPhysics has no type for is preserved, not constrained;
+        // the condition is the one _Joint authored by.
+        std::size_t unmapped = 0;
+        for (const mmd::PhysicsJoint& j : _doc.physics.joints) {
+            unmapped += IsSixDof(j.type) ? 0 : 1;
+        }
+        if (unmapped > 0) {
+            mmd::Location where;
+            where.table = "joints";
+            _diagnostics.push_back(mmd::MakeDiagnostic(
+                codes::PhysicsJointUnmapped,
+                (unmapped == 1 ? std::string("1 joint is")
+                               : std::to_string(unmapped) + " joints are") +
+                    " of a PMX 2.1 type UsdPhysics has no counterpart for, and preserved on a "
+                    "typeless prim without a PhysicsJoint",
+                std::move(where)));
+        }
         if (const std::size_t n = _doc.metadata.softBodyCount; n > 0) {
             mmd::Location where;
             where.table = "softBodies";

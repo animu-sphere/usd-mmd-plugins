@@ -6,7 +6,7 @@ decisions behind each row are in [PMX_CONTRACT.md](../design/PMX_CONTRACT.md)
 [MATERIAL_POLICY.md](../design/MATERIAL_POLICY.md) (canonical → USD); when
 this table disagrees with them, they win and this table is the bug.
 
-Status (2026-09-16): **rows of Phases 0–5 are implemented; the rest are
+Status (2026-09-17): **rows of Phases 0–6 are implemented; the rest are
 intended.** The Phase column says when a row became true or is expected to;
 [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) says which claims a fixture
 backs.
@@ -14,7 +14,8 @@ backs.
 Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 `/Asset/skel/Skeleton`, `Mtl` is `/Asset/mtl/<materialId>`, `Morph` is
 `/Asset/morph/<morphId>`, `Bones` is `/Asset/rig/Bones`, `IK` is
-`/Asset/rig/ik/<boneId>`. Every joint index is canonical.
+`/Asset/rig/ik/<boneId>`, `Body` is `/Asset/physics/rigidBodies/<rigidBodyId>`,
+`Joint` is `/Asset/physics/joints/<jointId>`. Every joint index is canonical.
 
 ## Header
 
@@ -97,7 +98,7 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 | bone offsets | `Morph.mmd:morph:joints`, `.translations`, `.rotations` | 4 |
 | UV offsets | `Morph.mmd:morph:pointIndices`, `.uvOffsets` (raw) | 4 |
 | material offsets | `Morph.mmd:morph:materialIndices` (`−1` = all), `.materialOperations`, and one array per modulated value | 4 |
-| impulse offsets | `Morph.mmd:morph:rigidBodyIndices` (source table), `.impulseLocal`, `.velocities`, `.torques` | 4 |
+| impulse offsets | `Morph.mmd:morph:rigidBodyIndices` (the order of `Body`), `.impulseLocal`, `.velocities`, `.torques` | 4 |
 
 ## Display frames
 
@@ -109,6 +110,18 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 
 | PMX field | USD | Phase |
 | --- | --- | :---: |
-| rigid body | `/Asset/physics/rigidBodies/<id>`: `UsdPhysics` where it matches, `mmd:physics:*` otherwise | 6 |
-| joint | `/Asset/physics/joints/<id>`: `UsdPhysics` where it matches, `mmd:physics:*` otherwise | 6 |
+| rigid body name, English name, (table index) | `Body` customData provenance | 6 |
+| bone | `Body.mmd:physics:bone` | 6 |
+| group, non-collision mask | `Body.mmd:physics:collisionGroup`, `collisionMask` | 6 |
+| shape, size | `Body.mmd:physics:shape`, `size`; `Body/collider` (`Sphere`, `Cube`, `Capsule`) | 6 |
+| position, rotation | `Body.xformOp:translate`, `xformOp:orient` | 6 |
+| mass | `Body.mmd:physics:mass`; `physics:mass` when positive | 6 |
+| linear and angular damping, restitution, friction | `Body.mmd:physics:linearDamping`, `angularDamping`, `restitution`, `friction` | 6 |
+| physics mode | `Body.mmd:physics:mode`; `physics:kinematicEnabled` | 6 |
+| joint name, English name, (table index) | `Joint` customData provenance | 6 |
+| joint type | `Joint.mmd:physics:type`; a `PhysicsJoint` for the 6-DOF types | 6 |
+| rigid bodies A and B | `Joint.mmd:physics:rigidBodyA`, `rigidBodyB`; `physics:body0`, `body1` | 6 |
+| position, rotation | `Joint.mmd:physics:position`, `orientation`; `physics:localPos0/1`, `localRot0/1` | 6 |
+| translation and rotation limits | `Joint.mmd:physics:translationLowerLimit` … `rotationUpperLimit`; `limit:<axis>:physics:low/high` | 6 |
+| translation and rotation springs | `Joint.mmd:physics:translationSpring`, `rotationSpring` | 6 |
 | soft body (2.1) | not authored (`MMD_PHYSICS_SOFT_BODY_UNSUPPORTED`) | — |

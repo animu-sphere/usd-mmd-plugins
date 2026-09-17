@@ -240,7 +240,39 @@ Generate(Random& r)
         left -= faces;
         doc.materials.push_back(m);
     }
-    doc.rigidBodies.resize(r.Below(4));
+    // Rigid bodies with any bone, shape, mode and transform, undefined values
+    // included, and joints between any bodies or none.
+    const std::size_t bodies = r.Below(4);
+    doc.rigidBodies.resize(bodies);
+    for (pmx::RigidBody& b : doc.rigidBodies) {
+        b.name = WildName(r);
+        b.englishName = WildName(r);
+        b.bone = Index(r, bones);
+        b.group = static_cast<std::uint8_t>(r.Below(20));
+        b.nonCollisionMask = static_cast<std::uint16_t>(r.Below(0x10000));
+        b.shape = static_cast<std::uint8_t>(r.Below(5));
+        b.size = WildVec3(r);
+        b.position = WildVec3(r);
+        b.rotation = WildVec3(r);
+        b.mass = WildFloat(r);
+        b.physicsMode = static_cast<std::uint8_t>(r.Below(5));
+    }
+    doc.joints.resize(r.Below(4));
+    for (pmx::Joint& j : doc.joints) {
+        j.name = WildName(r);
+        j.englishName = WildName(r);
+        j.type = static_cast<std::uint8_t>(r.Below(8));
+        j.rigidBodyA = Index(r, bodies);
+        j.rigidBodyB = Index(r, bodies);
+        j.position = WildVec3(r);
+        j.rotation = WildVec3(r);
+        j.translationMin = WildVec3(r);
+        j.translationMax = WildVec3(r);
+        j.rotationMin = WildVec3(r);
+        j.rotationMax = WildVec3(r);
+        j.translationSpring = WildVec3(r);
+        j.rotationSpring = WildVec3(r);
+    }
     // Morphs of every type, with members that name later morphs, earlier
     // ones, or themselves: a group graph with any cycle in it.
     const std::size_t morphs = r.OneIn(5) ? 0 : r.Below(10);
@@ -576,6 +608,45 @@ Violation(const pmx::Document& doc, const mmd::CanonicalDocument& c)
             }
         }
     }
+    // Physics: every body kept in order, every kept index naming what it
+    // should, every enumeration defined, every joint joining two bodies.
+    const std::size_t nr = doc.rigidBodies.size();
+    const auto body = [nr](std::int32_t k) { return k >= 0 && static_cast<std::size_t>(k) < nr; };
+    if (c.physics.rigidBodies.size() != nr) {
+        return "a rigid body was dropped";
+    }
+    for (std::size_t i = 0; i < nr; ++i) {
+        const mmd::RigidBody& b = c.physics.rigidBodies[i];
+        if (b.sourceIndex != i) {
+            return "the rigid bodies are not in source order";
+        }
+        if (b.bone != mmd::kNone && (b.bone < 0 || static_cast<std::size_t>(b.bone) >= nb)) {
+            return "a rigid body's bone names no joint";
+        }
+        if (static_cast<int>(b.shape) > 2 || static_cast<int>(b.mode) > 2) {
+            return "a rigid body's shape or mode is undefined";
+        }
+        if (b.orientation[3] < 0.0f) {
+            return "a rigid body's orientation has a negative w";
+        }
+    }
+    std::size_t joined = 0;
+    for (const pmx::Joint& j : doc.joints) {
+        joined += body(j.rigidBodyA) && body(j.rigidBodyB) ? 1 : 0;
+    }
+    if (c.physics.joints.size() != joined) {
+        return "the joints are not every joint between two bodies";
+    }
+    const int lastType = doc.header.version == pmx::Version::V2_1 ? 5 : 0;
+    for (const mmd::PhysicsJoint& j : c.physics.joints) {
+        if (!body(j.rigidBodyA) || !body(j.rigidBodyB)) {
+            return "a joint names no rigid body";
+        }
+        if (static_cast<int>(j.type) > lastType) {
+            return "a joint's type is undefined in its version";
+        }
+    }
+
     if (!MorphMembersTerminate(c.morphs)) {
         return "a group morph reaches its own morph";
     }
@@ -671,6 +742,32 @@ public:
                 Add(std::to_string(link.joint));
                 Raw(std::vector<mmd::Float3>{link.lowerLimit, link.upperLimit});
             }
+        }
+        for (const mmd::RigidBody& b : c.physics.rigidBodies) {
+            Add(b.name.stableId,
+                std::to_string(b.bone),
+                std::to_string(b.collisionGroup) + "," + std::to_string(b.collisionMask) + "," +
+                    std::to_string(static_cast<int>(b.shape)) + "," +
+                    std::to_string(static_cast<int>(b.mode)));
+            Raw(std::vector<mmd::Double3>{b.size, b.position});
+            Raw(std::vector<mmd::Float4>{b.orientation});
+            Raw(std::vector<float>{
+                b.mass, b.linearDamping, b.angularDamping, b.restitution, b.friction});
+        }
+        for (const mmd::PhysicsJoint& j : c.physics.joints) {
+            Add(j.name.stableId,
+                std::to_string(static_cast<int>(j.type)),
+                std::to_string(j.rigidBodyA) + "," + std::to_string(j.rigidBodyB));
+            Raw(std::vector<mmd::Double3>{j.position});
+            Raw(std::vector<mmd::Float4>{j.orientation, j.localOrientationA, j.localOrientationB});
+            Raw(std::vector<mmd::Float3>{j.translationLowerLimit,
+                                         j.translationUpperLimit,
+                                         j.rotationLowerLimit,
+                                         j.rotationUpperLimit,
+                                         j.translationSpring,
+                                         j.rotationSpring,
+                                         j.localPositionA,
+                                         j.localPositionB});
         }
     }
 

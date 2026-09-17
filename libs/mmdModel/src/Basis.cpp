@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "mmdModel/Basis.h"
 
+#include "Quaternion.h"
+
 #include <cmath>
+#include <cstddef>
 
 namespace mmd::basis {
 
@@ -85,6 +88,42 @@ Limits(const Float3& lower, const Float3& upper)
 {
     return {{Mirror(upper[0]), Mirror(upper[1]), lower[2] + 0.0f},
             {Mirror(lower[0]), Mirror(lower[1]), upper[2] + 0.0f}};
+}
+
+std::array<double, 4>
+EulerRotationD(const Float3& radians)
+{
+    const auto about = [](int axis, float angle) {
+        const double half = static_cast<double>(angle) * 0.5;
+        detail::QuatD q{0.0, 0.0, 0.0, std::cos(half)};
+        q[static_cast<std::size_t>(axis)] = std::sin(half);
+        return q;
+    };
+    const detail::QuatD source = detail::Multiply(
+        detail::Multiply(about(1, radians[1]), about(0, radians[0])), about(2, radians[2]));
+    // S * R * S for a unit quaternion: the axis mirrors as an axial vector.
+    return {-source[0], -source[1], source[2], source[3]};
+}
+
+Float4
+EulerRotation(const Float3& radians)
+{
+    return detail::Rounded(EulerRotationD(radians));
+}
+
+Double3
+Lengths(const Float3& source)
+{
+    return {source[0] * kMetersPerUnit + 0.0,
+            source[1] * kMetersPerUnit + 0.0,
+            source[2] * kMetersPerUnit + 0.0};
+}
+
+TranslationRange
+TranslationLimits(const Float3& lower, const Float3& upper)
+{
+    return {{Scaled(lower[0]), Scaled(lower[1]), Mirror(Scaled(upper[2]))},
+            {Scaled(upper[0]), Scaled(upper[1]), Mirror(Scaled(lower[2]))}};
 }
 
 Float2

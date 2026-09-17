@@ -1,46 +1,47 @@
-# Phase 6 — physics preservation
+# Phase 7 — VMD
 
 Status: ⬜ not started.
 
-`/Asset/physics` is the reserved scope for PMX's rigid bodies and joints.
-Phase 6 authors them with standard `UsdPhysics` where its semantics match and
-preserves every other parameter as `mmd:physics:*`, so every rigid body and
-joint is recoverable from the stage — and steps no simulation, as
-[DESIGN_POLICY.md §8](../design/DESIGN_POLICY.md#8-physics-policy) requires.
+Phase 7 reads VMD motion. `libs/motionVmd` is a plain, extraction-ready
+library — VMD syntax, CP932 decoding, the motion source representation, no
+OpenUSD and no dependency on the model libraries — integrated with the shared
+motion architecture, as
+[MOTION_CONTRACT.md](../design/MOTION_CONTRACT.md) describes. A `.vmd` opens
+directly as a stage only once that contract says what such a stage is.
 
 ## Outcome
 
 ```text
-Usd.Stage.Open("model.pmx")
-    → …                                   the Phase 0–5 stage, unchanged
-    → /Asset/physics/rigidBodies/<id>     shapes, mass, damping, groups, mode
-    → /Asset/physics/joints/<id>          constraints, limits, springs
+motionVmd::Read("motion.vmd")
+    → bone, morph, camera, light, self-shadow and IK/visibility tracks,
+      names decoded from CP932 with their raw bytes kept
+vmd_inspect motion.vmd
+    → what the file holds
 ```
 
 ## What remains
 
-- ⬜ Fix the PMX Euler composition order of rigid-body and joint rotations
-  against a reference implementation — PMX-O1, in
-  [PMX_CONTRACT.md §16](../design/PMX_CONTRACT.md#16-open-questions); until
-  then rotations are carried unconverted and not authored.
-- ⬜ Decide the physics prim shapes: which PMX concepts standard `UsdPhysics`
-  matches, and the typeless `mmd:physics:*` encoding of the rest — the
-  physics half of STAGE-O6, in
-  [STAGE_CONTRACT.md §16](../design/STAGE_CONTRACT.md#16-open-questions),
-  following the rig half decided in Phase 5.
-- ⬜ Carry rigid bodies and joints in `mmdModel`: identity, bone attachment by
-  canonical joint, shapes and sizes, positions and rotations through the
-  basis conversion, spring constants in source units.
-- ⬜ Author `/Asset/physics` and make
-  [STAGE_CONTRACT.md §13](../design/STAGE_CONTRACT.md#13-physics--reserved)
-  binding, with fixtures for every shape, joint type and repair; an impulse
-  morph's `mmd:morph:rigidBodyIndices` then has prims to name.
+- ⬜ Decide where the shared basis-conversion functions live, so `mmdModel`
+  and `motionVmd` share them without depending on each other — MOT-O1, in
+  [MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions).
+- ⬜ Decide which runtime owns MMD IK and append evaluation for baking —
+  MOT-O3, in the same section.
+- ⬜ Create `libs/motionVmd`: every VMD section under the PMX reading rules,
+  CP932 through a table the project owns, `MMD_TEXT_TRUNCATED_CP932` and
+  `MMD_MOTION_DUPLICATE_KEYFRAME`, with synthetic fixtures and a fuzzing lane
+  like the parser's.
+- ⬜ Create `tools/vmdInspect`.
+- ⬜ Binding a VMD to a PMX model by name, as a separate operation
+  ([MOTION_CONTRACT.md §8](../design/MOTION_CONTRACT.md#8-binding-a-vmd-to-a-pmx-model)).
+- ⬜ `usdVmdFileFormat` waits for MOT-O2, the shared motion contract's answer
+  to what a directly opened `.vmd` stage looks like.
 
 ## Completion criteria
 
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)'s acceptance for
-Phase 6: **no simulation; every rigid body and joint recoverable**.
+Phase 7: per [MOTION_CONTRACT.md](../design/MOTION_CONTRACT.md).
 
-Phase 6's preservation is the last part of what
+Phases 0–6 are done, so every Phase
 [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
-wants for the first substantial release; Phases 0–5 are done.
+names for the first substantial release has landed; Phase 7 is not part of
+it.

@@ -10,6 +10,7 @@
 
 #include "mmdModel/CanonicalDocument.h"
 
+#include <array>
 #include <cstdint>
 
 namespace mmd::basis {
@@ -58,6 +59,28 @@ struct RotationLimits {
     Float3 upper;
 };
 RotationLimits Limits(const Float3& lower, const Float3& upper);
+
+/// PMX Euler angles in radians -- a rigid body's or a joint's rotation -- as
+/// the unit quaternion (x, y, z, w) of the converted rotation, in double.
+/// The source composes them as R = Ry * Rx * Rz, acting on column vectors:
+/// Z first, then X, then Y (PMX_CONTRACT.md §13, PMX-O1). The matrix is then
+/// converted as S * R * S.
+std::array<double, 4> EulerRotationD(const Float3& radians);
+
+/// The same rotation rounded to float once, w never negative.
+Float4 EulerRotation(const Float3& radians);
+
+/// Scalar lengths -- a rigid body's radius, half extents, capsule height:
+/// `* s` each, never mirrored, in double: UsdGeom authors them as doubles.
+Double3 Lengths(const Float3& source);
+
+/// Per-axis translation limits, [lower, upper]: along X and Y scaled, along Z
+/// mirrored, so it becomes s * [-upper, -lower].
+struct TranslationRange {
+    Float3 lower;
+    Float3 upper;
+};
+TranslationRange TranslationLimits(const Float3& lower, const Float3& upper);
 
 /// A PMX UV (origin top-left) -> USD `st` (origin bottom-left): (u, 1 - v).
 Float2 St(const Float2& source);
