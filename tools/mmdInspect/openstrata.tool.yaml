@@ -8,11 +8,11 @@ schema: openstrata.tool/v1alpha1
 tool:
   id: mmd_inspect
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.0.0
+  version: 0.1.0
   license: Apache-2.0
 executables: [mmd_inspect]
 directories: [bin]
 requires:
   libraries:
     - id: mmdPmx
-      version: ">=0.0,<0.1"
+      version: ">=0.1,<0.2"

@@ -2,9 +2,10 @@
 
 All notable changes to `usd-mmd-plugins` are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Once it exists, the
-release version is the single value in the repository-root `VERSION` file; the
-git tag (`vX.Y.Z`) and this changelog mirror it.
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). The release
+version is the single value in the repository-root `VERSION` file; the git tag
+(`vX.Y.Z`) and this changelog mirror it, and each released version has a
+record in [docs/releases/](docs/releases/README.md).
 
 The **stage-contract version** is tracked separately from the package version:
 it changes only when the downstream interpretation of the authored stage
@@ -14,7 +15,27 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-17
+
+The first release: `.pmx` opens as the canonical stage, every PMX 2.0 and 2.1
+table is read, morphs, rig and physics are preserved without being evaluated,
+and VMD motion is read and bound to a model — Phases 0–7.
+
 ### Added
+
+- **Release machinery.** `release.yml`, on a `vX.Y.Z` tag equal to `VERSION`
+  and a dated changelog section, builds the workspace on Windows, macOS and
+  Linux against the pull request lanes' pinned runtimes, runs the bundle's
+  verification pyramid against the build tree and the package, packages the
+  bundle, both tools and the aggregate product twice to the same digests,
+  installs the product into a fresh prefix and uses it with nothing from the
+  build tree (`product_smoke.py`), and drafts a GitHub release with every
+  archive, its manifest, a source archive, `SHA256SUMS`, and notes rendered
+  from this changelog (`make_release_notes.py`,
+  `docs/contributing/RELEASE_NOTES_TEMPLATE.md`). `workflow_dispatch` is a
+  dry run. `check_docs.py` also fails when a manifest's required sibling
+  range or the installed-consumer lane's `find_package` version excludes
+  `VERSION`.
 
 - **Phase 2 canonical stage.** `Usd.Stage.Open("model.pmx")` now authors the
   model: `/Asset` as the `UsdSkelRoot` of a model with bones (an `Xform`
@@ -228,6 +249,15 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Changed
 
+- `VERSION` is 0.1.0, and so is every manifest and CMake fallback; each
+  component requires its siblings at `>=0.1,<0.2`, and the installed-consumer
+  lane asks for 0.1.
+- The capability matrix states the Phase 3 material rows as implemented —
+  the portable realizations approximated, the MMD semantics preserved; they
+  had kept the documentation baseline's `—`.
 - Every GCC and Clang target compiles with `-ffp-contract=off`, so no
   floating-point expression is fused into an FMA and the same bytes author
   the same stage on every platform.
+
+[Unreleased]: https://github.com/animu-sphere/usd-mmd-plugins/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/animu-sphere/usd-mmd-plugins/releases/tag/v0.1.0

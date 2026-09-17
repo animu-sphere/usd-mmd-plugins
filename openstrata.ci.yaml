@@ -2,13 +2,16 @@
 #
 # Policy: this file is the CI contract; .github/workflows/ost-*.yml are
 # renderer output from `ost ci generate github`. Do not hand-edit CI semantics
-# in the generated workflow YAML -- change this file and regenerate. Two
+# in the generated workflow YAML -- change this file and regenerate. Three
 # workflows are hand-written, each for what this matrix cannot express:
-# docs-check.yml checks documentation and builds nothing, and
+# docs-check.yml checks documentation and builds nothing;
 # parser-sanitizers.yml builds mmdPmx, mmdModel, motionVmd and
 # mmdMotionBinding on their own -- no runtime, since none links OpenUSD --
 # under ASan and UBSan, and fuzzes both readers (docs/architecture/
-# WORKSPACE.md §3, §6).
+# WORKSPACE.md §3, §6); and release.yml, on a tag, packages the product and
+# drafts the GitHub release. release.yml MIRRORS this file's ost version,
+# runtime digests, OpenUSD requirement, host packages and pyramid depths --
+# re-pin it with them (docs/releases/README.md).
 #
 # Lanes: one, `pull_request`, on GitHub-hosted runners. Each runner bootstraps
 # the pinned `ost` below and pulls the runtime SDK from its OCI reference.

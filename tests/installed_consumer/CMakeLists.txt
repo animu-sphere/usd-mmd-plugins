@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # mmdModel alone: its package config must find mmdPmx, its one edge, by
 # itself (PACKAGE_CONTRACT.md).
-find_package(mmdModel 0.0 CONFIG REQUIRED)
+find_package(mmdModel 0.1 CONFIG REQUIRED)
 
 add_executable(pmx_header_probe main.cpp)
 target_link_libraries(pmx_header_probe PRIVATE mmdModel::mmdModel)
@@ -25,7 +25,7 @@ endif()
 
 # mmdMotionBinding alone: its package config must find both of its edges,
 # mmdModel and motionVmd, by itself.
-find_package(mmdMotionBinding 0.0 CONFIG REQUIRED)
+find_package(mmdMotionBinding 0.1 CONFIG REQUIRED)
 
 add_executable(vmd_probe vmd_probe.cpp)
 target_link_libraries(vmd_probe PRIVATE mmdMotionBinding::mmdMotionBinding)

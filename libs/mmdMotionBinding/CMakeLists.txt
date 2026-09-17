@@ -17,7 +17,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
          _mmd_binding_version LIMIT_COUNT 1)
     string(STRIP "${_mmd_binding_version}" _mmd_binding_version)
 else()
-    set(_mmd_binding_version "0.0.0")  # mirrors openstrata.library.yaml
+    set(_mmd_binding_version "0.1.0")  # mirrors openstrata.library.yaml
 endif()
 
 project(mmdMotionBinding

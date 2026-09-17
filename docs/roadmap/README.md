@@ -12,6 +12,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 | Document | Contents |
 | --- | --- |
 | [current.md](current.md) | The current milestone — Phase 8, avatar runtime composition — and the part of it this repository owes or waits for. |
+| [../releases/](../releases/README.md) | What each released version shipped, and how a release is cut. |
 
 ## One sequence
 
@@ -27,24 +28,23 @@ in.** No other document states a version for a Phase.
 
 | Phase | Scope | Status | Release |
 | --- | --- | --- | --- |
-| 0 | workspace skeleton | ✅ done | unassigned |
-| 1 | PMX structural parser | ✅ done | unassigned |
-| 2 | canonical stage | ✅ done | unassigned |
-| 3 | material triad | ✅ done | unassigned |
-| 4 | morphs | ✅ done | unassigned |
-| 5 | control semantics | ✅ done | unassigned |
-| 6 | physics preservation | ✅ done | unassigned |
-| 7 | VMD | ✅ done | unassigned |
+| 0 | workspace skeleton | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
+| 1 | PMX structural parser | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
+| 2 | canonical stage | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
+| 3 | material triad | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
+| 4 | morphs | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
+| 5 | control semantics | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
+| 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
+| 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | avatar runtime composition | ⬜ | unassigned, and owned mostly outside this repository |
 
-No release number is assigned yet. The first release that claims PMX import is
-the one that meets
+Phases 0–7 ship together in v0.1.0, the first release, decided on
+2026-09-17: it is the one that meets
 [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
-— Phases 0–4 plus the preservation parts of 5 and 6 it names. Phases 0–7 are
-done, so every Phase that definition names has landed; its checklist is met
-in the tree, and which version carries it is decided here. Whether earlier
-Phases get releases of their own is also decided here, and both questions are
-still open.
+— Phases 0–4 plus the preservation parts of 5 and 6 it names — and it carries
+Phase 7 too. It is a 0.x release because no consumer has used the packages
+yet: Phase 8's consumer may still show a contract wrong
+([current.md](current.md)). No earlier Phase had a release of its own.
 
 Where things stand, as of 2026-09-17:
 

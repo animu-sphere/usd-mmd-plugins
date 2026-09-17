@@ -17,7 +17,9 @@ External links (`http:`, `https:`, `mailto:`) are not fetched.
 
 Mirrors -- docs/architecture/WORKSPACE.md §4: the repository-root VERSION is
 the single product version, and openstrata.toml, every component manifest and
-every CMake fallback mirror it; cmake/UsdMmdOpenUsd.cmake's pin and every
+every CMake fallback mirror it, every range a manifest requires a sibling in
+admits it, and so does every version the installed-consumer lane asks
+`find_package` for; cmake/UsdMmdOpenUsd.cmake's pin and every
 bundle manifest's `runtime.openusd` name the same OpenUSD release.
 
 Diagnostics -- docs/reference/DIAGNOSTICS.md §5 is the catalog, and each
@@ -146,6 +148,27 @@ def check_file(path: pathlib.Path, cache: dict) -> list[str]:
     return errors
 
 
+# `version: ">=0.1,<0.2"` under a manifest's `requires.libraries`.
+REQUIRED_RANGE = re.compile(r'^\s+version:\s*">=([0-9.]+),<([0-9.]+)"', re.MULTILINE)
+FIND_PACKAGE_VERSION = re.compile(r"find_package\((\w+)\s+([0-9.]+)\s+CONFIG")
+
+
+def in_range(version: str, lower: str, upper: str) -> bool:
+    def key(text: str) -> tuple[int, ...]:
+        parts = [int(p) for p in text.split(".")]
+        return tuple(parts + [0] * (3 - len(parts)))
+    return key(lower) <= key(version) < key(upper)
+
+
+def check_ranges(root: pathlib.Path, manifest: pathlib.Path, version: str) -> list[str]:
+    """Every sibling this workspace requires is built at VERSION, so every
+    required range has to admit it -- or the release cannot resolve itself."""
+    where = manifest.relative_to(root).as_posix()
+    return [f"{where}: required range >={lower},<{upper} excludes {version}"
+            for lower, upper in REQUIRED_RANGE.findall(manifest.read_text(encoding="utf-8"))
+            if not in_range(version, lower, upper)]
+
+
 def check_mirrors(root: pathlib.Path) -> list[str]:
     errors: list[str] = []
     version = (root / "VERSION").read_text(encoding="utf-8").strip()
@@ -162,10 +185,20 @@ def check_mirrors(root: pathlib.Path) -> list[str]:
            "project version")
     for manifest in sorted(root.glob("*/*/openstrata.*.yaml")):
         expect(manifest, r"^\s+version:\s*([0-9][^\s#]*)", version, "version")
+        errors.extend(check_ranges(root, manifest, version))
     for cmake in sorted(root.glob("*/*/CMakeLists.txt")):
         if "../../VERSION" in cmake.read_text(encoding="utf-8"):
             expect(cmake, r'set\(_mmd_\w+_version "([^"]+)"\)', version,
                    "standalone fallback version")
+
+    consumer = root / "tests" / "installed_consumer" / "CMakeLists.txt"
+    for package, requested in FIND_PACKAGE_VERSION.findall(
+            consumer.read_text(encoding="utf-8")):
+        # The packages are written with SameMinorVersion compatibility.
+        if requested != ".".join(version.split(".")[:2]):
+            errors.append(f"{consumer.relative_to(root).as_posix()}: "
+                          f"find_package({package} {requested}) cannot find "
+                          f"{version}")
 
     pin = re.search(r'USDMMD_OPENUSD_REQUIRED_RELEASE "([^"]+)"',
                     (root / "cmake" / "UsdMmdOpenUsd.cmake").read_text(encoding="utf-8"))
@@ -251,6 +284,16 @@ def selftest() -> int:
         failures.append("a link inside a code span is checked")
     if not MACHINE_LOCAL.match("C:\\dev\\x.md") or not MACHINE_LOCAL.match("/home/u/x"):
         failures.append("machine-local paths are not recognized")
+
+    for version, lower, upper, want in [("0.1.0", "0.1", "0.2", True),
+                                        ("0.1.0", "0.0", "0.1", False),
+                                        ("0.1.9", "0.1", "0.2", True),
+                                        ("1.0.0", "0.1", "1.0", False)]:
+        if in_range(version, lower, upper) != want:
+            failures.append(f"in_range({version}, {lower}, {upper}) != {want}")
+    ranges = REQUIRED_RANGE.findall('    - id: a\n      version: ">=0.1,<0.2"\n')
+    if ranges != [("0.1", "0.2")]:
+        failures.append(f"REQUIRED_RANGE found {ranges}")
 
     declarations = CODE_DECLARATION.findall(
         'inline constexpr Code PmxX{"MMD_PMX_X", Severity::Fatal};\n'

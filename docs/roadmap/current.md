@@ -8,7 +8,11 @@ under `usd-avatar-runtime`
 ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)). Most of it is
 owned outside this repository: the runtime, not this repository, is the avatar
 execution environment. What is listed here is only the part this repository
-owes, or waits for.
+owes, or waits for; what it consumes from here is
+[v0.1.0](../releases/v0.1.0.md).
+
+As of 2026-09-17 `usd-avatar-runtime`, `usd-motion-plugins` and
+`motion-connectors` hold no commits, so every item below waits on them.
 
 ## Outcome
 
@@ -22,9 +26,6 @@ usd-avatar-runtime
 
 ## What remains
 
-- ⬜ Decide which version carries the first substantial release: every Phase
-  [DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done)
-  names has landed ([README.md](README.md#status-at-a-glance)).
 - ⬜ Consume the packages from `usd-avatar-runtime` — `usdMmdFileFormat`, and
   `motionVmd` and `mmdMotionBinding` for motion — and change a contract here
   only if that consumer shows one is wrong

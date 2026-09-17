@@ -27,7 +27,7 @@ place that says what is implemented.
 | [reference/](reference/) | Facts about the current tree: what is supported, which diagnostics exist, where each PMX field lands. | [CAPABILITY_MATRIX.md](reference/CAPABILITY_MATRIX.md) · [DIAGNOSTICS.md](reference/DIAGNOSTICS.md) · [SOURCE_MAPPING.md](reference/SOURCE_MAPPING.md) |
 | [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
 | [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
-| `releases/` | Immutable per-version release records. | added with the first release |
+| [releases/](releases/) | Immutable per-version release records, and how a release is cut. | [README.md](releases/README.md) · [v0.1.0.md](releases/v0.1.0.md) |
 | [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) |
 
 ## Canonical documents
