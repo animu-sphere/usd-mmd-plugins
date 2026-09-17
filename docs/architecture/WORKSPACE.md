@@ -16,7 +16,10 @@ model) and `vmd_inspect` (which reports on a VMD) since Phase 7. All are built
 by `ost` and by plain CMake. Every other identity below is *reserved* until the
 Phase that creates it lands (Phases are
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)), and its row then
-records that.
+records that. The two Phase 9 identities, `mmdControl` and `mmdMotionAdapter`,
+and the one edge out of this repository into `usd-motion-plugins` (§2.4), were
+reserved on 2026-09-17, when the motion architecture was settled
+([DESIGN_POLICY.md §20](../design/DESIGN_POLICY.md)).
 
 The shape follows `usd-vrm-plugins`' workspace contract on purpose — the same
 plugin/library split, the same manifests, the same two build modes — so that a
@@ -43,7 +46,7 @@ And the motion components Phase 7 created
 
 | Identity | Kind | Directory | Manifest | Role | Created in | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| `motionVmd` | plain static CMake library | `libs/motionVmd/` | `openstrata.library.yaml` | VMD syntax, CP932 decoding, the motion source representation. Extraction-ready: no dependency at all. | Phase 7 | exists — every section |
+| `motionVmd` | plain static CMake library | `libs/motionVmd/` | `openstrata.library.yaml` | VMD syntax, CP932 decoding, the motion source representation. Model-independent: no dependency at all. VMD is MMD's format, so it stays in this repository. | Phase 7 | exists — every section |
 | `mmdMotionBinding` | plain static CMake library | `libs/mmdMotionBinding/` | `openstrata.library.yaml` | Binds a `motionVmd` motion to an `mmdModel` model by source name, in the model's basis. No OpenUSD, no evaluation. | Phase 7 | exists |
 | `vmd_inspect` | CLI executable | `tools/vmdInspect/` | `openstrata.tool.yaml` | Reports what a VMD contains, without a model or USD. | Phase 7 | exists |
 
@@ -57,7 +60,9 @@ created ahead of that.
 | --- | --- | --- | --- | --- |
 | `mmdMaterial` | plain static CMake library | `libs/mmdMaterial/` | Canonical material semantics, extracted from `mmdModel` | material translation outgrows `mmdModel`, or a second consumer needs it alone ([DESIGN_POLICY.md §5.3](../design/DESIGN_POLICY.md#53-mmdmaterial--deferred)) |
 | `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | Narrow applied API schemas | an API passes the admission test ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)) |
-| `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | the shared motion contract defines a directly opened motion stage |
+| `mmdControl` | plain static CMake library | `libs/mmdControl/` | MMD control evaluation: samples a bound motion's Bézier curves at an explicit time, and evaluates IK chains, append transforms and bone morphs over `mmdModel`'s control semantics into deformation-joint local transforms. No OpenUSD, no `usd-motion-plugins`. | Phase 9 begins ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md)) |
+| `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | The one bridge into `usd-motion-plugins`: a `SkeletonDescriptor` and humanoid `RetargetMap` from a canonical model, and evaluated MMD motion as a `MotionClip`. Owns no generic algorithm. | Phase 9, once `usd-motion-plugins` publishes an installable `motion-core` package ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md)) |
+| `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | MOT-O2 is resolved against `usd-motion-plugins`' standalone motion stage (`/Animation`) ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)) |
 | `mmd_convert` | CLI executable | `tools/mmdConvert/` | PMX → `.usda`/`.usdc` on disk | `usdcat` over the file format proves insufficient |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |
 
@@ -75,15 +80,19 @@ mmdModel ────────────→ mmdPmx                         
 usdMmdFileFormat ────→ mmdModel, mmdPmx, OpenUSD
                        mmdSchema                       (only if it exists)
 mmd_inspect ─────────→ mmdPmx                          (no OpenUSD)
-motionVmd ───────────→ nothing in this repository; later the shared motion
-                       contract only                   (no OpenUSD)
+motionVmd ───────────→ nothing                         (no OpenUSD)
 mmdMotionBinding ────→ mmdModel, motionVmd             (no OpenUSD)
 vmd_inspect ─────────→ motionVmd                       (no OpenUSD)
 
                        (later)
 mmdMaterial ─────────→ nothing in this repository; mmdModel → mmdMaterial
 mmdSchema ───────────→ OpenUSD only
-usdVmdFileFormat ────→ motionVmd, OpenUSD
+mmdControl ──────────→ mmdMotionBinding, mmdModel      (no OpenUSD)
+mmdMotionAdapter ────→ mmdControl, mmdModel,
+                       usd-motion-plugins motion-core  (OpenUSD foundation
+                                                        types only, through it)
+usdVmdFileFormat ────→ motionVmd, OpenUSD; usd-motion-plugins motion-usd if
+                       MOT-O2 says so
 mmd_convert ─────────→ usdMmdFileFormat's public entry point, OpenUSD
 ```
 
@@ -101,9 +110,12 @@ USD in the process
 | `mmdPmx → OpenUSD` | the parser exposes source facts, not USD policy |
 | `mmdPmx → mmdModel`, `mmdPmx → usdMmdFileFormat` | syntax never knows its consumers |
 | `mmdModel → OpenUSD`, `mmdModel → Hydra` | canonical semantics are renderer- and USD-independent |
-| `motionVmd → usdMmdFileFormat`, `motionVmd → mmdModel`, `motionVmd → mmdPmx`, `vmd_inspect → mmdModel`, `vmd_inspect → mmdPmx` | motion is extraction-ready and never needs a model to parse |
+| `motionVmd → usdMmdFileFormat`, `motionVmd → mmdModel`, `motionVmd → mmdPmx`, `vmd_inspect → mmdModel`, `vmd_inspect → mmdPmx` | a VMD never needs a model to parse |
 | `mmdModel → motionVmd`, `mmdModel → mmdMotionBinding` | a model never knows the motions bound to it; binding is its own step ([MOTION_CONTRACT.md §8](../design/MOTION_CONTRACT.md#8-binding-a-vmd-to-a-pmx-model)) |
 | `mmdMotionBinding → OpenUSD` | binding produces data a runtime consumes, not a stage |
+| `mmdControl → OpenUSD`, `mmdControl → usd-motion-plugins`, `mmdModel → mmdControl`, `mmdMotionBinding → mmdControl` | evaluation produces MMD-domain transforms; the model and the binding stay data, and normalization is the adapter's alone |
+| `mmdPmx`, `mmdModel`, `motionVmd`, `mmdMotionBinding`, `mmdControl` or `usdMmdFileFormat` `→ usd-motion-plugins` | exactly one component crosses into the shared motion core (§2.4), so a change there reaches one place here |
+| any component → `motion-connectors`, a device SDK, a network transport | live input is normalized by `motion-connectors` into the shared core, never read here |
 | `usdMmdFileFormat → hydra-toon` | the renderer consumes the stage, never the reverse |
 | `usdMmdFileFormat → usd-stage-runner` | the importer has no update loop |
 | any component → a physics engine | nothing is simulated ([DESIGN_POLICY.md §8](../design/DESIGN_POLICY.md#8-physics-policy)) |
@@ -142,8 +154,32 @@ runs it over `libs/mmdModel` and `mmd_inspect_boundaries` over
 `vmd_inspect_boundaries` over `tools/vmdInspect` with `motionVmd::motionVmd`,
 both also refusing any `mmdPmx/` or `mmdModel/` include (`--forbid-include`);
 and `mmdMotionBinding_boundaries` over `libs/mmdMotionBinding` with
-`mmdModel::mmdModel` and `motionVmd::motionVmd`. All of them are added to the
+`mmdModel::mmdModel` and `motionVmd::motionVmd`. `mmdControl_boundaries` and
+`mmdMotionAdapter_boundaries` are added with those libraries, the second
+allowing the `usd-motion-plugins` `motion-core` target as its one external
+edge (§2.4). All of them are added to the
 root build before OpenUSD is resolved, as `mmdPmx` is.
+
+### 2.4 Edges out of this repository
+
+The ecosystem's dependency direction is fixed by the `usd-motion-plugins`
+design policy (§19.3, §39) and restated here because this repository must keep
+it:
+
+```text
+usd-avatar-runtime ─→ usd-mmd-plugins ─→ usd-motion-plugins
+motion-connectors ──────────────────────→ usd-motion-plugins
+```
+
+| Rule | Detail |
+| --- | --- |
+| One crossing | Only `mmdMotionAdapter` depends on `usd-motion-plugins` — its `motion-core` package, and `motion-retarget` only if building a map needs its validation. `usdVmdFileFormat` may add `motion-usd` if MOT-O2 says so. |
+| Installed packages only | The edge is a `find_package` on an installed package with a declared version range, never a sibling checkout, a submodule or a vendored copy (§5, [DEPENDENCIES.md §6](DEPENDENCIES.md#6-usd-motion-plugins)). |
+| Never the reverse | `usd-motion-plugins` never depends on any component here, and nothing here is designed to be moved there: VMD is MMD's format (the motion policy's §26). |
+| Same OpenUSD | `motion-core` is built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
+
+Nothing crosses today: `usd-motion-plugins` has published no package, so the
+edge is reserved, and no component or manifest declares it yet.
 
 ## 3. Directory layout
 
@@ -304,8 +340,13 @@ first.
 7. No component keeps a private copy of a facility another component owns.
    One exception, and its reason: `motionVmd` declares its own diagnostic
    record, `Result<T>` and diagnostic list, the same shape as `mmdPmx`'s,
-   because it is extraction-ready and §2.2 forbids it `mmdPmx`; binding carries
-   its diagnostics into `mmdPmx`'s record field for field
+   because a VMD parses without a model and §2.2 forbids it `mmdPmx`; binding
+   carries its diagnostics into `mmdPmx`'s record field for field
    ([DIAGNOSTICS.md §1](../reference/DIAGNOSTICS.md#1-the-record)).
 8. A capability is claimed only with a fixture behind it
    ([CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md)).
+9. This repository consumes `usd-motion-plugins` and is never consumed by it
+   (§2.4). Generic motion — poses, clips, sampling, retargeting, recording,
+   `UsdSkelAnimation` authoring — is used from there, never re-implemented
+   here; what is MMD's — VMD, CP932 names, Bézier curves, IK, append
+   transforms, morphs — is never pushed there.
