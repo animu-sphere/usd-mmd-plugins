@@ -37,7 +37,7 @@ in.** No other document states a version for a Phase.
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | avatar runtime composition | ⬜ | unassigned, and owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | 🚧 `mmdControl` done | unassigned; its adapter waits for `usd-motion-plugins`' first release |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 `mmdControl` and the role table done | unassigned; its adapter waits for `usd-motion-plugins`' first release |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -109,8 +109,11 @@ Where things stand, as of 2026-09-19:
   says, with MOT-O7 resolved and legs following their IK goals over 13 local
   models and two distributed motions
   ([report](../reports/2026-09-19-phase9-local-control.md)).
-  `mmdMotionAdapter` waits for `usd-motion-plugins`, whose first tag
-  (2026-09-19) is a pre-release without `SkeletonDescriptor` or `RetargetMap`.
+  The humanoid role table and root motion are decided — MOT-O5 and MOT-O6
+  ([MOTION_CONTRACT.md §12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table),
+  [report](../reports/2026-09-19-phase9-roles-and-root.md)).
+  `mmdMotionAdapter` waits for `usd-motion-plugins` to release `motionCore`
+  and `motionRetarget`, both on its `main` since 2026-09-19.
 - Phase 8, avatar runtime composition, follows Phase 9 and is owned mostly
   outside this repository.
 
@@ -131,8 +134,9 @@ schedules them.
 | PMX-O1 | Euler order of rigid-body and joint rotations | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | resolved in Phase 6 |
 | MOT-O1 | Home of the shared basis-conversion functions | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7 |
 | MOT-O7 | Morphs evaluated into the pose versus carried as channels | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
-| MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter` (Phase 9) |
-| MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter` (Phase 9) |
+| MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
+| MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
+| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter`'s first retarget onto a non-MMD skeleton |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |

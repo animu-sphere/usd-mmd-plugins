@@ -36,6 +36,24 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Changed
 
+- **The humanoid role table and root motion are decided (MOT-O5, MOT-O6).**
+  `MOTION_CONTRACT.md` §12, new: table version 1 maps MMD's conventional bone
+  names — exact source names, deforming `D` bones first, never English names
+  or folded spellings — to the shared core's `HumanJoint`s, with a required
+  set of fifteen joints. A clip's rotations are derived from evaluated world
+  rotations, relative to each joint's nearest mapped ancestor, and its root
+  motion is the world transform of the joint `hips` maps to — no MMD bone is
+  chosen as the root. As a target, `hips` binds the nearest common ancestor
+  of the spine and legs. §10 follows what `usd-motion-plugins` has merged:
+  `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` are
+  `motionRetarget`'s, a descriptor carries the stage's joint tokens, and the
+  packages are named `motionCore` and `motionRetarget`. MOT-O10, the rest a
+  clip from MMD states, is opened: every local character's arms rest about
+  40° below horizontal. Documentation only; measured in a dated report
+  (2026-09-19) against 13 local characters and two distributed motions.
+  (`MOTION_CONTRACT.md` §9, §10, §12; `DESIGN_POLICY.md` §5.7, §14, §20.1;
+  `WORKSPACE.md` §1.2, §2, §2.4; `DEPENDENCIES.md` §6.)
+
 - **The design documents follow the `usd-motion-plugins` design policy.**
   VMD stays in this repository and `motionVmd` is no longer described as
   extraction-ready; MMD IK and append evaluation moves from the avatar

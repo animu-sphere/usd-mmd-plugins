@@ -17,7 +17,11 @@
 >
 > Revised 2026-09-17 to that policy: MOT-O3 is superseded (§8.2), `motionVmd`
 > is no longer described as leaving this repository (§2), and §10 is new.
-> Revised 2026-09-19: §11 is new, and MOT-O7 is resolved by it.
+> Revised 2026-09-19: §11 is new, and MOT-O7 is resolved by it. Revised again
+> the same day: §10 follows what `usd-motion-plugins` has merged — the rig
+> types are `motionRetarget`'s, not `motionCore`'s, and a map binds a *target*
+> rig — §12 is new, MOT-O5 and MOT-O6 are resolved by it, and MOT-O10 is
+> opened. §12 is **accepted** and, like the rest of §10, waits for the adapter.
 
 ---
 
@@ -271,12 +275,11 @@ as a whole.
 
 | Id | Question | Resolve by |
 | --- | --- | --- |
-| MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motion-usd` contract, then a consumer |
+| MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motionUsd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
-| MOT-O5 | Root motion: which MMD bones (`全ての親`, `センター`, `グルーブ`) become `RootMotion` and which stay hips-local motion, given the shared core keeps the two apart (§10.5) | Phase 9, against distributed motions |
-| MOT-O6 | The humanoid role table: which MMD bone names map to which `HumanJoint`, how English names and common variants are matched, and how the table is versioned (§10.4) | Phase 9 |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count. At 40 iterations, §11.7 leaves a leg's effector a median 0.02–7 mm and at most 29 mm from a goal within reach, falling to under 0.1 mm at 256 ([report](../reports/2026-09-19-phase9-local-control.md)); the rule is changed only against a reference — MMD's output, or an independent implementation's, on the same frames | a reference to compare against |
+| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal ([report](../reports/2026-09-19-phase9-roles-and-root.md)) — not the level arms a VRM's identity rest describes. Whether `mmdMotionAdapter` states a `SourceRestPose` measured from the rest bone directions (as the shared core's BVH profiles state `rest-offsets`), and against which reference directions, or leaves the difference to a retarget option | the adapter's first retarget onto a non-MMD skeleton |
 
 Resolved:
 
@@ -285,27 +288,31 @@ Resolved:
 | MOT-O1 | Where the shared basis-conversion functions live, so `mmdModel` and `motionVmd` share them without depending on each other | in `mmdModel`, applied by `mmdMotionBinding`; `motionVmd` converts nothing (§2) | Phase 7, 2026-09-17 |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | ~~the Phase 8 motion or avatar runtime~~ — **superseded 2026-09-17:** this repository, in the plain library `mmdControl`, scheduled by a runtime but never re-implemented by one (§8.2) | Phase 7, 2026-09-17; superseded the same day |
 | MOT-O7 | Which morph types `mmdControl` evaluates into the pose, and which reach `MotionChannelSet` as source weights | bone morphs, directly or as members of group morphs, are evaluated into the pose; every other bound morph track — group morphs included, bone morphs not — is a channel with its sampled weight, unexpanded (§11.3) | Phase 9, 2026-09-19 |
+| MOT-O5 | Which MMD bones (`全ての親`, `センター`, `グルーブ`) become `RootMotion` and which stay hips-local motion | none is chosen: the root is the evaluated world transform of the joint `hips` maps to, so every ancestor's motion reaches it, and nothing of it stays in a local rotation below (§12.3) | Phase 9, 2026-09-19 |
+| MOT-O6 | Which MMD bone names map to which `HumanJoint`, how English names and variants are matched, and how the table is versioned | table version 1, §12.2: exact source names, deforming (`D`) bones first; English names and spelling variants never match (§12.1); the version is recorded with every clip and bumped with any entry (§12.5) | Phase 9, 2026-09-19 |
 
 ## 10. Normalizing into the shared motion core
 
 Accepted: this section is Phase 9
 ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` exists and
 evaluates as §11 says; `mmdMotionAdapter` waits for `usd-motion-plugins` to
-publish a `motion-core` that carries `SkeletonDescriptor` and `RetargetMap`.
-Names of that repository's
-types (`MotionPose`, `MotionClip`, `HumanJoint`, `SkeletonDescriptor`,
-`RetargetMap`, `RootMotion`, `MotionChannelSet`) are its design policy's, and
-where its published contract differs, the published contract wins and this
-section is revised.
+release the two packages it needs: `motionCore` (`HumanJoint`, `MotionPose`,
+`RootMotion`, `MotionChannelSet`, `MotionClip`) and `motionRetarget`
+(`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`). Both are on that
+repository's `main` since 2026-09-19; neither is released yet
+([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
+The type names are that repository's, and where its published contract
+differs from this section, the published contract wins and this section is
+revised.
 
 ### 10.1 Components
 
 | Component | Input | Output | Depends on |
 | --- | --- | --- | --- |
 | `mmdControl` | a `BoundMotion`, the `CanonicalDocument` it was bound to, a time | the local transform of every deformation joint at that time, in the USD basis and meters, plus the morph weights §10.7 leaves as channels (§11) | `mmdMotionBinding`, `mmdModel` |
-| `mmdMotionAdapter` | a `CanonicalDocument`; `mmdControl` evaluated over a time range at an explicit rate | a `SkeletonDescriptor`, a humanoid `RetargetMap`, and a `MotionClip` | `mmdControl`, `mmdModel`, `usd-motion-plugins` `motion-core` |
+| `mmdMotionAdapter` | a `CanonicalDocument`; `mmdControl` evaluated over a time range at an explicit rate | as a source: a `MotionClip` and the `SourceRestPose` it is relative to; as a target: a `SkeletonDescriptor` and a humanoid `RetargetMap` (§10.4, §12) | `mmdControl`, `mmdModel`, `usd-motion-plugins` `motionCore` and `motionRetarget` |
 
-Neither links more of OpenUSD than `motion-core`'s foundation types, and
+Neither links more of OpenUSD than those packages' foundation types, and
 neither authors a stage. The edges are
 [WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)'s;
 `mmdMotionAdapter` is the only component that crosses into
@@ -331,8 +338,8 @@ VMD bytes → motionVmd → mmdMotionBinding ─→ BoundMotion           MMD so
                         deformation-joint local transforms at t
                                                   │
                         mmdMotionAdapter          ▼
-                          SkeletonDescriptor + RetargetMap (from the model)
-                          MotionPose per t → MotionClip
+                          role table (§12) → humanoid world rotations
+                          MotionPose per t → MotionClip + SourceRestPose
                                                   │
                                                   ▼
                         usd-motion-plugins: sampling, retarget, recording,
@@ -375,22 +382,34 @@ produce the same bits, as the importer's same-bytes rule requires
 
 ### 10.4 Skeleton and humanoid map
 
-- **`SkeletonDescriptor`** is built from the canonical skeleton: joint names
-  are the **source** names, Japanese kept
-  ([TEXT_ENCODING_POLICY.md §5](TEXT_ENCODING_POLICY.md#5-identity-versus-display)),
-  joint order and parents are the canonical joint order
-  ([STAGE_CONTRACT.md §9](STAGE_CONTRACT.md#9-skeleton-and-skinning)), and
-  rest transforms are the model's, with identity rest rotations.
-- **`RetargetMap`** assigns `HumanJoint`s to deformation joints by MMD's
-  conventional bone names (`上半身`, `左腕`, `右ひざ`, …) — a heuristic table
-  this repository owns, never a humanoid claim about the model. A model that
-  names its bones otherwise gets a partial map and a diagnostic per required
-  joint left unmapped; missing optional joints are valid (the motion
-  policy's §5.2). An explicitly authored map always wins over the table.
+A PMX model meets the shared core in two directions, and the role table
+(§12) serves both.
+
+- **As a source**, a VMD bound to the model becomes a `MotionClip` of
+  `HumanJoint` rotations and root motion, built as §12.3 says, with the
+  `SourceRestPose` those rotations are relative to. No MMD joint reaches the
+  clip; a retarget onto any skeleton reads the clip alone.
+- **As a target**, a clip from elsewhere drives the PMX stage's skeleton
+  through a `SkeletonDescriptor` and a `RetargetMap`:
+  - The **`SkeletonDescriptor`** is built with the shared core's
+    `BuildSkeletonDescriptor` from the stage's joint tokens and the model's
+    rest transforms, so its tokens are exactly `/Asset/skel/Skeleton`'s
+    `joints` — hierarchical paths of stable identifiers
+    ([STAGE_CONTRACT.md §9](STAGE_CONTRACT.md#9-skeleton-and-skinning)) — and
+    a retargeted pose can be authored onto that skeleton as it is. The
+    shared core asks for names that match `UsdSkelSkeleton.joints`, and the
+    stage's tokens are those; source names, Japanese kept, stay on the
+    canonical model and the stage's display names
+    ([TEXT_ENCODING_POLICY.md §5](TEXT_ENCODING_POLICY.md#5-identity-versus-display)),
+    which is where §12's table reads them. Every rest rotation is identity.
+  - The **`RetargetMap`** binds each `HumanJoint` the table resolves to that
+    joint's index, with the table's required set as `requiredBones`
+    (§12.4). It is a heuristic, never a humanoid claim about the model. An
+    explicitly authored map always wins over the table.
 - The table maps into **retarget data**, not into USD identifiers, so it does
   not become the stage ABI that
   [TEXT_ENCODING_POLICY.md §6.3](TEXT_ENCODING_POLICY.md#63-what-contract-v1-deliberately-does-not-do)
-  refuses to freeze. Its contents and version are MOT-O6.
+  refuses to freeze.
 
 ### 10.5 Time, coordinates and root motion
 
@@ -398,8 +417,8 @@ produce the same bits, as the importer's same-bytes rule requires
 | --- | --- |
 | time in seconds | `timestamp = frame / 30`; `nominalFrameRate = 30` is descriptive, the timestamps are authoritative |
 | Y-up, meters, right-handed | already true after binding (§7); nothing is converted again |
-| local joint rotations | the evaluated deformation-joint rotations, relative to identity rest rotations ([STAGE_CONTRACT.md §9.2](STAGE_CONTRACT.md#92-the-skeleton-prim)); rest-pose normalization against another skeleton is the retarget's |
-| root motion separate from hips | which bones feed `RootMotion` is MOT-O5; until it is resolved, the adapter emits no `RootMotion` and says so, rather than guessing |
+| local joint rotations | each `HumanJoint`'s rotation relative to its nearest mapped humanoid ancestor, from the evaluated world rotations (§12.3), relative to identity rest rotations ([STAGE_CONTRACT.md §9.2](STAGE_CONTRACT.md#92-the-skeleton-prim)); what that rest looks like is MOT-O10 |
+| root motion separate from hips | `RootMotion` is the evaluated world position and orientation of the joint `hips` maps to (§12.3; MOT-O5, resolved) |
 | provenance | `SourceMetadata` and clip metadata name the format (`vmd`) and the VMD's model name; they never change behavior |
 
 ### 10.6 What this repository does not do with the result
@@ -606,3 +625,141 @@ Raised by `Prepare`, once per element, never by `Evaluate`:
 | a joint with an external parent: with one model there is nothing to resolve, so the relation is ignored (§10.3) | `MMD_MOTION_EXTERNAL_PARENT_IGNORED` | info |
 | a local append, evaluated as a global one (§11.6) | `MMD_MOTION_LOCAL_APPEND_APPROXIMATED` | info |
 | a chain's loop count outside `[0, 256]`, clamped (§11.7) | `MMD_MOTION_IK_LOOP_CLAMPED` | warning |
+
+## 12. The humanoid role table
+
+Accepted, with §10: `mmdMotionAdapter` implements it when it lands. It
+resolves MOT-O5 and MOT-O6, against the 13 local characters and two
+distributed motions of the
+[2026-09-19 report](../reports/2026-09-19-phase9-roles-and-root.md).
+
+The shared core never matches joint names: a `HumanJoint` drives a joint only
+through an explicit entry, and building entries heuristically is the format
+repository's (its RETARGETING_POLICY §3). This section is that heuristic for
+MMD. It names roles; it never claims a model is a humanoid.
+
+### 12.1 Matching
+
+- A role is matched on a bone's **source name**, exactly: the decoded
+  Japanese name as the model states it, compared as a whole string. It is
+  the same identity a VMD track binds by (§8.1).
+- **English names never match.** Every one the report looked at was empty
+  or not the bone's name — `左腕` carries `Bip001 R Finger2` in one model — so
+  a match on them would bind the wrong joint silently.
+- **No spelling is folded.** Width (`１`/`1`), `ひざ`/`膝` and the like are not
+  normalized: no local character spells a table name differently, and a fold
+  that no model exercises is a guess the table would then be versioned by.
+  A variant is added as its own entry, in a new table version, when a model
+  shows it.
+- Each role lists its candidates in order, and the **first bone the model
+  has** is the one bound. A candidate the model lacks is skipped; a role
+  none of whose candidates it has is unmapped.
+- An explicitly authored map always wins over the table (§10.4).
+
+### 12.2 The table, version 1
+
+Left side shown; the right side is the same with `右` for `左`. Candidates in
+order, deforming (`D`) bones first: in a model that has them they are the
+bones the skin follows, and the non-`D` bone is the one the IK solves and
+the `D` bone appends.
+
+| `HumanJoint` | Candidates |
+| --- | --- |
+| `hips` | as a source: `下半身`. As a target: the nearest joint that is an ancestor of the `spine` joint and of both `upperLeg` joints (§12.3) |
+| `spine` | `上半身` |
+| `chest` | `上半身2` |
+| `upperChest` | `上半身3` |
+| `neck` | `首` |
+| `head` | `頭` |
+| `leftEye` | `左目` |
+| `jaw` | — (no conventional bone) |
+| `leftUpperLeg` | `左足D`, `左足` |
+| `leftLowerLeg` | `左ひざD`, `左ひざ` |
+| `leftFoot` | `左足首D`, `左足首` |
+| `leftToes` | `左足先EX` |
+| `leftShoulder` | `左肩` |
+| `leftUpperArm` | `左腕` |
+| `leftLowerArm` | `左ひじ` |
+| `leftHand` | `左手首` |
+| `leftThumbMetacarpal`, `…Proximal`, `…Distal` | `左親指０`, `左親指１`, `左親指２` |
+| `leftIndexProximal`, `…Intermediate`, `…Distal` | `左人指１`, `左人指２`, `左人指３` |
+| `leftMiddle…` | `左中指１`, `左中指２`, `左中指３` |
+| `leftRing…` | `左薬指１`, `左薬指２`, `左薬指３` |
+| `leftLittle…` | `左小指１`, `左小指２`, `左小指３` |
+
+Never mapped: `全ての親`, `センター`, `グルーブ`, `腰` and `両目` as roles of
+their own; IK bones (`左足ＩＫ`, `左つま先ＩＫ`) and IK tips (`左つま先`);
+twist bones (`左腕捩`, `左手捩`), `左肩P`/`左肩C`, `腰キャンセル左`, and every
+bone the table does not name. A model without `左親指０` maps `左親指１` to
+`…Proximal` all the same: an entry never shifts to fill a missing one.
+
+### 12.3 Evaluated motion as `HumanJoint` rotations and root motion
+
+MMD's hierarchy is not the humanoid one: `上半身` and `下半身` are siblings
+under `腰`, and between two table joints sit bones no role names —
+`腰キャンセル`, `肩P`, `肩C`, the twist bones. So a clip is built from
+**world** rotations, never by copying a local one:
+
+- For each sample, `mmdControl`'s local transforms are composed down the
+  canonical hierarchy into each joint's world transform.
+- A mapped `HumanJoint`'s local rotation is the world rotation of its
+  **nearest mapped humanoid ancestor** — the nearest ancestor in the
+  vocabulary's hierarchy that the table maps, the shared core's
+  `NearestPresentAncestor`, never an ancestor in MMD's — inverted, times its
+  own world rotation. `spine` is relative to `hips` although `上半身` is not a child of
+  `下半身`, and whatever the unnamed bones between two table joints do — the
+  twist bones' rotation, `腰キャンセル`'s cancellation — reaches the child's
+  rotation instead of being dropped. For a chain with no unnamed bone this is
+  the local rotation itself, and it agrees with the shared core's path rule
+  for recorded files (its MOTION_CONTRACT §11).
+- **Root motion (MOT-O5).** `RootMotion::worldPosition` and
+  `worldOrientation` are the world position and rotation of the joint `hips`
+  maps to, both flagged present — the shared core's record for a rig rooted
+  at its hips (its MOTION_CONTRACT §5.3), and `hips`' local rotation is that
+  same world rotation. **No MMD bone is chosen as the root.** `全ての親`,
+  `センター`, `グルーブ` and `腰` are all ancestors of `下半身`, so whatever each
+  of them does reaches the root, and nothing of it is left in a local
+  rotation below. In both distributed motions `センター` carries every
+  translation — up to 16 model units of travel and 3 of height — and
+  `全ての親`, `グルーブ` and `腰` hold at most one key, at zero.
+- The `SourceRestPose` states the table joints' rests, with each bone's
+  semantic parent from the same nearest-mapped-ancestor rule. Every rest
+  rotation is identity; what that rest is, as a pose, is MOT-O10.
+
+**As a target**, the same table binds joints, but a retarget writes each
+bound joint's rotation relative to *its own* parent on the PMX side (the
+shared core's RETARGETING_POLICY §4.1, case 6), and UsdSkel evaluates no
+append. Binding `hips` to `下半身` there would turn the legs and leave
+`上半身` behind; so `hips` binds to the nearest common ancestor of the `spine`
+and `upperLeg` joints — `腰` in each of the 12 local characters with legs —
+whose rotation moves both halves, as a humanoid's hips do. A model without
+the three joints has no such ancestor, and `hips` is left unmapped (§12.4).
+`下半身` stays at rest under it, and an unevaluated `腰キャンセル` is at rest
+too, so the legs are relative to `hips` as the clip means.
+
+### 12.4 Required joints
+
+The shared core leaves the required set to the caller (its
+RETARGETING_POLICY §4). The table's is `hips`, `spine`, `head`, and on both
+sides `upperLeg`, `lowerLeg`, `foot`, `upperArm`, `lowerArm`, `hand` —
+fifteen joints, the set VRM 1.0 requires, so a PMX target and a VRM target
+report alike. Twelve of the 13 local characters resolve all fifteen; the
+thirteenth, a 68-bone partial without legs, resolves the upper body.
+
+- **As a target**, the set is `RetargetOptions::requiredBones`, and a joint
+  left unmapped is the shared core's `MOTION_RETARGET_MISSING_REQUIRED_BONE`
+  from `DiagnoseRig`, passed through unchanged (§10.8).
+- **As a source**, a required joint the table cannot resolve is absent from
+  every pose of the clip, and reported once under an `MMD_MOTION_*` code
+  added with the adapter. The clip is still built: a partial clip is valid
+  in the shared core.
+
+### 12.5 Version
+
+The table is **version 1**. Any change to an entry — a candidate added,
+removed or reordered, a role mapped differently — changes which joint a
+clip drives, so it is a new version, recorded in the changelog. The version
+is a constant of `mmdMotionAdapter`, reported with every map it builds and
+recorded in a clip's provenance where the shared core gives it a place. It
+is independent of the shared core's `HumanJointVocabularyVersion` (1), which
+the table is written against: a vocabulary bump is a table review.

@@ -68,7 +68,7 @@ created ahead of that.
 | --- | --- | --- | --- | --- |
 | `mmdMaterial` | plain static CMake library | `libs/mmdMaterial/` | Canonical material semantics, extracted from `mmdModel` | material translation outgrows `mmdModel`, or a second consumer needs it alone ([DESIGN_POLICY.md §5.3](../design/DESIGN_POLICY.md#53-mmdmaterial--deferred)) |
 | `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | Narrow applied API schemas | an API passes the admission test ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)) |
-| `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | The one bridge into `usd-motion-plugins`: a `SkeletonDescriptor` and humanoid `RetargetMap` from a canonical model, and evaluated MMD motion as a `MotionClip`. Owns no generic algorithm. | Phase 9, once `usd-motion-plugins` publishes an installable `motion-core` package ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)) |
+| `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | The one bridge into `usd-motion-plugins`: evaluated MMD motion as a `MotionClip`, and a `SkeletonDescriptor` and humanoid `RetargetMap` from a canonical model, both through MMD's role table. Owns no generic algorithm. | Phase 9, once `usd-motion-plugins` releases installable `motionCore` and `motionRetarget` packages ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)) |
 | `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | MOT-O2 is resolved against `usd-motion-plugins`' standalone motion stage (`/Animation`) ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)) |
 | `mmd_convert` | CLI executable | `tools/mmdConvert/` | PMX → `.usda`/`.usdc` on disk | `usdcat` over the file format proves insufficient |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |
@@ -96,9 +96,9 @@ mmdControl ──────────→ mmdMotionBinding, mmdModel      (no
 mmdMaterial ─────────→ nothing in this repository; mmdModel → mmdMaterial
 mmdSchema ───────────→ OpenUSD only
 mmdMotionAdapter ────→ mmdControl, mmdModel,
-                       usd-motion-plugins motion-core  (OpenUSD foundation
-                                                        types only, through it)
-usdVmdFileFormat ────→ motionVmd, OpenUSD; usd-motion-plugins motion-usd if
+                       usd-motion-plugins motionCore,  (OpenUSD foundation
+                       motionRetarget                   types only, through them)
+usdVmdFileFormat ────→ motionVmd, OpenUSD; usd-motion-plugins motionUsd if
                        MOT-O2 says so
 mmd_convert ─────────→ usdMmdFileFormat's public entry point, OpenUSD
 ```
@@ -165,7 +165,7 @@ both also refusing any `mmdPmx/` or `mmdModel/` include (`--forbid-include`);
 over `libs/mmdControl` with `mmdMotionBinding::mmdMotionBinding` and
 `mmdModel::mmdModel`, also refusing any `motionCore/` include.
 `mmdMotionAdapter_boundaries` is added with that library, allowing the
-`usd-motion-plugins` `motion-core` target as its one external edge (§2.4). All of them are added to the
+`usd-motion-plugins` `motionCore` and `motionRetarget` targets as its one external edge (§2.4). All of them are added to the
 root build before OpenUSD is resolved, as `mmdPmx` is.
 
 ### 2.4 Edges out of this repository
@@ -181,10 +181,10 @@ motion-connectors ────────────────────�
 
 | Rule | Detail |
 | --- | --- |
-| One crossing | Only `mmdMotionAdapter` depends on `usd-motion-plugins` — its `motion-core` package, and `motion-retarget` only if building a map needs its validation. `usdVmdFileFormat` may add `motion-usd` if MOT-O2 says so. |
+| One crossing | Only `mmdMotionAdapter` depends on `usd-motion-plugins` — its `motionCore` and `motionRetarget` packages: `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` are `motionRetarget`'s ([MOTION_CONTRACT.md §10.4](../design/MOTION_CONTRACT.md#104-skeleton-and-humanoid-map)). `usdVmdFileFormat` may add `motionUsd` if MOT-O2 says so. |
 | Installed packages only | The edge is a `find_package` on an installed package with a declared version range, never a sibling checkout, a submodule or a vendored copy (§5, [DEPENDENCIES.md §6](DEPENDENCIES.md#6-usd-motion-plugins)). |
 | Never the reverse | `usd-motion-plugins` never depends on any component here, and nothing here is designed to be moved there: VMD is MMD's format (the motion policy's §26). |
-| Same OpenUSD | `motion-core` is built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
+| Same OpenUSD | `motionCore` and `motionRetarget` are built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
 
 Nothing crosses today: `usd-motion-plugins` has published no package, so the
 edge is reserved, and no component or manifest declares it yet.

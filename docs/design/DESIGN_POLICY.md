@@ -279,9 +279,11 @@ no clock, no thread and no update loop
 
 ### 5.7 `mmdMotionAdapter` — the hand-off to the shared motion core (Phase 9)
 
-The only component that depends on `usd-motion-plugins`. It builds a
-`SkeletonDescriptor` and a humanoid `RetargetMap` from a canonical model,
-and turns `mmdControl`'s evaluated motion into a `MotionClip`. It owns no
+The only component that depends on `usd-motion-plugins`. It turns
+`mmdControl`'s evaluated motion into a `MotionClip` of humanoid rotations and
+root motion, and, for a model driven by a clip from elsewhere, builds a
+`SkeletonDescriptor` and a humanoid `RetargetMap` — both through MMD's role
+table ([MOTION_CONTRACT.md §12](MOTION_CONTRACT.md#12-the-humanoid-role-table)). It owns no
 generic algorithm: sampling, retargeting, recording and `UsdSkelAnimation`
 authoring are used from the shared core
 ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
@@ -494,7 +496,7 @@ sequence ever appear, both get a qualifier, as they do in `usd-vrm-plugins`.
 | **6 — physics preservation** | Standard `UsdPhysics` where it matches; everything else preserved. | No simulation; every rigid body and joint recoverable. |
 | **7 — VMD** | Model-independent `libs/motionVmd` (defined as extraction-ready; VMD stays here since 2026-09-17, §9.1), bound to a model by `mmdMotionBinding`; the hand-off to the shared motion core is Phase 9; `usdVmdFileFormat` only once direct stage-open has a contract. | Per [MOTION_CONTRACT.md](MOTION_CONTRACT.md). |
 | **8 — avatar runtime composition** | Composition through OpenStrata with `usd-vrm-plugins`, `usd-motion-plugins`, `motion-connectors`, `hydra-toon` and `usd-stage-runner`, under `usd-avatar-runtime`. | The runtime, not this repository, is the avatar execution environment. |
-| **9 — shared motion core adoption** | `mmdControl` evaluates a bound motion over the control rig; `mmdMotionAdapter` builds a `SkeletonDescriptor`, a humanoid `RetargetMap` and a `MotionClip` against `usd-motion-plugins`' installed `motion-core`; MOT-O5, MOT-O6 and MOT-O7 resolved ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)). | On synthetic rigs with known answers, IK and append evaluation match; the same inputs give the same bits; a VMD-derived `MotionClip`, authored by the shared core as `UsdSkelAnimation`, poses the PMX stage's skeleton with legs driven by IK; the same clip retargets to a non-MMD synthetic skeleton through the shared retarget with no MMD code on that path; no generic motion algorithm exists in this repository. |
+| **9 — shared motion core adoption** | `mmdControl` evaluates a bound motion over the control rig; `mmdMotionAdapter` builds a `MotionClip`, a `SkeletonDescriptor` and a humanoid `RetargetMap` against `usd-motion-plugins`' installed `motionCore` and `motionRetarget`; MOT-O5, MOT-O6 and MOT-O7 resolved ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)). | On synthetic rigs with known answers, IK and append evaluation match; the same inputs give the same bits; a VMD-derived `MotionClip`, authored by the shared core as `UsdSkelAnimation`, poses the PMX stage's skeleton with legs driven by IK; the same clip retargets to a non-MMD synthetic skeleton through the shared retarget with no MMD code on that path; no generic motion algorithm exists in this repository. |
 
 Phases are numbered in the order they were defined, not the order they run.
 Phase 9 was added on 2026-09-17, when the motion architecture was settled
@@ -646,10 +648,10 @@ document records why.
 | §19.3, §39 (1–2) — format repositories depend on the core, never the reverse | [WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository); frozen decision 11 (§15) |
 | §26 — VMD is owned by `usd-mmd-plugins` | `motionVmd` stays, and is no longer described as extraction-ready (§9.1) |
 | §3.2, §38 — MMD IK conventions, bone flags, morph semantics stay in the format repository | `mmdControl` evaluates them here (§5.6); MOT-O3 superseded ([MOTION_CONTRACT.md §8.2](MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
-| §4.2, §11 — the format repository builds `SkeletonDescriptor` and `RetargetMap` | `mmdMotionAdapter` (§5.7), from a heuristic role table ([MOTION_CONTRACT.md §10.4](MOTION_CONTRACT.md#104-skeleton-and-humanoid-map)) |
+| §4.2, §11 — the format repository builds `SkeletonDescriptor` and `RetargetMap` | `mmdMotionAdapter` (§5.7), from a heuristic role table ([MOTION_CONTRACT.md §12](MOTION_CONTRACT.md#12-the-humanoid-role-table)) |
 | §5.3 — format-specific channels travel namespaced, uninterpreted | morph weights as `mmd:<source name>` ([MOTION_CONTRACT.md §10.7](MOTION_CONTRACT.md#107-morphs-as-channels)) |
-| §9 — seconds, meters, Y-up, local rotations, explicit root motion | [MOTION_CONTRACT.md §10.5](MOTION_CONTRACT.md#105-time-coordinates-and-root-motion); root motion is MOT-O5 |
-| §17.3, §39 (11) — Unicode source names survive | the `SkeletonDescriptor` carries source names, as the stage does ([TEXT_ENCODING_POLICY.md §5](TEXT_ENCODING_POLICY.md#5-identity-versus-display)) |
+| §9 — seconds, meters, Y-up, local rotations, explicit root motion | [MOTION_CONTRACT.md §10.5](MOTION_CONTRACT.md#105-time-coordinates-and-root-motion); root motion is the hips joint's evaluated world transform ([§12.3](MOTION_CONTRACT.md#123-evaluated-motion-as-humanjoint-rotations-and-root-motion)) |
+| §17.3, §39 (11) — Unicode source names survive | source names stay on the canonical model and the stage's display names, and the role table matches them; the `SkeletonDescriptor` carries the stage's joint tokens, because the shared core requires `UsdSkelSkeleton.joints` ([MOTION_CONTRACT.md §10.4](MOTION_CONTRACT.md#104-skeleton-and-humanoid-map), [TEXT_ENCODING_POLICY.md §5](TEXT_ENCODING_POLICY.md#5-identity-versus-display)) |
 | §21 — OpenExec is an optional layer over plain libraries | `mmdControl` is plain; any OpenExec node wraps it outside this repository |
 | §37 Phase D — `usd-mmd-plugins` consumes the same core | Phase 9 (§14) |
 
