@@ -103,7 +103,7 @@ rule by `mmdControl_robustness`.
 | Rotation and translation appends, negative ratios, chains of appends, appends from IK links | supported | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
 | Local appends | approximated (evaluated as global, reported) | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
 | IK by cyclic coordinate descent: angle limit, plane links, Euler-limited links, the IK-enable track | supported | [MOTION §11.7](../design/MOTION_CONTRACT.md#117-ik) |
-| IK matching MMD's own playback within a distance | unverified (MOT-O9) | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
+| IK matching MMD's own playback within a distance | unverified: no MMD output to compare against; an independent implementation leaves no less distance at the same loop count (MOT-O9), and whether a knee starts from its keyed rotation is MOT-O11 | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
 | External parents | unsupported (ignored, reported) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
 | Physics before after-physics bones | unsupported by design (nothing is simulated) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
 | The same inputs give the same bits, whatever was evaluated before | supported | [MOTION §11.1](../design/MOTION_CONTRACT.md#111-the-evaluator) |

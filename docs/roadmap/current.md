@@ -1,7 +1,7 @@
 # Phase 9, then Phase 8 — the shared motion core, and avatar runtime composition
 
-Status: 🚧 Phase 9 in progress — `mmdControl`, MOT-O5 and MOT-O6 are done;
-Phase 8 not started.
+Status: 🚧 Phase 9 in progress — `mmdControl`, MOT-O5, MOT-O6 and MOT-O9
+are done; Phase 8 not started.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -49,10 +49,16 @@ usd-avatar-runtime:  schedules the above per frame, composes the stage, renders
   models and two distributed motions
   ([report](../reports/2026-09-19-phase9-local-control.md)). MOT-O7 is
   resolved with it.
-- ⬜ **MOT-O9**: whether MMD's own IK leaves a reachable goal closer than
-  §11.7 does at a model's loop count — at 40 iterations the report measures a
-  leg's effector up to 29 mm from a goal within reach. Needs a reference to
-  compare against; the rule does not change without one.
+- ✅ **MOT-O9** (2026-09-19): §11.7 kept. Against three.js r168's
+  `CCDIKSolver` on the same frames and inputs, at the same 40 iterations,
+  §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference
+  leaves 10.5 mm, and both leave at most 29 mm
+  ([report](../reports/2026-09-19-phase9-ik-reference.md)). MOT-O11 is
+  opened with it.
+- ⬜ **MOT-O11**: whether a knee's plane angle starts from its keyed rotation
+  rather than from zero — all of the reference's advantage on a motion that
+  keys its legs alongside their goals. Needs MMD's output on such a motion;
+  the rule does not change without it.
 - ✅ **MOT-O5 and MOT-O6** (2026-09-19): the humanoid role table, version 1,
   and how evaluated motion becomes `HumanJoint` rotations and root motion
   ([MOTION_CONTRACT.md §12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table)),

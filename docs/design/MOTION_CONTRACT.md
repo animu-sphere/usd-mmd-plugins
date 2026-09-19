@@ -22,6 +22,8 @@
 > types are `motionRetarget`'s, not `motionCore`'s, and a map binds a *target*
 > rig — §12 is new, MOT-O5 and MOT-O6 are resolved by it, and MOT-O10 is
 > opened. §12 is **accepted** and, like the rest of §10, waits for the adapter.
+> Revised again the same day: MOT-O9 is resolved against an independent
+> implementation with §11.7 unchanged, and MOT-O11 is opened.
 
 ---
 
@@ -278,8 +280,8 @@ as a whole.
 | MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motionUsd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
-| MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count. At 40 iterations, §11.7 leaves a leg's effector a median 0.02–7 mm and at most 29 mm from a goal within reach, falling to under 0.1 mm at 256 ([report](../reports/2026-09-19-phase9-local-control.md)); the rule is changed only against a reference — MMD's output, or an independent implementation's, on the same frames | a reference to compare against |
 | MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal ([report](../reports/2026-09-19-phase9-roles-and-root.md)) — not the level arms a VRM's identity rest describes. Whether `mmdMotionAdapter` states a `SourceRestPose` measured from the rest bone directions (as the shared core's BVH profiles state `rest-offsets`), and against which reference directions, or leaves the difference to a retarget option | the adapter's first retarget onto a non-MMD skeleton |
+| MOT-O11 | Whether a plane link starts from its keyed rotation. §11.7 starts an enabled chain's plane angles at zero, so a knee's keyed rotation never reaches the pose and the knee is solved from straight; three.js r168 starts from the keyed rotation. On a motion that keys its legs' rotations alongside their goals, that start alone leaves a median 0.05 mm where §11.7 leaves 2.4 mm, and moves the knees a median 4.6 mm and at most 66 mm; on an IK-authored motion it changes little ([report](../reports/2026-09-19-phase9-ik-reference.md)). Which MMD does | MMD's output on a motion that keys its IK links |
 
 Resolved:
 
@@ -290,6 +292,7 @@ Resolved:
 | MOT-O7 | Which morph types `mmdControl` evaluates into the pose, and which reach `MotionChannelSet` as source weights | bone morphs, directly or as members of group morphs, are evaluated into the pose; every other bound morph track — group morphs included, bone morphs not — is a channel with its sampled weight, unexpanded (§11.3) | Phase 9, 2026-09-19 |
 | MOT-O5 | Which MMD bones (`全ての親`, `センター`, `グルーブ`) become `RootMotion` and which stay hips-local motion | none is chosen: the root is the evaluated world transform of the joint `hips` maps to, so every ancestor's motion reaches it, and nothing of it stays in a local rotation below (§12.3) | Phase 9, 2026-09-19 |
 | MOT-O6 | Which MMD bone names map to which `HumanJoint`, how English names and variants are matched, and how the table is versioned | table version 1, §12.2: exact source names, deforming (`D`) bones first; English names and spelling variants never match (§12.1); the version is recorded with every clip and bumped with any entry (§12.5) | Phase 9, 2026-09-19 |
+| MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
 
 ## 10. Normalizing into the shared motion core
 
@@ -615,6 +618,12 @@ into that range with `MMD_MOTION_IK_LOOP_CLAMPED` (§11.8). The largest of the
 ([report](../reports/2026-09-19-phase9-local-control.md)): the bound only
 keeps a malformed model from turning one evaluation into billions of
 iterations.
+
+A plane link's angle starts at zero, not at its keyed rotation: while its
+chain is enabled, a knee's keyed rotation never reaches the pose, and a
+motion that keys both a leg and its goal is solved from a straight knee.
+Whether MMD starts there too is MOT-O11; an independent implementation does
+not ([report](../reports/2026-09-19-phase9-ik-reference.md)).
 
 ### 11.8 Diagnostics
 
