@@ -205,7 +205,15 @@ Motion(Random& r, const CanonicalDocument& model, bool tame)
     return motion;
 }
 
-/// Bit-for-bit equality: NaN compares equal to the same NaN.
+/// The same bits: NaN compares equal to the same NaN.
+bool
+SameBits(double a, double b)
+{
+    return std::memcmp(&a, &b, sizeof(double)) == 0;
+}
+
+/// Bit-for-bit equality, field by field: a struct's padding bytes are
+/// indeterminate, so whole structs are never compared as bytes.
 bool
 Identical(const Pose& a, const Pose& b)
 {
@@ -213,8 +221,25 @@ Identical(const Pose& a, const Pose& b)
         a.visible != b.visible) {
         return false;
     }
-    return std::memcmp(a.joints.data(), b.joints.data(), a.joints.size() * sizeof(JointTransform)) == 0 &&
-           std::memcmp(a.channels.data(), b.channels.data(), a.channels.size() * sizeof(MorphChannel)) == 0;
+    for (std::size_t j = 0; j < a.joints.size(); ++j) {
+        for (std::size_t i = 0; i < 3; ++i) {
+            if (!SameBits(a.joints[j].translation[i], b.joints[j].translation[i])) {
+                return false;
+            }
+        }
+        for (std::size_t i = 0; i < 4; ++i) {
+            if (!SameBits(a.joints[j].rotation[i], b.joints[j].rotation[i])) {
+                return false;
+            }
+        }
+    }
+    for (std::size_t c = 0; c < a.channels.size(); ++c) {
+        if (a.channels[c].morph != b.channels[c].morph ||
+            !SameBits(a.channels[c].weight, b.channels[c].weight)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 const char*
