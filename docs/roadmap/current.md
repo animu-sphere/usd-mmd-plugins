@@ -1,6 +1,7 @@
 # Phase 9, then Phase 8 — the shared motion core, and avatar runtime composition
 
-Status: 🚧 Phase 9 in progress — `mmdControl` is done; Phase 8 not started.
+Status: 🚧 Phase 9 in progress — `mmdControl`, MOT-O5 and MOT-O6 are done;
+Phase 8 not started.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -20,11 +21,12 @@ the runtime consumes from here today is [v0.1.0](../releases/v0.1.0.md).
 
 As of 2026-09-19 `usd-avatar-runtime` holds no commits and
 `motion-connectors` a scaffold. `usd-motion-plugins` has tagged
-`v0.1.0-alpha.1`, a source-only pre-release of `motionCore` alone, without
-`SkeletonDescriptor` or `RetargetMap`
-([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)),
-so `mmdMotionAdapter` still cannot start. `mmdControl` depended on none of
-them, and is done.
+`v0.1.0-alpha.1`, a source-only pre-release of `motionCore` alone; its `main`
+has since received `motionRetarget` — `SkeletonDescriptor`, `RetargetMap`,
+`SourceRestPose` — for its `v0.2.0`
+([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
+Neither is released, so `mmdMotionAdapter` still cannot start. `mmdControl`
+and the role table depended on neither, and are done.
 
 ## Outcome
 
@@ -51,19 +53,28 @@ usd-avatar-runtime:  schedules the above per frame, composes the stage, renders
   §11.7 does at a model's loop count — at 40 iterations the report measures a
   leg's effector up to 29 mm from a goal within reach. Needs a reference to
   compare against; the rule does not change without one.
-- ⬜ **MOT-O5**, root motion: which MMD bones feed `RootMotion`, measured
-  against distributed motions in a dated report.
-- ⬜ **MOT-O6**, the humanoid role table and its version, measured against the
-  local models the Phase 7 report used.
-- ⛔ **`mmdMotionAdapter`** waits for `usd-motion-plugins` to publish an
-  installable `motion-core` with `SkeletonDescriptor` and `RetargetMap`
+- ✅ **MOT-O5 and MOT-O6** (2026-09-19): the humanoid role table, version 1,
+  and how evaluated motion becomes `HumanJoint` rotations and root motion
+  ([MOTION_CONTRACT.md §12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table)),
+  measured against the 13 local characters and two distributed motions
+  ([report](../reports/2026-09-19-phase9-roles-and-root.md)). No MMD bone is chosen as the root: it is the world
+  transform of the joint `hips` maps to. MOT-O10, the rest a clip from MMD
+  states, is opened with them.
+- ⬜ **MOT-O10**: whether the adapter states a `SourceRestPose` measured from
+  the rest bone directions — MMD's arms rest in an A — decided with the
+  adapter's first retarget onto a non-MMD skeleton.
+- ⛔ **`mmdMotionAdapter`** waits for `usd-motion-plugins` to release
+  installable `motionCore` and `motionRetarget` packages
   ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
+  The table is implemented with it, not before: it is written against
+  `HumanJoint`, and a copy of that vocabulary here would be the second
+  taxonomy the shared core forbids.
   `mmdControl`'s pose is its input: local transforms per canonical joint in
   the USD basis, and the morph channels.
   When it does, the edge is declared in the manifest and gated as
   [WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository)
-  says, and `SkeletonDescriptor`, `RetargetMap` and `MotionClip` are built as
-  MOTION_CONTRACT §10.4–§10.7 say.
+  says, and `MotionClip`, `SkeletonDescriptor` and `RetargetMap` are built as
+  MOTION_CONTRACT §10.4–§10.7 and §12 say.
 - ⛔ **Acceptance end to end** waits for `usd-motion-plugins`' retarget and
   `UsdSkelAnimation` authoring: a VMD-derived clip poses the PMX stage's
   skeleton with legs driven by IK, and retargets to a non-MMD synthetic

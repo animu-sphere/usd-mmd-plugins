@@ -171,7 +171,7 @@ rule by `mmdControl_robustness`.
 | --- | --- | --- |
 | IK solving, append-transform evaluation at import | unsupported by design | never the importer ([DESIGN_POLICY.md §2.2](../design/DESIGN_POLICY.md#22-the-static-importer-boundary)) |
 | IK solving, append-transform evaluation of a bound motion (`mmdControl`) | supported, outside the importer — see [Control evaluation](#control-evaluation-mmdcontrol) | [MOTION §11](../design/MOTION_CONTRACT.md#11-evaluating-the-control-rig) |
-| A VMD as a `MotionClip`, with a `SkeletonDescriptor` and humanoid `RetargetMap` (`mmdMotionAdapter`) | — (Phase 9; waits for `usd-motion-plugins`) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core) |
+| A VMD as a `MotionClip`, and a PMX model as a retarget target (`SkeletonDescriptor`, humanoid `RetargetMap`) (`mmdMotionAdapter`) | — (Phase 9; the role table is decided, the adapter waits for `usd-motion-plugins`) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core), [§12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table) |
 | Retargeting, recording, `UsdSkelAnimation` authoring of motion | unsupported by design | `usd-motion-plugins` ([MOTION §10.6](../design/MOTION_CONTRACT.md#106-what-this-repository-does-not-do-with-the-result)) |
 | Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
 | Toon rendering | unsupported by design | `hydra-toon` |
