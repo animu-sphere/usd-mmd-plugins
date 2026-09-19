@@ -1,4 +1,4 @@
-# OpenUSD MMD Plugins
+# OpenUSD MMD Character Plugins
 
 [![License: Apache-2.0](https://img.shields.io/github/license/animu-sphere/usd-mmd-plugins?label=license)](LICENSE)
 [![CI](https://github.com/animu-sphere/usd-mmd-plugins/actions/workflows/ost-source-ci.yml/badge.svg)](https://github.com/animu-sphere/usd-mmd-plugins/actions/workflows/ost-source-ci.yml)
