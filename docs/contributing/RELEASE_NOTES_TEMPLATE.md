@@ -3,8 +3,9 @@
 OpenUSD plugins for MikuMikuDance assets. `usdMmdFileFormat` opens `.pmx`
 models as USD stages; `mmd_inspect` and `vmd_inspect` report what a PMX or VMD
 file contains, without USD. The plain libraries — `mmdPmx`, `mmdModel`,
-`motionVmd`, `mmdMotionBinding` — ship inside the bundle and tools that link
-them, and build from the source archive as installable CMake packages.
+`motionVmd`, `mmdMotionBinding`, `mmdControl` — ship inside the bundle and
+tools that link them, and build from the source archive as installable CMake
+packages.
 
 - **Stage-contract version:** {stage_contract}
   ([STAGE_CONTRACT.md](https://github.com/animu-sphere/usd-mmd-plugins/blob/{tag}/docs/design/STAGE_CONTRACT.md))

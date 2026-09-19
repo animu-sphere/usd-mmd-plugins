@@ -94,8 +94,11 @@ exact version, and listed in `THIRD_PARTY_NOTICES.md`.
 
 The shared motion core: vendor- and avatar-format-neutral poses and clips,
 humanoid joint semantics, sampling, retargeting, recording and the
-`UsdSkelAnimation` bridge. Planned, not linked: the repository has published
-no package yet.
+`UsdSkelAnimation` bridge. Planned, not linked. Its first tag,
+`v0.1.0-alpha.1` (2026-09-19), is a source-only pre-release of `motionCore`
+alone — `MotionPose`, `MotionClip`, `HumanJoint`, no `SkeletonDescriptor` or
+`RetargetMap` — and its notes say it is not `v0.1.0`, so nothing here links it
+yet.
 
 | | |
 | --- | --- |

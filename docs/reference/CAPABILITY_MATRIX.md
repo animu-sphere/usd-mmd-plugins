@@ -4,7 +4,7 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-17 the tree holds Phases 0–7:** `.pmx` is registered, every
+**As of 2026-09-19 the tree holds Phases 0–7 and the first part of Phase 9:** `.pmx` is registered, every
 table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
 by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
 canonical stage — mesh, UVs, material prims and subsets, skeleton and
@@ -17,6 +17,9 @@ every rigid body and joint under `/Asset/physics`, as `UsdPhysics` where it
 matches and `mmd:physics:*` throughout, with nothing simulated. Phase 7 reads
 VMD motion (`motionVmd`, reported by `vmd_inspect`) and binds it to a
 canonical model by MMD's name rule (`mmdMotionBinding`), baking nothing.
+Phase 9's `mmdControl` evaluates a bound motion at an explicit time over the
+control rig — Bézier curves, bone and group morphs, appends, IK — into
+deformation-joint transforms, outside the importer.
 The *intended* column is the
 claim the design makes for the first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
@@ -84,6 +87,27 @@ fixtures `tests/fixtures/generate_vmd_fixtures.py` writes.
 | Bone keys converted to the USD basis and meters with the model's conversion | supported | [MOTION §7](../design/MOTION_CONTRACT.md#7-coordinates) |
 | The visibility track | preserved | [MOTION §8.3](../design/MOTION_CONTRACT.md#83-the-ik--visibility-track) |
 
+## Control evaluation (`mmdControl`)
+
+What evaluating a bound motion at one time gives: a pose of every
+deformation joint, the morph channels, and the visibility. Each claim is
+backed by a synthetic rig with a known answer in `mmdControl_unit`, and every
+rule by `mmdControl_robustness`.
+
+| Capability | Current | Contract |
+| --- | :---: | --- |
+| Bone tracks sampled on their Bézier curves; morph tracks linearly; IK and visibility as steps | supported | [MOTION §11.2](../design/MOTION_CONTRACT.md#112-sampling-the-tracks) |
+| Bone morphs, directly and through nested group morphs, evaluated into the pose | supported | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
+| Every other bound morph as a channel with its sampled weight | supported | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
+| MMD's evaluation order: after-physics flag, transform layer, source index | supported | [MOTION §11.5](../design/MOTION_CONTRACT.md#115-evaluation-order) |
+| Rotation and translation appends, negative ratios, chains of appends, appends from IK links | supported | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
+| Local appends | approximated (evaluated as global, reported) | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
+| IK by cyclic coordinate descent: angle limit, plane links, Euler-limited links, the IK-enable track | supported | [MOTION §11.7](../design/MOTION_CONTRACT.md#117-ik) |
+| IK matching MMD's own playback within a distance | unverified (MOT-O9) | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
+| External parents | unsupported (ignored, reported) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
+| Physics before after-physics bones | unsupported by design (nothing is simulated) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
+| The same inputs give the same bits, whatever was evaluated before | supported | [MOTION §11.1](../design/MOTION_CONTRACT.md#111-the-evaluator) |
+
 ## PMX model import
 
 | Capability | Current | Intended | Phase | Contract |
@@ -146,14 +170,14 @@ fixtures `tests/fixtures/generate_vmd_fixtures.py` writes.
 | Capability | Status | Where it belongs |
 | --- | --- | --- |
 | IK solving, append-transform evaluation at import | unsupported by design | never the importer ([DESIGN_POLICY.md §2.2](../design/DESIGN_POLICY.md#22-the-static-importer-boundary)) |
-| IK solving, append-transform evaluation of a bound motion (`mmdControl`) | — (Phase 9) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
+| IK solving, append-transform evaluation of a bound motion (`mmdControl`) | supported, outside the importer — see [Control evaluation](#control-evaluation-mmdcontrol) | [MOTION §11](../design/MOTION_CONTRACT.md#11-evaluating-the-control-rig) |
 | A VMD as a `MotionClip`, with a `SkeletonDescriptor` and humanoid `RetargetMap` (`mmdMotionAdapter`) | — (Phase 9; waits for `usd-motion-plugins`) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core) |
 | Retargeting, recording, `UsdSkelAnimation` authoring of motion | unsupported by design | `usd-motion-plugins` ([MOTION §10.6](../design/MOTION_CONTRACT.md#106-what-this-repository-does-not-do-with-the-result)) |
 | Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
 | Toon rendering | unsupported by design | `hydra-toon` |
 | Opening a `.vmd` as a stage (`usdVmdFileFormat`) | — (waits for MOT-O2) | [MOTION §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries) |
 | VMD playback | unsupported by design | a runtime scheduling `mmdControl` (Phase 8) |
-| VMD bake | — (Phase 9) | `mmdControl` evaluates, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
+| VMD bake | — (Phase 9; `mmdControl` exists, the shared core's authoring waits for `usd-motion-plugins`) | `mmdControl` evaluates, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
 | PMD | — (not planned) | `mmdPmd`, if ever |
 | PMX / VMD writing | — (not planned) | [DESIGN_POLICY.md §2.4](../design/DESIGN_POLICY.md#24-reader-first) |
 

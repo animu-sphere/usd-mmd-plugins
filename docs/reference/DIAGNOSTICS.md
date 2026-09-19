@@ -102,7 +102,7 @@ Codes are `MMD_<FAMILY>_<EVENT>`, upper snake case.
 | `MMD_MORPH_` | morphs |
 | `MMD_MATERIAL_` | materials |
 | `MMD_PHYSICS_` | rigid bodies, joints, soft bodies |
-| `MMD_MOTION_` | VMD and motion binding (Phase 7) |
+| `MMD_MOTION_` | VMD and motion binding (Phase 7), control evaluation (Phase 9) |
 | `MMD_USD_` | the source → USD boundary |
 
 A code is never renamed, never reused for a different event, and never changes
@@ -209,7 +209,7 @@ raises; every other code is reserved.
 | `MMD_PHYSICS_UNKNOWN_MODE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 | `MMD_PHYSICS_UNKNOWN_JOINT_TYPE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 
-### 5.6 Motion (Phase 7)
+### 5.6 Motion (Phases 7 and 9)
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
@@ -223,6 +223,9 @@ raises; every other code is reserved.
 | `MMD_MOTION_UNMATCHED_MORPH` *emitted* | info | `mmdMotionBinding` | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
 | `MMD_MOTION_AMBIGUOUS_NAME` *emitted* | warning | `mmdMotionBinding` | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
 | `MMD_MOTION_UNENCODABLE_NAME` *emitted* | info | `mmdMotionBinding` | [MOTION §8.1](../design/MOTION_CONTRACT.md#81-name-matching) |
+| `MMD_MOTION_EXTERNAL_PARENT_IGNORED` *emitted* | info | `mmdControl` (`Prepare`) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
+| `MMD_MOTION_LOCAL_APPEND_APPROXIMATED` *emitted* | info | `mmdControl` (`Prepare`) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
+| `MMD_MOTION_IK_LOOP_CLAMPED` *emitted* | warning | `mmdControl` (`Prepare`) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
 
 ### 5.7 USD boundary
 

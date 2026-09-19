@@ -56,6 +56,9 @@ bundle's `plugInfo.json` expects it, `mmd_inspect` into
 | `motionVmd_cp932_table` | the committed CP932 table is exactly what its generator writes |
 | `mmdMotionBinding_unit` | binding a motion to a canonicalized model: CP932 field bytes, matching per field width, unmatched, ambiguous and unencodable names, the basis conversion of a key, and carrying a `motionVmd` diagnostic into the workspace record |
 | `mmdMotionBinding_boundaries` | `mmdMotionBinding`'s sources include no OpenUSD, it links `mmdModel` and `motionVmd` and nothing else, and a binary linking it imports no OpenUSD library |
+| `mmdControl_unit` | evaluation over synthetic rigs with known answers: Bézier progress and which key's curve a segment follows, held and stepped tracks, forward kinematics, the evaluation order, bone morphs through nested groups and the channels left, appends with negative ratios and in chains, IK on one link, with an angle limit and with Euler limits, a leg with a plane knee and `足D`, the IK-enable track, the three diagnostics, and a VMD through `Bind` |
+| `mmdControl_robustness` | 20,000 generated rigs and motions — appends and IK chains naming any joint, wild loop counts, limits and keys, cyclic group morphs — each evaluated at five times, twice: no crash, the same bits both times, and finite unit-rotation poses from the tame half |
+| `mmdControl_boundaries` | `mmdControl`'s sources include no OpenUSD and no `motionCore/` header, it links `mmdMotionBinding` and `mmdModel` and nothing else, and a binary linking it imports no OpenUSD library |
 | `mmd_inspect_fixtures` | `mmd_inspect` reads every generated fixture as `fixtures.json` says, from an ASCII and a non-ASCII directory |
 | `mmd_inspect_boundaries` | `mmd_inspect` links `mmdPmx` and nothing else, and imports no OpenUSD library |
 | `vmd_inspect_fixtures` | `vmd_inspect` reads every generated VMD fixture as its `fixtures.json` says, from an ASCII and a non-ASCII directory |
@@ -149,10 +152,14 @@ ost library verify-consumer libs/motionVmd
 ost library build libs/mmdMotionBinding
 ost library test libs/mmdMotionBinding
 ost library verify-consumer libs/mmdMotionBinding
+ost library build libs/mmdControl
+ost library test libs/mmdControl
+ost library verify-consumer libs/mmdControl
 ```
 
 `mmdMotionBinding` requires `mmdModel` and `motionVmd`, so `ost` builds and
-installs its closure of four libraries first.
+installs its closure of four libraries first; `mmdControl`, which requires
+`mmdMotionBinding` and `mmdModel`, a closure of five.
 
 A root build and `ost build` both stage the plugin library into the same
 `plugins/usdMmdFileFormat/lib/`. On 2026-09-17 one `ost` build tree held an
@@ -188,9 +195,10 @@ cmake --build ~/mmd-san-model
 ctest --test-dir ~/mmd-san-model --output-on-failure
 ```
 
-`motionVmd` and `mmdMotionBinding` declare the same options
+`motionVmd`, `mmdMotionBinding` and `mmdControl` declare the same options
 (`MOTIONVMD_SANITIZERS`, `MOTIONVMD_BUILD_FUZZER`,
-`MMDMOTIONBINDING_SANITIZERS`); instrumented, they have run only in CI.
+`MMDMOTIONBINDING_SANITIZERS`, `MMDCONTROL_SANITIZERS`); instrumented, they
+have run only in CI.
 
 The fuzz targets need Clang's libFuzzer: `-DMMDPMX_BUILD_FUZZER=ON` or
 `-DMOTIONVMD_BUILD_FUZZER=ON` with `clang++`, and the sanitizers on. They have
@@ -208,8 +216,9 @@ what each package promises and names no source or build location, builds
 repository — against that prefix alone, runs the installed `mmd_inspect` over
 every fixture, reads every generated VMD fixture through the installed
 `motionVmd` and `vmd_inspect`, binds one to a PMX fixture through the
-installed `mmdMotionBinding`, and opens a PMX from a Python host whose only
-plugin path is the prefix's. `ctest` runs it as
+installed `mmdMotionBinding`, evaluates it at every frame through the
+installed `mmdControl`, and opens a PMX from a Python host whose only plugin
+path is the prefix's. `ctest` runs it as
 `workspace_installed_consumer`.
 
 ## Fixtures
