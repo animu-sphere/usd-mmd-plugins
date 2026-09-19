@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The remaining milestones — Phase 9, shared motion core adoption, then Phase 8, avatar runtime composition — and the part of each this repository owes or waits for. |
+| [current.md](current.md) | The remaining milestones — Phase 9, shared motion core adoption (in progress), then Phase 8, avatar runtime composition — and the part of each this repository owes or waits for. |
 | [../releases/](../releases/README.md) | What each released version shipped, and how a release is cut. |
 
 ## One sequence
@@ -37,7 +37,7 @@ in.** No other document states a version for a Phase.
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | avatar runtime composition | ⬜ | unassigned, and owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | ⬜ | unassigned; its adapter waits for `usd-motion-plugins`' first release |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 `mmdControl` done | unassigned; its adapter waits for `usd-motion-plugins`' first release |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -47,7 +47,7 @@ Phase 7 too. It is a 0.x release because no consumer has used the packages
 yet: Phase 8's consumer may still show a contract wrong
 ([current.md](current.md)). No earlier Phase had a release of its own.
 
-Where things stand, as of 2026-09-17:
+Where things stand, as of 2026-09-19:
 
 - The documentation baseline exists: the design policy, five focused design
   contracts, the workspace contract, and reference pages that state what is
@@ -102,9 +102,17 @@ Where things stand, as of 2026-09-17:
   VMD stays here, MMD IK and append evaluation moves here from the runtime
   (MOT-O3 superseded), and Phase 9 was added for the hand-off to the shared
   motion core.
-- Phase 9, shared motion core adoption, is the current milestone; Phase 8,
-  avatar runtime composition, follows it and is owned mostly outside this
-  repository.
+- Phase 9, shared motion core adoption, is the current milestone. Its first
+  part is done: `mmdControl` evaluates a bound motion over the control rig —
+  Bézier curves, bone and group morphs, appends, IK — deterministically, as
+  [MOTION_CONTRACT.md §11](../design/MOTION_CONTRACT.md#11-evaluating-the-control-rig)
+  says, with MOT-O7 resolved and legs following their IK goals over 13 local
+  models and two distributed motions
+  ([report](../reports/2026-09-19-phase9-local-control.md)).
+  `mmdMotionAdapter` waits for `usd-motion-plugins`, whose first tag
+  (2026-09-19) is a pre-release without `SkeletonDescriptor` or `RetargetMap`.
+- Phase 8, avatar runtime composition, follows Phase 9 and is owned mostly
+  outside this repository.
 
 ## Open decisions
 
@@ -122,7 +130,7 @@ schedules them.
 | STAGE-O6 | Rig and physics prim shapes | [STAGE §16](../design/STAGE_CONTRACT.md#16-open-questions) | resolved in Phases 5 and 6 |
 | PMX-O1 | Euler order of rigid-body and joint rotations | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | resolved in Phase 6 |
 | MOT-O1 | Home of the shared basis-conversion functions | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7 |
-| MOT-O7 | Morphs evaluated into the pose versus carried as channels | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdControl` (Phase 9) |
+| MOT-O7 | Morphs evaluated into the pose versus carried as channels | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter` (Phase 9) |
 | MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter` (Phase 9) |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
@@ -132,6 +140,7 @@ schedules them.
 | MAT-O4 | How `hydra-toon` reads MMD semantics | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | `hydra-toon` |
 | MOT-O4 | Camera and light tracks | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer |
 | MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
+| MOT-O9 | MMD's own IK distance at a model's loop count | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (a reference to compare against) |
 
 ## Quality bar (applies to every Phase)
 

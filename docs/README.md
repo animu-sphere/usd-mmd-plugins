@@ -15,9 +15,9 @@ chains, append relations, axes — under `/Asset/rig`, solving nothing, and
 Phase 6 every rigid body and joint under `/Asset/physics`, as `UsdPhysics`
 where it matches, simulating nothing. Phase 7 reads VMD motion without a
 model (`motionVmd`, `vmd_inspect`) and binds it to one by MMD's name rule
-(`mmdMotionBinding`), baking nothing. Phase 9, next, evaluates MMD's control
-rig over a bound motion and hands the result to `usd-motion-plugins`, the
-shared motion core this repository consumes. Everything
+(`mmdMotionBinding`), baking nothing. Phase 9, in progress, evaluates MMD's
+control rig over a bound motion (`mmdControl`, done) and will hand the result
+to `usd-motion-plugins`, the shared motion core this repository consumes. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
 place that says what is implemented.
 

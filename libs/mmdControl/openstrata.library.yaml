@@ -1,0 +1,39 @@
+# OpenStrata plain-library descriptor.
+#
+# mmdControl evaluates a motion bound to a PMX model over its control rig --
+# bone morphs, appends, IK -- at an explicit time (docs/design/
+# MOTION_CONTRACT.md §11). A plain static CMake library, NOT a plugin bundle,
+# with no OpenUSD dependency and nothing of usd-motion-plugins
+# (docs/architecture/WORKSPACE.md §1, §2).
+#
+# Two edges, the only ones permitted: mmdControl -> mmdMotionBinding, and
+# mmdControl -> mmdModel (WORKSPACE.md §2.1).
+schema: openstrata.library/v1alpha1
+library:
+  id: mmdControl
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.1.0
+requires:
+  libraries:
+    - id: mmdMotionBinding
+      version: ">=0.1,<0.2"
+    - id: mmdModel
+      version: ">=0.1,<0.2"
+cmake:
+  # The find_package() name and the imported target consumers link against.
+  package: mmdControl
+  target: mmdControl::mmdControl
+# Built and installed on its own; nothing in the product links it yet, so it
+# ships as a package for a motion runtime to consume.
+package:
+  standalone: true
+  aggregate_member: false
+# What the installed package promises a consumer (docs/architecture/
+# PACKAGE_CONTRACT.md).
+package_contract:
+  package_name: mmdControl
+  exported_targets: [mmdControl::mmdControl]
+  public_headers: [include/mmdControl/**]
+  consumer:
+    include: mmdControl/Evaluator.h
+    symbol: mmd::control::Evaluator::Prepare

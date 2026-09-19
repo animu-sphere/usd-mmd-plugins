@@ -7,9 +7,10 @@ installed-consumer lane
 ([WORKSPACE.md §6](WORKSPACE.md#6-tests)) builds against a clean prefix to
 keep it true.
 
-Status (2026-09-17): the two Phase 0 packages exist, `mmd_inspect` installs
-with the workspace since Phase 1, `mmdModel` since Phase 2, and `motionVmd`,
-`mmdMotionBinding` and `vmd_inspect` since Phase 7. Identities and
+Status (2026-09-19): the two Phase 0 packages exist, `mmd_inspect` installs
+with the workspace since Phase 1, `mmdModel` since Phase 2, `motionVmd`,
+`mmdMotionBinding` and `vmd_inspect` since Phase 7, and `mmdControl` since
+Phase 9. Identities and
 dependency edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not
 restate them.
 
@@ -88,6 +89,26 @@ verify-consumer libs/mmdMotionBinding` builds a consumer that includes
 holding its closure of four packages alone. The installed-consumer lane's
 `vmd_probe` finds `mmdMotionBinding` only, reads every VMD fixture through it
 and binds one to a PMX fixture.
+
+## `mmdControl`
+
+| | |
+| --- | --- |
+| `find_package` | `find_package(mmdControl 0.1 CONFIG REQUIRED)` |
+| Imported target | `mmdControl::mmdControl` (static library), which links `mmdMotionBinding::mmdMotionBinding` and `mmdModel::mmdModel` publicly |
+| Headers | `include/mmdControl/` — `Evaluator.h`, `Sample.h`, `Codes.h` |
+| Required packages | `mmdMotionBinding` and `mmdModel`, found by the package's config (`find_dependency`) unless the consumer already has the targets; they find `motionVmd` and `mmdPmx` |
+| Language | C++20 (`cxx_std_20` is a usage requirement) |
+| Version compatibility | `SameMinorVersion`, as `mmdPmx` |
+| Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdControl/`, and `include/mmdControl/` |
+
+Nothing in the product links it: like `mmdMotionBinding`, it is a package for
+a motion or avatar runtime, which schedules it, so its manifest marks it
+`aggregate_member: false`. `ost library verify-consumer libs/mmdControl`
+builds a consumer that includes `mmdControl/Evaluator.h` and names
+`mmd::control::Evaluator::Prepare` against a prefix holding its closure of
+five packages alone. The installed-consumer lane's `control_probe` finds
+`mmdControl` only, binds a VMD fixture to a PMX fixture and evaluates it.
 
 ## `usdMmdFileFormat`
 

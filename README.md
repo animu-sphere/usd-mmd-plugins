@@ -43,7 +43,8 @@ VMD bytes ─→ motionVmd ─→ mmdMotionBinding (+ mmdModel) ─→ a bound m
              syntax,      by source name, in the model's
              tracks       basis
           ─→ mmdControl ─→ mmdMotionAdapter ─→ MotionClip ─→ usd-motion-plugins
-             IK, append    (Phase 9, planned)                retarget, record, UsdSkelAnimation
+             IK, append,   (Phase 9, planned)                retarget, record, UsdSkelAnimation
+             bone morphs
 ```
 
 The importer authors data only. It never solves IK, evaluates bone constraints
@@ -66,6 +67,7 @@ that needs MMD to be understood stay here.
 | `mmd_inspect` | CLI | what a PMX contains, without USD | exists ([guide](docs/guides/inspecting.md)) |
 | `motionVmd` | plain C++ library | VMD syntax, CP932 names and tracks — no dependency at all | reads every section |
 | `mmdMotionBinding` | plain C++ library | binds a VMD motion to a canonical model by source name, in the model's basis — no OpenUSD, nothing evaluated | exists |
+| `mmdControl` | plain C++ library | evaluates a bound motion at an explicit time over MMD's control rig — Bézier curves, bone morphs, appends, IK — into deformation-joint transforms; no OpenUSD, scheduled by a runtime | exists |
 | `vmd_inspect` | CLI | what a VMD contains, without a model or USD | exists ([guide](docs/guides/inspecting.md)) |
 
 `mmdSchema` exists only if an MMD API schema passes the

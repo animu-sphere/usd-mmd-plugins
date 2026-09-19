@@ -2,8 +2,11 @@
 
 > Status: **binding** since Phase 7 for §2–§8.1 and §8.3: `motionVmd` reads
 > VMD as §3–§6 say, `vmd_inspect` reports on it, and `mmdMotionBinding` binds
-> a motion to a model as §7 and §8.1 say, each with fixtures. §8.2 and §10
-> are **accepted** and not implemented: they are Phase 9. This document holds
+> a motion to a model as §7 and §8.1 say, each with fixtures. §11 is
+> **binding** since Phase 9's `mmdControl`: it evaluates a bound motion as §11
+> says, with a synthetic rig behind each rule. §10 is **accepted**, and of it
+> only `mmdControl`'s part (§10.1–§10.3, §10.7's choice of channels) is
+> implemented; `mmdMotionAdapter` waits for `usd-motion-plugins`. This document holds
 > only what is specific to MMD motion — VMD's source facts, its text encoding,
 > where it meets a PMX model, how MMD's control rig is evaluated, and how the
 > result enters the shared motion core. Generic motion concepts (`MotionPose`,
@@ -14,6 +17,7 @@
 >
 > Revised 2026-09-17 to that policy: MOT-O3 is superseded (§8.2), `motionVmd`
 > is no longer described as leaving this repository (§2), and §10 is new.
+> Revised 2026-09-19: §11 is new, and MOT-O7 is resolved by it.
 
 ---
 
@@ -271,8 +275,8 @@ as a whole.
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
 | MOT-O5 | Root motion: which MMD bones (`全ての親`, `センター`, `グルーブ`) become `RootMotion` and which stay hips-local motion, given the shared core keeps the two apart (§10.5) | Phase 9, against distributed motions |
 | MOT-O6 | The humanoid role table: which MMD bone names map to which `HumanJoint`, how English names and common variants are matched, and how the table is versioned (§10.4) | Phase 9 |
-| MOT-O7 | Morphs: which morph types `mmdControl` evaluates before the pose is emitted (bone morphs change the skeleton; group morphs expand into both) and which reach `MotionChannelSet` as source weights (§10.7) | Phase 9 |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
+| MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count. At 40 iterations, §11.7 leaves a leg's effector a median 0.02–7 mm and at most 29 mm from a goal within reach, falling to under 0.1 mm at 256 ([report](../reports/2026-09-19-phase9-local-control.md)); the rule is changed only against a reference — MMD's output, or an independent implementation's, on the same frames | a reference to compare against |
 
 Resolved:
 
@@ -280,12 +284,15 @@ Resolved:
 | --- | --- | --- | --- |
 | MOT-O1 | Where the shared basis-conversion functions live, so `mmdModel` and `motionVmd` share them without depending on each other | in `mmdModel`, applied by `mmdMotionBinding`; `motionVmd` converts nothing (§2) | Phase 7, 2026-09-17 |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | ~~the Phase 8 motion or avatar runtime~~ — **superseded 2026-09-17:** this repository, in the plain library `mmdControl`, scheduled by a runtime but never re-implemented by one (§8.2) | Phase 7, 2026-09-17; superseded the same day |
+| MOT-O7 | Which morph types `mmdControl` evaluates into the pose, and which reach `MotionChannelSet` as source weights | bone morphs, directly or as members of group morphs, are evaluated into the pose; every other bound morph track — group morphs included, bone morphs not — is a channel with its sampled weight, unexpanded (§11.3) | Phase 9, 2026-09-19 |
 
 ## 10. Normalizing into the shared motion core
 
-Accepted, not implemented: this section is Phase 9
-([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)), and it waits for
-`usd-motion-plugins` to publish `motion-core`. Names of that repository's
+Accepted: this section is Phase 9
+([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` exists and
+evaluates as §11 says; `mmdMotionAdapter` waits for `usd-motion-plugins` to
+publish a `motion-core` that carries `SkeletonDescriptor` and `RetargetMap`.
+Names of that repository's
 types (`MotionPose`, `MotionClip`, `HumanJoint`, `SkeletonDescriptor`,
 `RetargetMap`, `RootMotion`, `MotionChannelSet`) are its design policy's, and
 where its published contract differs, the published contract wins and this
@@ -295,7 +302,7 @@ section is revised.
 
 | Component | Input | Output | Depends on |
 | --- | --- | --- | --- |
-| `mmdControl` | a `BoundMotion`, the `CanonicalDocument` it was bound to, a time | the local transform of every deformation joint at that time, in the USD basis and meters, plus the morph weights §10.7 leaves as channels | `mmdMotionBinding`, `mmdModel` |
+| `mmdControl` | a `BoundMotion`, the `CanonicalDocument` it was bound to, a time | the local transform of every deformation joint at that time, in the USD basis and meters, plus the morph weights §10.7 leaves as channels (§11) | `mmdMotionBinding`, `mmdModel` |
 | `mmdMotionAdapter` | a `CanonicalDocument`; `mmdControl` evaluated over a time range at an explicit rate | a `SkeletonDescriptor`, a humanoid `RetargetMap`, and a `MotionClip` | `mmdControl`, `mmdModel`, `usd-motion-plugins` `motion-core` |
 
 Neither links more of OpenUSD than `motion-core`'s foundation types, and
@@ -313,7 +320,7 @@ VMD bytes → motionVmd → mmdMotionBinding ─→ BoundMotion           MMD so
                                                   ▼
                         mmdControl, per sample time t:
                           1. sample every bound track's Bézier curve at t (§6)
-                          2. apply bone morphs (MOT-O7)
+                          2. apply bone morphs (§11.3)
                           3. evaluate every bone in MMD's evaluation order —
                              transform layer, then after-physics flag, never
                              the canonical joint order — applying appends and
@@ -346,7 +353,8 @@ produce the same bits, as the importer's same-bytes rule requires
 - **Where the semantics come from.** `mmdControl` reads the control
   semantics `mmdModel` canonicalizes — the same facts the importer authors
   under `/Asset/rig` in Phase 5 — so the stage and the evaluator cannot
-  disagree about a chain. Evaluating from the stage alone is MOT-O8.
+  disagree about a chain. Evaluating from the stage alone is MOT-O8. The
+  rules themselves are §11.
 - **Physics.** Bones MMD drives by rigid bodies are not simulated. Their
   pose is what keyframes, appends and IK give them; bones flagged to deform
   after physics are evaluated in that position of the order with no
@@ -405,7 +413,7 @@ component here keeps a private copy of any of it
 
 ### 10.7 Morphs as channels
 
-Morph tracks that are not evaluated into the pose (MOT-O7) reach
+Morph tracks that are not evaluated into the pose (§11.3) reach
 `MotionChannelSet` under the namespaced semantic `mmd:<source name>`, with
 the bound weight as a scalar — preserved, never interpreted by the shared
 core (the motion policy's §5.3). Promoting a channel to a common semantic
@@ -419,3 +427,182 @@ MMD-side events keep this repository's `MMD_MOTION_*` family
 its catalog with the code that raises them. Diagnostics the shared core
 raises (`MOTION-E####`, `MOTION-W####`, `MOTION-I####`) are passed through
 unchanged, never re-coded.
+
+## 11. Evaluating the control rig
+
+Binding since Phase 9: `mmdControl` evaluates a bound motion over a model as
+this section says, and each rule has a synthetic rig with a known answer in
+its unit tests. The rules are MMD's playback as the open MMD runtimes
+reproduce it; where a reading had to be chosen, the choice is named here.
+Every quantity is in the USD basis and meters, as binding and
+canonicalization leave it (§7), and every rotation of a canonical joint is
+relative to an identity rest rotation
+([STAGE_CONTRACT.md §9.2](STAGE_CONTRACT.md#92-the-skeleton-prim)). Rotations
+are unit quaternions acting on column vectors: `a · b` applies `b` first. The
+Z mirror of §7 preserves products (`S·(a·b)·S = (S·a·S)·(S·b·S)`), so MMD's
+composition rules hold unchanged in the USD basis.
+
+### 11.1 The evaluator
+
+- **Prepared once per model.** `Prepare` reads the canonical model and keeps
+  what evaluation needs — each joint's parent and rest translation, its
+  control semantics, the IK chains and the evaluation order (§11.5) — and
+  does not refer to the model afterwards. Its diagnostics (§11.8) are raised
+  there, once, never per evaluation.
+- **Evaluated at an explicit time.** `Evaluate` takes a motion bound to that
+  model and a time in MMD frames (§5), fractional allowed, and returns a
+  **pose**: for every canonical joint, its local translation — the rest
+  translation from its parent plus what the motion adds — and its local
+  rotation; the channel weights of §11.3; and the model's visibility.
+- **Stateless.** Every evaluation starts from the rest pose. Nothing carries
+  over from an earlier call — no IK solution warms the next — so a time gives
+  the same pose whatever was evaluated before it, and the same inputs give
+  the same bits (§10.2). A caller may pass its own pose to be refilled.
+- A track whose index names no joint or morph of the prepared model is
+  ignored: it was bound to another model.
+
+### 11.2 Sampling the tracks
+
+At frame `f`, every track is sampled on its own:
+
+- **Before its first key or after its last**, a track holds that key's
+  value; at a key's frame it has that key's value.
+- **Bone tracks, between keys** `k0` and `k1`: `u = (f − f0) / (f1 − f0)`.
+  Each channel — X, Y and Z translation, and rotation — takes its progress
+  from **`k1`'s** curve for that channel: the curve stored on a key describes
+  the transition into it. The curve's control points are divided by 127; the
+  parameter `s` with `x(s) = u` is found by 32 bisections of `[0, 1]`, and the
+  progress is `y(s)`. Translation interpolates each axis linearly by its own
+  progress; rotation is the shortest-path spherical interpolation by the
+  rotation's progress, normalized.
+- **Morph tracks** interpolate linearly between keys: they have no curves.
+- **IK and visibility tracks** are steps: the last key at or before `f`, or
+  the first key before it. A joint with no IK track has its chain enabled,
+  and a motion with no visibility keys leaves the model visible.
+
+A bone with no track has no motion: translation zero, rotation identity. Key
+values are used as stored, except that a key rotation is normalized (a zero
+one is identity); a non-finite value gives non-finite output for that joint
+and what depends on it, never a failure.
+
+### 11.3 Morphs
+
+Morphs are applied after the keys. Each morph's **effective weight** is its
+track's sampled weight (0 without one) plus, for every group morph that lists
+it, that group's effective weight times the member's weight. Groups may nest
+— canonicalization has already dropped any member that would close a cycle —
+and a morph that two groups reach takes both. Effective weights are
+accumulated groups-first in one pass, so the work is linear in the morph
+table however the groups nest.
+
+**Bone morphs** are evaluated into the pose, in ascending morph index, each
+with its effective weight `w` (a zero weight does nothing): for each of its
+offsets `(t, q)`, in order, the joint's motion translation gains `w · t`, and
+its motion rotation `ρ` becomes `slerp(1, q, w) · ρ` — a rotation about `q`'s
+axis by `w` times `q`'s angle, applied after `ρ`. Of what a group reaches,
+only its bone morphs change the pose.
+
+No other morph type changes a joint: vertex, UV and material morphs are a
+renderer's, and flip and impulse morphs are not evaluated. They reach the
+pose's **channels** instead — one per bound morph track whose morph is
+**not** a bone morph, with its sampled weight, never expanded — so a group
+morph is a channel too (MOT-O7, §10.7). A consumer that expands a group
+channel skips its bone morphs: they are already in the pose.
+
+### 11.4 A joint's local transform
+
+For joint `j`, with `T_j` its rest translation from its parent and `a_j`,
+`ρ_j` its motion translation and rotation (§11.2, §11.3):
+
+```text
+translation_j = T_j + a_j + (appendT_j   if j appends translation)
+rotation_j    = ik_j · ρ_j · (appendR_j  if j appends rotation)
+world_j       = world_parent(j) · [translation_j, rotation_j]
+```
+
+`ik_j` is identity unless an IK chain rotates `j` (§11.7). A fixed axis, local
+axes and the rotatable, translatable, visible and operable flags constrain
+editing in MMD, not playback, and are not applied.
+
+### 11.5 Evaluation order
+
+Joints are evaluated in ascending **(after-physics flag, transform layer,
+source index)** — never the canonical joint order
+([STAGE_CONTRACT.md §12.1](STAGE_CONTRACT.md#121-per-joint-control-semantics)).
+Before the pass every joint holds its motion, identity `ik` and no append.
+In order, for each joint: if it appends, its append is taken from its
+source's state at that moment (§11.6); then, if it is the IK bone of an
+enabled chain, the chain is solved (§11.7). World transforms are always those
+of the current state. Physics is not simulated: after-physics joints are
+evaluated last with no simulation before them (§10.3).
+
+### 11.6 Appends
+
+For joint `j` appending from source `s` with ratio `r`:
+
+- **Rotation.** `appendR_j` is a rotation about the axis of
+  `A = ik_s · ρ_s · (appendR_s if s appends rotation)` by `r` times its angle,
+  the angle taken in `[0, π]`, so a negative ratio turns the other way. The
+  source's whole rotation is taken — its keys and morphs, its IK rotation and
+  its own append — so a chain of appends composes, and a bone that follows an
+  IK link (`足D` from `足`) follows the solved leg.
+- **Translation.** `appendT_j = r · (a_s + (appendT_s if s appends translation))`.
+- **Local appends** (PMX flag `0x0080`) are evaluated by the same rule, with
+  `MMD_MOTION_LOCAL_APPEND_APPROXIMATED` (§11.8). None of 25 local models
+  holds one ([report](../reports/2026-09-19-phase9-local-control.md)).
+
+A source later in the order than `j` has not had its own append or IK applied
+when `j` reads it; no local model has one.
+
+### 11.7 IK
+
+A chain has an IK bone `g` (the goal), an effector `e`, links `L1 … Ln` in
+source order, a loop count `N` and an angle limit `α` in radians. A disabled
+chain is not solved, and its links keep identity `ik`. An enabled one is
+solved by cyclic coordinate descent:
+
+1. Every link's `ik` is set to identity, and its plane angle and previous
+   Euler angles (below) to zero. `best = +∞`.
+2. For each iteration `0 … N − 1`, for each link `L` in order that is not the
+   effector:
+   - The goal's and the effector's world positions are taken into `L`'s frame
+     and normalized; a vector shorter than `10⁻¹²` skips the link. The angle
+     between them is clamped to `α`; below `10⁻³` degrees the link is skipped.
+   - **Plane links** — limited, with exactly one axis whose lower or upper
+     limit is non-zero — rotate about that axis only. Of the effector vector
+     rotated by `+angle` and by `−angle` about it, the one with the larger dot
+     product with the goal vector gives the sign (`−` on a tie), and the
+     signed angle is added to the link's plane angle. In iteration 0 only, a
+     plane angle outside the limits is negated if its negation is inside
+     them, or if its negation is nearer the limits' midpoint. The plane angle
+     is then clamped to the limits, and `ik_L = axisAngle(axis, plane angle) · ρ_L⁻¹`.
+   - **Other links** rotate about the normalized cross product of the
+     effector and goal vectors (one shorter than `10⁻¹²` skips the link):
+     `R = ik_L · ρ_L · axisAngle(axis, angle)`. A limited link then takes
+     `R`'s Euler angles `(x, y, z)`, `R = Rx(x) · Ry(y) · Rz(z)` — of
+     `(x, y, z)` and the eight triples `(x ± π, ±π − y, z ± π)`, the one
+     nearest its previous Euler angles by the sum of absolute differences,
+     each wrapped into `(−π, π]`; when `|cos y|` is below `10⁻⁶`, `x` is the
+     previous one — clamps each to its limits and then to within `α` of the
+     previous angle, keeps the result as its previous Euler angles, and makes
+     `R = Rx · Ry · Rz` of it. Then `ik_L = R · ρ_L⁻¹`.
+   - After all links, `d` is the distance from the effector to the goal. If
+     `d < best`, `best = d` and every link's `ik` is saved; otherwise the
+     saved values are restored and the solve stops.
+
+`N` is used as stored when it is between 0 and 256; outside, it is clamped
+into that range with `MMD_MOTION_IK_LOOP_CLAMPED` (§11.8). The largest of the
+25 local models' chains is 40
+([report](../reports/2026-09-19-phase9-local-control.md)): the bound only
+keeps a malformed model from turning one evaluation into billions of
+iterations.
+
+### 11.8 Diagnostics
+
+Raised by `Prepare`, once per element, never by `Evaluate`:
+
+| Event | Code | Severity |
+| --- | --- | --- |
+| a joint with an external parent: with one model there is nothing to resolve, so the relation is ignored (§10.3) | `MMD_MOTION_EXTERNAL_PARENT_IGNORED` | info |
+| a local append, evaluated as a global one (§11.6) | `MMD_MOTION_LOCAL_APPEND_APPROXIMATED` | info |
+| a chain's loop count outside `[0, 256]`, clamped (§11.7) | `MMD_MOTION_IK_LOOP_CLAMPED` | warning |

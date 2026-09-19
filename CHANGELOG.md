@@ -15,6 +15,25 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ## [Unreleased]
 
+### Added
+
+- **`mmdControl` (`libs/mmdControl/`), MMD control evaluation.** A plain
+  library, with no OpenUSD and nothing of `usd-motion-plugins`, that
+  evaluates a motion bound to a model at an explicit time into the local
+  transform of every deformation joint: bone tracks sampled on their Bézier
+  curves, bone morphs applied directly and through nested group morphs,
+  appends — negative ratios and chains included — and IK by cyclic
+  coordinate descent with angle limits, plane and Euler-limited links and the
+  IK-enable track, in MMD's evaluation order. Every other bound morph is
+  returned as a channel with its sampled weight. `Prepare` raises
+  `MMD_MOTION_EXTERNAL_PARENT_IGNORED`, `MMD_MOTION_LOCAL_APPEND_APPROXIMATED`
+  and `MMD_MOTION_IK_LOOP_CLAMPED`; `Evaluate` is stateless, and the same
+  inputs give the same bits. It installs as a CMake package, and the
+  installed-consumer lane evaluates a VMD fixture through it. MOT-O7 is
+  resolved, and MOT-O9 — whether MMD's own IK leaves less distance at a
+  model's loop count — is opened (`MOTION_CONTRACT.md` §9, §11; report
+  2026-09-19).
+
 ### Changed
 
 - **The design documents follow the `usd-motion-plugins` design policy.**
