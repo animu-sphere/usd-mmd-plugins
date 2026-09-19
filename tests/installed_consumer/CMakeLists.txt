@@ -32,3 +32,13 @@ target_link_libraries(vmd_probe PRIVATE mmdMotionBinding::mmdMotionBinding)
 if(MSVC)
     target_compile_options(vmd_probe PRIVATE /utf-8)
 endif()
+
+# mmdControl alone: its package config must find mmdMotionBinding and
+# mmdModel, and through them motionVmd and mmdPmx, by itself.
+find_package(mmdControl 0.1 CONFIG REQUIRED)
+
+add_executable(control_probe control_probe.cpp)
+target_link_libraries(control_probe PRIVATE mmdControl::mmdControl)
+if(MSVC)
+    target_compile_options(control_probe PRIVATE /utf-8)
+endif()

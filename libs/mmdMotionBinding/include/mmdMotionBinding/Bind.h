@@ -12,8 +12,8 @@
 // It is not a bake. Nothing is sampled, no curve is evaluated, and no IK or
 // append transform is solved: the keys still drive MMD's control rig -- the
 // IK targets, the append sources -- exactly as the file does, and turning
-// them into a pose of the deformation skeleton is runtime work
-// (MOTION_CONTRACT.md §8.2, MOT-O3).
+// them into a pose of the deformation skeleton is mmdControl's
+// (MOTION_CONTRACT.md §8.2, §11).
 #pragma once
 
 #include <mmdModel/CanonicalDocument.h>

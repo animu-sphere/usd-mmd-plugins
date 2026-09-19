@@ -9,9 +9,10 @@ proves the prefix works on its own:
      source tree or the build tree;
   2. tests/installed_consumer/, copied out of the repository, configures
      against the prefix alone -- finding mmdModel, whose package finds mmdPmx,
-     and mmdMotionBinding, whose package finds mmdModel and motionVmd --,
-     builds, reads and canonicalizes every PMX fixture, and reads every VMD
-     fixture and binds one to a PMX;
+     mmdMotionBinding, whose package finds mmdModel and motionVmd, and
+     mmdControl, whose package finds mmdMotionBinding and mmdModel --,
+     builds, reads and canonicalizes every PMX fixture, reads every VMD
+     fixture, binds one to a PMX and evaluates it;
   3. the installed mmd_inspect and vmd_inspect read every fixture from the
      prefix's bin/;
   4. a Python host whose only plugin path is the prefix's opens a PMX through
@@ -60,7 +61,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     # The libraries install under CMAKE_INSTALL_LIBDIR, which GNUInstallDirs
     # makes lib64 on some Linux distributions; the plugin bundle's lib/ is
     # fixed by its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
-    for package in ("mmdPmx", "mmdModel", "motionVmd", "mmdMotionBinding"):
+    for package in ("mmdPmx", "mmdModel", "motionVmd", "mmdMotionBinding", "mmdControl"):
         config_dirs = sorted(p.parent for p in prefix.glob(
             f"lib*/cmake/{package}/{package}Config.cmake"))
         if len(config_dirs) != 1:
@@ -76,6 +77,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
         pathlib.Path("include", "mmdModel", "Canonicalize.h"),
         pathlib.Path("include", "motionVmd", "Reader.h"),
         pathlib.Path("include", "mmdMotionBinding", "Bind.h"),
+        pathlib.Path("include", "mmdControl", "Evaluator.h"),
         pathlib.Path("bin", executable("mmd_inspect")),
         pathlib.Path("bin", executable("vmd_inspect")),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
@@ -257,6 +259,26 @@ def main() -> int:
             return 1
         print(f"ok  the installed motionVmd, mmdMotionBinding and vmd_inspect read all "
               f"{len(vmd_manifest)} VMD fixtures")
+
+        # The installed mmdControl evaluates that bound motion at every frame.
+        control_probes = sorted(build.rglob(executable("control_probe")))
+        if not control_probes:
+            print("the consumer built no control_probe", file=sys.stderr)
+            return 1
+        model = "sample-2.1-utf8.pmx"
+        joints = len(manifest[model]["stage"]["joints"])
+        evaluated = subprocess.run([str(control_probes[0]), str(vmd_fixtures / "sample.vmd"),
+                                    str(fixtures / model)], text=True,
+                                   encoding="utf-8", stdout=subprocess.PIPE)
+        lines = evaluated.stdout.splitlines()
+        if (evaluated.returncode != 0 or len(lines) != 1
+                or not lines[0].startswith(f"joints={joints} ")
+                or not lines[0].endswith(" finite=1")):
+            print(f"the installed mmdControl printed {evaluated.stdout!r}, expected "
+                  f"joints={joints} and finite=1", file=sys.stderr)
+            return 1
+        print(f"ok  the installed mmdControl evaluated sample.vmd over {model}: "
+              f"{lines[0]}")
 
         # The Python host, with only the prefix on the plugin path.
         env = dict(os.environ)
