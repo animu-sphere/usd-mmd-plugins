@@ -136,6 +136,7 @@ schedules them.
 | MOT-O7 | Morphs evaluated into the pose versus carried as channels | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
+| MOT-O9 | MMD's own IK distance at a model's loop count | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 — §11.7 kept |
 | MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter`'s first retarget onto a non-MMD skeleton |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
@@ -144,7 +145,7 @@ schedules them.
 | MAT-O4 | How `hydra-toon` reads MMD semantics | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | `hydra-toon` |
 | MOT-O4 | Camera and light tracks | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer |
 | MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
-| MOT-O9 | MMD's own IK distance at a model's loop count | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (a reference to compare against) |
+| MOT-O11 | Whether a knee starts from its keyed rotation | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (MMD's output to compare against) |
 
 ## Quality bar (applies to every Phase)
 

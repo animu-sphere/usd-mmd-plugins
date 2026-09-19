@@ -36,6 +36,18 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Changed
 
+- **MMD IK is compared against an independent implementation (MOT-O9).**
+  Over 12 local characters and two distributed motions, with the inputs
+  matched to 0.02 mm, three.js r168's `CCDIKSolver` at the same stored loop
+  count leaves no less distance than `MOTION_CONTRACT.md` §11.7 overall — a
+  median 10.5 mm against 0.55 mm on an IK-authored motion, at most 29 mm in
+  both — so §11.7 is kept and MOT-O9 is resolved. Where the reference leaves
+  less, on a motion that keys its legs alongside their goals, the difference
+  is that it starts a knee from its keyed rotation where §11.7 starts it
+  from zero: MOT-O11, opened, for MMD's output to decide. Documentation
+  only; report 2026-09-19. (`MOTION_CONTRACT.md` §9, §11.7;
+  `CAPABILITY_MATRIX.md`.)
+
 - **The humanoid role table and root motion are decided (MOT-O5, MOT-O6).**
   `MOTION_CONTRACT.md` §12, new: table version 1 maps MMD's conventional bone
   names — exact source names, deforming `D` bones first, never English names
