@@ -85,12 +85,42 @@ if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
         --make-program "${CMAKE_MAKE_PROGRAM}"
         --cxx-compiler "${CMAKE_CXX_COMPILER}")
 endif()
+set(_motion_dependency_prefixes)
+foreach(_motion_package_dir IN ITEMS "${motionCore_DIR}" "${motionRetarget_DIR}")
+    if(_motion_package_dir)
+        get_filename_component(_motion_package_prefix
+            "${_motion_package_dir}/../../.." ABSOLUTE)
+        list(APPEND _motion_dependency_prefixes "${_motion_package_prefix}")
+    endif()
+endforeach()
+list(REMOVE_DUPLICATES _motion_dependency_prefixes)
+set(_consumer_dependencies)
+foreach(_motion_package_prefix IN LISTS _motion_dependency_prefixes)
+    list(APPEND _consumer_dependencies --dependency-prefix "${_motion_package_prefix}")
+endforeach()
+set(_consumer_python)
+# pxrConfig.cmake records the Python used to build the runtime as a fallback.
+# A relocatable runtime can therefore name a path from its build host.  The
+# root configure has already resolved that fallback against this host; carry
+# the resolved values into the clean installed-consumer configure so it does
+# not try the artifact producer's absolute path again.
+foreach(_python_variable IN ITEMS
+        Python3_EXECUTABLE Python3_LIBRARY Python3_INCLUDE_DIR)
+    if(DEFINED ${_python_variable} AND NOT "${${_python_variable}}" STREQUAL "")
+        string(TOLOWER "${_python_variable}" _python_option)
+        string(REPLACE "_" "-" _python_option "${_python_option}")
+        list(APPEND _consumer_python
+            "--${_python_option}" "${${_python_variable}}")
+    endif()
+endforeach()
 add_test(NAME workspace_installed_consumer
     COMMAND "${USDMMD_TEST_PYTHON}"
         "${PROJECT_SOURCE_DIR}/scripts/check_installed_consumer.py"
         --build-dir "${PROJECT_BINARY_DIR}"
         --config "$<CONFIG>"
         --usd-root "${_usd_root}"
+        ${_consumer_python}
+        ${_consumer_dependencies}
         ${_consumer_toolchain})
 set_tests_properties(workspace_installed_consumer PROPERTIES
     LABELS "installed-consumer")

@@ -12,9 +12,9 @@ every table of 2.0 and 2.1), `mmdModel` (the canonical model), `mmd_inspect`
 (which reports on a PMX through the parser) and `usdMmdFileFormat` (which
 registers `.pmx` and authors the canonical stage) exist since Phases 0–2;
 `motionVmd` (the VMD reader), `mmdMotionBinding` (which binds a motion to a
-model) and `vmd_inspect` (which reports on a VMD) since Phase 7; `mmdControl`
-(which evaluates a bound motion over the control rig) since Phase 9. All are
-built by `ost` and by plain CMake. Every other identity below is *reserved*
+model) and `vmd_inspect` (which reports on a VMD) since Phase 7; `mmdControl`,
+`mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9. All are built by
+`ost` and by plain CMake. Every other identity below is *reserved*
 until the Phase that creates it lands (Phases are
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)), and its row then
 records that. `mmdControl`, `mmdMotionAdapter` and the edge into
@@ -58,6 +58,8 @@ And the evaluator Phase 9 created
 | Identity | Kind | Directory | Manifest | Role | Created in | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `mmdControl` | plain static CMake library | `libs/mmdControl/` | `openstrata.library.yaml` | MMD control evaluation: samples a bound motion's Bézier curves at an explicit time, and evaluates bone morphs, append transforms and IK chains over `mmdModel`'s control semantics into deformation-joint local transforms. No OpenUSD, no `usd-motion-plugins`. | Phase 9 | exists |
+| `mmdSkeletonAdapter` | plain static CMake library | `libs/mmdSkeletonAdapter/` | `openstrata.library.yaml` | Exposes a canonical PMX skeleton as `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose`; owns role-table version 1 and no retarget algorithm. | Phase 9 | exists |
+| `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | `openstrata.library.yaml` | Converts fully evaluated `mmdControl` output into `MotionClip`, using `mmdSkeletonAdapter` for roles and source rest; owns no target-avatar knowledge. | Phase 9 | exists |
 
 ### 1.2 Later, only when their responsibility is real
 
@@ -69,8 +71,6 @@ created ahead of that.
 | --- | --- | --- | --- | --- |
 | `mmdMaterial` | plain static CMake library | `libs/mmdMaterial/` | Canonical material semantics, extracted from `mmdModel` | material translation outgrows `mmdModel`, or a second consumer needs it alone ([DESIGN_POLICY.md §5.3](../design/DESIGN_POLICY.md#53-mmdmaterial--deferred)) |
 | `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | Narrow applied API schemas | an API passes the admission test ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)) |
-| `mmdSkeletonAdapter` | plain static CMake library | `libs/mmdSkeletonAdapter/` | Exposes a canonical PMX skeleton as `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose`; owns the versioned MMD humanoid role table and no retarget algorithm. | Phase 9, once `usd-motion-plugins` releases installable `motionRetarget` ([MOTION_CONTRACT.md §10.4](../design/MOTION_CONTRACT.md#104-skeleton-and-humanoid-map)) |
-| `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | Converts `mmdControl`'s fully evaluated output into `MotionPose`/`MotionClip`, using `mmdSkeletonAdapter` for roles and source rest. Owns no target-avatar knowledge or generic algorithm. | Phase 9, once `usd-motion-plugins` releases installable `motionCore` and `motionRetarget` packages ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)) |
 | `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | MOT-O2 is resolved against `usd-motion-plugins`' standalone motion stage (`/Animation`) ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)) |
 | `mmd_convert` | CLI executable | `tools/mmdConvert/` | PMX → `.usda`/`.usdc` on disk | `usdcat` over the file format proves insufficient |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |
@@ -170,10 +170,16 @@ both also refusing any `mmdPmx/` or `mmdModel/` include (`--forbid-include`);
 `mmdModel::mmdModel` and `motionVmd::motionVmd`; and `mmdControl_boundaries`
 over `libs/mmdControl` with `mmdMotionBinding::mmdMotionBinding` and
 `mmdModel::mmdModel`, also refusing any `motionCore/` include.
-`mmdSkeletonAdapter_boundaries` is added with that library, allowing
+`mmdSkeletonAdapter_boundaries` runs with that library, allowing
 `motionRetarget`; `mmdMotionAdapter_boundaries` allows `motionCore` and the
-skeleton adapter. Those are the two narrow external adapter edges (§2.4). All of them are added to the
-root build before OpenUSD is resolved, as `mmdPmx` is.
+skeleton adapter. Those are the two narrow external adapter edges (§2.4).
+The five OpenUSD-free libraries are added before OpenUSD is resolved; the
+adapters follow it because their shared packages expose OpenUSD foundation
+types and reuse the root's already-resolved targets. The binary-import part
+allows only the foundation closure (`arch`, `tf`, `gf`, `js`, `trace`, `work`,
+`plug`, `vt` and the private `boost`/`python` support libraries some shared
+macOS runtimes attach to it); stage, schema and imaging libraries still fail
+the gate.
 
 ### 2.4 Edges out of this repository
 
@@ -196,9 +202,9 @@ usd-stage-runner ────→ usd-physics-plugins
 | Never the reverse | `usd-motion-plugins` never depends on any component here, and nothing here is designed to be moved there: VMD is MMD's format (the motion policy's §26). |
 | Same OpenUSD | `motionCore` and `motionRetarget` are built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
 
-Nothing crosses today: `usd-motion-plugins` has published no installable
-package, so both adapter edges are reserved, and no component or manifest
-declares them yet. A future MMD-specific physics adapter may similarly consume
+The two adapter edges are active since `usd-motion-plugins` v0.5.0: their
+manifests pin `motionCore` and `motionRetarget` artifacts by target and digest.
+A future MMD-specific physics adapter may similarly consume
 `usd-physics-plugins`; its identity and edge are added here only when the first
 runtime consumer makes them concrete
 ([PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy)).
@@ -218,7 +224,9 @@ usd-mmd-plugins/
 │  ├─ motionVmd/               include/ src/ tests/ fuzz/ cmake/ CMakeLists.txt openstrata.library.yaml;
 │  │                           tools/generate_cp932_table.py, the one author of src/Cp932Table.inc
 │  ├─ mmdMotionBinding/        include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
-│  └─ mmdControl/              include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
+│  ├─ mmdControl/              include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
+│  ├─ mmdSkeletonAdapter/      include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
+│  └─ mmdMotionAdapter/        include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
 ├─ plugins/
 │  └─ usdMmdFileFormat/
 │     ├─ plugin/resources/usdMmdFileFormat/   plugInfo.json.in, buildInfo.json.in (the build writes both .json)

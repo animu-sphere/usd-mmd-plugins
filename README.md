@@ -14,9 +14,10 @@ assets: PMX models, and VMD motion bound to them.
 > identifiers, and `mmd_inspect` reports what a file contains. A VMD is read
 > without a model and reported by `vmd_inspect`, and bound to a model by MMD's
 > own name rule. Phase 9 now evaluates MMD's IK and append transforms over a
-> bound motion; next its motion and skeleton adapters hand evaluated clips and
+> bound motion, and its motion and skeleton adapters hand evaluated clips and
 > PMX rig descriptions to `usd-motion-plugins`, which retargets and authors
-> `UsdSkelAnimation`. Future physics execution consumes the existing static
+> `UsdSkelAnimation`. End-to-end retarget and authoring acceptance remains.
+> Future physics execution consumes the existing static
 > stage through `usd-physics-plugins`; the importer remains solver-free. The
 > [capability matrix](docs/reference/CAPABILITY_MATRIX.md) is the only page
 > that says what is implemented, and [the roadmap](docs/roadmap/current.md)
@@ -45,7 +46,7 @@ VMD bytes ─→ motionVmd ─→ mmdMotionBinding (+ mmdModel) ─→ a bound m
              syntax,      by source name, in the model's
              tracks       basis
           ─→ mmdControl ─→ mmdMotionAdapter ─→ MotionClip ─→ usd-motion-plugins
-             IK, append,   (Phase 9, planned)                retarget, record, UsdSkelAnimation
+             IK, append,                                    retarget, record, UsdSkelAnimation
              bone morphs
 
 PMX skeleton ─→ mmdSkeletonAdapter ─→ SkeletonDescriptor / RetargetMap
@@ -77,8 +78,8 @@ contract is [docs/design/PHYSICS_INTEGRATION.md](docs/design/PHYSICS_INTEGRATION
 | `motionVmd` | plain C++ library | VMD syntax, CP932 names and tracks — no dependency at all | reads every section |
 | `mmdMotionBinding` | plain C++ library | binds a VMD motion to a canonical model by source name, in the model's basis — no OpenUSD, nothing evaluated | exists |
 | `mmdControl` | plain C++ library | evaluates a bound motion at an explicit time over MMD's control rig — Bézier curves, bone morphs, appends, IK — into deformation-joint transforms; no OpenUSD, scheduled by a runtime | exists |
-| `mmdSkeletonAdapter` | planned plain C++ library | exposes the PMX skeleton, source rest and versioned humanoid map to `usd-motion-plugins`; no retarget algorithm | waits for installable `motionRetarget` |
-| `mmdMotionAdapter` | planned plain C++ library | turns fully evaluated MMD poses into `MotionClip`; no target-avatar knowledge | waits for installable `motionCore` and `motionRetarget` |
+| `mmdSkeletonAdapter` | plain C++ library | exposes the PMX skeleton, source rest and versioned humanoid map to `usd-motion-plugins`; no retarget algorithm | exists |
+| `mmdMotionAdapter` | plain C++ library | turns fully evaluated MMD poses into `MotionClip`; no target-avatar knowledge | exists |
 | `vmd_inspect` | CLI | what a VMD contains, without a model or USD | exists ([guide](docs/guides/inspecting.md)) |
 
 `mmdSchema` exists only if an MMD API schema passes the

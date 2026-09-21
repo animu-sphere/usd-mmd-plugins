@@ -4,7 +4,7 @@ Documentation is organized by responsibility: each category answers one class
 of question. The layout is the one `usd-vrm-plugins`, `open-strata` and
 `hydra-merlin` use, so the repositories read the same way.
 
-**The tree holds Phases 0–7 (2026-09-17):** the PMX structural parser reads
+**The tree holds Phases 0–7 and most of Phase 9 (2026-09-21):** the PMX structural parser reads
 every table of a PMX 2.0 or 2.1 file, `mmd_inspect` reports on it, and `.pmx`
 opens as the canonical stage — mesh, UVs, material prims and subsets,
 skeleton and skinning, Y-up, in meters. Phase 3 adds canonical MMD material
@@ -15,9 +15,10 @@ chains, append relations, axes — under `/Asset/rig`, solving nothing, and
 Phase 6 every rigid body and joint under `/Asset/physics`, as `UsdPhysics`
 where it matches, simulating nothing. Phase 7 reads VMD motion without a
 model (`motionVmd`, `vmd_inspect`) and binds it to one by MMD's name rule
-(`mmdMotionBinding`), baking nothing. Phase 9, in progress, evaluates MMD's
-control rig over a bound motion (`mmdControl`, done) and will hand the result
-to `usd-motion-plugins`, through separate motion and skeleton adapters. Future
+(`mmdMotionBinding`), baking nothing. Phase 9 evaluates MMD's control rig over
+a bound motion (`mmdControl`) and hands the result to `usd-motion-plugins`
+through `mmdMotionAdapter` and `mmdSkeletonAdapter`. End-to-end retarget and
+animation authoring acceptance remains. Future
 physics execution consumes the existing static stage through
 `usd-physics-plugins`, with MMD coupling kept here and simulation outside the
 importer. Everything

@@ -17,6 +17,23 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Added
 
+- **Phase 9 shared-motion adapters.** `mmdSkeletonAdapter` implements role-table
+  version 1 and builds the PMX stage's `SkeletonDescriptor`, source rest and
+  target `RetargetMap`; `mmdMotionAdapter` samples `mmdControl` over an explicit
+  time range into evaluated `MotionClip` poses, root motion, namespaced MMD
+  morph channels and a reserved visibility channel. Non-finite evaluated
+  values are rejected at the shared boundary rather than replaced. Their
+  manifests consume digest-pinned `motionCore` and
+  `motionRetarget` v0.5.0 artifacts, and unit, boundary and installed-consumer
+  tests cover both edges. Source and release CI pin `ost` 0.23.2 so those
+  external artifacts are parsed, pulled and composed into root builds. CI
+  also forwards the host-resolved Python development paths into the clean
+  installed-consumer configure, provisions Python for Windows runtime
+  validation, and recognizes the complete macOS OpenUSD foundation closure.
+  `mmdMotionBinding` now preserves the VMD model name
+  as provenance. End-to-end retarget and `UsdSkelAnimation` authoring remains
+  Phase 9 work. (`MOTION_CONTRACT.md` §10, §12.)
+
 - **Physics runtime integration direction.** A proposed focused contract now
   fixes the future boundary: the existing `/Asset/physics` stage remains the
   hand-off, MMD bone/body coupling stays in this repository, generic
@@ -76,13 +93,14 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   (`MOTION_CONTRACT.md` §9, §10, §12; `DESIGN_POLICY.md` §5.7, §14, §20.1;
   `WORKSPACE.md` §1.2, §2, §2.4; `DEPENDENCIES.md` §6.)
 
-- **The shared-motion edge is split by responsibility.** The planned
-  `mmdMotionAdapter` now emits only fully evaluated `MotionPose`/`MotionClip`
-  data. A separate planned `mmdSkeletonAdapter` exposes
+- **The shared-motion edge is split by responsibility.** The
+  `mmdMotionAdapter` emits only fully evaluated `MotionPose`/`MotionClip`
+  data. A separate `mmdSkeletonAdapter` exposes
   `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` and owns the
   versioned MMD humanoid mapping. Both remain narrow consumers of
-  `usd-motion-plugins`; neither implements generic retargeting. Documentation
-  only; no component or manifest exists yet. (`MOTION_CONTRACT.md` §10, §12;
+  `usd-motion-plugins`; neither implements generic retargeting. This boundary
+  was decided in documentation first and implemented by the adapter change above.
+  (`MOTION_CONTRACT.md` §10, §12;
   `DESIGN_POLICY.md` §5.7; `WORKSPACE.md` §1.2, §2.4.)
 
 - **The design documents follow the `usd-motion-plugins` design policy.**

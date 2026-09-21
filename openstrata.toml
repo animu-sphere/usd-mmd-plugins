@@ -18,6 +18,8 @@ members = [
   "libs/motionVmd",
   "libs/mmdMotionBinding",
   "libs/mmdControl",
+  "libs/mmdSkeletonAdapter",
+  "libs/mmdMotionAdapter",
   "tools/mmdInspect",
   "tools/vmdInspect",
 ]

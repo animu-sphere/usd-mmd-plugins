@@ -4,7 +4,7 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-19 the tree holds Phases 0–7 and the first part of Phase 9:** `.pmx` is registered, every
+**As of 2026-09-21 the tree holds Phases 0–7 and most of Phase 9:** `.pmx` is registered, every
 table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
 by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
 canonical stage — mesh, UVs, material prims and subsets, skeleton and
@@ -19,7 +19,9 @@ VMD motion (`motionVmd`, reported by `vmd_inspect`) and binds it to a
 canonical model by MMD's name rule (`mmdMotionBinding`), baking nothing.
 Phase 9's `mmdControl` evaluates a bound motion at an explicit time over the
 control rig — Bézier curves, bone and group morphs, appends, IK — into
-deformation-joint transforms, outside the importer.
+deformation-joint transforms, outside the importer. `mmdSkeletonAdapter`
+builds the shared skeleton, rest and versioned role map, and
+`mmdMotionAdapter` turns evaluated poses into a `MotionClip`.
 The *intended* column is the
 claim the design makes for the first substantial release
 ([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
@@ -108,6 +110,24 @@ rule by `mmdControl_robustness`.
 | Physics before after-physics bones | unsupported by design (nothing is simulated) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
 | The same inputs give the same bits, whatever was evaluated before | supported | [MOTION §11.1](../design/MOTION_CONTRACT.md#111-the-evaluator) |
 
+## Shared-motion adapters (`mmdSkeletonAdapter`, `mmdMotionAdapter`)
+
+Each claim is covered by synthetic adapter tests and by the installed-consumer
+lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
+
+| Capability | Current | Contract |
+| --- | :---: | --- |
+| Stage-token `SkeletonDescriptor` with canonical rest translations | supported | [MOTION §10.4](../design/MOTION_CONTRACT.md#104-skeleton-and-humanoid-map) |
+| Role-table version 1, exact Japanese source names, deforming `D` candidates first, English names ignored | supported | [MOTION §12.1](../design/MOTION_CONTRACT.md#121-matching), [§12.2](../design/MOTION_CONTRACT.md#122-the-table-version-1) |
+| Source role mapping and `SourceRestPose`; target `RetargetMap` with hips at the common spine/leg ancestor | supported | [MOTION §12.3](../design/MOTION_CONTRACT.md#123-evaluated-motion-as-humanjoint-rotations-and-root-motion) |
+| Evaluated world rotations made local to the nearest mapped humanoid ancestor | supported | [MOTION §12.3](../design/MOTION_CONTRACT.md#123-evaluated-motion-as-humanjoint-rotations-and-root-motion) |
+| Root motion from the evaluated world transform of the source hips role | supported | [MOTION §10.5](../design/MOTION_CONTRACT.md#105-time-coordinates-and-root-motion) |
+| Explicit time range and rate, endpoint sampling, seconds and 30 VMD frames per second | supported | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation), [§10.5](../design/MOTION_CONTRACT.md#105-time-coordinates-and-root-motion) |
+| Non-bone morph weights under `mmd:morph:<source name>` channels | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
+| Evaluated model visibility under the reserved `mmd:model:visibility` channel | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
+| Non-finite evaluated shared values | rejected, never replaced | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
+| Rest-direction correction for an A-pose source (MOT-O10) | unverified | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
+
 ## PMX model import
 
 | Capability | Current | Intended | Phase | Contract |
@@ -171,13 +191,13 @@ rule by `mmdControl_robustness`.
 | --- | --- | --- |
 | IK solving, append-transform evaluation at import | unsupported by design | never the importer ([DESIGN_POLICY.md §2.2](../design/DESIGN_POLICY.md#22-the-static-importer-boundary)) |
 | IK solving, append-transform evaluation of a bound motion (`mmdControl`) | supported, outside the importer — see [Control evaluation](#control-evaluation-mmdcontrol) | [MOTION §11](../design/MOTION_CONTRACT.md#11-evaluating-the-control-rig) |
-| A VMD as a `MotionClip`, and a PMX model as a retarget target (`SkeletonDescriptor`, humanoid `RetargetMap`) (`mmdMotionAdapter`) | — (Phase 9; the role table is decided, the adapter waits for `usd-motion-plugins`) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core), [§12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table) |
+| A VMD as a `MotionClip`, and a PMX model as a retarget target (`SkeletonDescriptor`, humanoid `RetargetMap`) | supported — see [Shared-motion adapters](#shared-motion-adapters-mmdskeletonadapter-mmdmotionadapter) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core), [§12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table) |
 | Retargeting, recording, `UsdSkelAnimation` authoring of motion | unsupported by design | `usd-motion-plugins` ([MOTION §10.6](../design/MOTION_CONTRACT.md#106-what-this-repository-does-not-do-with-the-result)) |
 | Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
 | Toon rendering | unsupported by design | `hydra-toon` |
 | Opening a `.vmd` as a stage (`usdVmdFileFormat`) | — (waits for MOT-O2) | [MOTION §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries) |
 | VMD playback | unsupported by design | a runtime scheduling `mmdControl` (Phase 8) |
-| VMD bake | — (Phase 9; `mmdControl` exists, the shared core's authoring waits for `usd-motion-plugins`) | `mmdControl` evaluates, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
+| VMD bake to `UsdSkelAnimation` | — (end-to-end acceptance remains) | `mmdControl` evaluates, the adapters normalize, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
 | PMD | — (not planned) | `mmdPmd`, if ever |
 | PMX / VMD writing | — (not planned) | [DESIGN_POLICY.md §2.4](../design/DESIGN_POLICY.md#24-reader-first) |
 

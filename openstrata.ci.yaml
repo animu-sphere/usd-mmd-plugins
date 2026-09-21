@@ -36,10 +36,11 @@
 # `require_openusd` (the leaf's platform/os/arch/variant) and
 # `require_openusd_version: "26.08"`, so `ost artifact pull|verify` refuses a
 # re-pinned digest that is not the release cmake/UsdMmdOpenUsd.cmake pins. It
-# is also what keeps the rendered macOS steps runnable under ost 0.22.10: they
-# expand "${openusd_args[@]}" under `set -u`, and macOS's bash 3.2 treats an
-# empty array there as unbound (the first CI run of this repository failed on
-# exactly that, before any build step).
+# also keeps the rendered macOS steps runnable when they expand
+# "${openusd_args[@]}" under `set -u`: macOS's bash 3.2 treats an empty array
+# there as unbound (the first CI run of this repository failed on exactly that,
+# before any build step). The 0.23.2 pin is required for external-library
+# artifact declarations and for composing their prefixes into root builds.
 #
 # Cell inventory -- seven:
 #   * workspace-graph-pr: the WORKSPACE.md §2 dependency gate, before anything
@@ -62,7 +63,7 @@ schema: 1
 
 bootstrap:
   ost:
-    version: "0.22.10"
+    version: "0.23.2"
     repository: animu-sphere/open-strata
 
 runners:
@@ -158,6 +159,9 @@ cells:
     profile: usd
     require_openusd: cy2026/windows/x86_64/gl
     require_openusd_version: "26.08"
+    # Runtime validation links and executes an OpenUSD consumer.  The Windows
+    # runtime expects the matching host Python DLL on PATH.
+    host_python: "3.13"
     up_to: 4
 
   - name: usdmmdfileformat-pr-macos-arm64

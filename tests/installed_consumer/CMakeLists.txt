@@ -42,3 +42,14 @@ target_link_libraries(control_probe PRIVATE mmdControl::mmdControl)
 if(MSVC)
     target_compile_options(control_probe PRIVATE /utf-8)
 endif()
+
+# The Phase 9 edge: both adapters must resolve their digest-pinned shared
+# motion dependencies from installed packages, never sibling source trees.
+find_package(mmdSkeletonAdapter 0.1 CONFIG REQUIRED)
+find_package(mmdMotionAdapter 0.1 CONFIG REQUIRED)
+
+add_executable(adapter_probe adapter_probe.cpp)
+target_link_libraries(adapter_probe PRIVATE mmdMotionAdapter::mmdMotionAdapter)
+if(MSVC)
+    target_compile_options(adapter_probe PRIVATE /utf-8)
+endif()

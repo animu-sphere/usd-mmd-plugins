@@ -106,7 +106,8 @@ def markdown_files(root: pathlib.Path) -> list[pathlib.Path]:
     """
     try:
         listed = subprocess.run(
-            ["git", "-C", str(root), "ls-files", "-z", "--cached", "--others",
+            ["git", "-c", f"safe.directory={root}", "-C", str(root),
+             "ls-files", "-z", "--cached", "--others",
              "--exclude-standard", "--", "*.md"],
             check=True, stdout=subprocess.PIPE).stdout.decode("utf-8")
         files = [root / name for name in listed.split("\0") if name]
@@ -148,8 +149,11 @@ def check_file(path: pathlib.Path, cache: dict) -> list[str]:
     return errors
 
 
-# `version: ">=0.1,<0.2"` under a manifest's `requires.libraries`.
-REQUIRED_RANGE = re.compile(r'^\s+version:\s*">=([0-9.]+),<([0-9.]+)"', re.MULTILINE)
+# One `requires.libraries` row. External libraries have their own version and
+# are deliberately not compared with this repository's VERSION.
+REQUIRED_RANGE = re.compile(
+    r'^\s+- id:\s*([^\s#]+)\s*\n\s+version:\s*">=([0-9.]+),<([0-9.]+)"',
+    re.MULTILINE)
 FIND_PACKAGE_VERSION = re.compile(r"find_package\((\w+)\s+([0-9.]+)\s+CONFIG")
 
 
@@ -160,13 +164,15 @@ def in_range(version: str, lower: str, upper: str) -> bool:
     return key(lower) <= key(version) < key(upper)
 
 
-def check_ranges(root: pathlib.Path, manifest: pathlib.Path, version: str) -> list[str]:
+def check_ranges(root: pathlib.Path, manifest: pathlib.Path, version: str,
+                 sibling_ids: set[str]) -> list[str]:
     """Every sibling this workspace requires is built at VERSION, so every
     required range has to admit it -- or the release cannot resolve itself."""
     where = manifest.relative_to(root).as_posix()
     return [f"{where}: required range >={lower},<{upper} excludes {version}"
-            for lower, upper in REQUIRED_RANGE.findall(manifest.read_text(encoding="utf-8"))
-            if not in_range(version, lower, upper)]
+            for dependency, lower, upper in REQUIRED_RANGE.findall(
+                manifest.read_text(encoding="utf-8"))
+            if dependency in sibling_ids and not in_range(version, lower, upper)]
 
 
 def check_mirrors(root: pathlib.Path) -> list[str]:
@@ -183,9 +189,11 @@ def check_mirrors(root: pathlib.Path) -> list[str]:
 
     expect(root / "openstrata.toml", r'^version\s*=\s*"([^"]+)"', version,
            "project version")
-    for manifest in sorted(root.glob("*/*/openstrata.*.yaml")):
+    manifests = sorted(root.glob("*/*/openstrata.*.yaml"))
+    sibling_ids = {manifest.parent.name for manifest in manifests}
+    for manifest in manifests:
         expect(manifest, r"^\s+version:\s*([0-9][^\s#]*)", version, "version")
-        errors.extend(check_ranges(root, manifest, version))
+        errors.extend(check_ranges(root, manifest, version, sibling_ids))
     for cmake in sorted(root.glob("*/*/CMakeLists.txt")):
         if "../../VERSION" in cmake.read_text(encoding="utf-8"):
             expect(cmake, r'set\(_mmd_\w+_version "([^"]+)"\)', version,
@@ -292,7 +300,7 @@ def selftest() -> int:
         if in_range(version, lower, upper) != want:
             failures.append(f"in_range({version}, {lower}, {upper}) != {want}")
     ranges = REQUIRED_RANGE.findall('    - id: a\n      version: ">=0.1,<0.2"\n')
-    if ranges != [("0.1", "0.2")]:
+    if ranges != [("a", "0.1", "0.2")]:
         failures.append(f"REQUIRED_RANGE found {ranges}")
 
     declarations = CODE_DECLARATION.findall(

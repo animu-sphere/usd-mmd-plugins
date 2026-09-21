@@ -19,7 +19,7 @@ Commands are PowerShell, run from the repository root.
   integration tests import OpenUSD's bindings, which refuse any other version
   (`Module use of python313.dll conflicts with this version of Python`).
 - CMake 3.22 or later and a C++20 compiler.
-- For the OpenStrata path: `ost` 0.22.10 and a `cy2026` / `usd` runtime.
+- For the OpenStrata path: `ost` 0.23.2 and a `cy2026` / `usd` runtime.
 
 ## Plain CMake
 
@@ -59,6 +59,7 @@ bundle's `plugInfo.json` expects it, `mmd_inspect` into
 | `mmdControl_unit` | evaluation over synthetic rigs with known answers: Bézier progress and which key's curve a segment follows, held and stepped tracks, forward kinematics, the evaluation order, bone morphs through nested groups and the channels left, appends with negative ratios and in chains, IK on one link, with an angle limit and with Euler limits, a leg with a plane knee and `足D`, the IK-enable track, the three diagnostics, and a VMD through `Bind` |
 | `mmdControl_robustness` | 20,000 generated rigs and motions — appends and IK chains naming any joint, wild loop counts, limits and keys, cyclic group morphs — each evaluated at five times, twice: no crash, the same bits both times, and finite unit-rotation poses from the tame half |
 | `mmdControl_boundaries` | `mmdControl`'s sources include no OpenUSD and no `motionCore/` header, it links `mmdMotionBinding` and `mmdModel` and nothing else, and a binary linking it imports no OpenUSD library |
+| `mmdSkeletonAdapter_boundaries`, `mmdMotionAdapter_boundaries` | each adapter links only its declared local and shared-motion packages; its test binary may import the OpenUSD foundation closure those packages expose, including the private `usd_boost`/`usd_python` support libraries on macOS, but no stage, schema or imaging library |
 | `mmd_inspect_fixtures` | `mmd_inspect` reads every generated fixture as `fixtures.json` says, from an ASCII and a non-ASCII directory |
 | `mmd_inspect_boundaries` | `mmd_inspect` links `mmdPmx` and nothing else, and imports no OpenUSD library |
 | `vmd_inspect_fixtures` | `vmd_inspect` reads every generated VMD fixture as its `fixtures.json` says, from an ASCII and a non-ASCII directory |
