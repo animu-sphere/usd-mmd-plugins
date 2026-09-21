@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <limits>
 #include <string>
 
 namespace {
@@ -57,6 +58,10 @@ TestClip()
     smile.name = {"笑い", "", "Smile"};
     smile.type = mmd::MorphType::Vertex;
     model.morphs.push_back(smile);
+    mmd::Morph collidingName;
+    collidingName.name = {"model:visibility", "", "VisibilityNamedMorph"};
+    collidingName.type = mmd::MorphType::Vertex;
+    model.morphs.push_back(collidingName);
 
     mmd::binding::BoundMotion bound;
     bound.sourceModelName = "テストモデル";
@@ -68,6 +73,8 @@ TestClip()
                            {Key(0, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 1.0f}),
                             Key(30, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, s, s})}});
     bound.morphs.push_back({0, {{0, 0.25f}, {30, 0.75f}}});
+    bound.morphs.push_back({1, {{0, 0.5f}}});
+    bound.visibility = {{0, true}, {30, false}};
 
     const mmd::skeleton::AdaptedSkeleton skeleton = mmd::skeleton::Adapt(model);
     const auto prepared = mmd::control::Evaluator::Prepare(model);
@@ -94,8 +101,11 @@ TestClip()
     const auto spine = static_cast<std::size_t>(openstrata::motion::HumanJoint::Spine);
     assert(last.validRotations.test(spine));
     assert(std::abs(last.localRotations[spine].GetImaginary()[2] - s) < 1.0e-5f);
-    assert(std::abs(*first.channels.Find("mmd:笑い") - 0.25f) < 1.0e-6f);
-    assert(std::abs(*last.channels.Find("mmd:笑い") - 0.75f) < 1.0e-6f);
+    assert(std::abs(*first.channels.Find("mmd:morph:笑い") - 0.25f) < 1.0e-6f);
+    assert(std::abs(*last.channels.Find("mmd:morph:笑い") - 0.75f) < 1.0e-6f);
+    assert(*first.channels.Find("mmd:morph:model:visibility") == 0.5f);
+    assert(*first.channels.Find("mmd:model:visibility") == 1.0f);
+    assert(*last.channels.Find("mmd:model:visibility") == 0.0f);
 
     bool missingRequired = false;
     for (const mmd::Diagnostic& diagnostic : result.diagnostics()) {
@@ -103,6 +113,30 @@ TestClip()
     }
     assert(missingRequired);
     assert(skeleton.SourceJoint(openstrata::motion::HumanJoint::Hips) == lower);
+}
+
+void
+TestNonFiniteSample()
+{
+    mmd::CanonicalDocument model;
+    const int hips = AddBone(model, "下半身", "Hips", mmd::kNone, {0.0, 0.0, 0.0});
+    model.rig.bones.resize(1);
+
+    mmd::binding::BoundMotion bound;
+    bound.bones.push_back(
+        {hips,
+         {Key(
+             0, {0.0f, 0.0f, 0.0f}, {std::numeric_limits<float>::quiet_NaN(), 0.0f, 0.0f, 1.0f})}});
+
+    const mmd::skeleton::AdaptedSkeleton skeleton = mmd::skeleton::Adapt(model);
+    const auto prepared = mmd::control::Evaluator::Prepare(model);
+    assert(prepared);
+    const auto result = mmd::motion::BuildClip(model, bound, prepared.value(), skeleton);
+    assert(!result);
+    assert(result.fatal());
+    assert(result.fatal()->code == "MMD_MOTION_NON_FINITE_SAMPLE");
+    assert(result.fatal()->location.table == "samples");
+    assert(result.fatal()->location.index == 0);
 }
 
 void
@@ -127,5 +161,6 @@ main()
 {
     TestClip();
     TestRangeValidation();
+    TestNonFiniteSample();
     return 0;
 }

@@ -123,7 +123,9 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | Evaluated world rotations made local to the nearest mapped humanoid ancestor | supported | [MOTION §12.3](../design/MOTION_CONTRACT.md#123-evaluated-motion-as-humanjoint-rotations-and-root-motion) |
 | Root motion from the evaluated world transform of the source hips role | supported | [MOTION §10.5](../design/MOTION_CONTRACT.md#105-time-coordinates-and-root-motion) |
 | Explicit time range and rate, endpoint sampling, seconds and 30 VMD frames per second | supported | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation), [§10.5](../design/MOTION_CONTRACT.md#105-time-coordinates-and-root-motion) |
-| Non-bone morph weights under `mmd:<source name>` channels | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
+| Non-bone morph weights under `mmd:morph:<source name>` channels | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
+| Evaluated model visibility under the reserved `mmd:model:visibility` channel | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
+| Non-finite evaluated shared values | rejected, never replaced | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
 | Rest-direction correction for an A-pose source (MOT-O10) | unverified | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
 
 ## PMX model import

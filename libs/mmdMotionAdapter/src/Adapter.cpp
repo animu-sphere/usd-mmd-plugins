@@ -41,14 +41,18 @@ Inverse(const control::Quat& q)
     return {-q[0] / norm, -q[1] / norm, -q[2] / norm, q[3] / norm};
 }
 
+bool
+IsUsableRotation(const control::Quat& q)
+{
+    const double norm = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+    return norm > 0.0 && std::isfinite(norm);
+}
+
 pxr::GfQuatf
 ToGf(const control::Quat& source)
 {
     const double norm = std::sqrt(source[0] * source[0] + source[1] * source[1] +
                                   source[2] * source[2] + source[3] * source[3]);
-    if (!(norm > 0.0) || !std::isfinite(norm)) {
-        return pxr::GfQuatf(1.0f, pxr::GfVec3f(0.0f));
-    }
     const float x = static_cast<float>(source[0] / norm);
     const float y = static_cast<float>(source[1] / norm);
     const float z = static_cast<float>(source[2] / norm);
@@ -140,9 +144,22 @@ BuildClip(const CanonicalDocument& model, const binding::BoundMotion& bound,
 
     const std::vector<double> times = SampleTimes(options);
     clip.samples.reserve(times.size());
-    for (const double time : times) {
+    for (std::size_t sampleIndex = 0; sampleIndex < times.size(); ++sampleIndex) {
+        const double time = times[sampleIndex];
         const control::Pose evaluated = evaluator.Evaluate(bound, time * 30.0);
         const std::vector<control::JointTransform> world = evaluator.World(evaluated);
+
+        const auto nonFinite = [&](std::string field) {
+            Location where;
+            where.table = "samples";
+            where.index = sampleIndex;
+            where.field = std::move(field);
+            return Result<MotionClip>::Failure(
+                MakeDiagnostic(codes::MotionNonFiniteSample,
+                               "evaluated motion cannot be represented as a finite shared sample",
+                               std::move(where)),
+                diagnostics);
+        };
 
         MotionPose pose;
         pose.timestamp = time;
@@ -158,14 +175,27 @@ BuildClip(const CanonicalDocument& model, const binding::BoundMotion& bound,
                 continue;
             }
             control::Quat local = world[static_cast<std::size_t>(joint)].rotation;
+            if (!IsUsableRotation(local)) {
+                return nonFinite(std::string(openstrata::motion::HumanJointName(role)) +
+                                 ".rotation");
+            }
             const auto parent =
                 openstrata::motion::NearestPresentAncestor(role, skeleton.sourcePresent);
             if (parent) {
                 const int parentJoint = skeleton.SourceJoint(*parent);
                 if (parentJoint >= 0 && static_cast<std::size_t>(parentJoint) < world.size()) {
-                    local = Multiply(Inverse(world[static_cast<std::size_t>(parentJoint)].rotation),
-                                     local);
+                    const control::Quat& parentRotation =
+                        world[static_cast<std::size_t>(parentJoint)].rotation;
+                    if (!IsUsableRotation(parentRotation)) {
+                        return nonFinite(std::string(openstrata::motion::HumanJointName(*parent)) +
+                                         ".rotation");
+                    }
+                    local = Multiply(Inverse(parentRotation), local);
                 }
+            }
+            if (!IsUsableRotation(local)) {
+                return nonFinite(std::string(openstrata::motion::HumanJointName(role)) +
+                                 ".rotation");
             }
             pose.localRotations[i] = ToGf(local);
             pose.validRotations.set(i);
@@ -174,9 +204,17 @@ BuildClip(const CanonicalDocument& model, const binding::BoundMotion& bound,
         const int hips = skeleton.SourceJoint(HumanJoint::Hips);
         if (hips >= 0 && static_cast<std::size_t>(hips) < world.size()) {
             const control::JointTransform& root = world[static_cast<std::size_t>(hips)];
-            pose.root.worldPosition = pxr::GfVec3f(static_cast<float>(root.translation[0]),
-                                                   static_cast<float>(root.translation[1]),
-                                                   static_cast<float>(root.translation[2]));
+            const pxr::GfVec3f position(static_cast<float>(root.translation[0]),
+                                        static_cast<float>(root.translation[1]),
+                                        static_cast<float>(root.translation[2]));
+            if (!std::isfinite(position[0]) || !std::isfinite(position[1]) ||
+                !std::isfinite(position[2])) {
+                return nonFinite("root.position");
+            }
+            if (!IsUsableRotation(root.rotation)) {
+                return nonFinite("root.orientation");
+            }
+            pose.root.worldPosition = position;
             pose.root.worldOrientation = ToGf(root.rotation);
             pose.root.hasPosition = true;
             pose.root.hasOrientation = true;
@@ -187,10 +225,15 @@ BuildClip(const CanonicalDocument& model, const binding::BoundMotion& bound,
                 static_cast<std::size_t>(channel.morph) >= model.morphs.size()) {
                 continue;
             }
-            pose.channels.Set("mmd:" +
+            const float weight = static_cast<float>(channel.weight);
+            if (!std::isfinite(weight)) {
+                return nonFinite("channels");
+            }
+            pose.channels.Set("mmd:morph:" +
                                   model.morphs[static_cast<std::size_t>(channel.morph)].name.source,
-                              static_cast<float>(channel.weight));
+                              weight);
         }
+        pose.channels.Set("mmd:model:visibility", evaluated.visible ? 1.0f : 0.0f);
         clip.samples.push_back(std::move(pose));
     }
 

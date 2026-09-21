@@ -80,10 +80,11 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   skeleton with legs driven by IK, and retargets to a non-MMD synthetic
   skeleton with no MMD code on that path.
 - ⬜ **Expression interoperability** follows the skeletal adapter path. Keep
-  every original `mmd:<source name>` channel, then optionally emit only
+  every original `mmd:morph:<source name>` channel, then optionally emit only
   explicit, versioned, high-confidence semantic mappings such as blink and
   basic mouth visemes. Unknown model-specific morphs remain source channels
-  and generic motion code contains no MMD name table
+  and generic motion code contains no MMD name table. Model visibility remains
+  independently available under `mmd:model:visibility`
   ([MOTION_CONTRACT.md §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels)).
 
 ## Phase 8 — what remains

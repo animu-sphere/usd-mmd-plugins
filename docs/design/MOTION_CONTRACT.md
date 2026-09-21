@@ -448,7 +448,7 @@ component here keeps a private copy of any of it
 ### 10.7 Morphs as channels
 
 Morph tracks that are not evaluated into the pose (§11.3) always reach
-`MotionChannelSet` under the namespaced semantic `mmd:<source name>`, with
+`MotionChannelSet` under the namespaced semantic `mmd:morph:<source name>`, with
 the bound weight as a scalar. That source-preserving channel is retained even
 when an optional semantic expression is emitted beside it.
 
@@ -458,6 +458,11 @@ versioned and limited to high-confidence conventions such as blink and basic
 mouth visemes. It preserves the original channel, diagnoses ambiguity and
 never turns an unknown model-specific morph into a guess. Generic motion code
 contains no MMD morph-name table.
+
+The evaluated model-visibility step track is carried on every sample as
+`mmd:model:visibility`, with `1` for visible and `0` for hidden. The separate
+`mmd:morph:` and `mmd:model:` sub-namespaces ensure that arbitrary
+source-authored morph text cannot collide with this reserved adapter semantic.
 
 ### 10.8 Diagnostics
 
@@ -471,6 +476,9 @@ unchanged, never re-coded.
 request with `MMD_MOTION_INVALID_SAMPLE_RANGE`. It reports each required
 source role absent from the versioned table once per clip as
 `MMD_MOTION_MISSING_REQUIRED_JOINT`; the partial clip remains valid (§12.4).
+An evaluated rotation, root position or channel that cannot be represented as
+a finite shared value rejects the clip with `MMD_MOTION_NON_FINITE_SAMPLE`;
+the adapter never hides it by substituting identity or zero.
 
 ## 11. Evaluating the control rig
 

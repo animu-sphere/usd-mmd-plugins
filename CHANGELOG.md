@@ -20,8 +20,10 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 - **Phase 9 shared-motion adapters.** `mmdSkeletonAdapter` implements role-table
   version 1 and builds the PMX stage's `SkeletonDescriptor`, source rest and
   target `RetargetMap`; `mmdMotionAdapter` samples `mmdControl` over an explicit
-  time range into evaluated `MotionClip` poses, root motion and namespaced MMD
-  morph channels. Their manifests consume digest-pinned `motionCore` and
+  time range into evaluated `MotionClip` poses, root motion, namespaced MMD
+  morph channels and a reserved visibility channel. Non-finite evaluated
+  values are rejected at the shared boundary rather than replaced. Their
+  manifests consume digest-pinned `motionCore` and
   `motionRetarget` v0.5.0 artifacts, and unit, boundary and installed-consumer
   tests cover both edges. `mmdMotionBinding` now preserves the VMD model name
   as provenance. End-to-end retarget and `UsdSkelAnimation` authoring remains

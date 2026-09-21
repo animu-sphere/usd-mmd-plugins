@@ -18,7 +18,9 @@ struct ClipOptions {
 
 /// Evaluates `bound` at the requested rate and emits humanoid rotations, root
 /// motion and source-preserving MMD morph channels. A valid range always has
-/// a sample at both endpoints (one sample when they are equal).
+/// a sample at both endpoints (one sample when they are equal). `model`,
+/// `evaluator` and `skeleton` must have been built from the same canonical
+/// document that `bound` targets.
 Result<openstrata::motion::MotionClip> BuildClip(const CanonicalDocument& model,
                                                  const binding::BoundMotion& bound,
                                                  const control::Evaluator& evaluator,
