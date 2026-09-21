@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The remaining milestones — Phase 9, shared motion core adoption (in progress), then Phase 8, avatar runtime composition — and the part of each this repository owes or waits for. |
+| [current.md](current.md) | The remaining milestones — Phase 9 shared motion adoption, then Phase 8 avatar, motion and physics runtime composition — and the part of each this repository owes or waits for. |
 | [../releases/](../releases/README.md) | What each released version shipped, and how a release is cut. |
 
 ## One sequence
@@ -36,8 +36,8 @@ in.** No other document states a version for a Phase.
 | 5 | control semantics | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
-| 8 | avatar runtime composition | ⬜ | unassigned, and owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | 🚧 `mmdControl` and the role table done | unassigned; its adapter waits for `usd-motion-plugins`' first release |
+| 8 | avatar runtime composition, including optional physics coupling | ⬜ | unassigned, and owned mostly outside this repository |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 `mmdControl` and the role table done | unassigned; its motion and skeleton adapters wait for installable `usd-motion-plugins` packages |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -49,7 +49,7 @@ yet: Phase 8's consumer may still show a contract wrong
 
 Where things stand, as of 2026-09-19:
 
-- The documentation baseline exists: the design policy, five focused design
+- The documentation baseline exists: the design policy, six focused design
   contracts, the workspace contract, and reference pages that state what is
   implemented.
 - Phase 0, the workspace skeleton, is done: `.pmx` opens as a stage through
@@ -112,10 +112,13 @@ Where things stand, as of 2026-09-19:
   The humanoid role table and root motion are decided — MOT-O5 and MOT-O6
   ([MOTION_CONTRACT.md §12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table),
   [report](../reports/2026-09-19-phase9-roles-and-root.md)).
-  `mmdMotionAdapter` waits for `usd-motion-plugins` to release `motionCore`
-  and `motionRetarget`, both on its `main` since 2026-09-19.
+  `mmdMotionAdapter` and `mmdSkeletonAdapter` wait for
+  `usd-motion-plugins` to release `motionCore` and `motionRetarget`, both on
+  its `main` since 2026-09-19.
 - Phase 8, avatar runtime composition, follows Phase 9 and is owned mostly
-  outside this repository.
+  outside this repository. Its MMD physics work consumes the already-authored
+  stage through `usd-physics-plugins`; the importer never gains a solver
+  ([PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md)).
 
 ## Open decisions
 
@@ -137,7 +140,7 @@ schedules them.
 | MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O9 | MMD's own IK distance at a model's loop count | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 — §11.7 kept |
-| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `mmdMotionAdapter`'s first retarget onto a non-MMD skeleton |
+| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | the adapters' first retarget onto a non-MMD skeleton |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |

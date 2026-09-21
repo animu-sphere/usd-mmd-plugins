@@ -17,6 +17,16 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Added
 
+- **Physics runtime integration direction.** A proposed focused contract now
+  fixes the future boundary: the existing `/Asset/physics` stage remains the
+  hand-off, MMD bone/body coupling stays in this repository, generic
+  simulation and backend ownership live in `usd-physics-plugins`,
+  `usd-stage-runner` owns frame order, and `usd-avatar-runtime` composes the
+  pieces. The dependency is optional and no parser, canonical-model or
+  importer package takes it. Documentation only; no simulation is claimed.
+  (`PHYSICS_INTEGRATION.md`; `DESIGN_POLICY.md` §8, §14;
+  `DEPENDENCIES.md` §7; `roadmap/current.md`.)
+
 - **`mmdControl` (`libs/mmdControl/`), MMD control evaluation.** A plain
   library, with no OpenUSD and nothing of `usd-motion-plugins`, that
   evaluates a motion bound to a model at an explicit time into the local
@@ -66,14 +76,24 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   (`MOTION_CONTRACT.md` §9, §10, §12; `DESIGN_POLICY.md` §5.7, §14, §20.1;
   `WORKSPACE.md` §1.2, §2, §2.4; `DEPENDENCIES.md` §6.)
 
+- **The shared-motion edge is split by responsibility.** The planned
+  `mmdMotionAdapter` now emits only fully evaluated `MotionPose`/`MotionClip`
+  data. A separate planned `mmdSkeletonAdapter` exposes
+  `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` and owns the
+  versioned MMD humanoid mapping. Both remain narrow consumers of
+  `usd-motion-plugins`; neither implements generic retargeting. Documentation
+  only; no component or manifest exists yet. (`MOTION_CONTRACT.md` §10, §12;
+  `DESIGN_POLICY.md` §5.7; `WORKSPACE.md` §1.2, §2.4.)
+
 - **The design documents follow the `usd-motion-plugins` design policy.**
   VMD stays in this repository and `motionVmd` is no longer described as
   extraction-ready; MMD IK and append evaluation moves from the avatar
   runtime to a planned plain library here, `mmdControl`, superseding MOT-O3;
-  a planned `mmdMotionAdapter` is the one component that depends on
-  `usd-motion-plugins`, building a `SkeletonDescriptor`, a humanoid
-  `RetargetMap` and a `MotionClip`. Phase 9, shared motion core adoption, is
-  added and runs before Phase 8; MOT-O5 to MOT-O8 are opened. Documentation
+  planned `mmdMotionAdapter` and `mmdSkeletonAdapter` components are the only
+  dependencies on `usd-motion-plugins`, separately building evaluated motion
+  and the PMX skeleton/role description. Phase 9, shared motion core
+  adoption, is added and runs before Phase 8; MOT-O5 to MOT-O8 are opened.
+  Documentation
   only: no component, manifest or authored stage changes
   (`DESIGN_POLICY.md` §5.6, §5.7, §9, §14, §20; `MOTION_CONTRACT.md` §8.2,
   §10; `WORKSPACE.md` §1.2, §2.4, §7; `DEPENDENCIES.md` §6).

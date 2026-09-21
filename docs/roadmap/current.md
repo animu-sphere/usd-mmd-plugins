@@ -1,4 +1,4 @@
-# Phase 9, then Phase 8 — the shared motion core, and avatar runtime composition
+# Phase 9, then Phase 8 — shared motion, avatar and physics composition
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, MOT-O5, MOT-O6 and MOT-O9
 are done; Phase 8 not started.
@@ -8,11 +8,13 @@ other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
 
 - **Phase 9 — shared motion core adoption.** This repository evaluates MMD
   motion over the control rig (`mmdControl`) and hands the result to
-  `usd-motion-plugins` as a `MotionClip` (`mmdMotionAdapter`)
+  `usd-motion-plugins` as a `MotionClip` (`mmdMotionAdapter`), while
+  `mmdSkeletonAdapter` exposes the PMX skeleton for generic retargeting
   ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
 - **Phase 8 — avatar runtime composition.** `usd-avatar-runtime` composes this
   repository with `usd-vrm-plugins`, `usd-motion-plugins`,
-  `motion-connectors`, `hydra-toon` and `usd-stage-runner` through
+  `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and
+  `usd-stage-runner` through
   OpenStrata. Most of it is owned outside this repository: the runtime, not
   this repository, is the avatar execution environment.
 
@@ -25,17 +27,20 @@ As of 2026-09-19 `usd-avatar-runtime` holds no commits and
 has since received `motionRetarget` — `SkeletonDescriptor`, `RetargetMap`,
 `SourceRestPose` — for its `v0.2.0`
 ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
-Neither is released, so `mmdMotionAdapter` still cannot start. `mmdControl`
-and the role table depended on neither, and are done.
+Neither is released, so `mmdMotionAdapter` and `mmdSkeletonAdapter` still
+cannot start. `mmdControl` and the role-table decision depended on neither,
+and are done.
 
 ## Outcome
 
 ```text
 .pmx ─→ usdMmdFileFormat ─→ /Asset stage
 .vmd ─→ motionVmd ─→ mmdMotionBinding ─→ mmdControl ─→ mmdMotionAdapter ─→ MotionClip
+.pmx ─→ mmdModel ─→ mmdSkeletonAdapter ─→ SkeletonDescriptor / RetargetMap
                                                                               │
 usd-motion-plugins:  retarget to any skeleton, record, author UsdSkelAnimation ◀┘
-usd-avatar-runtime:  schedules the above per frame, composes the stage, renders
+usd-stage-runner:    orders pose → MMD physics sync → physics step → feedback
+usd-avatar-runtime:  composes the above per frame and coordinates rendering
 ```
 
 ## Phase 9 — what remains
@@ -66,30 +71,40 @@ usd-avatar-runtime:  schedules the above per frame, composes the stage, renders
   ([report](../reports/2026-09-19-phase9-roles-and-root.md)). No MMD bone is chosen as the root: it is the world
   transform of the joint `hips` maps to. MOT-O10, the rest a clip from MMD
   states, is opened with them.
-- ⬜ **MOT-O10**: whether the adapter states a `SourceRestPose` measured from
-  the rest bone directions — MMD's arms rest in an A — decided with the
-  adapter's first retarget onto a non-MMD skeleton.
-- ⛔ **`mmdMotionAdapter`** waits for `usd-motion-plugins` to release
+- ⬜ **MOT-O10**: whether `mmdSkeletonAdapter` states a `SourceRestPose`
+  measured from the rest bone directions — MMD's arms rest in an A — decided
+  with the adapters' first retarget onto a non-MMD skeleton.
+- ⛔ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** wait for
+  `usd-motion-plugins` to release
   installable `motionCore` and `motionRetarget` packages
   ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
-  The table is implemented with it, not before: it is written against
-  `HumanJoint`, and a copy of that vocabulary here would be the second
-  taxonomy the shared core forbids.
+  The role table is implemented in `mmdSkeletonAdapter`, not before: it is
+  written against `HumanJoint`, and a copy of that vocabulary here would be
+  the second taxonomy the shared core forbids.
   `mmdControl`'s pose is its input: local transforms per canonical joint in
   the USD basis, and the morph channels.
-  When it does, the edge is declared in the manifest and gated as
+  When the packages ship, the two adapter edges are declared in their
+  manifests and gated as
   [WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository)
-  says, and `MotionClip`, `SkeletonDescriptor` and `RetargetMap` are built as
+  says, and `MotionClip`, `SkeletonDescriptor`, `SourceRestPose` and
+  `RetargetMap` are built as
   MOTION_CONTRACT §10.4–§10.7 and §12 say.
 - ⛔ **Acceptance end to end** waits for `usd-motion-plugins`' retarget and
   `UsdSkelAnimation` authoring: a VMD-derived clip poses the PMX stage's
   skeleton with legs driven by IK, and retargets to a non-MMD synthetic
   skeleton with no MMD code on that path.
+- ⬜ **Expression interoperability** follows the skeletal adapter path. Keep
+  every original `mmd:<source name>` channel, then optionally emit only
+  explicit, versioned, high-confidence semantic mappings such as blink and
+  basic mouth visemes. Unknown model-specific morphs remain source channels
+  and generic motion code contains no MMD name table
+  ([MOTION_CONTRACT.md §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels)).
 
 ## Phase 8 — what remains
 
 - ⬜ Consume the packages from `usd-avatar-runtime` — `usdMmdFileFormat`, and
-  `motionVmd`, `mmdMotionBinding`, `mmdControl` and `mmdMotionAdapter` for
+  `motionVmd`, `mmdMotionBinding`, `mmdControl`, `mmdMotionAdapter` and
+  `mmdSkeletonAdapter` for
   motion — and change a contract here only if that consumer shows one is
   wrong ([PACKAGE_CONTRACT.md](../architecture/PACKAGE_CONTRACT.md)).
 - ⛔ `usdVmdFileFormat` waits for MOT-O2: `usd-motion-plugins` defines the
@@ -97,6 +112,35 @@ usd-avatar-runtime:  schedules the above per frame, composes the stage, renders
   open ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)).
   When it is answered, the basis functions a model-free `.vmd` stage needs are
   extracted from `mmdModel` with it (MOT-O1).
+- ⬜ Verify generic motion targeting PMX with synthetic, BVH-derived and
+  VRMA-derived clips through `mmdSkeletonAdapter`; no target path evaluates a
+  VMD again.
+- ⬜ Verify `motion-connectors → MotionPose → shared retarget → PMX` first from
+  deterministic recorded captures. Live devices and network access are demo
+  concerns, not CI requirements, and no protocol dependency enters this
+  repository.
+
+### Physics runtime integration
+
+Static physics preservation is complete in Phase 6. Phase 8 owns only the
+runtime composition described by
+[PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md):
+
+- ⬜ verify that `usd-physics-plugins` can consume the existing
+  `/Asset/physics` stage contract without backend-specific metadata;
+- ⬜ establish the optional MMD coupling-adapter component and installed
+  dependency only when that first consumer fixes the required API;
+- ⬜ synchronize `followBone` bodies from the evaluated/retargeted pose;
+- ⬜ simulate dynamic bodies and constrained pairs;
+- ⬜ apply `dynamicWithBone` feedback to the runtime pose outside the importer;
+- ⬜ improve limits, springs and damping incrementally, with backend-specific
+  tolerances confined to backend tests.
+
+The intended frame order is pose evaluation, bone → body synchronization,
+shared physics step, body → bone feedback, then final pose consumption.
+`usd-stage-runner` owns that order; `usd-avatar-runtime` owns composition and
+playback state. PMX parsing and `Usd.Stage.Open("model.pmx")` remain usable
+without any physics runtime.
 
 ## Completion criteria
 

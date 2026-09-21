@@ -17,7 +17,10 @@ where it matches, simulating nothing. Phase 7 reads VMD motion without a
 model (`motionVmd`, `vmd_inspect`) and binds it to one by MMD's name rule
 (`mmdMotionBinding`), baking nothing. Phase 9, in progress, evaluates MMD's
 control rig over a bound motion (`mmdControl`, done) and will hand the result
-to `usd-motion-plugins`, the shared motion core this repository consumes. Everything
+to `usd-motion-plugins`, through separate motion and skeleton adapters. Future
+physics execution consumes the existing static stage through
+`usd-physics-plugins`, with MMD coupling kept here and simulation outside the
+importer. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
 place that says what is implemented.
 
@@ -41,7 +44,7 @@ place that says what is implemented.
   **Phase 0–9** sequence, the decisions frozen early, where the design
   departs from the 2026-09-15 implementation policy it was distilled from, and
   how it aligns with the `usd-motion-plugins` design policy (§20).
-- Five focused contracts own one area each, and on that area they win over the
+- Six focused contracts own one area each, and on that area they win over the
   design policy:
   - [design/STAGE_CONTRACT.md](design/STAGE_CONTRACT.md) — the exact authored
     stage: hierarchy, types, metadata, the coordinate conversion, skeleton,
@@ -55,7 +58,11 @@ place that says what is implemented.
   - [design/MOTION_CONTRACT.md](design/MOTION_CONTRACT.md) — the MMD-specific
     motion boundary: how VMD bytes are read, how a motion binds to a
     model, how MMD's control rig is evaluated, and how the result enters the
-    shared motion core of `usd-motion-plugins`.
+    shared motion core of `usd-motion-plugins`;
+  - [design/PHYSICS_INTEGRATION.md](design/PHYSICS_INTEGRATION.md) — the
+    proposed runtime boundary after static physics preservation: MMD coupling
+    here, generic simulation in `usd-physics-plugins`, execution order in
+    `usd-stage-runner`, and composition in `usd-avatar-runtime`.
 - [architecture/WORKSPACE.md](architecture/WORKSPACE.md) is the binding
   **workspace contract**. When a document disagrees with it about structure, it
   wins, and structural changes go there first, in their own pull request.
