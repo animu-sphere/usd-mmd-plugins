@@ -49,7 +49,11 @@ FORBIDDEN_FILES = {"openstrata.plugin.yaml", "pluginfo.json", "pluginfo.json.in"
 USD_LIBRARY = re.compile(r"\b(?:lib)?usd_[A-Za-z0-9]+\.(?:dll|so|dylib)\b",
                          re.IGNORECASE)
 USD_FOUNDATION_LIBRARY = re.compile(
-    r"^(?:lib)?usd_(?:arch|tf|gf|js|trace|work|plug|vt)\.(?:dll|so|dylib)$",
+    # boost and python are private support libraries in the transitive closure
+    # of the public tf/gf/vt targets on shared-library macOS runtimes.  They do
+    # not grant an adapter access to stage, schema or imaging APIs.
+    r"^(?:lib)?usd_(?:arch|boost|python|tf|gf|js|trace|work|plug|vt)"
+    r"\.(?:dll|so|dylib)$",
     re.IGNORECASE)
 SOURCE_SUFFIXES = {".h", ".hpp", ".hh", ".inl", ".c", ".cc", ".cpp", ".cxx"}
 
@@ -198,7 +202,8 @@ def selftest() -> int:
                  "libc.so.6"):
         expect(not USD_LIBRARY.search(f"    {name}\n"),
                f"{name} is mistaken for OpenUSD")
-    for name in ("usd_gf.dll", "libusd_tf.so", "libusd_vt.dylib"):
+    for name in ("usd_gf.dll", "libusd_tf.so", "libusd_vt.dylib",
+                 "libusd_boost.dylib", "libusd_python.dylib"):
         expect(bool(USD_FOUNDATION_LIBRARY.match(name)),
                f"{name} is not recognized as an allowed foundation library")
     for name in ("usd_sdf.dll", "libusd_usd.so", "usd_ms.dll"):

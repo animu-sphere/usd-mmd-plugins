@@ -26,7 +26,10 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   manifests consume digest-pinned `motionCore` and
   `motionRetarget` v0.5.0 artifacts, and unit, boundary and installed-consumer
   tests cover both edges. Source and release CI pin `ost` 0.23.2 so those
-  external artifacts are parsed, pulled and composed into root builds.
+  external artifacts are parsed, pulled and composed into root builds. CI
+  also forwards the host-resolved Python development paths into the clean
+  installed-consumer configure, provisions Python for Windows runtime
+  validation, and recognizes the complete macOS OpenUSD foundation closure.
   `mmdMotionBinding` now preserves the VMD model name
   as provenance. End-to-end retarget and `UsdSkelAnimation` authoring remains
   Phase 9 work. (`MOTION_CONTRACT.md` §10, §12.)

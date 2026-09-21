@@ -159,6 +159,9 @@ cells:
     profile: usd
     require_openusd: cy2026/windows/x86_64/gl
     require_openusd_version: "26.08"
+    # Runtime validation links and executes an OpenUSD consumer.  The Windows
+    # runtime expects the matching host Python DLL on PATH.
+    host_python: "3.13"
     up_to: 4
 
   - name: usdmmdfileformat-pr-macos-arm64

@@ -138,6 +138,9 @@ def main() -> int:
     parser.add_argument("--build-dir", required=True, type=pathlib.Path)
     parser.add_argument("--config", default="Release")
     parser.add_argument("--usd-root", required=True, type=pathlib.Path)
+    parser.add_argument("--python3-executable", type=pathlib.Path)
+    parser.add_argument("--python3-library", type=pathlib.Path)
+    parser.add_argument("--python3-include-dir", type=pathlib.Path)
     parser.add_argument("--dependency-prefix", action="append", default=[],
                         type=pathlib.Path)
     parser.add_argument("--generator")
@@ -177,6 +180,16 @@ def main() -> int:
         search = [prefix, args.usd_root, *args.dependency_prefix]
         configure = ["cmake", "-S", source, "-B", build,
                      "-DCMAKE_PREFIX_PATH=" + ";".join(p.as_posix() for p in search)]
+        # OpenUSD's relocatable pxrConfig.cmake carries build-host Python paths
+        # as fallbacks.  Define the three inputs before find_package(pxr) so
+        # those fallbacks cannot override the Python resolved by the workspace
+        # configure on this host.
+        for cmake_name, value in (
+                ("Python3_EXECUTABLE", args.python3_executable),
+                ("Python3_LIBRARY", args.python3_library),
+                ("Python3_INCLUDE_DIR", args.python3_include_dir)):
+            if value:
+                configure.append(f"-D{cmake_name}={value.as_posix()}")
         if args.generator:
             configure += ["-G", args.generator]
         if args.make_program:

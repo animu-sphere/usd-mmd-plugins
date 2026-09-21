@@ -175,7 +175,11 @@ over `libs/mmdControl` with `mmdMotionBinding::mmdMotionBinding` and
 skeleton adapter. Those are the two narrow external adapter edges (§2.4).
 The five OpenUSD-free libraries are added before OpenUSD is resolved; the
 adapters follow it because their shared packages expose OpenUSD foundation
-types and reuse the root's already-resolved targets.
+types and reuse the root's already-resolved targets. The binary-import part
+allows only the foundation closure (`arch`, `tf`, `gf`, `js`, `trace`, `work`,
+`plug`, `vt` and the private `boost`/`python` support libraries some shared
+macOS runtimes attach to it); stage, schema and imaging libraries still fail
+the gate.
 
 ### 2.4 Edges out of this repository
 
