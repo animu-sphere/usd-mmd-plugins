@@ -10,7 +10,8 @@ proves the prefix works on its own:
   2. tests/installed_consumer/, copied out of the repository, configures
      against the prefix alone -- finding mmdModel, whose package finds mmdPmx,
      mmdMotionBinding, whose package finds mmdModel and motionVmd, and
-     mmdControl, whose package finds mmdMotionBinding and mmdModel --,
+     mmdControl, and both Phase 9 adapters with their released shared-motion
+     dependencies --,
      builds, reads and canonicalizes every PMX fixture, reads every VMD
      fixture, binds one to a PMX and evaluates it;
   3. the installed mmd_inspect and vmd_inspect read every fixture from the
@@ -61,7 +62,8 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     # The libraries install under CMAKE_INSTALL_LIBDIR, which GNUInstallDirs
     # makes lib64 on some Linux distributions; the plugin bundle's lib/ is
     # fixed by its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
-    for package in ("mmdPmx", "mmdModel", "motionVmd", "mmdMotionBinding", "mmdControl"):
+    for package in ("mmdPmx", "mmdModel", "motionVmd", "mmdMotionBinding", "mmdControl",
+                    "mmdSkeletonAdapter", "mmdMotionAdapter"):
         config_dirs = sorted(p.parent for p in prefix.glob(
             f"lib*/cmake/{package}/{package}Config.cmake"))
         if len(config_dirs) != 1:
@@ -78,6 +80,8 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
         pathlib.Path("include", "motionVmd", "Reader.h"),
         pathlib.Path("include", "mmdMotionBinding", "Bind.h"),
         pathlib.Path("include", "mmdControl", "Evaluator.h"),
+        pathlib.Path("include", "mmdSkeletonAdapter", "Adapter.h"),
+        pathlib.Path("include", "mmdMotionAdapter", "Adapter.h"),
         pathlib.Path("bin", executable("mmd_inspect")),
         pathlib.Path("bin", executable("vmd_inspect")),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
@@ -134,6 +138,8 @@ def main() -> int:
     parser.add_argument("--build-dir", required=True, type=pathlib.Path)
     parser.add_argument("--config", default="Release")
     parser.add_argument("--usd-root", required=True, type=pathlib.Path)
+    parser.add_argument("--dependency-prefix", action="append", default=[],
+                        type=pathlib.Path)
     parser.add_argument("--generator")
     parser.add_argument("--make-program")
     parser.add_argument("--cxx-compiler")
@@ -168,8 +174,9 @@ def main() -> int:
         fixtures = work / "fixtures"
         shutil.copytree(FIXTURES, fixtures)
         build = work / "consumer-build"
+        search = [prefix, args.usd_root, *args.dependency_prefix]
         configure = ["cmake", "-S", source, "-B", build,
-                     f"-DCMAKE_PREFIX_PATH={prefix.as_posix()}"]
+                     "-DCMAKE_PREFIX_PATH=" + ";".join(p.as_posix() for p in search)]
         if args.generator:
             configure += ["-G", args.generator]
         if args.make_program:
@@ -279,6 +286,24 @@ def main() -> int:
             return 1
         print(f"ok  the installed mmdControl evaluated sample.vmd over {model}: "
               f"{lines[0]}")
+
+        adapter_probes = sorted(build.rglob(executable("adapter_probe")))
+        if not adapter_probes:
+            print("the consumer built no adapter_probe", file=sys.stderr)
+            return 1
+        adapted = subprocess.run(
+            [str(adapter_probes[0]), str(vmd_fixtures / "sample.vmd"),
+             str(fixtures / model)], text=True, encoding="utf-8",
+            stdout=subprocess.PIPE)
+        adapter_lines = adapted.stdout.splitlines()
+        if (adapted.returncode != 0 or len(adapter_lines) != 1
+                or not adapter_lines[0].startswith("samples=")
+                or f"joints={joints}" not in adapter_lines[0]
+                or not adapter_lines[0].endswith("roleTable=1")):
+            print(f"the installed adapters printed {adapted.stdout!r}", file=sys.stderr)
+            return 1
+        print(f"ok  the installed Phase 9 adapters built a shared MotionClip: "
+              f"{adapter_lines[0]}")
 
         # The Python host, with only the prefix on the plugin path.
         env = dict(os.environ)

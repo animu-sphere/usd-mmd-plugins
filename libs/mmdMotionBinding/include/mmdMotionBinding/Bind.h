@@ -70,6 +70,9 @@ struct IkTrack {
 };
 
 struct BoundMotion {
+    /// The VMD header's decoded model name. Binding keeps it as provenance;
+    /// it never participates in name matching after this point.
+    std::string sourceModelName;
     std::vector<BoneTrack> bones;   ///< ascending joint index
     std::vector<MorphTrack> morphs; ///< ascending morph index
     std::vector<IkTrack> ik;        ///< ascending joint index

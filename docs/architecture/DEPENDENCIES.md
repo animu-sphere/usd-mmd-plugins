@@ -15,7 +15,7 @@ component links it yet. §7 records the proposed optional runtime edge to
 | | |
 | --- | --- |
 | Pin | OpenUSD **26.08**, exactly (`PXR_VERSION` 2608), enforced by [cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake) for `ost` and plain-CMake builds alike and declared as `runtime.openusd: "==26.08"` in the bundle manifest; the release the rest of the ecosystem pins (`usd-vrm-plugins` too), because `usd-avatar-runtime` composes every plugin into one OpenUSD process |
-| Used by | `usdMmdFileFormat` (and later `mmdSchema`, `usdVmdFileFormat`) only; later `mmdMotionAdapter` too, for the foundation types (`gf`, `tf`, `vt`) `usd-motion-plugins`' `motionCore` and `motionRetarget` expose, and no stage (§6) |
+| Used by | `usdMmdFileFormat`; `mmdMotionAdapter` and `mmdSkeletonAdapter` use only the foundation types (`gf`, `tf`, `vt`) exposed through the shared motion packages, and no stage (§6) |
 | Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `usdPhysics`, `usdShade`, `usdSkel`, `kind` (`usdShade` and `usdSkel` since Phase 2, `usdPhysics` since Phase 6) |
 | Not used | OpenExec, Hydra, `usdImaging` — nothing is evaluated or rendered here, so unlike `usd-vrm-plugins`' pin module this one probes for no OpenExec |
 | CI runtimes | the OpenUSD 26.08 leaves of OpenStrata's runtime matrix, the same digests `usd-vrm-plugins` pins ([openstrata.ci.yaml](../../openstrata.ci.yaml)) |
@@ -95,20 +95,16 @@ exact version, and listed in `THIRD_PARTY_NOTICES.md`.
 
 The shared motion core: vendor- and avatar-format-neutral poses and clips,
 humanoid joint semantics, sampling, retargeting, recording and the
-`UsdSkelAnimation` bridge. Planned, not linked. Its first tag,
-`v0.1.0-alpha.1` (2026-09-19), is a source-only pre-release of `motionCore`
-alone, and its notes say it is not `v0.1.0`. Its `main` has since received
-`motionRetarget` — `SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`,
-the root-motion policy and the retarget diagnostics — imported from
-`usd-vrm-plugins` on 2026-09-19 ahead of the `v0.2.0` that ships it. Nothing
-here links either until each is released.
+`UsdSkelAnimation` bridge. v0.5.0 was published on 2026-09-20 with installable
+`motionCore` and `motionRetarget`; the two adapters consume their per-target,
+digest-pinned OpenStrata artifacts.
 
 | | |
 | --- | --- |
 | Packages | `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionClip`) and `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`), each by `find_package(<name> CONFIG)` and linked as `<name>::<name>`; `motionUsd` only where [WORKSPACE.md §2.4](WORKSPACE.md#24-edges-out-of-this-repository) allows it |
-| Used by | `mmdMotionAdapter`; later perhaps `usdVmdFileFormat` (MOT-O2) |
+| Used by | `mmdMotionAdapter` (`motionCore`) and `mmdSkeletonAdapter` (`motionRetarget`); later perhaps `usdVmdFileFormat` (MOT-O2) |
 | Consumed as | an installed package, by `find_package` with a version range admitting the release it was verified against, the way siblings are ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
-| Version | unset until its first release; its `v0.1.0` (core contract) carries `motionCore`, and `v0.2.0` (`motionRetarget`, with `motionUsd`'s reading half) is the one Phase 9 is designed against, since the adapter needs both |
+| Version | `>=0.5,<0.6`, verified against v0.5.0 |
 | OpenUSD | the same exact pin as §1 |
 | Direction | one way: `usd-motion-plugins` never depends on this repository |
 

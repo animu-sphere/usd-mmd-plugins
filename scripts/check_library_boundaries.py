@@ -48,6 +48,9 @@ FORBIDDEN_FILES = {"openstrata.plugin.yaml", "pluginfo.json", "pluginfo.json.in"
 # libusd_tf.dylib on macOS, and the monolithic usd_ms in any of those forms.
 USD_LIBRARY = re.compile(r"\b(?:lib)?usd_[A-Za-z0-9]+\.(?:dll|so|dylib)\b",
                          re.IGNORECASE)
+USD_FOUNDATION_LIBRARY = re.compile(
+    r"^(?:lib)?usd_(?:arch|tf|gf|js|trace|work|plug|vt)\.(?:dll|so|dylib)$",
+    re.IGNORECASE)
 SOURCE_SUFFIXES = {".h", ".hpp", ".hh", ".inl", ".c", ".cc", ".cpp", ".cxx"}
 
 
@@ -155,6 +158,8 @@ def check(args: argparse.Namespace) -> list[str]:
         errors.append(f"could not inspect {args.binary}: {exc}")
         dependencies = ""
     for match in sorted(set(USD_LIBRARY.findall(dependencies))):
+        if args.allow_openusd_foundation and USD_FOUNDATION_LIBRARY.match(match):
+            continue
         errors.append(f"{args.binary.name}, which links only {args.name}, "
                       f"imports the OpenUSD library {match}")
     return errors
@@ -193,6 +198,12 @@ def selftest() -> int:
                  "libc.so.6"):
         expect(not USD_LIBRARY.search(f"    {name}\n"),
                f"{name} is mistaken for OpenUSD")
+    for name in ("usd_gf.dll", "libusd_tf.so", "libusd_vt.dylib"):
+        expect(bool(USD_FOUNDATION_LIBRARY.match(name)),
+               f"{name} is not recognized as an allowed foundation library")
+    for name in ("usd_sdf.dll", "libusd_usd.so", "usd_ms.dll"):
+        expect(not USD_FOUNDATION_LIBRARY.match(name),
+               f"{name} is mistaken for a foundation library")
 
     import tempfile
     with tempfile.TemporaryDirectory() as scratch:
@@ -224,6 +235,8 @@ def main() -> int:
                         help="a link item WORKSPACE.md §2.1 permits")
     parser.add_argument("--forbid-include", action="append", default=[],
                         help="a header prefix WORKSPACE.md §2.2 forbids, e.g. mmdPmx/")
+    parser.add_argument("--allow-openusd-foundation", action="store_true",
+                        help="allow only the arch/tf/gf/js/trace/work/plug/vt runtime leaves")
     args = parser.parse_args()
 
     errors = check(args)

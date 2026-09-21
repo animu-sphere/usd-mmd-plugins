@@ -66,6 +66,15 @@ add_subdirectory("tools/vmdInspect")
 find_package(pxr REQUIRED CONFIG)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/UsdMmdOpenUsd.cmake")
 
+# The two Phase 9 adapters are the only libraries that cross into the shared
+# motion packages. Resolve them after OpenUSD so motionCore/motionRetarget can
+# reuse the already-defined foundation targets, then add the adapters in their
+# dependency order.
+find_package(motionCore 0.5 CONFIG REQUIRED)
+find_package(motionRetarget 0.5 CONFIG REQUIRED)
+add_subdirectory("libs/mmdSkeletonAdapter")
+add_subdirectory("libs/mmdMotionAdapter")
+
 # The interpreter the integration tests import OpenUSD's Python bindings into.
 # It must be the Python OpenUSD was built against, and pxrConfig.cmake names
 # that one -- it sets Python3_EXECUTABLE unless it is already defined -- so the

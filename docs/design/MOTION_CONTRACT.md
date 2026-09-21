@@ -4,10 +4,10 @@
 > VMD as §3–§6 say, `vmd_inspect` reports on it, and `mmdMotionBinding` binds
 > a motion to a model as §7 and §8.1 say, each with fixtures. §11 is
 > **binding** since Phase 9's `mmdControl`: it evaluates a bound motion as §11
-> says, with a synthetic rig behind each rule. §10 is **accepted**, and of it
-> only `mmdControl`'s part (§10.1–§10.3, §10.7's choice of channels) is
-> implemented; `mmdMotionAdapter` and `mmdSkeletonAdapter` wait for
-> `usd-motion-plugins`. This document holds
+> says, with a synthetic rig behind each rule. §10 and §12 are **binding**
+> since `mmdMotionAdapter` and `mmdSkeletonAdapter` adopted the released
+> `usd-motion-plugins` v0.5.0 packages, with synthetic adapter tests and an
+> installed consumer. This document holds
 > only what is specific to MMD motion — VMD's source facts, its text encoding,
 > where it meets a PMX model, how MMD's control rig is evaluated, and how the
 > result enters the shared motion core. Generic motion concepts (`MotionPose`,
@@ -22,12 +22,14 @@
 > the same day: §10 follows what `usd-motion-plugins` has merged — the rig
 > types are `motionRetarget`'s, not `motionCore`'s, and a map binds a *target*
 > rig — §12 is new, MOT-O5 and MOT-O6 are resolved by it, and MOT-O10 is
-> opened. §12 is **accepted** and, like the rest of §10, waits for the adapter.
+> opened. §12 was accepted there and became binding with the adapters.
 > Revised again the same day: MOT-O9 is resolved against an independent
 > implementation with §11.7 unchanged, and MOT-O11 is opened.
 > Revised 2026-09-21: the shared-motion edge is split by responsibility:
 > `mmdMotionAdapter` emits evaluated motion, while `mmdSkeletonAdapter` exposes
 > the PMX skeleton, rest pose and versioned humanoid mapping.
+> Revised again on 2026-09-21: `usd-motion-plugins` v0.5.0 shipped installable
+> `motionCore` and `motionRetarget`, and both adapters implemented §10 and §12.
 
 ---
 
@@ -303,14 +305,12 @@ Resolved:
 
 ## 10. Normalizing into the shared motion core
 
-Accepted: this section is Phase 9
-([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` exists and
-evaluates as §11 says; `mmdMotionAdapter` and `mmdSkeletonAdapter` wait for
-`usd-motion-plugins` to
-release the two packages it needs: `motionCore` (`HumanJoint`, `MotionPose`,
-`RootMotion`, `MotionChannelSet`, `MotionClip`) and `motionRetarget`
-(`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`). Both are on that
-repository's `main` since 2026-09-19; neither is released yet
+Binding: this section is Phase 9
+([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` evaluates
+as §11 says; `mmdMotionAdapter` and `mmdSkeletonAdapter` consume the two
+packages released by `usd-motion-plugins` v0.5.0: `motionCore` (`HumanJoint`,
+`MotionPose`, `RootMotion`, `MotionChannelSet`, `MotionClip`) and
+`motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`)
 ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
 The type names are that repository's, and where its published contract
 differs from this section, the published contract wins and this section is
@@ -466,6 +466,11 @@ MMD-side events keep this repository's `MMD_MOTION_*` family
 its catalog with the code that raises them. Diagnostics the shared core
 raises (`MOTION-E####`, `MOTION-W####`, `MOTION-I####`) are passed through
 unchanged, never re-coded.
+
+`mmdMotionAdapter` rejects a non-finite, reversed or non-positive-rate sample
+request with `MMD_MOTION_INVALID_SAMPLE_RANGE`. It reports each required
+source role absent from the versioned table once per clip as
+`MMD_MOTION_MISSING_REQUIRED_JOINT`; the partial clip remains valid (§12.4).
 
 ## 11. Evaluating the control rig
 
@@ -654,7 +659,7 @@ Raised by `Prepare`, once per element, never by `Evaluate`:
 
 ## 12. The humanoid role table
 
-Accepted, with §10: `mmdSkeletonAdapter` implements it when it lands, and
+Binding, with §10: `mmdSkeletonAdapter` implements it, and
 `mmdMotionAdapter` consumes it for source clips. It
 resolves MOT-O5 and MOT-O6, against the 13 local characters and two
 distributed motions of the

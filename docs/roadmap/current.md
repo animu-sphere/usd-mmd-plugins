@@ -1,7 +1,7 @@
 # Phase 9, then Phase 8 — shared motion, avatar and physics composition
 
-Status: 🚧 Phase 9 in progress — `mmdControl`, MOT-O5, MOT-O6 and MOT-O9
-are done; Phase 8 not started.
+Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
+MOT-O5, MOT-O6 and MOT-O9 are done; Phase 8 not started.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -21,15 +21,11 @@ other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
 What is listed here is only the part this repository owes, or waits for; what
 the runtime consumes from here today is [v0.1.0](../releases/v0.1.0.md).
 
-As of 2026-09-19 `usd-avatar-runtime` holds no commits and
-`motion-connectors` a scaffold. `usd-motion-plugins` has tagged
-`v0.1.0-alpha.1`, a source-only pre-release of `motionCore` alone; its `main`
-has since received `motionRetarget` — `SkeletonDescriptor`, `RetargetMap`,
-`SourceRestPose` — for its `v0.2.0`
+As of 2026-09-21 `usd-motion-plugins` v0.5.0 is published with installable
+`motionCore`, `motionRetarget` and `motionUsd`
 ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
-Neither is released, so `mmdMotionAdapter` and `mmdSkeletonAdapter` still
-cannot start. `mmdControl` and the role-table decision depended on neither,
-and are done.
+The first two are consumed by digest-pinned artifacts, and
+`mmdMotionAdapter` and `mmdSkeletonAdapter` are implemented.
 
 ## Outcome
 
@@ -74,23 +70,13 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
 - ⬜ **MOT-O10**: whether `mmdSkeletonAdapter` states a `SourceRestPose`
   measured from the rest bone directions — MMD's arms rest in an A — decided
   with the adapters' first retarget onto a non-MMD skeleton.
-- ⛔ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** wait for
-  `usd-motion-plugins` to release
-  installable `motionCore` and `motionRetarget` packages
-  ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
-  The role table is implemented in `mmdSkeletonAdapter`, not before: it is
-  written against `HumanJoint`, and a copy of that vocabulary here would be
-  the second taxonomy the shared core forbids.
-  `mmdControl`'s pose is its input: local transforms per canonical joint in
-  the USD basis, and the morph channels.
-  When the packages ship, the two adapter edges are declared in their
-  manifests and gated as
-  [WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository)
-  says, and `MotionClip`, `SkeletonDescriptor`, `SourceRestPose` and
-  `RetargetMap` are built as
-  MOTION_CONTRACT §10.4–§10.7 and §12 say.
-- ⛔ **Acceptance end to end** waits for `usd-motion-plugins`' retarget and
-  `UsdSkelAnimation` authoring: a VMD-derived clip poses the PMX stage's
+- ✅ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** (2026-09-21): digest-pinned
+  `motionCore` and `motionRetarget` v0.5.0 packages; role-table version 1;
+  stage-token `SkeletonDescriptor`, source rest and target `RetargetMap`;
+  evaluated world rotations normalized into `MotionClip`, root motion and
+  namespaced morph channels; unit, boundary and installed-consumer tests.
+- ⬜ **Acceptance end to end**: through `motionRetarget` and `motionUsd`, a
+  VMD-derived clip poses the PMX stage's
   skeleton with legs driven by IK, and retargets to a non-MMD synthetic
   skeleton with no MMD code on that path.
 - ⬜ **Expression interoperability** follows the skeletal adapter path. Keep

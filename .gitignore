@@ -10,6 +10,7 @@ strata.lock
 # its OST_HOME (the materialized runtime).
 /.ost-ci/
 /.ost-ci-home/
+/.ost-*/
 
 # Built plugin libraries are staged into each bundle's lib/ by the build, and
 # tools into their own bin/.

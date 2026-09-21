@@ -226,6 +226,8 @@ raises; every other code is reserved.
 | `MMD_MOTION_EXTERNAL_PARENT_IGNORED` *emitted* | info | `mmdControl` (`Prepare`) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
 | `MMD_MOTION_LOCAL_APPEND_APPROXIMATED` *emitted* | info | `mmdControl` (`Prepare`) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
 | `MMD_MOTION_IK_LOOP_CLAMPED` *emitted* | warning | `mmdControl` (`Prepare`) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
+| `MMD_MOTION_INVALID_SAMPLE_RANGE` *emitted* | fatal | `mmdMotionAdapter` (`BuildClip`) | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
+| `MMD_MOTION_MISSING_REQUIRED_JOINT` *emitted* | warning | `mmdMotionAdapter` (`BuildClip`) | [MOTION §12.4](../design/MOTION_CONTRACT.md#124-required-joints) |
 
 ### 5.7 USD boundary
 

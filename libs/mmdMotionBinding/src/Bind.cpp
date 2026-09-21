@@ -127,6 +127,7 @@ Result<BoundMotion>
 Bind(const motionVmd::Motion& motion, const CanonicalDocument& model)
 {
     BoundMotion bound;
+    bound.sourceModelName = motion.header.modelName.text;
     DiagnosticList diagnostics;
 
     const std::vector<Bone>& bones = model.skeleton.bones;

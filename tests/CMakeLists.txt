@@ -85,12 +85,26 @@ if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
         --make-program "${CMAKE_MAKE_PROGRAM}"
         --cxx-compiler "${CMAKE_CXX_COMPILER}")
 endif()
+set(_motion_dependency_prefixes)
+foreach(_motion_package_dir IN ITEMS "${motionCore_DIR}" "${motionRetarget_DIR}")
+    if(_motion_package_dir)
+        get_filename_component(_motion_package_prefix
+            "${_motion_package_dir}/../../.." ABSOLUTE)
+        list(APPEND _motion_dependency_prefixes "${_motion_package_prefix}")
+    endif()
+endforeach()
+list(REMOVE_DUPLICATES _motion_dependency_prefixes)
+set(_consumer_dependencies)
+foreach(_motion_package_prefix IN LISTS _motion_dependency_prefixes)
+    list(APPEND _consumer_dependencies --dependency-prefix "${_motion_package_prefix}")
+endforeach()
 add_test(NAME workspace_installed_consumer
     COMMAND "${USDMMD_TEST_PYTHON}"
         "${PROJECT_SOURCE_DIR}/scripts/check_installed_consumer.py"
         --build-dir "${PROJECT_BINARY_DIR}"
         --config "$<CONFIG>"
         --usd-root "${_usd_root}"
+        ${_consumer_dependencies}
         ${_consumer_toolchain})
 set_tests_properties(workspace_installed_consumer PROPERTIES
     LABELS "installed-consumer")

@@ -37,7 +37,7 @@ in.** No other document states a version for a Phase.
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | avatar runtime composition, including optional physics coupling | ⬜ | unassigned, and owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | 🚧 `mmdControl` and the role table done | unassigned; its motion and skeleton adapters wait for installable `usd-motion-plugins` packages |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 evaluator and adapters done; end-to-end acceptance remains | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -47,7 +47,7 @@ Phase 7 too. It is a 0.x release because no consumer has used the packages
 yet: Phase 8's consumer may still show a contract wrong
 ([current.md](current.md)). No earlier Phase had a release of its own.
 
-Where things stand, as of 2026-09-19:
+Where things stand, as of 2026-09-21:
 
 - The documentation baseline exists: the design policy, six focused design
   contracts, the workspace contract, and reference pages that state what is
@@ -102,8 +102,8 @@ Where things stand, as of 2026-09-19:
   VMD stays here, MMD IK and append evaluation moves here from the runtime
   (MOT-O3 superseded), and Phase 9 was added for the hand-off to the shared
   motion core.
-- Phase 9, shared motion core adoption, is the current milestone. Its first
-  part is done: `mmdControl` evaluates a bound motion over the control rig —
+- Phase 9, shared motion core adoption, is the current milestone. `mmdControl`
+  evaluates a bound motion over the control rig —
   Bézier curves, bone and group morphs, appends, IK — deterministically, as
   [MOTION_CONTRACT.md §11](../design/MOTION_CONTRACT.md#11-evaluating-the-control-rig)
   says, with MOT-O7 resolved and legs following their IK goals over 13 local
@@ -112,9 +112,10 @@ Where things stand, as of 2026-09-19:
   The humanoid role table and root motion are decided — MOT-O5 and MOT-O6
   ([MOTION_CONTRACT.md §12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table),
   [report](../reports/2026-09-19-phase9-roles-and-root.md)).
-  `mmdMotionAdapter` and `mmdSkeletonAdapter` wait for
-  `usd-motion-plugins` to release `motionCore` and `motionRetarget`, both on
-  its `main` since 2026-09-19.
+  `mmdMotionAdapter` and `mmdSkeletonAdapter` consume the released,
+  digest-pinned `motionCore` and `motionRetarget` v0.5.0 packages and are
+  covered by unit, boundary and installed-consumer tests. End-to-end retarget
+  and `UsdSkelAnimation` authoring acceptance remains.
 - Phase 8, avatar runtime composition, follows Phase 9 and is owned mostly
   outside this repository. Its MMD physics work consumes the already-authored
   stage through `usd-physics-plugins`; the importer never gains a solver

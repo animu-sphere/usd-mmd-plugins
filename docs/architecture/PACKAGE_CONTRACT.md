@@ -4,13 +4,13 @@ What each installed package promises a consumer: the name it is found by, the
 target it links, the headers it installs, and what it needs besides. A
 consumer relies on this page and on nothing else in the build tree; the
 installed-consumer lane
-([WORKSPACE.md §6](WORKSPACE.md#6-tests)) builds against a clean prefix to
-keep it true.
+([WORKSPACE.md §6](WORKSPACE.md#6-tests)) builds against a clean repository
+prefix plus the explicitly pinned external motion packages to keep it true.
 
-Status (2026-09-19): the two Phase 0 packages exist, `mmd_inspect` installs
+Status (2026-09-21): the two Phase 0 packages exist, `mmd_inspect` installs
 with the workspace since Phase 1, `mmdModel` since Phase 2, `motionVmd`,
-`mmdMotionBinding` and `vmd_inspect` since Phase 7, and `mmdControl` since
-Phase 9. Identities and
+`mmdMotionBinding` and `vmd_inspect` since Phase 7, and `mmdControl`,
+`mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9. Identities and
 dependency edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not
 restate them.
 
@@ -109,6 +109,38 @@ builds a consumer that includes `mmdControl/Evaluator.h` and names
 `mmd::control::Evaluator::Prepare` against a prefix holding its closure of
 five packages alone. The installed-consumer lane's `control_probe` finds
 `mmdControl` only, binds a VMD fixture to a PMX fixture and evaluates it.
+
+## `mmdSkeletonAdapter`
+
+| | |
+| --- | --- |
+| `find_package` | `find_package(mmdSkeletonAdapter 0.1 CONFIG REQUIRED)` |
+| Imported target | `mmdSkeletonAdapter::mmdSkeletonAdapter` (static library), which links `mmdModel::mmdModel` and `motionRetarget::motionRetarget` publicly |
+| Headers | `include/mmdSkeletonAdapter/` — `Adapter.h` |
+| Required packages | `mmdModel` and released `motionRetarget >=0.5,<0.6`; the external package finds `motionCore` and the same OpenUSD foundation runtime |
+| Language | C++20 (`cxx_std_20` is a usage requirement) |
+| Version compatibility | `SameMinorVersion`, as `mmdPmx` |
+| Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdSkeletonAdapter/`, and `include/mmdSkeletonAdapter/` |
+
+Its manifest pins `motionRetarget` by archive and OCI digest for each supported
+target. The installed-consumer lane verifies the package from outside the
+source tree against that external package.
+
+## `mmdMotionAdapter`
+
+| | |
+| --- | --- |
+| `find_package` | `find_package(mmdMotionAdapter 0.1 CONFIG REQUIRED)` |
+| Imported target | `mmdMotionAdapter::mmdMotionAdapter` (static library), which links `mmdControl`, `mmdModel`, `mmdSkeletonAdapter` and `motionCore` publicly |
+| Headers | `include/mmdMotionAdapter/` — `Adapter.h`, `Codes.h` |
+| Required packages | the three repository packages above and released `motionCore >=0.5,<0.6` |
+| Language | C++20 (`cxx_std_20` is a usage requirement) |
+| Version compatibility | `SameMinorVersion`, as `mmdPmx` |
+| Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdMotionAdapter/`, and `include/mmdMotionAdapter/` |
+
+Its manifest pins `motionCore` per target. The installed-consumer lane binds a
+generated VMD to a generated PMX, evaluates it, and builds a shared
+`MotionClip` through both installed adapters.
 
 ## `usdMmdFileFormat`
 

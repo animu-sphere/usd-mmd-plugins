@@ -170,6 +170,7 @@ TestBind()
     assert(result.diagnostics()[5].location.table == "ikKeyframes");
 
     const binding::BoundMotion& bound = result.value();
+    assert(bound.sourceModelName == motion.header.modelName.text);
     // The ambiguous name binds the lower source index, 右腕捩りボーン線.
     std::vector<std::int32_t> joints;
     for (const binding::BoneTrack& t : bound.bones) {
