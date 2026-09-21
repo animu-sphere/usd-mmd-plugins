@@ -6,7 +6,8 @@
 > **binding** since Phase 9's `mmdControl`: it evaluates a bound motion as §11
 > says, with a synthetic rig behind each rule. §10 is **accepted**, and of it
 > only `mmdControl`'s part (§10.1–§10.3, §10.7's choice of channels) is
-> implemented; `mmdMotionAdapter` waits for `usd-motion-plugins`. This document holds
+> implemented; `mmdMotionAdapter` and `mmdSkeletonAdapter` wait for
+> `usd-motion-plugins`. This document holds
 > only what is specific to MMD motion — VMD's source facts, its text encoding,
 > where it meets a PMX model, how MMD's control rig is evaluated, and how the
 > result enters the shared motion core. Generic motion concepts (`MotionPose`,
@@ -24,6 +25,9 @@
 > opened. §12 is **accepted** and, like the rest of §10, waits for the adapter.
 > Revised again the same day: MOT-O9 is resolved against an independent
 > implementation with §11.7 unchanged, and MOT-O11 is opened.
+> Revised 2026-09-21: the shared-motion edge is split by responsibility:
+> `mmdMotionAdapter` emits evaluated motion, while `mmdSkeletonAdapter` exposes
+> the PMX skeleton, rest pose and versioned humanoid mapping.
 
 ---
 
@@ -50,9 +54,11 @@ VMD bytes ─Read─→ motionVmd::Document ─BuildMotion─→ motionVmd::Moti
                                                           │
                             (Phase 9, §10)  mmdControl ───┤  IK, append, bone morphs
                                                           ▼
-                            mmdMotionAdapter ─→ MotionClip (usd-motion-plugins)
-                                                          │
-                            retarget, recording, UsdSkelAnimation — usd-motion-plugins
+                             mmdMotionAdapter ─→ MotionClip (usd-motion-plugins)
+                                                           │
+                             retarget, recording, UsdSkelAnimation — usd-motion-plugins
+
+CanonicalDocument ─→ mmdSkeletonAdapter ─→ SkeletonDescriptor / RetargetMap
 ```
 
 - **`motionVmd`** is a plain library: VMD syntax, CP932 decoding, and the
@@ -62,7 +68,8 @@ VMD bytes ─Read─→ motionVmd::Document ─BuildMotion─→ motionVmd::Moti
   never `mmdPmx`
   ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)),
   and never `usd-motion-plugins` either — the source representation is
-  MMD's, and only `mmdMotionAdapter` speaks the shared core's types (§10.1).
+  MMD's, and only the two adapter components speak the shared core's types
+  (§10.1).
   It carries its own diagnostic record and `Result<T>` rather than reach
   `mmdPmx`'s ([WORKSPACE.md §7](../architecture/WORKSPACE.md#7-invariants)).
 - **Parsing a VMD never requires a PMX.** `vmd_inspect` reports on a VMD with
@@ -280,7 +287,7 @@ as a whole.
 | MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motionUsd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
-| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal ([report](../reports/2026-09-19-phase9-roles-and-root.md)) — not the level arms a VRM's identity rest describes. Whether `mmdMotionAdapter` states a `SourceRestPose` measured from the rest bone directions (as the shared core's BVH profiles state `rest-offsets`), and against which reference directions, or leaves the difference to a retarget option | the adapter's first retarget onto a non-MMD skeleton |
+| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal ([report](../reports/2026-09-19-phase9-roles-and-root.md)) — not the level arms a VRM's identity rest describes. Whether `mmdSkeletonAdapter` states a `SourceRestPose` measured from the rest bone directions (as the shared core's BVH profiles state `rest-offsets`), and against which reference directions, or leaves the difference to a retarget option | the adapters' first retarget onto a non-MMD skeleton |
 | MOT-O11 | Whether a plane link starts from its keyed rotation. §11.7 starts an enabled chain's plane angles at zero, so a knee's keyed rotation never reaches the pose and the knee is solved from straight; three.js r168 starts from the keyed rotation. On a motion that keys its legs' rotations alongside their goals, that start alone leaves a median 0.05 mm where §11.7 leaves 2.4 mm, and moves the knees a median 4.6 mm and at most 66 mm; on an IK-authored motion it changes little ([report](../reports/2026-09-19-phase9-ik-reference.md)). Which MMD does | MMD's output on a motion that keys its IK links |
 
 Resolved:
@@ -298,7 +305,8 @@ Resolved:
 
 Accepted: this section is Phase 9
 ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` exists and
-evaluates as §11 says; `mmdMotionAdapter` waits for `usd-motion-plugins` to
+evaluates as §11 says; `mmdMotionAdapter` and `mmdSkeletonAdapter` wait for
+`usd-motion-plugins` to
 release the two packages it needs: `motionCore` (`HumanJoint`, `MotionPose`,
 `RootMotion`, `MotionChannelSet`, `MotionClip`) and `motionRetarget`
 (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`). Both are on that
@@ -313,13 +321,13 @@ revised.
 | Component | Input | Output | Depends on |
 | --- | --- | --- | --- |
 | `mmdControl` | a `BoundMotion`, the `CanonicalDocument` it was bound to, a time | the local transform of every deformation joint at that time, in the USD basis and meters, plus the morph weights §10.7 leaves as channels (§11) | `mmdMotionBinding`, `mmdModel` |
-| `mmdMotionAdapter` | a `CanonicalDocument`; `mmdControl` evaluated over a time range at an explicit rate | as a source: a `MotionClip` and the `SourceRestPose` it is relative to; as a target: a `SkeletonDescriptor` and a humanoid `RetargetMap` (§10.4, §12) | `mmdControl`, `mmdModel`, `usd-motion-plugins` `motionCore` and `motionRetarget` |
+| `mmdSkeletonAdapter` | a `CanonicalDocument` | a `SkeletonDescriptor`, versioned humanoid `RetargetMap` and `SourceRestPose` (§10.4, §12) | `mmdModel`, `usd-motion-plugins` `motionRetarget` |
+| `mmdMotionAdapter` | `mmdControl` evaluated over a time range at an explicit rate; the source mapping/rest from `mmdSkeletonAdapter` | a `MotionClip` of evaluated humanoid motion and preserved generic channels | `mmdControl`, `mmdModel`, `mmdSkeletonAdapter`, `usd-motion-plugins` `motionCore` |
 
-Neither links more of OpenUSD than those packages' foundation types, and
-neither authors a stage. The edges are
+None links more of OpenUSD than those packages' foundation types, and none
+authors a stage. The edges are
 [WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)'s;
-`mmdMotionAdapter` is the only component that crosses into
-`usd-motion-plugins`
+the two adapters are the only components that cross into `usd-motion-plugins`
 ([WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository)).
 
 ### 10.2 The pipeline
@@ -340,9 +348,10 @@ VMD bytes → motionVmd → mmdMotionBinding ─→ BoundMotion           MMD so
                                                   ▼
                         deformation-joint local transforms at t
                                                   │
+                        mmdSkeletonAdapter → roles + SourceRestPose
                         mmdMotionAdapter          ▼
-                          role table (§12) → humanoid world rotations
-                          MotionPose per t → MotionClip + SourceRestPose
+                          evaluated pose → humanoid world rotations
+                          MotionPose per t → MotionClip
                                                   │
                                                   ▼
                         usd-motion-plugins: sampling, retarget, recording,
@@ -385,15 +394,18 @@ produce the same bits, as the importer's same-bytes rule requires
 
 ### 10.4 Skeleton and humanoid map
 
-A PMX model meets the shared core in two directions, and the role table
-(§12) serves both.
+A PMX model meets the shared core in two directions. `mmdSkeletonAdapter`
+owns the role table (§12), skeleton description and source rest; the motion
+adapter consumes those results rather than duplicating the mapping.
 
-- **As a source**, a VMD bound to the model becomes a `MotionClip` of
+- **As a source**, `mmdSkeletonAdapter` supplies the role mapping and
+  `SourceRestPose`; a VMD bound to the model becomes a `MotionClip` of
   `HumanJoint` rotations and root motion, built as §12.3 says, with the
   `SourceRestPose` those rotations are relative to. No MMD joint reaches the
   clip; a retarget onto any skeleton reads the clip alone.
-- **As a target**, a clip from elsewhere drives the PMX stage's skeleton
-  through a `SkeletonDescriptor` and a `RetargetMap`:
+- **As a target**, `mmdSkeletonAdapter` exposes the PMX stage's skeleton
+  through a `SkeletonDescriptor` and a `RetargetMap`, so a clip from elsewhere
+  can drive it:
   - The **`SkeletonDescriptor`** is built with the shared core's
     `BuildSkeletonDescriptor` from the stage's joint tokens and the model's
     rest transforms, so its tokens are exactly `/Asset/skel/Skeleton`'s
@@ -435,12 +447,17 @@ component here keeps a private copy of any of it
 
 ### 10.7 Morphs as channels
 
-Morph tracks that are not evaluated into the pose (§11.3) reach
+Morph tracks that are not evaluated into the pose (§11.3) always reach
 `MotionChannelSet` under the namespaced semantic `mmd:<source name>`, with
-the bound weight as a scalar — preserved, never interpreted by the shared
-core (the motion policy's §5.3). Promoting a channel to a common semantic
-such as `face/blinkLeft` is the shared core's standardization, not a mapping
-this repository invents.
+the bound weight as a scalar. That source-preserving channel is retained even
+when an optional semantic expression is emitted beside it.
+
+The shared core owns common expression vocabulary; this repository owns any
+mapping from an MMD source name to that vocabulary. Such a mapping is explicit,
+versioned and limited to high-confidence conventions such as blink and basic
+mouth visemes. It preserves the original channel, diagnoses ambiguity and
+never turns an unknown model-specific morph into a guess. Generic motion code
+contains no MMD morph-name table.
 
 ### 10.8 Diagnostics
 
@@ -637,7 +654,8 @@ Raised by `Prepare`, once per element, never by `Evaluate`:
 
 ## 12. The humanoid role table
 
-Accepted, with §10: `mmdMotionAdapter` implements it when it lands. It
+Accepted, with §10: `mmdSkeletonAdapter` implements it when it lands, and
+`mmdMotionAdapter` consumes it for source clips. It
 resolves MOT-O5 and MOT-O6, against the 13 local characters and two
 distributed motions of the
 [2026-09-19 report](../reports/2026-09-19-phase9-roles-and-root.md).
@@ -768,7 +786,7 @@ thirteenth, a 68-bone partial without legs, resolves the upper body.
 The table is **version 1**. Any change to an entry — a candidate added,
 removed or reordered, a role mapped differently — changes which joint a
 clip drives, so it is a new version, recorded in the changelog. The version
-is a constant of `mmdMotionAdapter`, reported with every map it builds and
+is a constant of `mmdSkeletonAdapter`, reported with every map it builds and
 recorded in a clip's provenance where the shared core gives it a place. It
 is independent of the shared core's `HumanJointVocabularyVersion` (1), which
 the table is written against: a vocabulary bump is a table review.

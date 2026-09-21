@@ -4,10 +4,11 @@ What `usd-mmd-plugins` builds against, what it refuses to depend on, and the
 test a new dependency has to pass. Edges *between* this repository's own
 components are [WORKSPACE.md §2](WORKSPACE.md#2-dependency-directions)'s.
 
-Status (2026-09-15): the Phase 0 decisions are closed, and every value below
+Status (2026-09-21): the Phase 0 decisions are closed, and every value below
 is what the workspace builds with. The OpenUSD pin is enforced at configure
 time. §6, `usd-motion-plugins`, was added on 2026-09-17 and is planned: no
-component links it yet.
+component links it yet. §7 records the proposed optional runtime edge to
+`usd-physics-plugins`; the static import path never takes it.
 
 ## 1. OpenUSD
 
@@ -45,7 +46,7 @@ calls the MaterialX library. The MaterialX document version it declares
 
 | Dependency | Refused because |
 | --- | --- |
-| Bullet, PhysX, Jolt, any physics engine | nothing is simulated; physics execution belongs to a runtime ([DESIGN_POLICY.md §8](../design/DESIGN_POLICY.md#8-physics-policy)) |
+| Bullet, PhysX, Jolt, any physics engine directly | nothing in this repository owns backend objects; future simulation is reached through the optional shared `usd-physics-plugins` contract ([PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy)) |
 | An image decoder in the importer | the importer never reads texture pixels; authoring stays independent of image content and of whether files exist ([TEXT_ENCODING_POLICY.md §7.3](../design/TEXT_ENCODING_POLICY.md#73-no-filesystem-access-while-authoring)) |
 | ICU, `iconv`, OS code-page APIs | PMX text is UTF-8 or UTF-16LE, decoded by the parser; CP932 (for VMD, PMD) uses a table the project owns ([TEXT_ENCODING_POLICY.md §9](../design/TEXT_ENCODING_POLICY.md#9-pmd-and-vmd)) |
 | A third-party PMX parser, by default | PMX is a bounded format; a purpose-built parser avoids inheriting an application's semantics ([DESIGN_POLICY.md §10](../design/DESIGN_POLICY.md#10-parser-strategy)) — adoption is possible only through §4 |
@@ -116,3 +117,24 @@ motion in one repository so that VRM, MMD and live sources share one
 retarget and one USD mapping; a private MMD copy would be the permanent
 duplication that policy forbids (its §37). What stays here is what needs MMD
 to be understood ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
+
+## 7. usd-physics-plugins
+
+The future backend-neutral physics layer: scene construction from authored
+`UsdPhysics`, simulation stepping, queries and backend integration. Proposed,
+not linked; no package name or version is assumed until that repository
+publishes its contract.
+
+| | |
+| --- | --- |
+| Used by | a future MMD-specific bone/body coupling adapter, only after its first runtime consumer fixes the component identity in [WORKSPACE.md](WORKSPACE.md) |
+| Not used by | `mmdPmx`, `mmdModel`, `usdMmdFileFormat`, `motionVmd`, `mmdMotionBinding`, `mmdControl`, `mmdMotionAdapter` or `mmdSkeletonAdapter` |
+| Consumed as | an installed package with a declared compatible version, never sibling source, a submodule or vendored code |
+| Backend direction | this repository never links Jolt, PhysX, Bullet or another backend directly |
+| OpenUSD | the same exact pin as §1 when the package exposes OpenUSD types |
+| Runtime ownership | `usd-stage-runner` orders the step; `usd-avatar-runtime` composes it; neither moves generic physics or MMD coupling into the importer |
+
+The authored hand-off and staged integration are
+[PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md). Static PMX import,
+inspection and stage authoring remain fully functional when this dependency is
+absent.

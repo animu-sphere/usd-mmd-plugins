@@ -660,8 +660,10 @@ No `PhysicsScene` is authored, no body carries a velocity, and nothing moves a
 body off its rest frame or a bone after a body. A consumer recovers every
 rigid body — its bone, shape and parameters — and every joint and the bodies
 it joins from these properties alone, which is Phase 6's acceptance
-([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). Simulating them belongs
-to `usd-stage-runner` or another runtime.
+([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). Runtime simulation is
+the optional, downstream flow defined by
+[PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md): `usd-physics-plugins`
+simulates, `usd-stage-runner` orders the step, and the importer remains static.
 
 ## 14. Validation checklist
 
