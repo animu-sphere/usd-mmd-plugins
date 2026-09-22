@@ -4,7 +4,7 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-21 the tree holds Phases 0–7 and most of Phase 9:** `.pmx` is registered, every
+**As of 2026-09-22 the tree holds Phases 0–7 and most of Phase 9:** `.pmx` is registered, every
 table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
 by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
 canonical stage — mesh, UVs, material prims and subsets, skeleton and
@@ -126,6 +126,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | Non-bone morph weights under `mmd:morph:<source name>` channels | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
 | Evaluated model visibility under the reserved `mmd:model:visibility` channel | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
 | Non-finite evaluated shared values | rejected, never replaced | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
+| VMD-derived, IK-evaluated legs through a `motionUsd` round trip and `motionRetarget`, onto a PMX-derived stage skeleton and a non-MMD synthetic skeleton | supported | [Phase 9 acceptance report](../reports/2026-09-22-phase9-motion-acceptance.md) |
 | Rest-direction correction for an A-pose source (MOT-O10) | unverified | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
 
 ## PMX model import

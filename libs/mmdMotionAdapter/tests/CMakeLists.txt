@@ -7,6 +7,22 @@ target_compile_options(mmdMotionAdapter_tests
     PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/UNDEBUG,-UNDEBUG>)
 add_test(NAME mmdMotionAdapter_unit COMMAND mmdMotionAdapter_tests)
 
+if(NOT TARGET motionUsd::motionUsd)
+    find_package(motionUsd 0.5 CONFIG REQUIRED)
+endif()
+
+add_executable(mmdMotionAdapter_acceptance
+    test_acceptance.cpp
+    generic_retarget.cpp)
+target_link_libraries(mmdMotionAdapter_acceptance PRIVATE
+    mmdMotionAdapter::mmdMotionAdapter
+    motionRetarget::motionRetarget
+    motionUsd::motionUsd)
+usdmmd_target_defaults(mmdMotionAdapter_acceptance)
+target_compile_options(mmdMotionAdapter_acceptance
+    PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/UNDEBUG,-UNDEBUG>)
+add_test(NAME mmdMotionAdapter_acceptance COMMAND mmdMotionAdapter_acceptance)
+
 file(GENERATE
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/mmdMotionAdapter_link_$<CONFIG>.txt"
     CONTENT "LINK_LIBRARIES=$<TARGET_PROPERTY:mmdMotionAdapter,LINK_LIBRARIES>

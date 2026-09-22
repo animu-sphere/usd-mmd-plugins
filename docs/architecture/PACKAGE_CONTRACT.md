@@ -122,9 +122,10 @@ five packages alone. The installed-consumer lane's `control_probe` finds
 | Version compatibility | `SameMinorVersion`, as `mmdPmx` |
 | Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdSkeletonAdapter/`, and `include/mmdSkeletonAdapter/` |
 
-Its manifest pins `motionRetarget` by archive and OCI digest for each supported
-target. The installed-consumer lane verifies the package from outside the
-source tree against that external package.
+Its manifest pins `motionRetarget` and that package's `motionCore` dependency
+by archive and OCI digest for each supported target, so its isolated artifact
+closure is complete. The installed-consumer lane verifies the package from
+outside the source tree against those external packages.
 
 ## `mmdMotionAdapter`
 
@@ -138,7 +139,9 @@ source tree against that external package.
 | Version compatibility | `SameMinorVersion`, as `mmdPmx` |
 | Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdMotionAdapter/`, and `include/mmdMotionAdapter/` |
 
-Its manifest pins `motionCore` per target. The installed-consumer lane binds a
+Its manifest pins `motionCore` per target, and pins `motionUsd` only to supply
+the Phase 9 acceptance test; `motionUsd` is not in the exported target or
+installed package contract. The installed-consumer lane binds a
 generated VMD to a generated PMX, evaluates it, and builds a shared
 `MotionClip` through both installed adapters.
 

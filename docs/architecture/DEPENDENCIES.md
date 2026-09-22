@@ -96,13 +96,13 @@ exact version, and listed in `THIRD_PARTY_NOTICES.md`.
 The shared motion core: vendor- and avatar-format-neutral poses and clips,
 humanoid joint semantics, sampling, retargeting, recording and the
 `UsdSkelAnimation` bridge. v0.5.0 was published on 2026-09-20 with installable
-`motionCore` and `motionRetarget`; the two adapters consume their per-target,
-digest-pinned OpenStrata artifacts.
+`motionCore`, `motionRetarget` and `motionUsd`; the adapters and their skeletal
+acceptance test consume per-target, digest-pinned OpenStrata artifacts.
 
 | | |
 | --- | --- |
-| Packages | `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionClip`) and `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`), each by `find_package(<name> CONFIG)` and linked as `<name>::<name>`; `motionUsd` only where [WORKSPACE.md §2.4](WORKSPACE.md#24-edges-out-of-this-repository) allows it |
-| Used by | `mmdMotionAdapter` (`motionCore`) and `mmdSkeletonAdapter` (`motionRetarget`); later perhaps `usdVmdFileFormat` (MOT-O2) |
+| Packages | `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionClip`), `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`) and `motionUsd` (the standalone motion-stage writer/reader), each by `find_package(<name> CONFIG)` and linked as `<name>::<name>` |
+| Used by | `mmdMotionAdapter` (`motionCore`), `mmdSkeletonAdapter` (`motionRetarget`, plus its required `motionCore` artifact closure) and the Phase 9 acceptance test (`motionRetarget`, `motionUsd`); later perhaps `usdVmdFileFormat` (MOT-O2) |
 | Consumed as | an installed package, by `find_package` with a version range admitting the release it was verified against, the way siblings are ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
 | Version | `>=0.5,<0.6`, verified against v0.5.0 |
 | OpenUSD | the same exact pin as §1 |
@@ -113,6 +113,11 @@ motion in one repository so that VRM, MMD and live sources share one
 retarget and one USD mapping; a private MMD copy would be the permanent
 duplication that policy forbids (its §37). What stays here is what needs MMD
 to be understood ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
+
+`motionUsd` is test-only today. Its pin lives on `mmdMotionAdapter`'s manifest
+so a standalone or workspace test has the same artifact CI uses; the exported
+`mmdMotionAdapter::mmdMotionAdapter` target and installed package do not link
+or require it.
 
 ## 7. usd-physics-plugins
 
