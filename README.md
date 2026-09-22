@@ -82,10 +82,14 @@ contract is [docs/design/PHYSICS_INTEGRATION.md](docs/design/PHYSICS_INTEGRATION
 | `mmdMotionAdapter` | plain C++ library | turns fully evaluated MMD poses into `MotionClip`; no target-avatar knowledge | exists |
 | `vmd_inspect` | CLI | what a VMD contains, without a model or USD | exists ([guide](docs/guides/inspecting.md)) |
 
-`mmdSchema` exists only if an MMD API schema passes the
-[admission test](docs/design/DESIGN_POLICY.md#6-the-schema-admission-test); the
-first stage uses standard schemas only. Identities and dependency directions
-are fixed in [docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md).
+`MmdMaterialAPI` passed the
+[admission test](docs/design/DESIGN_POLICY.md#6-the-schema-admission-test) on
+2026-09-22 for the `hydra-toon` consumer. The current stage-contract v1 still
+uses schema-less `mmd:material:*` attributes; Phase 8 adds `mmdSchema`, applies
+the API as a backward-compatible contract-v1 addition, and adds the independent
+`mmdImaging` bridge without renaming those properties. Identities and dependency
+directions are fixed in
+[docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md).
 
 ## What the importer will author
 
@@ -93,6 +97,7 @@ are fixed in [docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md).
 /Asset                    UsdSkelRoot, kind = component, defaultPrim; Y-up, meters
   geo/Mesh                UsdGeomMesh, skinned; one GeomSubset per material
   mtl/<material>          UsdShadeMaterial: MMD semantics + /preview and /mtlx graphs
+                          (Phase 8 target: + MmdMaterialAPI)
   skel/Skeleton           UsdSkelSkeleton in canonical joint order
   morph/<morph>           UsdSkelBlendShape for vertex morphs; others preserved declaratively
   rig/Bones, rig/ik/<bone> MMD control semantics: IK chains, append relations, axes — never solved

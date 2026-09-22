@@ -50,7 +50,7 @@ calls the MaterialX library. The MaterialX document version it declares
 | An image decoder in the importer | the importer never reads texture pixels; authoring stays independent of image content and of whether files exist ([TEXT_ENCODING_POLICY.md §7.3](../design/TEXT_ENCODING_POLICY.md#73-no-filesystem-access-while-authoring)) |
 | ICU, `iconv`, OS code-page APIs | PMX text is UTF-8 or UTF-16LE, decoded by the parser; CP932 (for VMD, PMD) uses a table the project owns ([TEXT_ENCODING_POLICY.md §9](../design/TEXT_ENCODING_POLICY.md#9-pmd-and-vmd)) |
 | A third-party PMX parser, by default | PMX is a bounded format; a purpose-built parser avoids inheriting an application's semantics ([DESIGN_POLICY.md §10](../design/DESIGN_POLICY.md#10-parser-strategy)) — adoption is possible only through §4 |
-| OpenExec, Hydra, `hydra-toon`, `usd-stage-runner` | the importer neither evaluates nor renders ([WORKSPACE.md §2.2](WORKSPACE.md#22-forbidden-edges)); `mmdControl` evaluates as a plain library, and a runtime that wants it as an OpenExec node wraps it there |
+| OpenExec, Hydra render delegates, `hydra-toon`, `usd-stage-runner` | the importer neither evaluates nor renders ([WORKSPACE.md §2.2](WORKSPACE.md#22-forbidden-edges)); `mmdImaging` uses only OpenUSD's UsdImaging API, `mmdControl` evaluates as a plain library, and a runtime that wants it as an OpenExec node wraps it there |
 | `motion-connectors`, device SDKs, network transports | live input reaches this repository only as the shared core's types, if at all ([WORKSPACE.md §2.2](WORKSPACE.md#22-forbidden-edges)) |
 | A copy of any `usd-motion-plugins` algorithm | generic motion is consumed, never duplicated ([WORKSPACE.md §7](WORKSPACE.md#7-invariants), invariant 9) |
 

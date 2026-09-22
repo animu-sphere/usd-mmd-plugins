@@ -1,8 +1,9 @@
-# Phase 9, then Phase 8 — shared motion, avatar and physics composition
+# Phase 9, then Phase 8 — shared motion, material and avatar composition
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; Phase 8
-not started.
+implementation has not started, but its `MmdMaterialAPI` and Hydra boundary are
+now decided.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -12,7 +13,8 @@ other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
   `usd-motion-plugins` as a `MotionClip` (`mmdMotionAdapter`), while
   `mmdSkeletonAdapter` exposes the PMX skeleton for generic retargeting
   ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
-- **Phase 8 — avatar runtime composition.** `usd-avatar-runtime` composes this
+- **Phase 8 — material and avatar runtime composition.** This repository adds
+  `MmdMaterialAPI` and its UsdImaging bridge; `usd-avatar-runtime` composes this
   repository with `usd-vrm-plugins`, `usd-motion-plugins`,
   `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and
   `usd-stage-runner` through
@@ -32,7 +34,7 @@ test. `mmdMotionAdapter` and `mmdSkeletonAdapter` are implemented.
 ## Outcome
 
 ```text
-.pmx ─→ usdMmdFileFormat ─→ /Asset stage
+.pmx ─→ usdMmdFileFormat ─→ /Asset stage ─→ MmdMaterialAPI ─→ UsdImaging adapter ─→ hydra-toon
 .vmd ─→ motionVmd ─→ mmdMotionBinding ─→ mmdControl ─→ mmdMotionAdapter ─→ MotionClip
 .pmx ─→ mmdModel ─→ mmdSkeletonAdapter ─→ SkeletonDescriptor / RetargetMap
                                                                               │
@@ -96,6 +98,39 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   ([MOTION_CONTRACT.md §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels)).
 
 ## Phase 8 — what remains
+
+### Material schema and renderer integration
+
+Phase 3 remains complete: contract-v1 stages already preserve every canonical
+MMD material value and carry generic `preview` and `mtlx` fallbacks. Phase 8
+formalizes that existing contract for an MMD-aware renderer; it does not replace
+or reinterpret the fallbacks
+([MATERIAL_POLICY.md](../design/MATERIAL_POLICY.md)).
+
+- ✅ **Schema decision and attribute inventory** (2026-09-22):
+  `MmdMaterialAPI` is a single-apply API on `UsdShadeMaterial`; existing
+  `mmd:material:*` names, types and meanings are retained, neutral fallbacks are
+  fixed, provenance stays outside the API, and MAT-O4 is resolved as an
+  UsdImaging adapter rather than a third realization graph.
+- ⬜ Add the `mmdSchema` plugin with generated C++/Python accessors and tokens;
+  admit no other MMD schema by association.
+- ⬜ Apply `MmdMaterialAPI` and author through it in `usdMmdFileFormat` as an
+  additive stage-contract v1 change. Test both directions of compatibility:
+  schema-aware consumers read earlier schema-less v1 attributes, while existing
+  consumers can ignore `apiSchemas` and still read the unchanged properties and
+  fallback graphs.
+- ⬜ Keep `/preview` and `/mtlx` output, appearance and golden coverage stable
+  while migrating the canonical authoring path.
+- ⬜ Implement a UsdImaging adapter that exposes `MmdMaterialAPI` to Hydra
+  without making the importer depend on `hydra-toon`.
+- ⬜ Bring up the `hydra-toon` MMD path in this order: diffuse/alpha, toon
+  ramp, sphere multiply/add, sub-texture, outline, shadow flags, material morph
+  runtime, then advanced UV and vertex-color behavior.
+- ⬜ After both `VrmMtoonMaterialAPI` and `MmdMaterialAPI` paths work, evaluate
+  renderer-private common code. Do not introduce a USD-level `ToonMaterialAPI`
+  until the two concrete implementations demonstrate stable common semantics.
+
+### Avatar runtime composition
 
 - ⬜ Consume the packages from `usd-avatar-runtime` — `usdMmdFileFormat`, and
   `motionVmd`, `mmdMotionBinding`, `mmdControl`, `mmdMotionAdapter` and

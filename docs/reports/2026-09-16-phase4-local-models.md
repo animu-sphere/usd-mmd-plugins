@@ -69,7 +69,7 @@ and with no light in the scene:
 - The result is flat, with no toon ramp, no sphere-map highlight and no
   outline. That is the intended portable path, not a defect: MMD-specific
   shading stays declarative on the material prim for an MMD-aware renderer
-  ([MATERIAL_POLICY.md §12](../design/MATERIAL_POLICY.md#12-rendering-belongs-elsewhere)).
+  ([MATERIAL_POLICY.md §12](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere)).
 
 ## What it did not cover
 

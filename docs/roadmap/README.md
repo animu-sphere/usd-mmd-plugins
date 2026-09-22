@@ -11,7 +11,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The remaining milestones — Phase 9 shared motion adoption, then Phase 8 avatar, motion and physics runtime composition — and the part of each this repository owes or waits for. |
+| [current.md](current.md) | The remaining milestones — Phase 9 shared motion adoption, then the Phase 8 material-schema, renderer, avatar and physics composition work — and the part of each this repository owes or waits for. |
 | [../releases/](../releases/README.md) | What each released version shipped, and how a release is cut. |
 
 ## One sequence
@@ -36,7 +36,7 @@ in.** No other document states a version for a Phase.
 | 5 | control semantics | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
-| 8 | avatar runtime composition, including optional physics coupling | ⬜ | unassigned, and owned mostly outside this repository |
+| 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | ⬜ | unassigned; schema/adapter work is here, composition is owned mostly outside this repository |
 | 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; expression interoperability and open rest-pose evidence remain | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
@@ -47,7 +47,7 @@ Phase 7 too. It is a 0.x release because no consumer has used the packages
 yet: Phase 8's consumer may still show a contract wrong
 ([current.md](current.md)). No earlier Phase had a release of its own.
 
-Where things stand, as of 2026-09-21:
+Where things stand, as of 2026-09-22:
 
 - The documentation baseline exists: the design policy, six focused design
   contracts, the workspace contract, and reference pages that state what is
@@ -62,8 +62,9 @@ Where things stand, as of 2026-09-21:
   importer authors the mesh, material prims and subsets, skeleton and
   skinning, and the workspace, standalone, sanitizer and documentation lanes
   cover the implementation.
-- Phase 3, the material triad, is done: canonical MMD material semantics on
-  every material prim, plus the unlit `preview` and MaterialX `mtlx`
+- Phase 3, the material triad, is done: canonical MMD material semantics as
+  schema-less `mmd:material:*` attributes on every contract-v1 material prim,
+  plus the unlit `preview` and MaterialX `mtlx`
   realizations. Its last two items closed on 2026-09-16 — the standalone
   golden agrees on every supported platform, and three distributed models
   render through Storm with their source colors
@@ -120,9 +121,14 @@ Where things stand, as of 2026-09-21:
   stage skeleton and a non-MMD skeleton
   ([report](../reports/2026-09-22-phase9-motion-acceptance.md)). Expression
   interoperability and MOT-O10 remain.
-- Phase 8, avatar runtime composition, follows Phase 9 and is owned mostly
-  outside this repository. Its MMD physics work consumes the already-authored
-  stage through `usd-physics-plugins`; the importer never gains a solver
+- Phase 8 follows Phase 9. Before renderer composition, this repository adds
+  the admitted `MmdMaterialAPI`, applies it as a backward-compatible
+  contract-v1 addition without renaming any `mmd:material:*` property, and
+  supplies the UsdImaging bridge consumed by `hydra-toon`. The shared renderer
+  may normalize MMD and MToon privately, but their USD schemas remain separate.
+  The rest of avatar composition is owned mostly outside this repository. Its
+  MMD physics work consumes the already-authored stage through
+  `usd-physics-plugins`; the importer never gains a renderer or solver
   ([PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md)).
 
 ## Open decisions
@@ -150,7 +156,7 @@ schedules them.
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
 | PMX-O4 | Morph category from display frames | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
-| MAT-O4 | How `hydra-toon` reads MMD semantics | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | `hydra-toon` |
+| MAT-O4 | How `hydra-toon` reads MMD semantics | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved 2026-09-22 — `MmdMaterialAPI` + UsdImaging adapter; implementation is Phase 8 |
 | MOT-O4 | Camera and light tracks | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer |
 | MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
 | MOT-O11 | Whether a knee starts from its keyed rotation | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (MMD's output to compare against) |

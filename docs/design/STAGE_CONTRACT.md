@@ -19,6 +19,12 @@
 > graph boundaries are binding from Phase 3; their interior shader node names
 > remain realization-local.
 >
+> `MmdMaterialAPI` is admitted but not yet authored by the current contract-v1
+> implementation. Its planned application is additive within contract v1: the
+> existing `mmd:material:*` names, types and meanings remain unchanged, and
+> readers have an explicit compatibility path
+> ([MATERIAL_POLICY.md §14](MATERIAL_POLICY.md#14-migration-and-implementation-order)).
+>
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
 > stage metadata, prim hierarchy, types, names, the coordinate conversion, and
 > the layout of skeleton, materials, morphs, control rig and physics. Material graphs are detailed in
@@ -50,8 +56,9 @@ layer's `customLayerData` is no longer visible from the composed stage, while
 The version increments **only** when downstream interpretation changes
 incompatibly: a path, type, name, unit, basis, or property meaning a consumer
 could depend on. It does not change for parser refactors, diagnostic wording,
-build-system changes, performance work, or the addition of a property a
-consumer can ignore.
+build-system changes, performance work, the addition of a property a consumer
+can ignore, or applying `MmdMaterialAPI` while its existing properties retain
+the same names, types and meanings.
 
 ## 3. Authoring conventions
 
@@ -67,11 +74,13 @@ consumer can ignore.
 - **Provenance of an element that is not a prim** — a joint, a vertex — is a
   parallel array attribute on the prim that owns the elements
   (`mmd:bone:sourceName` on the Skeleton, for example).
-- **Semantics a consumer evaluates are namespaced custom attributes**:
+- **Semantics a consumer evaluates are namespaced attributes**:
   `mmd:material:*`, `mmd:morph:*`, `mmd:rig:*`, `mmd:physics:*`. They are
-  attributes rather than customData so they can be queried, overridden in a
-  stronger layer, and later declared verbatim by an applied API schema without
-  changing the stage ([DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test)).
+  attributes rather than customData so they can be queried and overridden in a
+  stronger layer. The current implementation authors all of them as custom
+  attributes; Phase 8 applies `MmdMaterialAPI` and declares the existing
+  material names verbatim, while the other families remain schema-less
+  ([DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test)).
 - **Per-vertex MMD data is a primvar** in the `mmd:` namespace
   (`primvars:mmd:uv1`, `primvars:mmd:edgeScale`, …), so it follows the mesh
   through any primvar-aware pipeline.
@@ -91,7 +100,7 @@ consumer can ignore.
 │  └─ Mesh                      UsdGeomMesh + UsdSkelBindingAPI
 │     └─ <materialId>           UsdGeomSubset (familyName = materialBind), one per non-empty material
 ├─ mtl                          Scope
-│  └─ <materialId>              UsdShadeMaterial  (graphs: MATERIAL_POLICY.md)
+│  └─ <materialId>              UsdShadeMaterial  (Phase 8: + MmdMaterialAPI; graphs: MATERIAL_POLICY.md)
 ├─ skel                         Scope
 │  └─ Skeleton                  UsdSkelSkeleton
 ├─ morph                        Scope                                       (Phase 4)
@@ -429,7 +438,10 @@ vertex.
 One `UsdShadeMaterial` per PMX material at `/Asset/mtl/<materialId>`, in
 material-table order, carrying the MMD source semantics as `mmd:material:*`
 attributes and two realization graphs, `preview` and `mtlx`. Bindings target
-the material prim, never a node inside it. Fully specified in
+the material prim, never a node inside it. The current implementation authors
+schema-less custom attributes; Phase 8 applies the single-apply
+`MmdMaterialAPI` and authors the same properties through its generated
+accessors. Fully specified in
 [MATERIAL_POLICY.md](MATERIAL_POLICY.md).
 
 Each material carries its provenance (`mmd:sourceName`,
@@ -440,6 +452,12 @@ for an individual toon ramp — each authored only when its path is safe. The
 full MMD semantics are authored as `mmd:material:*` attributes, and both
 portable realization graphs are present from Phase 3 as specified by
 MATERIAL_POLICY.md.
+
+`MmdMaterialAPI` is canonical identification and declaration, not a third
+realization. A schema-aware consumer uses its generated accessors when the API
+is applied and accepts the same schema-less property names on an earlier
+contract-v1 asset. PreviewSurface and MaterialX remain generic fallbacks and are
+never used to reconstruct canonical MMD values.
 
 The material-table index is also MMD's **draw order**, which alpha-blended
 MMD rendering depends on; it is preserved as `mmd:sourceIndex` and consumers

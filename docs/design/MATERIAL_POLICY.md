@@ -1,15 +1,17 @@
 # Material policy
 
-> Status: **binding for Phase 3**; authored from Phase 3, except what Phase 2 already
-> authors with fixtures — one `UsdShadeMaterial` per PMX material at its
-> §3 path, bound by its subset; `mmd:material:doubleSided` and the three
-> texture slots of §4.1; and the provenance of §4.2 but `mmd:sourceMemo` —
-> which is binding. It fixes how a PMX material
-> becomes a `UsdShadeMaterial`: the hierarchy, the canonical MMD semantics, and
-> the two portable realizations. It follows the shape of `usd-vrm-plugins`'
-> material architecture policy so that one renderer can read both families,
-> and on material questions it wins over
-> [STAGE_CONTRACT.md](STAGE_CONTRACT.md). Section numbers are stable.
+> Status: **binding for Phase 3 and for the planned material-schema migration**.
+> Phase 3 authors one `UsdShadeMaterial` per PMX material, the
+> `mmd:material:*` attributes in §4.1, provenance in §4.2, and the two portable
+> realizations. Stage-contract v1 authors those attributes as schema-less custom
+> attributes. `MmdMaterialAPI` passed the schema admission test on 2026-09-22;
+> Phase 8 applies it while retaining the same property names, types and meanings
+> as a backward-compatible stage-contract v1 addition (§4.3, §14). This
+> document fixes the hierarchy, canonical MMD semantics, portable realizations
+> and renderer boundary. It follows the
+> shape of `usd-vrm-plugins`' material architecture without treating MMD as
+> MToon, and on material questions it wins over
+> [STAGE_CONTRACT.md](STAGE_CONTRACT.md). Existing section numbers are stable.
 
 ---
 
@@ -30,9 +32,11 @@ realization from the semantics — never one realization from another.
 PMX material
     ↓
 canonical MMD material semantics      (mmdModel)
+    ↓
+MmdMaterialAPI                        formal USD contract (Phase 8 target)
     ├→ UsdPreviewSurface               unlit-compatible fallback /preview
     ├→ MaterialX gltf_pbr              unlit-compatible portable path /mtlx
-    └→ MMD toon realization            hydra-toon, elsewhere      (not authored here)
+    └→ UsdImaging adapter              hydra-toon, elsewhere      (not authored here)
 ```
 
 The cost is that the same source parameter is read by several generators. What
@@ -43,6 +47,7 @@ requires reading nothing but the semantics.
 
 ```text
 /Asset/mtl/<materialId>                  UsdShadeMaterial
+    applied API: MmdMaterialAPI           (Phase 8 target)
     mmd:material:*                       canonical MMD semantics (§4)
     customData: provenance (§4.2)
     outputs:surface       → preview.outputs:surface
@@ -77,37 +82,42 @@ requires reading nothing but the semantics.
   child graph reads as a third realization and the material prim is where
   identity and semantics already live
   ([DESIGN_POLICY.md §19](DESIGN_POLICY.md#19-where-this-document-departs-from-the-implementation-policy)).
+- Applying `MmdMaterialAPI` does not create a new child or realization. It
+  declares the existing canonical properties and identifies the prim as an MMD
+  material. Bindings and render-context outputs continue to target the
+  `UsdShadeMaterial`.
 
 ## 4. Canonical material semantics
 
 ### 4.1 Attributes
 
 Every material carries its full MMD semantics, whether or not any realization
-uses them. They are plain custom attributes, so an `MmdMaterialAPI` admitted
-later can declare the same names without changing the stage.
+uses them. The shipped stage-contract v1 implementation authors them as plain
+custom attributes. Phase 8 declares the same names through `MmdMaterialAPI`; no
+consumer has to translate an old property name to a new one.
 
-| Attribute | Type | Source |
-| --- | --- | --- |
-| `mmd:material:diffuseColor` | `color4f` | diffuse RGBA |
-| `mmd:material:specularColor` | `color3f` | specular |
-| `mmd:material:specularPower` | `float` | specular power |
-| `mmd:material:ambientColor` | `color3f` | ambient |
-| `mmd:material:doubleSided` | `uniform bool` | flag `0x01` |
-| `mmd:material:groundShadow` | `bool` | flag `0x02` |
-| `mmd:material:castSelfShadow` | `bool` | flag `0x04` |
-| `mmd:material:receiveSelfShadow` | `bool` | flag `0x08` |
-| `mmd:material:drawEdge` | `bool` | flag `0x10` |
-| `mmd:material:vertexColor` | `bool` | flag `0x20` (2.1) |
-| `mmd:material:drawPoints` | `bool` | flag `0x40` (2.1) |
-| `mmd:material:drawLines` | `bool` | flag `0x80` (2.1) |
-| `mmd:material:edgeColor` | `color4f` | edge color |
-| `mmd:material:edgeSize` | `float` | edge size |
-| `mmd:material:texture` | `asset` | base texture (absent when none) |
-| `mmd:material:sphereTexture` | `asset` | sphere texture (absent when none) |
-| `mmd:material:sphereMode` | `token` | `disabled`, `multiply`, `add`, `subTexture` |
-| `mmd:material:toonSource` | `token` | `none`, `individual`, `shared` (§7) |
-| `mmd:material:toonTexture` | `asset` | individual toon texture (only when `individual`) |
-| `mmd:material:sharedToonIndex` | `int` | shared toon slot 0–9 (only when `shared`) |
+| Attribute | Type | PMX source | Authoring |
+| --- | --- | --- | --- |
+| `mmd:material:diffuseColor` | `color4f` | diffuse RGBA | required |
+| `mmd:material:specularColor` | `color3f` | specular | required |
+| `mmd:material:specularPower` | `float` | specular power | required |
+| `mmd:material:ambientColor` | `color3f` | ambient | required |
+| `mmd:material:doubleSided` | `uniform bool` | flag `0x01` | required |
+| `mmd:material:groundShadow` | `bool` | flag `0x02` | required |
+| `mmd:material:castSelfShadow` | `bool` | flag `0x04` | required |
+| `mmd:material:receiveSelfShadow` | `bool` | flag `0x08` | required |
+| `mmd:material:drawEdge` | `bool` | flag `0x10` | required |
+| `mmd:material:vertexColor` | `bool` | flag `0x20` (2.1 meaning) | required; preserved in 2.0 without assigning 2.1 meaning |
+| `mmd:material:drawPoints` | `bool` | flag `0x40` (2.1 meaning) | required; preserved in 2.0 without assigning 2.1 meaning |
+| `mmd:material:drawLines` | `bool` | flag `0x80` (2.1 meaning) | required; preserved in 2.0 without assigning 2.1 meaning |
+| `mmd:material:edgeColor` | `color4f` | edge color | required even when `drawEdge = false` |
+| `mmd:material:edgeSize` | `float` | edge size | required even when `drawEdge = false` |
+| `mmd:material:texture` | `asset` | base texture | only when the slot names a safe asset path |
+| `mmd:material:sphereTexture` | `asset` | sphere texture | only when the slot names a safe asset path |
+| `mmd:material:sphereMode` | `token` | `disabled`, `multiply`, `add`, `subTexture` | required |
+| `mmd:material:toonSource` | `token` | `none`, `individual`, `shared` (§7) | required |
+| `mmd:material:toonTexture` | `asset` | individual toon texture | only when `toonSource = individual` and the path is safe |
+| `mmd:material:sharedToonIndex` | `int` | shared toon slot 0–9 | only when `toonSource = shared` |
 
 Colors are authored as stored: MMD specifies them without a declared color
 space, and the importer does not reinterpret them.
@@ -120,6 +130,38 @@ the verbatim decoded texture strings `mmd:sourceTexturePath`,
 `mmd:sourceSphereTexturePath` and `mmd:sourceToonTexturePath` — kept even when
 the path is unsafe or does not resolve
 ([TEXT_ENCODING_POLICY.md §7](TEXT_ENCODING_POLICY.md#7-texture-paths)).
+
+### 4.3 `MmdMaterialAPI`
+
+`MmdMaterialAPI` is a **single-apply API schema** on `UsdShadeMaterial`. It is
+the formal USD contract for §4.1, not a renderer implementation and not a copy
+of the PMX record layout. It passed
+[DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test) because an
+MMD-aware renderer needs to discover and read these values from a composed USD
+stage without PMX access.
+
+The generated API exposes every §4.1 property, tokens for `sphereMode` and
+`toonSource`, and schema fallbacks that are neutral when a property is absent:
+
+| Property family | Schema fallback |
+| --- | --- |
+| diffuse | `(1, 1, 1, 1)` |
+| specular, ambient | `(0, 0, 0)` |
+| specular power | `0` |
+| drawing and shadow flags | `false` |
+| edge color, edge size | `(0, 0, 0, 0)`, `0` |
+| asset-valued texture slots | empty asset path |
+| sphere mode | `disabled` |
+| toon source, shared toon index | `none`, `-1` |
+
+The importer still authors every scalar and flag that exists in a PMX material;
+fallbacks define robust reads, not permission to discard source values. Asset
+slots remain conditional as §4.1 states. Provenance stays in `customData` and
+is deliberately outside the API.
+
+Consumers use generated schema accessors rather than treating attribute-name
+strings as their public interface. During migration they must also accept a
+stage-contract v1 material with the same schema-less properties (§14).
 
 ## 5. UsdPreviewSurface realization
 
@@ -235,21 +277,43 @@ color and size, and the texture, sphere and toon tints. The stage never
 contains a precomputed material per morph, and a morph never edits the
 material prims.
 
-## 12. Rendering belongs elsewhere
+## 12. Rendering and integration belong elsewhere
 
-`usd-mmd-plugins` contains no MMD renderer. A toon renderer (`hydra-toon`)
-consumes this contract; it never parses PMX, and the same renderer can serve
-MToon from `usd-vrm-plugins` through its own semantic reading. The portable
-`gltf_pbr` path stays the default realization; toon rendering is an additional
-path, not a replacement.
+`usd-mmd-plugins` defines and authors MMD semantics; it contains no toon
+renderer, outline pass, shadow algorithm or GPU shader. `hydra-toon` consumes
+the composed USD contract and never parses PMX. The portable `gltf_pbr` path
+stays the default realization; MMD-aware rendering is an additional path, not a
+replacement.
 
-A known gap for that consumer: custom attributes on a material prim do not
-reach a Hydra render delegate by themselves — `UsdImaging` passes the material
-*network*, not arbitrary prim properties. `hydra-toon` will need either an
-admitted `MmdMaterialAPI` with an imaging adapter that exposes it, or a third
-realization graph for its own render context. That choice is deferred to when
-`hydra-toon` exists to be a real consumer (MAT-O4), and either answer keeps §4
-unchanged.
+An applied API schema alone does not make arbitrary prim properties appear in
+a Hydra material network. The fixed integration boundary is therefore:
+
+```text
+UsdShadeMaterial + MmdMaterialAPI
+                ↓
+       UsdImaging adapter
+                ↓
+  Hydra material representation
+                ↓
+          hydra-toon
+```
+
+The adapter exposes the API's semantics through the Hydra data-source or
+material-data mechanism appropriate to the OpenUSD version. It does not add a
+third `toon` realization graph, and `hydra-toon` does not depend on
+`usdMmdFileFormat`, `mmdModel` or `mmdPmx`.
+
+`hydra-toon` may normalize `MmdMaterialAPI` and the independent
+`VrmMtoonMaterialAPI` into a renderer-private runtime representation. That is
+an implementation convenience, not a claim that MMD and MToon have the same
+material model. MMD-only concepts — sphere multiply/add, sub-texture UVs,
+shared toon slots, ground/self-shadow flags and vertex edge scale — remain
+explicit extensions where they cannot be shared faithfully.
+
+No USD-level `ToonMaterialAPI` is introduced now. A common API may be
+reconsidered only after both MMD and VRM paths have been implemented and stable
+common semantics are demonstrated. Shared abstractions are extracted from
+working concrete adapters, not designed ahead of them.
 
 ## 13. Open questions
 
@@ -258,4 +322,34 @@ unchanged.
 | MAT-O1 | Roughness from specular power | resolved for the current portable realizations: they are unlit and author `roughness = 1`; `specularPower` remains canonical for an MMD-aware realization | Phase 3 |
 | MAT-O2 | Alpha mode without decoding images: the importer never reads texture pixels, so it cannot know whether a texture has alpha | resolved: blend when the material names a base texture or diffuse alpha < 1; opaque otherwise | Phase 3 |
 | MAT-O3 | Missing individual toon texture | resolved: preserve the source path and provenance, author a safe asset path when available so USD validation can report an unresolved file, and never fall back to a shared ramp | Phase 3 |
-| MAT-O4 | How `hydra-toon` reads MMD semantics | `MmdMaterialAPI` + imaging adapter, or a toon realization graph | when `hydra-toon` consumes the stage |
+| MAT-O4 | How `hydra-toon` reads MMD semantics | resolved: applied `MmdMaterialAPI` + UsdImaging adapter; no toon realization graph | design fixed 2026-09-22; implementation in Phase 8 |
+
+## 14. Migration and implementation order
+
+The policy is implemented without rewriting the already shipped Phase 3
+contract:
+
+1. **Inventory — complete in this document.** §4.1 fixes names, types,
+   required/conditional authoring and PMX mapping; §4.3 fixes fallbacks.
+2. **Schema bundle.** Add `mmdSchema` with the single-apply
+   `MmdMaterialAPI`, generated C++/Python accessors and token declarations.
+3. **Importer migration.** Apply the API and author through its accessors while
+   keeping the §4.1 property values byte-for-byte equivalent. The applied-schema
+   metadata is an additive stage-contract v1 change, not a semantic version bump.
+4. **Fallback regression.** Keep `/preview` and `/mtlx` graph boundaries and
+   appearance unchanged; they remain generic fallbacks, not canonical data.
+5. **Hydra bridge.** Implement and test the UsdImaging adapter independently
+   of the renderer's GPU representation.
+6. **MMD renderer path.** Bring up diffuse/alpha, toon ramp, sphere
+   multiply/add, sub-texture, outline, shadow flags, material morph runtime,
+   then advanced UV and vertex-color behavior.
+7. **Common-runtime review.** Compare the completed MMD and VRM adapters and
+   extract only proven renderer-private common code. Revisit a USD-level
+   `ToonMaterialAPI` only with evidence from both.
+
+Compatibility is asymmetric and explicit: a schema-aware reader accepts an
+earlier contract-v1 material by reading the same names even when
+`MmdMaterialAPI` is not applied; an existing reader can ignore `apiSchemas` and
+continues to see the same custom properties and fallback graphs. No migration
+renames a property or turns PreviewSurface or MaterialX into the source of
+truth.

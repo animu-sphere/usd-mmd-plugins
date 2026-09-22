@@ -51,6 +51,7 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 
 | PMX field | USD | Phase |
 | --- | --- | :---: |
+| (material semantics contract) | Current contract v1: schema-less `mmd:material:*`; Phase 8: the same properties declared by applied `MmdMaterialAPI` | 8 |
 | name / English name | `Mtl` identifier; customData `mmd:sourceName` / `mmd:sourceEnglishName` | 2 |
 | (table index) | `Mtl` customData `mmd:sourceIndex` (= draw order) | 2 |
 | face count | `Mesh/<materialId>` `GeomSubset.indices` + `material:binding` | 2 |
