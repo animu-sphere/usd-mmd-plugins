@@ -86,7 +86,7 @@ carries, in this order of priority:
 2. generic material realizations (`UsdPreviewSurface`, MaterialX `gltf_pbr`);
 3. MMD-native semantics where nothing generic can hold them.
 
-An MMD-aware renderer such as a future `hydra-toon` reads level 3 as well; a
+An MMD-aware renderer such as `hydra-toon` reads level 3 as well; a
 generic consumer ignores it and still sees a correct, bound, skinned model
 (§11).
 
@@ -143,8 +143,10 @@ What deliberately does **not** carry over:
   embeds its textures in a GLB container. A PMX references external files, so
   standard `ArResolver` behavior is sufficient
   ([TEXT_ENCODING_POLICY.md §7](TEXT_ENCODING_POLICY.md#7-texture-paths)).
-- **No schema bundle by default.** `vrmSchema` exists because VRM has typed
-  semantics consumers read. `mmdSchema` must pass its own admission test (§6).
+- **No catch-all schema bundle.** `vrmSchema` exists because VRM has typed
+  semantics consumers read. `MmdMaterialAPI` has now passed this repository's
+  admission test for `hydra-toon`; that admits only the narrow material API,
+  not a schema mirror of PMX (§6).
 - **No humanoid assumption.** MMD bone names are a community convention, not a
   humanoid specification, so the importer authors no humanoid semantics.
   Retargeting still needs a humanoid map, and the shared motion core leaves
@@ -293,9 +295,20 @@ Neither owns a generic algorithm or target-avatar knowledge: sampling,
 retargeting, recording and `UsdSkelAnimation` authoring are used from the shared core
 ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
 
+### 5.8 `mmdSchema` and `mmdImaging` — the renderer edge (Phase 8)
+
+`mmdSchema` owns the generated single-apply `MmdMaterialAPI` and its tokens.
+`usdMmdFileFormat` applies that API and authors through its accessors in Phase
+8. `mmdImaging` reads the composed API and exposes its values
+through UsdImaging for `hydra-toon`; it depends on neither the parser,
+canonical model nor importer, and owns no GPU representation. This keeps the
+contract usable by any renderer and lets `hydra-toon` consume MMD and MToon
+through independent format adapters
+([MATERIAL_POLICY.md §12](MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere)).
+
 ## 6. The schema admission test
 
-`mmdSchema` is not created because `vrmSchema` exists. A candidate API schema
+`mmdSchema` is not created merely because `vrmSchema` exists. A candidate API schema
 (`MmdModelAPI`, `MmdMaterialAPI`, `MmdBoneAPI`, `MmdPhysicsAPI`, …) is admitted
 only if it passes:
 
@@ -304,14 +317,24 @@ only if it passes:
 
 If not, the value stays as provenance, custom data, or is not authored.
 
-The v1 stage therefore has **no custom typed prim schemas and no applied API
+Stage-contract v1 has **no custom typed prim schemas and no applied API
 schemas**. Semantics that a consumer evaluates are authored as namespaced
-custom attributes (`mmd:material:*`, `mmd:morph:*`, …) whose names a later
-applied API schema can declare verbatim, so admitting a schema does not change
-the authored stage
-([STAGE_CONTRACT.md §3](STAGE_CONTRACT.md#3-authoring-conventions)). An API is
-proposed when a real consumer asks for one, and the proposal cites that
-consumer. `mmdSchema` must not become a dump of the PMX binary structure.
+custom attributes (`mmd:material:*`, `mmd:morph:*`, …), so a later applied API
+can declare the names verbatim
+([STAGE_CONTRACT.md §3](STAGE_CONTRACT.md#3-authoring-conventions)).
+
+`MmdMaterialAPI` passed the test on 2026-09-22: `hydra-toon` must discover MMD
+materials and read their canonical values from a composed USD stage without
+PMX access. The single-apply API declares only the existing
+`mmd:material:*` contract; provenance remains `customData`, and morph, rig and
+physics properties remain schema-less until they independently pass this test.
+Applying the API is a backward-compatible stage-contract v1 addition: the
+property names, types and meanings do not change, and existing readers may
+ignore the applied-schema metadata
+([MATERIAL_POLICY.md §4.3](MATERIAL_POLICY.md#43-mmdmaterialapi)). A generated
+API plus a UsdImaging adapter is the renderer boundary; a third material
+realization graph is not. `mmdSchema` must not become a dump of the PMX binary
+structure.
 
 ## 7. Deformation, morph and bone-control policy
 
@@ -444,7 +467,7 @@ what it does not understand:
 | --- | --- | --- |
 | 1 | Any USD tool | mesh, materials, skeleton, skinning, blend shapes, textures |
 | 2 | A MaterialX-aware renderer | the `gltf_pbr` realization |
-| 3 | An MMD-aware Hydra renderer (`hydra-toon`) | toon ramp, sphere map, outline, MMD alpha and draw behavior |
+| 3 | An MMD-aware Hydra renderer (`hydra-toon`) | `MmdMaterialAPI` through a UsdImaging adapter: toon ramp, sphere map, outline, MMD alpha and draw behavior |
 | 4 | An avatar runtime (`usd-avatar-runtime`) | VMD, IK, bone control, morph composition, physics, live motion |
 
 This layering is preferred to making every USD consumer understand MMD.
@@ -506,7 +529,7 @@ sequence ever appear, both get a qualifier, as they do in `usd-vrm-plugins`.
 | **5 — control semantics** | Narrow MMD semantics for IK, append transforms, axes, morph composition and material morphs — schema only where §6 admits one. | A consumer can reconstruct every IK chain and append relation from the stage alone. |
 | **6 — physics preservation** | Standard `UsdPhysics` where it matches; everything else preserved. | No simulation; every rigid body and joint recoverable. |
 | **7 — VMD** | Model-independent `libs/motionVmd` (defined as extraction-ready; VMD stays here since 2026-09-17, §9.1), bound to a model by `mmdMotionBinding`; the hand-off to the shared motion core is Phase 9; `usdVmdFileFormat` only once direct stage-open has a contract. | Per [MOTION_CONTRACT.md](MOTION_CONTRACT.md). |
-| **8 — avatar runtime composition** | Composition through OpenStrata with `usd-vrm-plugins`, `usd-motion-plugins`, `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and `usd-stage-runner`, under `usd-avatar-runtime`; MMD-specific physics coupling follows [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md). | The runtime, not this repository, is the avatar execution environment; physics can progress from `followBone` through dynamic bodies to bone feedback without putting a solver in the importer. |
+| **8 — avatar runtime composition** | Composition through OpenStrata with `usd-vrm-plugins`, `usd-motion-plugins`, `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and `usd-stage-runner`, under `usd-avatar-runtime`; this repository first supplies `MmdMaterialAPI` and its UsdImaging bridge, while MMD-specific physics coupling follows [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md). | The runtime, not this repository, is the avatar execution environment; `hydra-toon` consumes MMD semantics without PMX or importer dependencies, and physics can progress from `followBone` through dynamic bodies to bone feedback without putting a renderer or solver in the importer. |
 | **9 — shared motion core adoption** | `mmdControl` evaluates a bound motion over the control rig; `mmdMotionAdapter` builds a `MotionClip`, while `mmdSkeletonAdapter` builds a `SkeletonDescriptor`, `SourceRestPose` and humanoid `RetargetMap`, against `usd-motion-plugins`' installed `motionCore` and `motionRetarget`; MOT-O5, MOT-O6 and MOT-O7 resolved ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)). | On synthetic rigs with known answers, IK and append evaluation match; the same inputs give the same bits; a VMD-derived `MotionClip`, authored by the shared core as `UsdSkelAnimation`, poses the PMX stage's skeleton with legs driven by IK; the same clip retargets to a non-MMD synthetic skeleton through the shared retarget with no MMD code on that path; no generic motion algorithm exists in this repository. |
 
 Phases are numbered in the order they were defined, not the order they run.
@@ -560,15 +583,17 @@ structural ones, a change to WORKSPACE.md first.
 | 9 | The static importer / runtime evaluator boundary | §2.2 |
 | 10 | VMD is never hard-wired into PMX loading | §9 |
 | 11 | This repository consumes `usd-motion-plugins` only through its narrow motion and skeleton adapters, and is never consumed by it | [WORKSPACE.md §2.4](../architecture/WORKSPACE.md#24-edges-out-of-this-repository) |
+| 12 | `MmdMaterialAPI` is the canonical USD schema for MMD material semantics; `preview` and `mtlx` remain fallbacks | [MATERIAL_POLICY.md §4.3](MATERIAL_POLICY.md#43-mmdmaterialapi) |
 
 ## 16. Decisions deliberately left flexible
 
 Not frozen, and not to be frozen until at least two plausible consumers or one
-real implementation demonstrate the need: custom MMD API schema names; the
-physics backend; `mmdControl`'s public API, until Phase 9 has a consumer; an
-SDEF GPU implementation; the toon renderer's architecture; the humanoid role
-table's contents (MOT-O6); Python or JavaScript bindings; USD export policy;
-PMD support. The retarget API is not on this list: it is
+real implementation demonstrate the need: any MMD API schema beyond
+`MmdMaterialAPI`; a shared USD-level `ToonMaterialAPI`; the physics backend;
+`mmdControl`'s public API, until Phase 9 has a consumer; an SDEF GPU
+implementation; `hydra-toon`'s private GPU and common-runtime architecture;
+the humanoid role table's contents (MOT-O6); Python or JavaScript bindings; USD
+export policy; PMD support. The retarget API is not on this list: it is
 `usd-motion-plugins`', not this repository's to freeze or leave open.
 
 ## 17. Non-goals for the first releases
@@ -588,19 +613,18 @@ Some of these exist elsewhere in the ecosystem (§18); none belongs here.
           ┌──────────────────────┼──────────────────────┐
    usd-motion-plugins      usd-stage-runner        hydra-toon
           └─────────────── USD scene contract ──────────┘
-                                 ▲
-                         usd-mmd-plugins
-              ┌──────────────────┴──────────────────┐
-      usdMmdFileFormat                         usdVmdFileFormat (later)
-              │                                     │
-          mmdModel ── mmdSchema (only if §6)    motionVmd
-              │    \                              /
-           mmdPmx   └──── mmdMotionBinding ──────┘
-              │                   │
-             PMX             mmdControl (Phase 9)
-                                  │
-                          mmdMotionAdapter (Phase 9) ─┐
-                        mmdSkeletonAdapter (Phase 9) ─┴→ usd-motion-plugins
+                                 ▲              ▲
+                         usdMmdFileFormat    mmdImaging
+                          ▲       ▲              │
+                   mmdModel   mmdSchema/MmdMaterialAPI
+                      ▲
+                   mmdPmx ← PMX
+
+ VMD ─→ motionVmd ─→ mmdMotionBinding ─→ mmdControl (Phase 9)
+                              ├─→ mmdMotionAdapter ───┐
+                mmdModel ─────└─→ mmdSkeletonAdapter ┴→ usd-motion-plugins
+
+ usdVmdFileFormat (later) reads motionVmd once MOT-O2 is resolved.
 ```
 
 Every arrow points toward a more general contract. The PMX parser knows nothing
@@ -615,7 +639,7 @@ than forcing them into one library.
 | `usd-motion-plugins` | motion representation (`MotionPose`, `MotionClip`), humanoid joint semantics, sampling, retarget, recording, the `UsdSkelAnimation` bridge |
 | `usd-physics-plugins` | backend-neutral physics worlds, stepping, queries and backend integration |
 | `motion-connectors` | live external inputs, normalized into `usd-motion-plugins`' types |
-| `hydra-toon` | toon rendering, consuming the USD contract — never PMX |
+| `hydra-toon` | MToon and MMD toon rendering through format-specific schema adapters, consuming the USD contract — never PMX |
 | `usd-stage-runner` | the update and evaluation loop |
 | `usd-avatar-runtime` | OpenStrata composition, scheduling of evaluation, and the cross-format avatar contract |
 
@@ -638,7 +662,7 @@ the Phase that first authors it lands with a fixture, and binding from then.
 | Implementation policy | Here | Why | Status |
 | --- | --- | --- | --- |
 | §6.1, §6.8 — `/Asset` is a `UsdGeomXform`; `/Asset/rig/SkelRoot/Skeleton` | `/Asset` is the `UsdSkelRoot` when the model has bones; the skeleton is `/Asset/skel/Skeleton` | `UsdSkel` only skins geometry beneath a `SkelRoot`, so meshes under `/Asset/geo` would not deform under `/Asset/rig/SkelRoot`. The `skel`/`rig` split is `usd-vrm-plugins`' layout and matches §7.3's own deformation/control split ([STAGE_CONTRACT.md §4.1](STAGE_CONTRACT.md#41-why-asset-is-the-skelroot)). | binding (Phase 2) |
-| §10 — a `native` child under each material | Native semantics are attributes on the `UsdShadeMaterial` itself | A child graph reads as a third realization; the material prim is where identity and semantics already live in the VRM material policy ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding (Phases 2 and 3) |
+| §10 — a `native` child under each material | Native semantics are `mmd:material:*` attributes on the `UsdShadeMaterial` itself, declared by `MmdMaterialAPI` from Phase 8 | A child graph reads as a third realization; the material prim is where identity and semantics already live. The API formalizes the existing attributes without becoming a realization ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding for attributes (Phases 2 and 3); API authoring scheduled in Phase 8 |
 | §27 — `customLayerData.mmdSchemaContractVersion` | `/Asset.customData.mmd:stageContractVersion` | Layer metadata is not composed, so it is lost once the asset is referenced; `/Asset` customData travels with the reference, and matches `vrm:schemaContractVersion` ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)). | binding (Phase 0) |
 | §19 — `mmdModel` may or may not depend on `mmdPmx`; OpenUSD unspecified | `mmdModel → mmdPmx`; no OpenUSD in either | §26's `Canonicalize(const pmx::Document&)` settles the first; the second keeps canonical MMD usable by non-USD tools ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)). | binding (Phase 2) |
 | §15.2 — stable-ID precedence includes transliteration and recognized roles | Contract v1 uses the English name or an index fallback only | Both a transliteration table and a role table would become part of the stage ABI; they stay open until a consumer needs them ([TEXT_ENCODING_POLICY.md §6](TEXT_ENCODING_POLICY.md#6-stable-identifiers)). | binding (Phase 2) |

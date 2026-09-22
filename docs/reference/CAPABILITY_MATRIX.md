@@ -160,6 +160,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | `UsdPreviewSurface` | approximated | approximated | 3 | [MATERIAL §5](../design/MATERIAL_POLICY.md#5-usdpreviewsurface-realization) |
 | MaterialX `gltf_pbr` | approximated | approximated | 3 | [MATERIAL §6](../design/MATERIAL_POLICY.md#6-materialx-gltf_pbr-realization) |
 | Native MMD material semantics | preserved | preserved | 3 | [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
+| `MmdMaterialAPI` application | — (planned; current v1 properties are schema-less) | — (planned; current v1 properties are schema-less) | 8 | [MATERIAL §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi), [§14](../design/MATERIAL_POLICY.md#14-migration-and-implementation-order) |
 | Sphere textures | preserved | preserved | 3 | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
 | Toon ramps (individual and shared) | preserved | preserved | 3 | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
 | Edge / outline | preserved | preserved | 3 | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
@@ -195,7 +196,8 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | A VMD as a `MotionClip`, and a PMX model as a retarget target (`SkeletonDescriptor`, humanoid `RetargetMap`) | supported — see [Shared-motion adapters](#shared-motion-adapters-mmdskeletonadapter-mmdmotionadapter) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core), [§12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table) |
 | Retargeting, recording, `UsdSkelAnimation` authoring of motion | unsupported by design | `usd-motion-plugins` ([MOTION §10.6](../design/MOTION_CONTRACT.md#106-what-this-repository-does-not-do-with-the-result)) |
 | Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
-| Toon rendering | unsupported by design | `hydra-toon` |
+| `MmdMaterialAPI` → Hydra data (`mmdImaging`) | — (planned for Phase 8) | [MATERIAL §12](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere) |
+| Toon rendering | unsupported by design | `hydra-toon`; this repository supplies the schema and imaging adapter, not the renderer |
 | Opening a `.vmd` as a stage (`usdVmdFileFormat`) | — (waits for MOT-O2) | [MOTION §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries) |
 | VMD playback | unsupported by design | a runtime scheduling `mmdControl` (Phase 8) |
 | VMD bake to `UsdSkelAnimation` | — (end-to-end acceptance remains) | `mmdControl` evaluates, the adapters normalize, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |

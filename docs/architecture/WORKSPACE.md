@@ -70,7 +70,8 @@ created ahead of that.
 | Identity | Kind | Directory | Role | Created when |
 | --- | --- | --- | --- | --- |
 | `mmdMaterial` | plain static CMake library | `libs/mmdMaterial/` | Canonical material semantics, extracted from `mmdModel` | material translation outgrows `mmdModel`, or a second consumer needs it alone ([DESIGN_POLICY.md §5.3](../design/DESIGN_POLICY.md#53-mmdmaterial--deferred)) |
-| `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | Narrow applied API schemas | an API passes the admission test ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)) |
+| `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | `MmdMaterialAPI`; no catch-all PMX schema | Phase 8 material work. The API passed the admission test on 2026-09-22 for the `hydra-toon` consumer ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)) |
+| `mmdImaging` | plugin bundle (`usd-imaging`) | `plugins/mmdImaging/` | Exposes `MmdMaterialAPI` through UsdImaging data; no PMX parsing and no renderer-private GPU representation | Phase 8, after `MmdMaterialAPI` exists ([MATERIAL_POLICY.md §12](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere)) |
 | `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | MOT-O2 is resolved against `usd-motion-plugins`' standalone motion stage (`/Animation`) ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)) |
 | `mmd_convert` | CLI executable | `tools/mmdConvert/` | PMX → `.usda`/`.usdc` on disk | `usdcat` over the file format proves insufficient |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |
@@ -87,7 +88,7 @@ live in a lower-camel directory.
 mmdPmx ──────────────→ (nothing in this repository; no OpenUSD)
 mmdModel ────────────→ mmdPmx                          (no OpenUSD)
 usdMmdFileFormat ────→ mmdModel, mmdPmx, OpenUSD
-                       mmdSchema                       (only if it exists)
+                       mmdSchema                       (from Phase 8)
 mmd_inspect ─────────→ mmdPmx                          (no OpenUSD)
 motionVmd ───────────→ nothing                         (no OpenUSD)
 mmdMotionBinding ────→ mmdModel, motionVmd             (no OpenUSD)
@@ -97,6 +98,7 @@ mmdControl ──────────→ mmdMotionBinding, mmdModel      (no
                        (later)
 mmdMaterial ─────────→ nothing in this repository; mmdModel → mmdMaterial
 mmdSchema ───────────→ OpenUSD only
+mmdImaging ──────────→ mmdSchema, OpenUSD UsdImaging only
 mmdSkeletonAdapter ──→ mmdModel,
                        usd-motion-plugins motionRetarget (OpenUSD foundation
                                                           types only, through it)
@@ -124,13 +126,14 @@ USD in the process
 | `mmdPmx → OpenUSD` | the parser exposes source facts, not USD policy |
 | `mmdPmx → mmdModel`, `mmdPmx → usdMmdFileFormat` | syntax never knows its consumers |
 | `mmdModel → OpenUSD`, `mmdModel → Hydra` | canonical semantics are renderer- and USD-independent |
+| `mmdImaging → mmdPmx`, `mmdModel`, `usdMmdFileFormat`, `hydra-toon` | the adapter reads the composed `MmdMaterialAPI` contract and publishes imaging data; it neither reparses source data nor owns renderer code |
 | `motionVmd → usdMmdFileFormat`, `motionVmd → mmdModel`, `motionVmd → mmdPmx`, `vmd_inspect → mmdModel`, `vmd_inspect → mmdPmx` | a VMD never needs a model to parse |
 | `mmdModel → motionVmd`, `mmdModel → mmdMotionBinding` | a model never knows the motions bound to it; binding is its own step ([MOTION_CONTRACT.md §8](../design/MOTION_CONTRACT.md#8-binding-a-vmd-to-a-pmx-model)) |
 | `mmdMotionBinding → OpenUSD` | binding produces data a runtime consumes, not a stage |
 | `mmdControl → OpenUSD`, `mmdControl → usd-motion-plugins`, `mmdModel → mmdControl`, `mmdMotionBinding → mmdControl` | evaluation produces MMD-domain transforms; the model and the binding stay data, and normalization is the adapter's alone |
 | `mmdPmx`, `mmdModel`, `motionVmd`, `mmdMotionBinding`, `mmdControl` or `usdMmdFileFormat` `→ usd-motion-plugins` | only the two narrow adapter components cross into the shared motion core (§2.4), so parsing and evaluation remain independent |
 | any component → `motion-connectors`, a device SDK, a network transport | live input is normalized by `motion-connectors` into the shared core, never read here |
-| `usdMmdFileFormat → hydra-toon` | the renderer consumes the stage, never the reverse |
+| `usdMmdFileFormat → hydra-toon` | the renderer consumes `MmdMaterialAPI` through the USD/UsdImaging contract, never the importer or PMX |
 | `usdMmdFileFormat → usd-stage-runner` | the importer has no update loop |
 | parser, canonical model or importer → `usd-physics-plugins` | the static path only preserves physics; only a future MMD runtime adapter may consume the optional shared package ([PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy)) |
 | any component → Jolt, PhysX, Bullet or another physics backend | backend ownership is `usd-physics-plugins`'; even the future MMD coupling adapter depends only on the shared contract |

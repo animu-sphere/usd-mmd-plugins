@@ -53,8 +53,9 @@ place that says what is implemented.
     skinning, morph layout, and the stage-contract version;
   - [design/PMX_CONTRACT.md](design/PMX_CONTRACT.md) — how PMX 2.0/2.1 bytes are
     read and what each source concept becomes in the canonical model;
-  - [design/MATERIAL_POLICY.md](design/MATERIAL_POLICY.md) — `UsdPreviewSurface`,
-    MaterialX `gltf_pbr`, and the native MMD material semantics;
+  - [design/MATERIAL_POLICY.md](design/MATERIAL_POLICY.md) — `MmdMaterialAPI`,
+    native MMD semantics, `UsdPreviewSurface` / MaterialX fallbacks, and the
+    `mmdImaging` → `hydra-toon` boundary;
   - [design/TEXT_ENCODING_POLICY.md](design/TEXT_ENCODING_POLICY.md) — text
     decoding, source names versus USD identifiers, collisions, texture paths;
   - [design/MOTION_CONTRACT.md](design/MOTION_CONTRACT.md) — the MMD-specific

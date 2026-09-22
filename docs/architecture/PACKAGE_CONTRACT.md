@@ -7,7 +7,7 @@ installed-consumer lane
 ([WORKSPACE.md §6](WORKSPACE.md#6-tests)) builds against a clean repository
 prefix plus the explicitly pinned external motion packages to keep it true.
 
-Status (2026-09-21): the two Phase 0 packages exist, `mmd_inspect` installs
+Status (2026-09-22): the two Phase 0 packages exist, `mmd_inspect` installs
 with the workspace since Phase 1, `mmdModel` since Phase 2, `motionVmd`,
 `mmdMotionBinding` and `vmd_inspect` since Phase 7, and `mmdControl`,
 `mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9. Identities and
@@ -145,6 +145,22 @@ installed package contract. The installed-consumer lane binds a
 generated VMD to a generated PMX, evaluates it, and builds a shared
 `MotionClip` through both installed adapters.
 
+## Planned Phase 8 plugin packages
+
+These identities are admitted by the design but do not exist in the current
+install. Their exact library filenames and resource layout become binding when
+the first installed-consumer fixture lands:
+
+| Bundle | Discovery | Public responsibility |
+| --- | --- | --- |
+| `mmdSchema` | OpenUSD plug registry and generated C++/Python API | Single-apply `MmdMaterialAPI`, its `mmd:material:*` declarations and tokens; no PMX record mirror |
+| `mmdImaging` | OpenUSD plug registry | UsdImaging adapter from a composed `MmdMaterialAPI` to renderer-consumable Hydra data; no parser, importer or GPU implementation |
+
+The two bundles are separately discoverable: tools that only inspect the
+schema do not load an imaging adapter. `mmdImaging` requires `mmdSchema` and
+the matching OpenUSD UsdImaging runtime. Neither package requires
+`hydra-toon`; the renderer consumes the published imaging contract.
+
 ## `usdMmdFileFormat`
 
 A plugin bundle, found by OpenUSD's plug registry rather than by CMake. It
@@ -161,7 +177,10 @@ relative to itself, and the installed bundle keeps the source bundle's shape.
 
 A host makes the plugin available by putting
 `plugin/resources/usdMmdFileFormat` on `PXR_PLUGINPATH_NAME`, with OpenUSD
-26.08's libraries on the loader path. It needs no other package at run time.
+26.08's libraries on the loader path. The current bundle needs no other package
+at run time. From the Phase 8 migration it will include `mmdSchema` in its
+declared plugin closure so the applied `MmdMaterialAPI` is discoverable;
+it will not depend on `mmdImaging` or `hydra-toon`.
 
 ## `mmd_inspect`
 
