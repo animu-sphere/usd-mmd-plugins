@@ -32,10 +32,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <numbers>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {

@@ -71,7 +71,9 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   states, is opened with them.
 - ⬜ **MOT-O10**: whether `mmdSkeletonAdapter` states a `SourceRestPose`
   measured from the rest bone directions — MMD's arms rest in an A — decided
-  with the adapters' first retarget onto a non-MMD skeleton.
+  by a measured A-pose-to-level-arm retarget comparison. The first generic
+  skeletal acceptance used identity rest rotations and therefore could not
+  answer it.
 - ✅ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** (2026-09-21): digest-pinned
   `motionCore` and `motionRetarget` v0.5.0 packages; role-table version 1;
   stage-token `SkeletonDescriptor`, source rest and target `RetargetMap`;
