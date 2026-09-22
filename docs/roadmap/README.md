@@ -37,7 +37,7 @@ in.** No other document states a version for a Phase.
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | avatar runtime composition, including optional physics coupling | ⬜ | unassigned, and owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | 🚧 evaluator and adapters done; end-to-end acceptance remains | unassigned |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; expression interoperability and open rest-pose evidence remain | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -114,8 +114,12 @@ Where things stand, as of 2026-09-21:
   [report](../reports/2026-09-19-phase9-roles-and-root.md)).
   `mmdMotionAdapter` and `mmdSkeletonAdapter` consume the released,
   digest-pinned `motionCore` and `motionRetarget` v0.5.0 packages and are
-  covered by unit, boundary and installed-consumer tests. End-to-end retarget
-  and `UsdSkelAnimation` authoring acceptance remains.
+  covered by unit, boundary and installed-consumer tests. A deterministic
+  acceptance test now carries VMD-derived, IK-evaluated legs through
+  digest-pinned `motionUsd` and `motionRetarget`, onto both a PMX-derived
+  stage skeleton and a non-MMD skeleton
+  ([report](../reports/2026-09-22-phase9-motion-acceptance.md)). Expression
+  interoperability and MOT-O10 remain.
 - Phase 8, avatar runtime composition, follows Phase 9 and is owned mostly
   outside this repository. Its MMD physics work consumes the already-authored
   stage through `usd-physics-plugins`; the importer never gains a solver
@@ -141,7 +145,7 @@ schedules them.
 | MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O9 | MMD's own IK distance at a model's loop count | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 — §11.7 kept |
-| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | the adapters' first retarget onto a non-MMD skeleton |
+| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | measured A-pose-to-level-arm retarget comparison; the first generic acceptance used identity rest rotations |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |

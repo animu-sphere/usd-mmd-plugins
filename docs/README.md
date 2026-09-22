@@ -4,7 +4,7 @@ Documentation is organized by responsibility: each category answers one class
 of question. The layout is the one `usd-vrm-plugins`, `open-strata` and
 `hydra-merlin` use, so the repositories read the same way.
 
-**The tree holds Phases 0–7 and most of Phase 9 (2026-09-21):** the PMX structural parser reads
+**The tree holds Phases 0–7 and most of Phase 9 (2026-09-22):** the PMX structural parser reads
 every table of a PMX 2.0 or 2.1 file, `mmd_inspect` reports on it, and `.pmx`
 opens as the canonical stage — mesh, UVs, material prims and subsets,
 skeleton and skinning, Y-up, in meters. Phase 3 adds canonical MMD material
@@ -17,8 +17,9 @@ where it matches, simulating nothing. Phase 7 reads VMD motion without a
 model (`motionVmd`, `vmd_inspect`) and binds it to one by MMD's name rule
 (`mmdMotionBinding`), baking nothing. Phase 9 evaluates MMD's control rig over
 a bound motion (`mmdControl`) and hands the result to `usd-motion-plugins`
-through `mmdMotionAdapter` and `mmdSkeletonAdapter`. End-to-end retarget and
-animation authoring acceptance remains. Future
+through `mmdMotionAdapter` and `mmdSkeletonAdapter`. Skeletal end-to-end
+retarget and animation authoring acceptance is covered; expression
+interoperability and rest-direction evidence remain. Future
 physics execution consumes the existing static stage through
 `usd-physics-plugins`, with MMD coupling kept here and simulation outside the
 importer. Everything
@@ -34,7 +35,7 @@ place that says what is implemented.
 | [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
 | [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
 | [releases/](releases/) | Immutable per-version release records, and how a release is cut. | [README.md](releases/README.md) · [v0.1.0.md](releases/v0.1.0.md) |
-| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) |
+| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) |
 
 ## Canonical documents
 

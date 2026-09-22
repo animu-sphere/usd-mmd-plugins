@@ -30,9 +30,14 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   also forwards the host-resolved Python development paths into the clean
   installed-consumer configure, provisions Python for Windows runtime
   validation, and recognizes the complete macOS OpenUSD foundation closure.
-  `mmdMotionBinding` now preserves the VMD model name
-  as provenance. End-to-end retarget and `UsdSkelAnimation` authoring remains
-  Phase 9 work. (`MOTION_CONTRACT.md` §10, §12.)
+  `mmdSkeletonAdapter` now also states `motionRetarget`'s pinned `motionCore`
+  artifact closure so its standalone build is complete. `mmdMotionBinding`
+  now preserves the VMD model name as provenance. A deterministic skeletal
+  acceptance now carries VMD-derived, IK-evaluated legs through `motionUsd`,
+  retargets them with `motionRetarget` onto both a PMX-derived stage skeleton
+  and a non-MMD skeleton, and binds the PMX target's `UsdSkelAnimation`;
+  `motionUsd` v0.5.0 is digest-pinned for that test only.
+  (`MOTION_CONTRACT.md` §10, §12; report 2026-09-22.)
 
 - **Physics runtime integration direction.** A proposed focused contract now
   fixes the future boundary: the existing `/Asset/physics` stage remains the

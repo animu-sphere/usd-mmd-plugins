@@ -1,7 +1,8 @@
 # Phase 9, then Phase 8 — shared motion, avatar and physics composition
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
-MOT-O5, MOT-O6 and MOT-O9 are done; Phase 8 not started.
+skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; Phase 8
+not started.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -24,8 +25,9 @@ the runtime consumes from here today is [v0.1.0](../releases/v0.1.0.md).
 As of 2026-09-21 `usd-motion-plugins` v0.5.0 is published with installable
 `motionCore`, `motionRetarget` and `motionUsd`
 ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
-The first two are consumed by digest-pinned artifacts, and
-`mmdMotionAdapter` and `mmdSkeletonAdapter` are implemented.
+All three are consumed by digest-pinned artifacts: `motionCore` and
+`motionRetarget` by the adapters, and `motionUsd` by the skeletal acceptance
+test. `mmdMotionAdapter` and `mmdSkeletonAdapter` are implemented.
 
 ## Outcome
 
@@ -69,16 +71,22 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   states, is opened with them.
 - ⬜ **MOT-O10**: whether `mmdSkeletonAdapter` states a `SourceRestPose`
   measured from the rest bone directions — MMD's arms rest in an A — decided
-  with the adapters' first retarget onto a non-MMD skeleton.
+  by a measured A-pose-to-level-arm retarget comparison. The first generic
+  skeletal acceptance used identity rest rotations and therefore could not
+  answer it.
 - ✅ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** (2026-09-21): digest-pinned
   `motionCore` and `motionRetarget` v0.5.0 packages; role-table version 1;
   stage-token `SkeletonDescriptor`, source rest and target `RetargetMap`;
   evaluated world rotations normalized into `MotionClip`, root motion and
   namespaced morph channels; unit, boundary and installed-consumer tests.
-- ⬜ **Acceptance end to end**: through `motionRetarget` and `motionUsd`, a
-  VMD-derived clip poses the PMX stage's
+- ✅ **Acceptance end to end** (2026-09-22): through `motionRetarget` and
+  `motionUsd`, a VMD-derived clip poses the PMX stage's
   skeleton with legs driven by IK, and retargets to a non-MMD synthetic
-  skeleton with no MMD code on that path.
+  skeleton through a translation unit whose interface and implementation name
+  no MMD type. The deterministic test uses generated source and target rigs;
+  a separate local run retargeted a 1,201-sample dance onto a 539-joint PMX
+  stage, passed `usdchecker`, and was observed moving in `usdview`
+  ([report](../reports/2026-09-22-phase9-motion-acceptance.md)).
 - ⬜ **Expression interoperability** follows the skeletal adapter path. Keep
   every original `mmd:morph:<source name>` channel, then optionally emit only
   explicit, versioned, high-confidence semantic mappings such as blink and
