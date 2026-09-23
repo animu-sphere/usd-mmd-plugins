@@ -86,7 +86,12 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   Staging the plugin and tools out of the source tree waits on OpenStrata
   (`WORKSPACE.md` §5; ost report 01).
 
-- **The `ost` pin is 0.23.3.** 0.23.3 adds a tool's own library edges to
+- **The `ost` pin is 0.23.4.** 0.23.4 applies the runtime check to
+  `ost library build` and `ost plugin build` as well. It also adds pins for a
+  published bundle and a published test tool (`usd-vrm-plugins`' ost report
+  45), which nothing here uses yet. Re-pinned with the ecosystem.
+
+- **The `ost` pin was 0.23.3.** 0.23.3 adds a tool's own library edges to
   `ost library pull`, the root build and the graph check, and discards a
   build tree whose cache was configured against another runtime
   (`usd-vrm-plugins`' ost report 44). Re-pinned with the ecosystem.
