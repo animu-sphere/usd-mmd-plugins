@@ -1,48 +1,35 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# Top-level project for usd-mmd-plugins.
+# Top-level project for usd-mmd-plugins: the dependency graph of the
+# workspace, and nothing else. Each component declares its own dependencies
+# and its own install; this file says in which order they are composed, and
+# where OpenUSD enters.
 #
-# The workspace builds two ways, and both are kept working
-# (docs/architecture/WORKSPACE.md §5):
-#   * OpenStrata: `ost plugin build|test plugins/usdMmdFileFormat` drives the
-#     bundle's own CMakeLists.txt against the activated runtime's toolchain, and
-#     `ost plugin test --workspace` configures this file.
-#   * Plain CMake: configure this file with CMAKE_PREFIX_PATH pointing at an
-#     OpenUSD 26.08 install, or use CMakePresets.json:
-#       cmake -S . -B build -DCMAKE_PREFIX_PATH=<usd-install>
+# One CMake contract, three ways to drive it (docs/architecture/WORKSPACE.md
+# §5):
+#   * Plain CMake, this file: CMAKE_PREFIX_PATH names the dependency prefix --
+#     OpenUSD 26.08 and usd-motion-plugins' packages, installed:
+#       cmake -S . -B build -DCMAKE_PREFIX_PATH=<dependency-prefix>
 #       cmake --build build --config Release
 #       ctest --test-dir build -C Release
+#   * Plain CMake, one component: `cmake -S libs/<component>` against the same
+#     prefix plus the installed packages of its in-repository edges.
+#   * OpenStrata: `ost build`, `ost plugin build plugins/usdMmdFileFormat`,
+#     `ost library build libs/<component>` compose that prefix and configure
+#     these same files; nothing here knows it.
 #
-# Every component is a self-contained CMake project (so `ost` can build it
-# standalone) that is also add_subdirectory()-able from here.
+# Inside this repository an edge is the in-tree target when it exists and the
+# installed package otherwise (`if(NOT TARGET ...) find_package(...)`);
+# outside it, always an installed package. No sibling checkout is ever
+# add_subdirectory()'d.
 cmake_minimum_required(VERSION 3.22)
 
-# The single product version: the repository-root VERSION file. CHANGELOG.md,
-# the git tag and every manifest mirror it; nothing restates the number here.
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" _mmd_project_version LIMIT_COUNT 1)
-string(STRIP "${_mmd_project_version}" _mmd_project_version)
-
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/UsdMmdProject.cmake")
 project(UsdMmdPlugins
-    VERSION ${_mmd_project_version}
+    VERSION ${USDMMD_VERSION}
     DESCRIPTION "OpenUSD plugins for MikuMikuDance assets"
     LANGUAGES CXX)
-
-# C++20: the parser's public API takes std::span (DEPENDENCIES.md §2).
-if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 20)
-endif()
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Single-config generators (Ninja) default to an empty build type. The OpenUSD
-# installs this builds against are Release-only, so default to Release rather
-# than pull debug-only imported dependencies.
-get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-if(NOT _isMultiConfig AND NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-endif()
-
-option(USDMMD_BUILD_TESTS "Build usd-mmd-plugins tests" ${PROJECT_IS_TOP_LEVEL})
+usdmmd_component(TESTS_OPTION USDMMD_BUILD_TESTS)
 
 if(USDMMD_BUILD_TESTS)
     # At the top level, so tests registered by components are discoverable by
@@ -50,10 +37,11 @@ if(USDMMD_BUILD_TESTS)
     enable_testing()
 endif()
 
-# The PMX syntax parser, the canonical model, the VMD reader and the tools that
-# report on a PMX and a VMD link no OpenUSD (WORKSPACE.md §2), so they are
-# added before the one workspace-wide OpenUSD resolution below. Their position
-# is the statement: nothing they configure can see pxr.
+# Pure MMD libraries: the PMX syntax parser, the canonical model, the VMD
+# reader, motion binding and control evaluation, and the tools that report on
+# a PMX and a VMD. They link no OpenUSD and nothing outside this repository
+# (WORKSPACE.md §2), so they are added before OpenUSD is resolved. Their
+# position is the statement: nothing they configure can see pxr.
 add_subdirectory("libs/mmdPmx")
 add_subdirectory("libs/mmdModel")
 add_subdirectory("libs/motionVmd")
@@ -62,18 +50,9 @@ add_subdirectory("libs/mmdControl")
 add_subdirectory("tools/mmdInspect")
 add_subdirectory("tools/vmdInspect")
 
-# Resolve OpenUSD once for the whole project; bundles reuse the result.
-find_package(pxr REQUIRED CONFIG)
+# OpenUSD, resolved once for everything below and held to the pin.
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/UsdMmdOpenUsd.cmake")
-
-# The two Phase 9 adapters are the only libraries that cross into the shared
-# motion packages. Resolve them after OpenUSD so motionCore/motionRetarget can
-# reuse the already-defined foundation targets, then add the adapters in their
-# dependency order.
-find_package(motionCore 0.5 CONFIG REQUIRED)
-find_package(motionRetarget 0.5 CONFIG REQUIRED)
-add_subdirectory("libs/mmdSkeletonAdapter")
-add_subdirectory("libs/mmdMotionAdapter")
+usdmmd_find_openusd()
 
 # The interpreter the integration tests import OpenUSD's Python bindings into.
 # It must be the Python OpenUSD was built against, and pxrConfig.cmake names
@@ -87,6 +66,12 @@ if(USDMMD_BUILD_TESTS)
         set(USDMMD_TEST_PYTHON "${Python3_EXECUTABLE}")
     endif()
 endif()
+
+# Ecosystem adapters: the only libraries that cross into usd-motion-plugins
+# (WORKSPACE.md §2.4). Each finds its motion package itself; they follow
+# OpenUSD so those packages reuse the foundation targets resolved above.
+add_subdirectory("libs/mmdSkeletonAdapter")
+add_subdirectory("libs/mmdMotionAdapter")
 
 # Every plugin bundle: an immediate plugins/<name>/ carrying both an
 # openstrata.plugin.yaml and a CMakeLists.txt. Named rather than globbed, so

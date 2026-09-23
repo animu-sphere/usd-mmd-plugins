@@ -3,45 +3,25 @@
 # usdMmdFileFormat -- the OpenUSD SdfFileFormat bundle that imports .pmx
 # (docs/design/DESIGN_POLICY.md §5.4).
 #
-# Self-contained, so `ost plugin build plugins/usdMmdFileFormat` can configure
-# it directly; also add_subdirectory()'d by the repository root for the
-# plain-CMake workflow.
+# Self-contained, so `ost plugin build plugins/usdMmdFileFormat` or plain
+# CMake can configure it directly against installed packages; also
+# add_subdirectory()'d by the repository root.
 cmake_minimum_required(VERSION 3.22)
 
-# The repository-root VERSION file is the single source. A standalone export
-# without the repository root falls back to the manifest's version.
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
-    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION"
-         _mmd_plugin_version LIMIT_COUNT 1)
-    string(STRIP "${_mmd_plugin_version}" _mmd_plugin_version)
-else()
-    set(_mmd_plugin_version "0.1.0")  # mirrors openstrata.plugin.yaml
-endif()
-
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdProject.cmake")
 project(UsdMmdFileFormatPlugin
-    VERSION ${_mmd_plugin_version}
+    VERSION ${USDMMD_VERSION}
     DESCRIPTION "OpenUSD pmx file-format plugin"
     LANGUAGES CXX)
-
-if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 20)
-endif()
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-if(NOT _isMultiConfig AND NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-endif()
+usdmmd_component()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdTargets.cmake")
-
-# Resolved from the runtime OpenStrata activates, or from CMAKE_PREFIX_PATH in
-# the plain-CMake flow. Idempotent when the root project already found it.
-if(NOT pxr_FOUND)
-    find_package(pxr REQUIRED CONFIG)
-endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdOpenUsd.cmake")
+
+# OpenUSD, from the runtime OpenStrata activates or from CMAKE_PREFIX_PATH in
+# the plain-CMake flow. The composed root build has already resolved it, and
+# this reuses those targets; either way the pin is checked here.
+usdmmd_find_openusd()
 
 # mmdPmx and mmdModel are plain libraries, not bundles. ost executes the
 # manifest's requires.libraries closure -- it builds and installs them into
@@ -135,11 +115,8 @@ if(NOT _mmd_stage_contract_version)
         "usdMmdFileFormat: could not read kStageContractVersion from "
         "src/usd/UsdMmdAuthorer.h")
 endif()
+# VERSION is one already: cmake/UsdMmdProject.cmake reads it.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_mmd_authorer_header}")
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
-endif()
 
 find_package(Git QUIET)
 add_custom_target(UsdMmdFileFormat_buildInfo ALL
@@ -148,7 +125,7 @@ add_custom_target(UsdMmdFileFormat_buildInfo ALL
         "-DOUTPUT=${_mmd_resources}/buildInfo.json"
         "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
         "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}"
-        "-D_mmd_plugin_version=${_mmd_plugin_version}"
+        "-D_mmd_plugin_version=${PROJECT_VERSION}"
         "-D_mmd_stage_contract_version=${_mmd_stage_contract_version}"
         "-DUSDMMD_OPENUSD_RELEASE=${USDMMD_OPENUSD_RELEASE}"
         "-DCMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}"

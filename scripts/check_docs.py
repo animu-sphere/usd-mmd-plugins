@@ -16,8 +16,9 @@ every Markdown file, this fails when:
 External links (`http:`, `https:`, `mailto:`) are not fetched.
 
 Mirrors -- docs/architecture/WORKSPACE.md §4: the repository-root VERSION is
-the single product version, and openstrata.toml, every component manifest and
-every CMake fallback mirror it, every range a manifest requires a sibling in
+the single product version, and openstrata.toml and every component manifest
+mirror it, every CMake project() takes it from cmake/UsdMmdProject.cmake
+rather than restating it, every range a manifest requires a sibling in
 admits it, and so does every version the installed-consumer lane asks
 `find_package` for; cmake/UsdMmdOpenUsd.cmake's pin and every
 bundle manifest's `runtime.openusd` name the same OpenUSD release.
@@ -175,6 +176,10 @@ def check_ranges(root: pathlib.Path, manifest: pathlib.Path, version: str,
             if dependency in sibling_ids and not in_range(version, lower, upper)]
 
 
+# `project(mmdPmx VERSION ${USDMMD_VERSION} ...)`: the argument after VERSION.
+PROJECT_VERSION = re.compile(r"^project\(\w+\s+VERSION\s+(\S+)", re.MULTILINE)
+
+
 def check_mirrors(root: pathlib.Path) -> list[str]:
     errors: list[str] = []
     version = (root / "VERSION").read_text(encoding="utf-8").strip()
@@ -194,10 +199,12 @@ def check_mirrors(root: pathlib.Path) -> list[str]:
     for manifest in manifests:
         expect(manifest, r"^\s+version:\s*([0-9][^\s#]*)", version, "version")
         errors.extend(check_ranges(root, manifest, version, sibling_ids))
-    for cmake in sorted(root.glob("*/*/CMakeLists.txt")):
-        if "../../VERSION" in cmake.read_text(encoding="utf-8"):
-            expect(cmake, r'set\(_mmd_\w+_version "([^"]+)"\)', version,
-                   "standalone fallback version")
+    for cmake in [root / "CMakeLists.txt", *sorted(root.glob("*/*/CMakeLists.txt"))]:
+        project = PROJECT_VERSION.search(cmake.read_text(encoding="utf-8"))
+        if project and project.group(1) != "${USDMMD_VERSION}":
+            errors.append(f"{cmake.relative_to(root).as_posix()}: project() "
+                          f"VERSION is {project.group(1)}, expected "
+                          "${USDMMD_VERSION} (cmake/UsdMmdProject.cmake)")
 
     consumer = root / "tests" / "installed_consumer" / "CMakeLists.txt"
     for package, requested in FIND_PACKAGE_VERSION.findall(

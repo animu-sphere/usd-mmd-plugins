@@ -2,74 +2,24 @@
 #
 # mmdPmx -- the PMX syntax parser (docs/design/DESIGN_POLICY.md §5.1).
 #
-# A plain static library with NO OpenUSD dependency (docs/architecture/
-# WORKSPACE.md §2): this file never resolves pxr, and the tests below fail if
-# anything it links, or anything linking it inherits, reaches OpenUSD.
+# A plain static library with NO dependency at all -- no OpenUSD, nothing in
+# this repository (docs/architecture/WORKSPACE.md §2): this file never
+# resolves pxr, and the tests below fail if anything it links, or anything
+# linking it inherits, reaches OpenUSD.
 #
-# Self-contained, so `ost library build libs/mmdPmx` can configure it directly;
-# also add_subdirectory()'d by the repository root.
+# Self-contained, so `ost library build libs/mmdPmx` or plain CMake can
+# configure it directly; also add_subdirectory()'d by the repository root.
 cmake_minimum_required(VERSION 3.22)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION")
-    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION"
-         _mmd_pmx_version LIMIT_COUNT 1)
-    string(STRIP "${_mmd_pmx_version}" _mmd_pmx_version)
-else()
-    set(_mmd_pmx_version "0.1.0")  # mirrors openstrata.library.yaml
-endif()
-
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdProject.cmake")
 project(mmdPmx
-    VERSION ${_mmd_pmx_version}
+    VERSION ${USDMMD_VERSION}
     DESCRIPTION "PMX syntax parser for usd-mmd-plugins"
     LANGUAGES CXX)
-
-if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 20)
-endif()
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-if(NOT _isMultiConfig AND NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-endif()
-
-if(NOT DEFINED MMDPMX_BUILD_TESTS)
-    if(DEFINED USDMMD_BUILD_TESTS)
-        set(_mmd_pmx_tests_default "${USDMMD_BUILD_TESTS}")
-    else()
-        set(_mmd_pmx_tests_default "${PROJECT_IS_TOP_LEVEL}")
-    endif()
-    option(MMDPMX_BUILD_TESTS "Build mmdPmx tests" ${_mmd_pmx_tests_default})
-endif()
+usdmmd_component(TESTS_OPTION MMDPMX_BUILD_TESTS)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdTargets.cmake")
-
-# Sanitizers and the fuzz target (DESIGN_POLICY.md §13), for the lane that
-# builds this library on its own: .github/workflows/parser-sanitizers.yml.
-# Directory-scoped, so they instrument this library, its tests and its fuzz
-# target and nothing a composed build adds elsewhere.
-set(MMDPMX_SANITIZERS "" CACHE STRING
-    "Sanitizers for mmdPmx and its tests, e.g. \"address;undefined\" (Clang or GCC)")
-option(MMDPMX_BUILD_FUZZER "Build the mmdPmx_fuzz libFuzzer target (Clang only)" OFF)
-if(MMDPMX_SANITIZERS)
-    list(JOIN MMDPMX_SANITIZERS "," _mmd_pmx_sanitize)
-    add_compile_options(-fsanitize=${_mmd_pmx_sanitize} -fno-sanitize-recover=all
-                        -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=${_mmd_pmx_sanitize})
-endif()
-if(MMDPMX_BUILD_FUZZER)
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        message(FATAL_ERROR "MMDPMX_BUILD_FUZZER needs Clang's libFuzzer")
-    endif()
-    # The coverage hooks fuzzer-no-link compiles into every target here are
-    # defined by the sanitizer runtime; without one the tests do not link.
-    if(NOT MMDPMX_SANITIZERS)
-        message(FATAL_ERROR
-            "MMDPMX_BUILD_FUZZER needs MMDPMX_SANITIZERS (at least \"address\")")
-    endif()
-    add_compile_options(-fsanitize=fuzzer-no-link)
-endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdPackage.cmake")
 
 add_library(mmdPmx STATIC
     src/Diagnostic.cpp
@@ -91,37 +41,14 @@ target_include_directories(mmdPmx
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
 usdmmd_target_defaults(mmdPmx)
 
-include(GNUInstallDirs)
-install(TARGETS mmdPmx
-    EXPORT mmdPmxTargets
-    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-install(DIRECTORY include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mmdPmxConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/mmdPmxConfig.cmake"
-    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mmdPmx")
-# Pre-1.0, a minor version may break the API, so a consumer's request is
-# compatible only within the same major.minor.
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/mmdPmxConfigVersion.cmake"
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMinorVersion)
-install(EXPORT mmdPmxTargets
-    FILE mmdPmxTargets.cmake
-    NAMESPACE mmdPmx::
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mmdPmx")
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/mmdPmxConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/mmdPmxConfigVersion.cmake"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mmdPmx")
+usdmmd_install_library(mmdPmx)
 
 if(MMDPMX_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
-if(MMDPMX_BUILD_FUZZER)
+# The libFuzzer target (DESIGN_POLICY.md §13), for the sanitizer lane:
+# .github/workflows/parser-sanitizers.yml.
+if(USDMMD_BUILD_FUZZERS)
     add_subdirectory(fuzz)
 endif()

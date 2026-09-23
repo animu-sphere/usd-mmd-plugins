@@ -2,13 +2,20 @@
 #
 # Per-target settings every component of the workspace applies to its own
 # targets. Included by the root project and by each component, so a component
-# built standalone (`ost plugin build`, `ost library build`) compiles exactly
-# as it does in the composed tree.
+# built standalone (`ost plugin build`, `ost library build`, or plain CMake on
+# its directory) compiles exactly as it does in the composed tree.
+#
+# Every setting is a PRIVATE property of the target it is applied to: nothing
+# here is directory-scoped (add_compile_options, add_link_options), so a
+# composed build -- this workspace, or a consumer that add_subdirectory()s a
+# component -- sees no flag it did not ask for.
 #
 # Nothing here resolves a dependency. The workspace has no third-party
 # dependency (docs/architecture/DEPENDENCIES.md), and OpenUSD is resolved by
-# the components that may link it, next to cmake/UsdMmdOpenUsd.cmake.
+# the components that may link it, through cmake/UsdMmdOpenUsd.cmake.
 include_guard(GLOBAL)
+
+include("${CMAKE_CURRENT_LIST_DIR}/UsdMmdSanitizers.cmake")
 
 # usdmmd_target_defaults(<target>)
 #
@@ -25,6 +32,9 @@ include_guard(GLOBAL)
 # the same bytes would then author a different stage on macOS than on Linux,
 # and one golden could not serve both (DESIGN_POLICY.md §2.5). MSVC's default
 # /fp:precise does not contract.
+#
+# And the sanitizer instrumentation USDMMD_SANITIZERS and USDMMD_BUILD_FUZZERS
+# ask for (UsdMmdSanitizers.cmake); none by default.
 function(usdmmd_target_defaults target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /utf-8)
@@ -32,6 +42,7 @@ function(usdmmd_target_defaults target)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(${target} PRIVATE -ffp-contract=off)
     endif()
+    usdmmd_target_sanitizers(${target})
 endfunction()
 
 # usdmmd_use_utf8_code_page(<target>)

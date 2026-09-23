@@ -304,10 +304,17 @@ def main() -> int:
         if not adapter_probes:
             print("the consumer built no adapter_probe", file=sys.stderr)
             return 1
+        # The adapters link OpenUSD's foundation libraries through the shared
+        # motion packages, so the probe loads them: on Windows from PATH, which
+        # an `ost` session sets and a plain-CMake build does not.
+        runtime_env = dict(os.environ)
+        runtime_env["PATH"] = os.pathsep.join(
+            [str(args.usd_root / "bin"), str(args.usd_root / "lib"),
+             runtime_env.get("PATH", "")])
         adapted = subprocess.run(
             [str(adapter_probes[0]), str(vmd_fixtures / "sample.vmd"),
              str(fixtures / model)], text=True, encoding="utf-8",
-            stdout=subprocess.PIPE)
+            stdout=subprocess.PIPE, env=runtime_env)
         adapter_lines = adapted.stdout.splitlines()
         if (adapted.returncode != 0 or len(adapter_lines) != 1
                 or not adapter_lines[0].startswith("samples=")
@@ -319,10 +326,8 @@ def main() -> int:
               f"{adapter_lines[0]}")
 
         # The Python host, with only the prefix on the plugin path.
-        env = dict(os.environ)
+        env = dict(runtime_env)
         env["PXR_PLUGINPATH_NAME"] = str(prefix / PLUGIN_RESOURCES)
-        paths = [str(args.usd_root / "bin"), str(args.usd_root / "lib")]
-        env["PATH"] = os.pathsep.join(paths + [env.get("PATH", "")])
         env["PYTHONPATH"] = os.pathsep.join(
             [str(args.usd_root / "lib" / "python"), env.get("PYTHONPATH", "")])
         run([sys.executable, source / "open_stage.py", prefix,

@@ -30,13 +30,10 @@ add_test(NAME workspace_docs_selftest
     COMMAND "${USDMMD_TEST_PYTHON}" "${PROJECT_SOURCE_DIR}/scripts/check_docs.py"
         --selftest)
 
+include("${PROJECT_SOURCE_DIR}/cmake/UsdMmdTesting.cmake")
+
 # The OpenUSD install root, from where pxrConfig.cmake was found.
-set(_usd_root "")
-if(pxr_DIR AND EXISTS "${pxr_DIR}/bin")
-    set(_usd_root "${pxr_DIR}")
-elseif(pxr_DIR)
-    get_filename_component(_usd_root "${pxr_DIR}/../../.." ABSOLUTE)
-endif()
+usdmmd_openusd_root(_usd_root)
 
 # The plugin as a host finds it: through the bundle's own plugInfo.json, whose
 # relative LibraryPath points at the library staged into the bundle's lib/.

@@ -13,14 +13,13 @@
             "installDir": "${sourceDir}/build/${presetName}-install",
             "cacheVariables": {
                 "CMAKE_CXX_STANDARD": "20",
-                "USDMMD_BUILD_TESTS": "ON",
-                "CMAKE_PREFIX_PATH": "$env{USD_INSTALL_ROOT}"
+                "USDMMD_BUILD_TESTS": "ON"
             }
         },
         {
             "name": "windows-msvc",
             "displayName": "Windows / Visual Studio (plain CMake)",
-            "description": "Set USD_INSTALL_ROOT to an OpenUSD 26.08 install. No generator is named, so CMake picks the newest Visual Studio installed.",
+            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget and motionUsd 0.5 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable. No generator is named, so CMake picks the newest Visual Studio installed.",
             "inherits": "base",
             "architecture": {
                 "value": "x64",
@@ -35,7 +34,7 @@
         {
             "name": "macos-ninja",
             "displayName": "macOS / Ninja (plain CMake)",
-            "description": "Set USD_INSTALL_ROOT to an OpenUSD 26.08 install.",
+            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget and motionUsd 0.5 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable.",
             "inherits": "base",
             "generator": "Ninja Multi-Config",
             "condition": {
@@ -47,7 +46,7 @@
         {
             "name": "linux-ninja",
             "displayName": "Linux / Ninja (plain CMake)",
-            "description": "Set USD_INSTALL_ROOT to an OpenUSD 26.08 install.",
+            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget and motionUsd 0.5 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable.",
             "inherits": "base",
             "generator": "Ninja Multi-Config",
             "condition": {
