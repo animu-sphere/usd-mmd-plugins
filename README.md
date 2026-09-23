@@ -112,18 +112,19 @@ paths, and Japanese texture filenames resolve. The full contract is
 
 The workspace builds both with
 [OpenStrata](https://github.com/animu-sphere/open-strata) (`ost`) and with
-plain CMake, against OpenUSD 26.08 exactly
+plain CMake, against OpenUSD 26.08 exactly and `usd-motion-plugins`' released
+packages, all found as installed packages on `CMAKE_PREFIX_PATH`
 ([WORKSPACE.md §5](docs/architecture/WORKSPACE.md#5-build-modes)):
 
 ```powershell
-$env:USD_INSTALL_ROOT = "<OpenUSD 26.08 install>"
+$env:CMAKE_PREFIX_PATH = "<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionUsd>"
 cmake --preset windows-msvc
 cmake --build --preset windows-release
 ctest --preset windows-release
 ```
 
 or `ost build` and `ost test`. [docs/guides/building.md](docs/guides/building.md)
-has the full set — the bundle on its own, packaging, and the
+has the full set — one component on its own, packaging, and the
 installed-consumer lane — every command in it run.
 
 ## Documentation

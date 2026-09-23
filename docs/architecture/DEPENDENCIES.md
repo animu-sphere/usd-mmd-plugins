@@ -34,13 +34,13 @@ calls the MaterialX library. The MaterialX document version it declares
 | | |
 | --- | --- |
 | Language | C++20 (the public parser API takes `std::span`) |
-| Build | CMake **3.22** or later, the minimum `usd-vrm-plugins` declares; `CMakePresets.json` for the plain-CMake path |
+| Build | CMake **3.22** or later, the minimum `usd-vrm-plugins` declares; `CMakePresets.json` for the plain-CMake path, which takes every dependency from `CMAKE_PREFIX_PATH` as an installed package ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
 | Compilers | MSVC on Windows, Clang on macOS (arm64), GCC on Linux — the three hosted lanes `usd-vrm-plugins` runs |
 | Windows flags | `/utf-8`, `NOMINMAX`, applied by `usdmmd_target_defaults()` in [cmake/UsdMmdTargets.cmake](../../cmake/UsdMmdTargets.cmake) ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
 | Python | the Python OpenUSD was built against — 3.13 for the 26.08 runtimes — for stage tests and tooling. The root project finds the interpreter *after* OpenUSD, so it inherits the one `pxrConfig.cmake` names |
 | OpenStrata | `ost` **0.23.3**, pinned in `openstrata.ci.yaml`; required for digest-pinned external-library artifacts in root builds |
 | Unit-test framework | **none**, as in `usd-vrm-plugins`: each suite is a plain executable that checks with `assert()`, compiled with `NDEBUG` undefined so Release builds still check, and registered with CTest |
-| Sanitizers and fuzzing | Clang 18's AddressSanitizer, UndefinedBehaviorSanitizer and libFuzzer, from Ubuntu 24.04's packages, in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) only; `mmdPmx`'s `MMDPMX_SANITIZERS` and `MMDPMX_BUILD_FUZZER` options, and the matching `MMDMODEL_`, `MOTIONVMD_` and `MMDMOTIONBINDING_` ones, switch them on, and nothing shipped is built with them. Toolchain runtimes, not dependencies: no code is vendored and nothing links them outside that lane |
+| Sanitizers and fuzzing | Clang 18's AddressSanitizer, UndefinedBehaviorSanitizer and libFuzzer, from Ubuntu 24.04's packages, in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) only; the `USDMMD_SANITIZERS` and `USDMMD_BUILD_FUZZERS` options of [cmake/UsdMmdSanitizers.cmake](../../cmake/UsdMmdSanitizers.cmake) switch them on, and nothing shipped is built with them. Toolchain runtimes, not dependencies: no code is vendored and nothing links them outside that lane |
 
 ## 3. Refused dependencies
 
