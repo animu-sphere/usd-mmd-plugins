@@ -112,7 +112,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libx11-dev libxt-dev
-      - name: Bootstrap ost 0.23.2 (pinned release asset, checksum-verified)
+      - name: Bootstrap ost 0.23.3 (pinned release asset, checksum-verified)
         shell: bash
         run: |
           set -euo pipefail
@@ -123,7 +123,7 @@ jobs:
             *) echo "::error title=ost bootstrap::no ost release asset for ${RUNNER_OS}-${RUNNER_ARCH}" ; exit 1 ;;
           esac
           asset="ost-cli-${triple}.${ext}"
-          base="https://github.com/animu-sphere/open-strata/releases/download/v0.23.2"
+          base="https://github.com/animu-sphere/open-strata/releases/download/v0.23.3"
           curl -fsSLo "$asset" "$base/$asset"
           curl -fsSLo "$asset.sha256" "$base/$asset.sha256"
           actual="$( (command -v sha256sum > /dev/null && sha256sum "$asset" || shasum -a 256 "$asset") | cut -d' ' -f1 )"
@@ -155,8 +155,8 @@ jobs:
             version="$(ost --version)"
           fi
           echo "$version"
-          if [ "$version" != "ost 0.23.2" ]; then
-            echo "::error title=ost bootstrap::expected 'ost 0.23.2', got '$version'" ; exit 1
+          if [ "$version" != "ost 0.23.3" ]; then
+            echo "::error title=ost bootstrap::expected 'ost 0.23.3', got '$version'" ; exit 1
           fi
       # Restore only: the pull request lanes own these entries, and a release
       # run must not write a cache a later pull request would trust.
@@ -165,7 +165,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .ost-ci-home/artifacts
-          key: ost-registry-0.23.2-${{ runner.os }}-${{ runner.arch }}-${{ matrix.cache_cell }}-${{ matrix.runtime_artifact }}
+          key: ost-registry-0.23.3-${{ runner.os }}-${{ runner.arch }}-${{ matrix.cache_cell }}-${{ matrix.runtime_artifact }}
       # The cache-hit test is the same predicate as the gate below, so a cached
       # record that would fail the gate drops through to a fresh pull.
       - name: Pull the pinned runtime SDK from its remote reference

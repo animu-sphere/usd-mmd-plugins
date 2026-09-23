@@ -19,7 +19,7 @@ Commands are PowerShell, run from the repository root.
   integration tests import OpenUSD's bindings, which refuse any other version
   (`Module use of python313.dll conflicts with this version of Python`).
 - CMake 3.22 or later and a C++20 compiler.
-- For the OpenStrata path: `ost` 0.23.2 and a `cy2026` / `usd` runtime.
+- For the OpenStrata path: `ost` 0.23.3 and a `cy2026` / `usd` runtime.
 
 ## Plain CMake
 
