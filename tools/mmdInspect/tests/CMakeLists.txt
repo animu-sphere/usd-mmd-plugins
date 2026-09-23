@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(NOT DEFINED USDMMD_TEST_PYTHON)
-    find_package(Python3 COMPONENTS Interpreter QUIET)
-    if(Python3_Interpreter_FOUND)
-        set(USDMMD_TEST_PYTHON "${Python3_EXECUTABLE}")
-    endif()
-endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/UsdMmdTesting.cmake")
+
+usdmmd_test_python()
 if(NOT USDMMD_TEST_PYTHON)
     message(WARNING "mmd_inspect: no Python 3 interpreter; its tests are not registered")
     return()
@@ -21,14 +18,5 @@ add_test(NAME mmd_inspect_fixtures
         --generator "${_repo}/tests/fixtures/generate_fixtures.py")
 
 # WORKSPACE.md §2.1 allows mmd_inspect mmdPmx and nothing else -- no OpenUSD.
-file(GENERATE
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/mmd_inspect_link_$<CONFIG>.txt"
-    CONTENT "LINK_LIBRARIES=$<TARGET_PROPERTY:mmd_inspect,LINK_LIBRARIES>
-")
-add_test(NAME mmd_inspect_boundaries
-    COMMAND "${USDMMD_TEST_PYTHON}" "${_repo}/scripts/check_library_boundaries.py"
-        --name mmd_inspect
-        --source "${CMAKE_CURRENT_SOURCE_DIR}/.."
-        --link-file "${CMAKE_CURRENT_BINARY_DIR}/mmd_inspect_link_$<CONFIG>.txt"
-        --binary "$<TARGET_FILE:mmd_inspect>"
-        --allow mmdPmx::mmdPmx)
+usdmmd_add_boundary_test(mmd_inspect TARGET mmd_inspect BINARY mmd_inspect
+    ARGS --allow mmdPmx::mmdPmx)

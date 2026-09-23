@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(NOT DEFINED USDMMD_TEST_PYTHON)
-    find_package(Python3 COMPONENTS Interpreter QUIET)
-    if(Python3_Interpreter_FOUND)
-        set(USDMMD_TEST_PYTHON "${Python3_EXECUTABLE}")
-    endif()
-endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/UsdMmdTesting.cmake")
+
+usdmmd_test_python()
 if(NOT USDMMD_TEST_PYTHON)
     message(WARNING "vmd_inspect: no Python 3 interpreter; its tests are not registered")
     return()
@@ -21,16 +18,7 @@ add_test(NAME vmd_inspect_fixtures
         --generator "${_repo}/tests/fixtures/generate_vmd_fixtures.py")
 
 # WORKSPACE.md §2.1 allows vmd_inspect motionVmd and nothing else.
-file(GENERATE
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/vmd_inspect_link_$<CONFIG>.txt"
-    CONTENT "LINK_LIBRARIES=$<TARGET_PROPERTY:vmd_inspect,LINK_LIBRARIES>
-")
-add_test(NAME vmd_inspect_boundaries
-    COMMAND "${USDMMD_TEST_PYTHON}" "${_repo}/scripts/check_library_boundaries.py"
-        --name vmd_inspect
-        --source "${CMAKE_CURRENT_SOURCE_DIR}/.."
-        --link-file "${CMAKE_CURRENT_BINARY_DIR}/vmd_inspect_link_$<CONFIG>.txt"
-        --binary "$<TARGET_FILE:vmd_inspect>"
-        --allow motionVmd::motionVmd
-        --forbid-include mmdPmx/
-        --forbid-include mmdModel/)
+usdmmd_add_boundary_test(vmd_inspect TARGET vmd_inspect BINARY vmd_inspect
+    ARGS --allow motionVmd::motionVmd
+         --forbid-include mmdPmx/
+         --forbid-include mmdModel/)

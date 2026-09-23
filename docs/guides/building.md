@@ -2,9 +2,9 @@
 
 How to build the workspace, run its tests, and package the plugin. Every
 command on this page has been run, on Windows 11 with Visual Studio 18
-(MSVC 19.51), CMake 4.4, Python 3.13 and OpenUSD 26.08, on 2026-09-15 — except
-the sanitizer build, which was run on Ubuntu (WSL) with GCC 15, as that
-section says. macOS and Linux run the same `ost` commands in CI
+(MSVC 19.51), CMake 4.4, Python 3.13 and OpenUSD 26.08, on 2026-09-15, and the
+plain-CMake sections again on 2026-09-24 — except the sanitizer build, which
+was run on Ubuntu (WSL) with GCC, as that section says. macOS and Linux run the same `ost` commands in CI
 ([openstrata.ci.yaml](../../openstrata.ci.yaml)); their plain-CMake presets
 exist but have not been run by hand, so they are not documented here yet.
 
@@ -23,21 +23,38 @@ Commands are PowerShell, run from the repository root.
 
 ## Plain CMake
 
-`CMakePresets.json` reads the OpenUSD install from `USD_INSTALL_ROOT`:
+Plain CMake is given one thing: the **dependency prefix**, as
+`CMAKE_PREFIX_PATH` — OpenUSD 26.08, and `usd-motion-plugins`' `motionCore`,
+`motionRetarget` and `motionUsd` 0.5 packages, installed
+([WORKSPACE.md §5](../architecture/WORKSPACE.md#5-build-modes)). Nothing looks
+for a sibling checkout. The presets in `CMakePresets.json` set the generator,
+the architecture and the tests, and leave the prefix to the caller, either on
+the command line or in CMake's own environment variable:
 
 ```powershell
-$env:USD_INSTALL_ROOT = "<OpenUSD 26.08 install>"
+$env:CMAKE_PREFIX_PATH = "<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionUsd>"
 cmake --preset windows-msvc
 cmake --build --preset windows-release
 ctest --preset windows-release
 ```
+
+`cmake --preset windows-msvc -DCMAKE_PREFIX_PATH="..."` does the same. The
+motion packages are the digest-pinned artifacts the manifests name; after an
+`ost library pull` they are under
+`.strata/external-libraries/<target>/<package>/<digest>/`, and that is where
+the prefix above was taken from on 2026-09-24. An existing build tree keeps
+the `CMAKE_PREFIX_PATH` it was first given in its cache and searches it before
+the environment's, so configure a new tree (`-B <dir>`, or `--fresh`) when the
+prefix changes.
 
 The Windows preset names no generator, so CMake picks the newest Visual Studio
 installed. The build tree is `build/windows-msvc/`. The plugin library is
 staged into the bundle itself, `plugins/usdMmdFileFormat/lib/`, where the
 bundle's `plugInfo.json` expects it, `mmd_inspect` into
 `tools/mmdInspect/bin/`, and `vmd_inspect` into `tools/vmdInspect/bin/`
-([inspecting.md](inspecting.md) says how to use them).
+([inspecting.md](inspecting.md) says how to use them). That is where `ost`
+reads them too, which is why they are not in the build tree
+([ost report 01](../reports/ost/01-2026-09-24-v0.23.3-a-bundle-is-staged-in-its-source-tree.md)).
 
 `ctest` runs every test in the workspace:
 
@@ -78,6 +95,29 @@ labelled and can be left out:
 ```powershell
 ctest --preset windows-release -LE installed-consumer
 ```
+
+## One component, plain CMake
+
+Every component under `libs/`, `tools/` and `plugins/` configures on its own,
+against the installed packages of its edges. Install a repository build, then
+point a component at that install and the dependency prefix — for example the
+motion adapter, which finds `mmdControl`, `mmdModel`, `mmdSkeletonAdapter` and
+`motionCore` there, and `motionRetarget` and `motionUsd` for its acceptance
+test:
+
+```powershell
+cmake --install build/windows-msvc --prefix build/usdmmd-install --config Release
+$env:CMAKE_PREFIX_PATH = "<repo>/build/usdmmd-install;<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionUsd>"
+cmake -S libs/mmdMotionAdapter -B build/mmdMotionAdapter -A x64
+cmake --build build/mmdMotionAdapter --config Release
+ctest --test-dir build/mmdMotionAdapter -C Release
+```
+
+Run on 2026-09-24 for `mmdPmx`, `mmdModel`, `mmdControl`,
+`mmdSkeletonAdapter`, `mmdMotionAdapter` and `vmd_inspect`, whose own suites
+all pass that way, and for the bundle, which configures and builds. A
+component's tests are on when it is the top-level project
+(`<COMPONENT>_BUILD_TESTS`, e.g. `MMDMOTIONADAPTER_BUILD_TESTS`).
 
 ## OpenStrata
 
@@ -176,13 +216,16 @@ built.
 
 ## Sanitizers
 
-`mmdPmx` builds on its own, and its unit, robustness and boundary tests run
-under AddressSanitizer and UndefinedBehaviorSanitizer with two cache options.
-Run on Ubuntu 24.04 under WSL, with GCC 15, CMake 4.2 and Ninja, from the
-repository root:
+The plain libraries build on their own, and their unit, robustness and
+boundary tests run under AddressSanitizer and UndefinedBehaviorSanitizer with
+one cache option, the same in every component:
+`USDMMD_SANITIZERS` ([cmake/UsdMmdSanitizers.cmake](../../cmake/UsdMmdSanitizers.cmake)).
+It instruments every target the configured component creates — library,
+tests, fuzz harness — and nothing else. Run on Ubuntu 24.04 under WSL, with
+GCC, CMake 4.2 and Ninja, from the repository root:
 
 ```sh
-cmake -S libs/mmdPmx -B ~/mmd-sanitize -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo       -DMMDPMX_SANITIZERS="address;undefined" -DMMDPMX_BUILD_TESTS=ON
+cmake -S libs/mmdPmx -B ~/mmd-sanitize -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo       -DUSDMMD_SANITIZERS="address;undefined" -DMMDPMX_BUILD_TESTS=ON
 cmake --build ~/mmd-sanitize
 ctest --test-dir ~/mmd-sanitize --output-on-failure
 ```
@@ -192,20 +235,20 @@ instrumented parser is installed into a prefix first:
 
 ```sh
 cmake --install ~/mmd-sanitize --prefix ~/mmd-san-prefix
-cmake -S libs/mmdModel -B ~/mmd-san-model -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo       -DMMDMODEL_SANITIZERS="address;undefined" -DMMDMODEL_BUILD_TESTS=ON       -DCMAKE_PREFIX_PATH=~/mmd-san-prefix
+cmake -S libs/mmdModel -B ~/mmd-san-model -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo       -DUSDMMD_SANITIZERS="address;undefined" -DMMDMODEL_BUILD_TESTS=ON       -DCMAKE_PREFIX_PATH=~/mmd-san-prefix
 cmake --build ~/mmd-san-model
 ctest --test-dir ~/mmd-san-model --output-on-failure
 ```
 
-`motionVmd`, `mmdMotionBinding` and `mmdControl` declare the same options
-(`MOTIONVMD_SANITIZERS`, `MOTIONVMD_BUILD_FUZZER`,
-`MMDMOTIONBINDING_SANITIZERS`, `MMDCONTROL_SANITIZERS`); instrumented, they
-have run only in CI.
+`motionVmd`, `mmdMotionBinding` and `mmdControl` follow the same way, each
+against the prefix its edges were installed into; on 2026-09-24 the whole
+chain of five passed instrumented, as
+[parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) runs
+it.
 
-The fuzz targets need Clang's libFuzzer: `-DMMDPMX_BUILD_FUZZER=ON` or
-`-DMOTIONVMD_BUILD_FUZZER=ON` with `clang++`, and the sanitizers on. They have
-run only in CI;
-[parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) is the
+The fuzz targets need Clang's libFuzzer: `-DUSDMMD_BUILD_FUZZERS=ON` with
+`clang++` and the sanitizers on builds `mmdPmx_fuzz` or `motionVmd_fuzz` in
+the component that has one. They have run only in CI; the workflow is the
 record of its commands, including how the corpus is seeded from the generated
 fixtures.
 

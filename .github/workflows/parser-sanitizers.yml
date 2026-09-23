@@ -8,7 +8,8 @@
 # lane needs no runtime and no `ost`: it configures libs/mmdPmx and
 # libs/motionVmd on their own, as `ost library build` does, installs each
 # library instrumented, and configures the ones that depend on them against
-# that prefix, each with the sanitizer options its CMakeLists.txt declares. `ost ci generate` has no
+# that prefix, each with the USDMMD_SANITIZERS option
+# cmake/UsdMmdSanitizers.cmake declares. `ost ci generate` has no
 # way to express a sanitizer build, which is why this workflow exists beside
 # the generated one rather than inside it.
 name: parser-sanitizers
@@ -23,7 +24,11 @@ on:
       - "libs/mmdControl/**"
       - "tests/fixtures/generate_fixtures.py"
       - "tests/fixtures/generate_vmd_fixtures.py"
+      - "cmake/UsdMmdProject.cmake"
       - "cmake/UsdMmdTargets.cmake"
+      - "cmake/UsdMmdSanitizers.cmake"
+      - "cmake/UsdMmdPackage.cmake"
+      - "cmake/UsdMmdTesting.cmake"
       - "scripts/check_library_boundaries.py"
       - ".github/workflows/parser-sanitizers.yml"
   push:
@@ -36,7 +41,11 @@ on:
       - "libs/mmdControl/**"
       - "tests/fixtures/generate_fixtures.py"
       - "tests/fixtures/generate_vmd_fixtures.py"
+      - "cmake/UsdMmdProject.cmake"
       - "cmake/UsdMmdTargets.cmake"
+      - "cmake/UsdMmdSanitizers.cmake"
+      - "cmake/UsdMmdPackage.cmake"
+      - "cmake/UsdMmdTesting.cmake"
       - "scripts/check_library_boundaries.py"
       - ".github/workflows/parser-sanitizers.yml"
   workflow_dispatch:
@@ -71,8 +80,8 @@ jobs:
           -DCMAKE_CXX_COMPILER=clang++-18
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DMMDPMX_BUILD_TESTS=ON
-          -DMMDPMX_SANITIZERS="address;undefined"
-          -DMMDPMX_BUILD_FUZZER=ON
+          -DUSDMMD_SANITIZERS="address;undefined"
+          -DUSDMMD_BUILD_FUZZERS=ON
 
       - name: Build
         run: cmake --build build/sanitize
@@ -89,7 +98,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++-18 \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DMMDPMX_BUILD_TESTS=OFF \
-            -DMMDPMX_SANITIZERS="address;undefined"
+            -DUSDMMD_SANITIZERS="address;undefined"
           cmake --build build/sanitize-pmx
           cmake --install build/sanitize-pmx --prefix build/sanitize-prefix
 
@@ -100,7 +109,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_PREFIX_PATH="$PWD/build/sanitize-prefix" \
             -DMMDMODEL_BUILD_TESTS=ON \
-            -DMMDMODEL_SANITIZERS="address;undefined"
+            -DUSDMMD_SANITIZERS="address;undefined"
           cmake --build build/sanitize-model
 
       - name: mmdModel unit, robustness and boundary tests under the sanitizers
@@ -112,8 +121,8 @@ jobs:
           -DCMAKE_CXX_COMPILER=clang++-18
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DMOTIONVMD_BUILD_TESTS=ON
-          -DMOTIONVMD_SANITIZERS="address;undefined"
-          -DMOTIONVMD_BUILD_FUZZER=ON
+          -DUSDMMD_SANITIZERS="address;undefined"
+          -DUSDMMD_BUILD_FUZZERS=ON
 
       - name: Build motionVmd
         run: cmake --build build/sanitize-vmd
@@ -129,7 +138,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++-18 \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DMOTIONVMD_BUILD_TESTS=OFF \
-            -DMOTIONVMD_SANITIZERS="address;undefined"
+            -DUSDMMD_SANITIZERS="address;undefined"
           cmake --build build/sanitize-vmd-lib
           cmake --install build/sanitize-vmd-lib --prefix build/sanitize-prefix
           cmake --install build/sanitize-model --prefix build/sanitize-prefix
@@ -141,7 +150,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_PREFIX_PATH="$PWD/build/sanitize-prefix" \
             -DMMDMOTIONBINDING_BUILD_TESTS=ON \
-            -DMMDMOTIONBINDING_SANITIZERS="address;undefined"
+            -DUSDMMD_SANITIZERS="address;undefined"
           cmake --build build/sanitize-binding
 
       - name: mmdMotionBinding unit and boundary tests under the sanitizers
@@ -159,7 +168,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_PREFIX_PATH="$PWD/build/sanitize-prefix" \
             -DMMDCONTROL_BUILD_TESTS=ON \
-            -DMMDCONTROL_SANITIZERS="address;undefined"
+            -DUSDMMD_SANITIZERS="address;undefined"
           cmake --build build/sanitize-control
 
       - name: mmdControl unit, robustness and boundary tests under the sanitizers

@@ -35,7 +35,7 @@ place that says what is implemented.
 | [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
 | [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
 | [releases/](releases/) | Immutable per-version release records, and how a release is cut. | [README.md](releases/README.md) · [v0.1.0.md](releases/v0.1.0.md) |
-| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) |
+| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) · [ost/](reports/ost/README.md), the OpenStrata dogfooding reports |
 
 ## Canonical documents
 

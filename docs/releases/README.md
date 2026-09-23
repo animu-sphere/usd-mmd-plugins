@@ -14,8 +14,8 @@ stated only in its
 
 ## How a release is cut
 
-1. On a branch: set `VERSION`, and every manifest and CMake fallback that
-   mirrors it, including the sibling ranges the manifests require —
+1. On a branch: set `VERSION`, and every manifest that mirrors it (CMake
+   reads it directly), including the sibling ranges the manifests require —
    `scripts/check_docs.py` fails until they agree. Move the changelog's
    `[Unreleased]` entries under `## [X.Y.Z] - YYYY-MM-DD`, write the record
    here, and give the Phases it carries their release in the

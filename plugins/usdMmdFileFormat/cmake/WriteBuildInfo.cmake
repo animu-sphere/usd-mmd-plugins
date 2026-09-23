@@ -11,8 +11,8 @@
 # untouched.
 #
 # Every other value is fixed at configure time and passed in with -D; the
-# bundle's CMakeLists.txt makes the files they come from (VERSION, the
-# authorer's header) configure dependencies.
+# bundle's CMakeLists.txt makes the files they come from (VERSION, through
+# cmake/UsdMmdProject.cmake, and the authorer's header) configure dependencies.
 #
 # Inputs: TEMPLATE, OUTPUT, SOURCE_DIR, GIT_EXECUTABLE (may be empty), and the
 # @-variables TEMPLATE names.

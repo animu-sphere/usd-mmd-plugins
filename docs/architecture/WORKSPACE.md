@@ -24,7 +24,7 @@ edge on 2026-09-21 (§2.4,
 [DESIGN_POLICY.md §20](../design/DESIGN_POLICY.md#20-alignment-with-the-usd-motion-plugins-design-policy)).
 
 The shape follows `usd-vrm-plugins`' workspace contract on purpose — the same
-plugin/library split, the same manifests, the same two build modes — so that a
+plugin/library split, the same manifests, the same build modes — so that a
 contributor, and `usd-avatar-runtime`, can treat the two repositories alike. It
 does not copy VRM-specific identities that have no MMD reason to exist, such as
 a package resolver.
@@ -227,8 +227,8 @@ runtime consumer makes them concrete
 usd-mmd-plugins/
 ├─ .github/workflows/          ost-source-ci.yml (generated from openstrata.ci.yaml); hand-written:
 │                              docs-check.yml, parser-sanitizers.yml, release.yml
-├─ cmake/                      UsdMmdOpenUsd.cmake (the OpenUSD pin), UsdMmdTargets.cmake (per-target
-│                              compile flags, the UTF-8 code-page manifest helper), utf8-code-page.manifest
+├─ cmake/                      UsdMmdProject, UsdMmdTargets, UsdMmdSanitizers, UsdMmdPackage,
+│                              UsdMmdTesting, UsdMmdOpenUsd (.cmake: §5), utf8-code-page.manifest
 ├─ docs/                       see docs/README.md
 ├─ libs/
 │  ├─ mmdPmx/                  include/ src/ tests/ fuzz/ cmake/ CMakeLists.txt openstrata.library.yaml
@@ -314,34 +314,68 @@ bundle's copies.
 
 ## 5. Build modes
 
-The workspace builds two ways, and both are kept working:
+One CMake contract, driven three ways. The difference between them is only
+who prepares the **dependency prefix** — the installed OpenUSD 26.08 and the
+installed `usd-motion-plugins` packages — never what the CMake does with it:
 
 ```sh
-# OpenStrata
-ost plugin build   plugins/usdMmdFileFormat
-ost plugin test    plugins/usdMmdFileFormat
-ost plugin package plugins/usdMmdFileFormat
-
-# Plain CMake, against any supported OpenUSD install
-cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/openusd
+# Plain CMake, the whole repository: the prefix is the caller's
+cmake -S . -B build -DCMAKE_PREFIX_PATH=<dependency-prefix>
 cmake --build build --config Release
 ctest --test-dir build -C Release
+
+# Plain CMake, one component: the same prefix, plus the installed packages
+# of the component's in-repository edges
+cmake -S libs/mmdMotionAdapter -B build/mmdMotionAdapter       -DCMAKE_PREFIX_PATH="<dependency-prefix>;<usd-mmd-plugins install>"
+
+# OpenStrata: `ost` composes the prefix and configures the same files
+ost build
+ost plugin build   plugins/usdMmdFileFormat
+ost library build  libs/mmdMotionAdapter
 ```
 
-Both have been run; [guides/building.md](../guides/building.md) records the
-exact commands, including the presets in `CMakePresets.json`.
+All three have been run; [guides/building.md](../guides/building.md) records
+the exact commands, including the presets in `CMakePresets.json`.
 
-- The root `CMakeLists.txt` composes every component for development. It
-  adds `mmdPmx` before resolving OpenUSD, so nothing the library configures
-  can see pxr.
-- Once a component is packaged, each bundle also builds **standalone**
-  against the installed packages of its dependencies
-  (`find_package(mmdPmx CONFIG REQUIRED)`). No consumer reaches into a
-  sibling's source tree with an ad-hoc `add_subdirectory()`.
+The contract every `CMakeLists.txt` keeps:
+
+| Rule | Detail |
+| --- | --- |
+| In-repository edges | the in-tree target when it exists, the installed package otherwise: `if(NOT TARGET mmdPmx::mmdPmx) find_package(mmdPmx CONFIG REQUIRED)`. So the same file configures composed by the root and on its own. |
+| Edges out of the repository | always `find_package(<package> <version> CONFIG REQUIRED)` on an installed package. Never a sibling checkout: no `add_subdirectory()` of a path outside this repository, and no probing for one (`if(EXISTS ../usd-motion-plugins)`), so the checkout layout is never an input to the graph. |
+| Who declares an edge | the component that links it, next to its target. The root `CMakeLists.txt` names components and their order, and resolves OpenUSD once as the boundary the pure libraries are added before; it lists no other external package. |
+| Transitive edges | a package's `<name>Config.cmake` finds what its public link interface needs with `find_dependency()`, each behind a target check, so a consumer never lists a transitive dependency ([PACKAGE_CONTRACT.md](PACKAGE_CONTRACT.md)). |
+| OpenUSD | resolved through `usdmmd_find_openusd()` ([cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake)), which runs `pxrConfig.cmake` only where OpenUSD's targets are not yet visible — the check `usd-motion-plugins`' package configs make — and holds every entry point to the pin. |
+| OpenStrata | nothing in CMake knows it. `ost` writes a toolchain whose `CMAKE_PREFIX_PATH` holds the runtime, the workspace prefix and the digest-pinned external artifacts; a plain-CMake caller passes the same prefixes. |
+| Build settings | per target, never per directory: `usdmmd_target_defaults()` applies the compile flags and the sanitizer instrumentation as `PRIVATE` properties, so a composed build sees no flag it did not ask for. |
+
+The root adds the five OpenUSD-free libraries and both tools before OpenUSD is
+resolved, so nothing they configure can see pxr; then the two adapters, whose
+motion packages reuse the OpenUSD targets resolved there; then the bundle.
+
+The shared CMake lives in `cmake/`, one module per concern, and hides no
+`add_library()`, `target_link_libraries()` or dependency declaration:
+
+| Module | Provides |
+| --- | --- |
+| `UsdMmdProject.cmake` | `USDMMD_VERSION` from `VERSION`, before `project()`; `usdmmd_component()` — C++20, the single-config Release default, the component's tests option |
+| `UsdMmdTargets.cmake` | `usdmmd_target_defaults()` (below), `usdmmd_use_utf8_code_page()` |
+| `UsdMmdSanitizers.cmake` | `USDMMD_SANITIZERS`, `USDMMD_BUILD_FUZZERS` |
+| `UsdMmdPackage.cmake` | `usdmmd_install_library()` — one package layout, one `SameMinorVersion` policy, one export for every plain library. A bundle installs its own way. |
+| `UsdMmdTesting.cmake` | `usdmmd_test_executable()`, `usdmmd_add_boundary_test()` (§2.3), the test interpreter and the OpenUSD runtime environment |
+| `UsdMmdOpenUsd.cmake` | `usdmmd_find_openusd()` and the pin |
+
 - **Windows:** every target compiles with `/utf-8` and `NOMINMAX`; the plugin
   follows `usd-vrm-plugins`' DLL import/export discipline; executables embed a
   UTF-8 `activeCodePage` manifest
   ([TEXT_ENCODING_POLICY.md §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere)).
+- **Staging:** the build writes the plugin library into the bundle's own
+  `lib/`, its `plugInfo.json` and `buildInfo.json` into
+  `plugin/resources/usdMmdFileFormat/`, and each tool into its `bin/` — inside
+  the source tree, and ignored by git. `ost` 0.23.3 reads a bundle's
+  registration and library, and a tool's declared directories, from the
+  component directory itself, so staging into the build tree waits on
+  OpenStrata ([ost report 01](../reports/ost/01-2026-09-24-v0.23.3-a-bundle-is-staged-in-its-source-tree.md)).
 
 What each installed package promises a consumer — its `find_package` name,
 target, header root and required packages — is
@@ -380,7 +414,8 @@ first.
    motion evaluation at import.
 4. The same bytes produce the same stage.
 5. The authored stage does not change meaning without a stage-contract bump.
-6. Both build modes work, and every bundle builds against installed siblings.
+6. Every build mode of §5 works, and every component builds against installed
+   siblings.
 7. No component keeps a private copy of a facility another component owns.
    One exception, and its reason: `motionVmd` declares its own diagnostic
    record, `Result<T>` and diagnostic list, the same shape as `mmdPmx`'s,

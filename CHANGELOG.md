@@ -68,6 +68,24 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Changed
 
+- **One CMake dependency contract for plain CMake, a single component and
+  `ost`.** Inside the repository an edge is the in-tree target when it
+  exists and the installed package otherwise; outside it, always an
+  installed package found by the component that links it — the adapters now
+  find `motionRetarget` and `motionCore` themselves, and the root lists no
+  external package but OpenUSD. `CMakePresets.json` no longer reads
+  `USD_INSTALL_ROOT`: the caller passes the dependency prefix as
+  `CMAKE_PREFIX_PATH`. The shared CMake is one module per concern
+  (`UsdMmdProject`, `UsdMmdTargets`, `UsdMmdSanitizers`, `UsdMmdPackage`,
+  `UsdMmdTesting`, `UsdMmdOpenUsd`): every library installs through
+  `usdmmd_install_library()`, OpenUSD resolves through
+  `usdmmd_find_openusd()` only where its targets are not yet visible, and
+  build settings are per target. The per-component sanitizer options became
+  `USDMMD_SANITIZERS` and `USDMMD_BUILD_FUZZERS`. The adapters' tests put
+  OpenUSD on `PATH` themselves, so they pass outside an `ost` session.
+  Staging the plugin and tools out of the source tree waits on OpenStrata
+  (`WORKSPACE.md` §5; ost report 01).
+
 - **The `ost` pin is 0.23.3.** 0.23.3 adds a tool's own library edges to
   `ost library pull`, the root build and the graph check, and discards a
   build tree whose cache was configured against another runtime
