@@ -68,6 +68,11 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ### Changed
 
+- **The `ost` pin is 0.23.3.** 0.23.3 adds a tool's own library edges to
+  `ost library pull`, the root build and the graph check, and discards a
+  build tree whose cache was configured against another runtime
+  (`usd-vrm-plugins`' ost report 44). Re-pinned with the ecosystem.
+
 - **MMD IK is compared against an independent implementation (MOT-O9).**
   Over 12 local characters and two distributed motions, with the inputs
   matched to 0.02 mm, three.js r168's `CCDIKSolver` at the same stored loop
