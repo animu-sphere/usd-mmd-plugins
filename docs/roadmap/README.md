@@ -37,7 +37,7 @@ in.** No other document states a version for a Phase.
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | ⬜ | unassigned; schema/adapter work is here, composition is owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; expression interoperability and open rest-pose evidence remain | unassigned |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the A-pose rest (MOT-O10) is measured and, with expression interoperability, waits on `usd-motion-plugins`; MOT-O12 remains | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -47,7 +47,7 @@ Phase 7 too. It is a 0.x release because no consumer has used the packages
 yet: Phase 8's consumer may still show a contract wrong
 ([current.md](current.md)). No earlier Phase had a release of its own.
 
-Where things stand, as of 2026-09-22:
+Where things stand, as of 2026-09-25:
 
 - The documentation baseline exists: the design policy, six focused design
   contracts, the workspace contract, and reference pages that state what is
@@ -119,8 +119,12 @@ Where things stand, as of 2026-09-22:
   acceptance test now carries VMD-derived, IK-evaluated legs through
   digest-pinned `motionUsd` and `motionRetarget`, onto both a PMX-derived
   stage skeleton and a non-MMD skeleton
-  ([report](../reports/2026-09-22-phase9-motion-acceptance.md)). Expression
-  interoperability and MOT-O10 remain.
+  ([report](../reports/2026-09-22-phase9-motion-acceptance.md)). MOT-O10 was
+  measured on 2026-09-25: an arm-chain rest is exact, but only once a PMX
+  target can state it too, which waits on `usd-motion-plugins`
+  ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)). So does
+  expression interoperability: that repository has promoted no common
+  expression semantic. MOT-O12, found by the same run, remains.
 - Phase 8 follows Phase 9. Before renderer composition, this repository adds
   the admitted `MmdMaterialAPI`, applies it as a backward-compatible
   contract-v1 addition without renaming any `mmd:material:*` property, and
@@ -151,7 +155,7 @@ schedules them.
 | MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O9 | MMD's own IK distance at a model's loop count | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 — §11.7 kept |
-| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | measured A-pose-to-level-arm retarget comparison; the first generic acceptance used identity rest rotations |
+| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | measured 2026-09-25; `usd-motion-plugins`: a target rest distinct from the bind rest, and public T-pose directions |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
@@ -160,6 +164,7 @@ schedules them.
 | MOT-O4 | Camera and light tracks | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer |
 | MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
 | MOT-O11 | Whether a knee starts from its keyed rotation | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (MMD's output to compare against) |
+| MOT-O12 | Where `上半身3` falls in the role table | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a role-table version 2 |
 
 ## Quality bar (applies to every Phase)
 

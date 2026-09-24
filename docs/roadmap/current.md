@@ -1,7 +1,8 @@
 # Phase 9, then Phase 8 — shared motion, material and avatar composition
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
-skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; Phase 8
+skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
+and expression interoperability wait on `usd-motion-plugins`; Phase 8
 implementation has not started, but its `MmdMaterialAPI` and Hydra boundary are
 now decided.
 
@@ -71,11 +72,22 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   ([report](../reports/2026-09-19-phase9-roles-and-root.md)). No MMD bone is chosen as the root: it is the world
   transform of the joint `hips` maps to. MOT-O10, the rest a clip from MMD
   states, is opened with them.
-- ⬜ **MOT-O10**: whether `mmdSkeletonAdapter` states a `SourceRestPose`
-  measured from the rest bone directions — MMD's arms rest in an A — decided
-  by a measured A-pose-to-level-arm retarget comparison. The first generic
-  skeletal acceptance used identity rest rotations and therefore could not
-  answer it.
+- ⛔ **MOT-O10**: measured 2026-09-25
+  ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)). Onto a
+  level-arm skeleton, today's identity rest leaves every arm segment a median
+  40° low. A rest aimed from the arm chain's rest bone directions removes
+  that, and whole-body aiming is wrong for MMD. The source rest is correct
+  only if the same rest is stated for a PMX target: stated on the source
+  alone, PMX to PMX goes from 2.5° to 40°. So it waits for
+  `usd-motion-plugins` to take a target rest distinct from the stage's bind
+  rest, and to publish the T-pose directions. A level-arm clip already
+  reaches a PMX target 40° low today.
+- ⬜ **MOT-O12**: `上半身3` sits between `上半身` and `上半身2` in both local
+  models that have it, against role-table version 1's `chest` →
+  `upperChest`. With a motion that keys `上半身2`, arms land up to 26° off on
+  targets without `upperChest`. A version-2 table that maps by the model's
+  chain is proposed
+  ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)).
 - ✅ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** (2026-09-21): digest-pinned
   `motionCore` and `motionRetarget` v0.5.0 packages; role-table version 1;
   stage-token `SkeletonDescriptor`, source rest and target `RetargetMap`;
@@ -89,10 +101,12 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   a separate local run retargeted a 1,201-sample dance onto a 539-joint PMX
   stage, passed `usdchecker`, and was observed moving in `usdview`
   ([report](../reports/2026-09-22-phase9-motion-acceptance.md)).
-- ⬜ **Expression interoperability** follows the skeletal adapter path. Keep
-  every original `mmd:morph:<source name>` channel, then optionally emit only
-  explicit, versioned, high-confidence semantic mappings such as blink and
-  basic mouth visemes. Unknown model-specific morphs remain source channels
+- ⛔ **Expression interoperability** waits for the shared core to promote a
+  common expression semantic. As of `usd-motion-plugins` v0.5.x none exists,
+  and one is promoted only by a revision of its motion contract, never by a
+  mapping. Until then, keep every original `mmd:morph:<source name>` channel.
+  When a semantic exists, optionally emit only explicit, versioned,
+  high-confidence mappings such as blink and basic mouth visemes. Unknown model-specific morphs remain source channels
   and generic motion code contains no MMD name table. Model visibility remains
   independently available under `mmd:model:visibility`
   ([MOTION_CONTRACT.md §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels)).

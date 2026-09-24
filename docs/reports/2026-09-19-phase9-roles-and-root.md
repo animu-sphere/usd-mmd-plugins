@@ -1,5 +1,7 @@
 # Phase 9 humanoid roles and root motion against distributed models and motions (2026-09-19)
 
+> Later: `上半身3`'s place in the version 1 table was found to run against the model's chain on 2026-09-25, MOT-O12 ([report](2026-09-25-phase9-rest-pose-comparison.md)).
+
 Dated evidence from real runs; append-only
 ([contributing/documentation.md](../contributing/documentation.md)).
 
