@@ -10,7 +10,8 @@ prefix plus the explicitly pinned external motion packages to keep it true.
 Status (2026-09-22): the two Phase 0 packages exist, `mmd_inspect` installs
 with the workspace since Phase 1, `mmdModel` since Phase 2, `motionVmd`,
 `mmdMotionBinding` and `vmd_inspect` since Phase 7, and `mmdControl`,
-`mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9. Identities and
+`mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9, and the `mmdSchema`
+bundle since Phase 8 (2026-09-25). Identities and
 dependency edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not
 restate them.
 
@@ -145,18 +146,48 @@ installed package contract. The installed-consumer lane binds a
 generated VMD to a generated PMX, evaluates it, and builds a shared
 `MotionClip` through both installed adapters.
 
-## Planned Phase 8 plugin packages
+## `mmdSchema`
 
-These identities are admitted by the design but do not exist in the current
-install. Their exact library filenames and resource layout become binding when
-the first installed-consumer fixture lands:
+A plugin bundle that is also a CMake package. The plug registry discovers
+`MmdMaterialAPI` from its `plugInfo.json`; a C++ consumer, such as the
+UsdImaging adapter, links the generated accessors through CMake. Like
+`usdMmdFileFormat`, its `lib/` is always `lib`, because `plugInfo.json` names
+the library relative to itself.
+
+| | |
+| --- | --- |
+| `find_package` | `find_package(mmdSchema 0.1 CONFIG REQUIRED)` |
+| Imported target | `mmdSchema::mmdSchema` (shared library), which links OpenUSD's `usd` publicly (or the `usd_ms` monolith) |
+| Headers | `include/mmdSchema/` — `mmdMaterialAPI.h` (`UsdMmdMaterialAPI`), `tokens.h` (`UsdMmdTokens`), `api.h` |
+| Required packages | `pxr` (OpenUSD 26.08), found by the package config unless the consumer has already resolved it |
+| Language | C++17 is the usage requirement; the generated headers are OpenUSD's |
+| Version compatibility | `SameMinorVersion` |
+| Python | no compiled module. Python reads the schema through the registry: `prim.ApplyAPI("MmdMaterialAPI")`, the prim definition and its fallbacks ([MATERIAL_POLICY.md §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi)) |
+
+| Installed path | Content |
+| --- | --- |
+| `lib/libmmdSchema.{dll,dylib,so}` | the schema library; on Windows the import library `lib/mmdSchema.lib` beside it |
+| `lib/cmake/mmdSchema/` | `mmdSchemaConfig.cmake`, `mmdSchemaConfigVersion.cmake`, `mmdSchemaTargets.cmake` |
+| `plugin/resources/mmdSchema/plugInfo.json` | registration of the `UsdMmdMaterialAPI` type; `LibraryPath` is relative (`../../../lib/…`) |
+| `plugin/resources/mmdSchema/generatedSchema.usda` | the prim definition the schema registry reads |
+| `openstrata.plugin.yaml` | the bundle manifest |
+
+A host makes the schema available by putting `plugin/resources/mmdSchema` on
+`PXR_PLUGINPATH_NAME`. The installed-consumer lane builds a probe against the
+package, applies the API, and reads a fallback through the prefix's
+registration alone.
+
+## Planned Phase 8 plugin package
+
+`mmdImaging` is admitted by the design but does not exist in the current
+install. Its exact library filename and resource layout become binding when
+its first installed-consumer fixture lands:
 
 | Bundle | Discovery | Public responsibility |
 | --- | --- | --- |
-| `mmdSchema` | OpenUSD plug registry and generated C++ API; Python through the schema registry | Single-apply `MmdMaterialAPI`, its `inputs:mmd:material:*` declarations and tokens; no PMX record mirror |
 | `mmdImaging` | OpenUSD plug registry | UsdImaging adapter from a composed `MmdMaterialAPI` to renderer-consumable Hydra data; no parser, importer or GPU implementation |
 
-The two bundles are separately discoverable: tools that only inspect the
+It is separately discoverable from `mmdSchema`: tools that only inspect the
 schema do not load an imaging adapter. `mmdImaging` requires `mmdSchema` and
 the matching OpenUSD UsdImaging runtime. Neither package requires
 `hydra-toon`; the renderer consumes the published imaging contract.

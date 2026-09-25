@@ -23,3 +23,9 @@ Cp932Table.inc text eol=lf
 # the parsed value -- so a Windows checkout would flatten to different bytes
 # than the committed golden (usd-vrm-plugins, PR #42).
 *.usda text eol=lf
+
+# mmdSchema's committed usdGenSchema output is compared byte for byte with what
+# its generator writes (`generate_schema.py --check`), and the generator writes
+# '\n' whatever usdGenSchema's host wrote.
+plugins/mmdSchema/src/mmdSchema/* text eol=lf
+plugins/mmdSchema/plugin/resources/mmdSchema/plugInfo.json.in text eol=lf

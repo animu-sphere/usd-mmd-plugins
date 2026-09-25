@@ -15,6 +15,19 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ## [Unreleased]
 
+### Added
+
+- **`mmdSchema`, the Phase 8 schema bundle.** It registers the single-apply
+  `MmdMaterialAPI`, which is Material-only and declares the canonical
+  material values as Material interface inputs, `inputs:mmd:material:*`.
+  Morph-modulated values and texture slots are varying; flags, modes and the
+  shared toon slot are uniform; fallbacks are neutral. The C++ accessors
+  (`UsdMmdMaterialAPI`, `UsdMmdTokens`) are generated from
+  `schema/schema.usda` by `tools/generate_schema.py`, committed, and installed
+  as the `mmdSchema` CMake package; Python reads the schema through the
+  registry. The importer does not apply it yet: stage contract 2 does. The
+  bundle is a release member.
+
 ### Changed
 
 - **Role-table version 2 (MOT-O12).** `mmdSkeletonAdapter` now reports

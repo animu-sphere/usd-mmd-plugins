@@ -4,8 +4,9 @@
 # with a dated `## [X.Y.Z] - YYYY-MM-DD` section in CHANGELOG.md -- builds the
 # workspace on the same three cells and digest-pinned runtimes as the pull
 # request lanes, proves the packaged artifacts, and assembles a DRAFT GitHub
-# release: per target the usdMmdFileFormat bundle, the mmd_inspect and
-# vmd_inspect tools and the aggregate product, each with its manifest; a
+# release: per target the usdMmdFileFormat and mmdSchema bundles, the
+# mmd_inspect and vmd_inspect tools and the aggregate product, each with its
+# manifest; a
 # source archive; SHA256SUMS; and notes rendered from the changelog through
 # docs/contributing/RELEASE_NOTES_TEMPLATE.md. Publishing the draft is a
 # human decision (docs/releases/README.md).
@@ -205,12 +206,18 @@ jobs:
       - name: Build the workspace root tree (libraries and tools)
         shell: bash
         run: ost build --target cy2026 --profile usd --progress plain
-      - name: Build the bundle from source
+      - name: Build the bundles from source
         shell: bash
-        run: ost plugin build plugins/usdMmdFileFormat --target cy2026 --profile usd
+        run: |
+          set -euo pipefail
+          ost plugin build plugins/usdMmdFileFormat --target cy2026 --profile usd
+          ost plugin build plugins/mmdSchema --target cy2026 --profile usd
       - name: Run the verification pyramid against the build tree
         shell: bash
-        run: ost plugin test plugins/usdMmdFileFormat --target cy2026 --profile usd --up-to ${{ matrix.up_to }} --json > /dev/null
+        run: |
+          set -euo pipefail
+          ost plugin test plugins/usdMmdFileFormat --target cy2026 --profile usd --up-to ${{ matrix.up_to }} --json > /dev/null
+          ost plugin test plugins/mmdSchema --target cy2026 --profile usd --up-to ${{ matrix.up_to }} --json > /dev/null
       - name: Package the workspace (bundle, tools and the aggregate product)
         shell: bash
         run: |
@@ -238,7 +245,10 @@ jobs:
           EOF
       - name: Run the verification pyramid against the package
         shell: bash
-        run: ost plugin test plugins/usdMmdFileFormat --from-package --target cy2026 --profile usd --up-to ${{ matrix.up_to }} --json > /dev/null
+        run: |
+          set -euo pipefail
+          ost plugin test plugins/usdMmdFileFormat --from-package --target cy2026 --profile usd --up-to ${{ matrix.up_to }} --json > /dev/null
+          ost plugin test plugins/mmdSchema --from-package --target cy2026 --profile usd --up-to ${{ matrix.up_to }} --json > /dev/null
       - name: Install the product and use it with nothing from the build tree
         shell: bash
         run: |

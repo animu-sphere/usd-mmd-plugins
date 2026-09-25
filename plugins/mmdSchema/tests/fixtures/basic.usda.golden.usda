@@ -1,0 +1,60 @@
+#usda 1.0
+(
+    defaultPrim = "Asset"
+    doc = """Generated from Composed Stage of root layer tests/fixtures/basic.usda
+"""
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "Asset"
+{
+    def Scope "mtl"
+    {
+        def Material "body" (
+            apiSchemas = ["MmdMaterialAPI"]
+        )
+        {
+            color3f inputs:mmd:material:ambientColor = (0.4, 0.35, 0.3)
+            uniform bool inputs:mmd:material:castSelfShadow = 1
+            color4f inputs:mmd:material:diffuseColor = (0.8, 0.7, 0.6, 1)
+            uniform bool inputs:mmd:material:doubleSided = 1
+            uniform bool inputs:mmd:material:drawEdge = 1
+            uniform bool inputs:mmd:material:drawLines = 0
+            uniform bool inputs:mmd:material:drawPoints = 0
+            color4f inputs:mmd:material:edgeColor = (0, 0, 0, 1)
+            float inputs:mmd:material:edgeSize = 1
+            uniform bool inputs:mmd:material:groundShadow = 1
+            uniform bool inputs:mmd:material:receiveSelfShadow = 1
+            uniform int inputs:mmd:material:sharedToonIndex = 3
+            color3f inputs:mmd:material:specularColor = (0.1, 0.1, 0.1)
+            float inputs:mmd:material:specularPower = 8
+            uniform token inputs:mmd:material:sphereMode = "multiply"
+            uniform token inputs:mmd:material:toonSource = "shared"
+            uniform bool inputs:mmd:material:vertexColor = 0
+            token outputs:surface.connect = </Asset/mtl/body/preview.outputs:surface>
+
+            def NodeGraph "preview"
+            {
+                color4f inputs:diffuseColor.connect = </Asset/mtl/body.inputs:mmd:material:diffuseColor>
+                token outputs:surface.connect = </Asset/mtl/body/preview/surface.outputs:surface>
+
+                def Shader "surface"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor = (0, 0, 0)
+                    color3f inputs:emissiveColor = (0.8, 0.7, 0.6)
+                    float inputs:roughness = 1
+                    token outputs:surface
+                }
+            }
+        }
+
+        def Material "unauthored" (
+            apiSchemas = ["MmdMaterialAPI"]
+        )
+        {
+        }
+    }
+}
+

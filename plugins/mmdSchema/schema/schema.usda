@@ -1,0 +1,159 @@
+#usda 1.0
+(
+    """
+    mmdSchema - the typed MMD API schemas. tools/generate_schema.py runs
+    usdGenSchema over this file and commits its output, which the mmdSchema
+    plugin bundle compiles (docs/architecture/WORKSPACE.md s1).
+
+    One schema only: MmdMaterialAPI, the formal USD contract for the canonical
+    MMD material semantics (docs/design/MATERIAL_POLICY.md s4), authored from
+    stage-contract v2. No other MMD schema is admitted by association with it;
+    each one passes DESIGN_POLICY.md s6 on its own.
+
+    The GLOBAL naming mirrors usd-vrm-plugins' vrmSchema: libraryPrefix "Usd"
+    turns the class MmdMaterialAPI into C++ UsdMmdMaterialAPI while the schema
+    identifier and apiSchemas token stay "MmdMaterialAPI"; tokensPrefix
+    "UsdMmd" gives UsdMmdTokens, clear of core UsdTokens.
+    """
+    subLayers = [
+        @usd/schema.usda@
+    ]
+)
+
+over "GLOBAL" (
+    customData = {
+        string libraryName      = "mmdSchema"
+        string libraryPath      = "."
+        string libraryPrefix    = "Usd"
+        string tokensPrefix     = "UsdMmd"
+        bool skipCodeGeneration = false
+    }
+)
+{
+}
+
+class "MmdMaterialAPI" (
+    inherits = </APISchemaBase>
+    customData = {
+        token apiSchemaType = "singleApply"
+        token[] apiSchemaCanOnlyApplyTo = ["Material"]
+    }
+    doc = """The canonical semantics of one PMX material. Apply to the
+    /Asset/mtl/<materialId> UsdShadeMaterial. It declares the properties the
+    importer authors there; it adds no child and no realization, and bindings
+    and render-context outputs keep targeting the Material. Every property is
+    a Material interface input, because UsdShade connects nothing else: the
+    /preview and /mtlx graphs connect to these values and never store them.
+    Values a material morph modulates are varying, so a runtime override
+    reaches every connected realization.
+
+    Colors are authored as PMX stores them, with no declared color space.
+    Fallbacks are neutral values for robust reads; the importer authors every
+    scalar and flag a PMX material has, and an asset slot only when the source
+    names a safe asset path. Provenance (source names, index, memo and the
+    verbatim texture strings) stays in the prim's customData, outside this
+    API. MATERIAL_POLICY.md s4.1 is the property inventory."""
+)
+{
+    color4f inputs:mmd:material:diffuseColor = (1, 1, 1, 1) (
+        doc = "PMX diffuse RGBA."
+        customData = { string apiName = "diffuseColor" }
+    )
+    color3f inputs:mmd:material:specularColor = (0, 0, 0) (
+        doc = "PMX specular RGB."
+        customData = { string apiName = "specularColor" }
+    )
+    float inputs:mmd:material:specularPower = 0 (
+        doc = "PMX specular power (exponent)."
+        customData = { string apiName = "specularPower" }
+    )
+    color3f inputs:mmd:material:ambientColor = (0, 0, 0) (
+        doc = "PMX ambient RGB."
+        customData = { string apiName = "ambientColor" }
+    )
+
+    uniform bool inputs:mmd:material:doubleSided = false (
+        doc = """PMX drawing flag 0x01, no culling. The mesh's own
+        doubleSided is what a generic renderer reads
+        (STAGE_CONTRACT.md s8.5)."""
+        customData = { string apiName = "doubleSided" }
+    )
+    uniform bool inputs:mmd:material:groundShadow = false (
+        doc = "PMX drawing flag 0x02, ground shadow."
+        customData = { string apiName = "groundShadow" }
+    )
+    uniform bool inputs:mmd:material:castSelfShadow = false (
+        doc = "PMX drawing flag 0x04, draws into the self-shadow map."
+        customData = { string apiName = "castSelfShadow" }
+    )
+    uniform bool inputs:mmd:material:receiveSelfShadow = false (
+        doc = "PMX drawing flag 0x08, receives self shadow."
+        customData = { string apiName = "receiveSelfShadow" }
+    )
+    uniform bool inputs:mmd:material:drawEdge = false (
+        doc = "PMX drawing flag 0x10, draws the outline."
+        customData = { string apiName = "drawEdge" }
+    )
+    uniform bool inputs:mmd:material:vertexColor = false (
+        doc = """PMX drawing flag 0x20. PMX 2.1 means vertex color; a PMX 2.0
+        source's bit is preserved without that meaning."""
+        customData = { string apiName = "vertexColor" }
+    )
+    uniform bool inputs:mmd:material:drawPoints = false (
+        doc = """PMX drawing flag 0x40. PMX 2.1 means point drawing; a PMX 2.0
+        source's bit is preserved without that meaning."""
+        customData = { string apiName = "drawPoints" }
+    )
+    uniform bool inputs:mmd:material:drawLines = false (
+        doc = """PMX drawing flag 0x80. PMX 2.1 means line drawing; a PMX 2.0
+        source's bit is preserved without that meaning."""
+        customData = { string apiName = "drawLines" }
+    )
+
+    color4f inputs:mmd:material:edgeColor = (0, 0, 0, 0) (
+        doc = "PMX edge RGBA, authored whether or not drawEdge is set."
+        customData = { string apiName = "edgeColor" }
+    )
+    float inputs:mmd:material:edgeSize = 0 (
+        doc = """PMX edge size, authored whether or not drawEdge is set. The
+        per-vertex scale is the mesh's primvars:mmd:edgeScale."""
+        customData = { string apiName = "edgeSize" }
+    )
+
+    asset inputs:mmd:material:texture = @@ (
+        doc = """The base texture, when the PMX slot names a safe asset path.
+        The verbatim source string is customData mmd:sourceTexturePath."""
+        customData = { string apiName = "texture" }
+    )
+    asset inputs:mmd:material:sphereTexture = @@ (
+        doc = """The sphere texture, when the PMX slot names a safe asset path.
+        The verbatim source string is customData
+        mmd:sourceSphereTexturePath."""
+        customData = { string apiName = "sphereTexture" }
+    )
+    uniform token inputs:mmd:material:sphereMode = "disabled" (
+        allowedTokens = ["disabled", "multiply", "add", "subTexture"]
+        doc = """How the sphere texture combines. subTexture samples it as an
+        ordinary texture through additional UV 1, primvars:mmd:uv1."""
+        customData = { string apiName = "sphereMode" }
+    )
+
+    uniform token inputs:mmd:material:toonSource = "none" (
+        allowedTokens = ["none", "individual", "shared"]
+        doc = """Which toon ramp the material names: none; individual, in
+        toonTexture; or shared, MMD's own ramp sharedToonIndex, whose image
+        the consumer supplies."""
+        customData = { string apiName = "toonSource" }
+    )
+    asset inputs:mmd:material:toonTexture = @@ (
+        doc = """The individual toon texture, authored only when toonSource is
+        individual and the path is safe. The verbatim source string is
+        customData mmd:sourceToonTexturePath."""
+        customData = { string apiName = "toonTexture" }
+    )
+    uniform int inputs:mmd:material:sharedToonIndex = -1 (
+        doc = """MMD's shared toon slot 0-9 (toon01.bmp-toon10.bmp), authored
+        only when toonSource is shared; -1 when unauthored."""
+        customData = { string apiName = "sharedToonIndex" }
+    )
+}

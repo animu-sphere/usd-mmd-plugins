@@ -13,6 +13,7 @@ profile = "usd"
 [workspace]
 members = [
   "plugins/usdMmdFileFormat",
+  "plugins/mmdSchema",
   "libs/mmdPmx",
   "libs/mmdModel",
   "libs/motionVmd",
@@ -27,6 +28,7 @@ members = [
 # a dependency of the bundle that links it, never as a member of its own.
 release_members = [
   "usdMmdFileFormat",
+  "mmdSchema",
   "mmd_inspect",
   "vmd_inspect",
 ]

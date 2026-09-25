@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+# The one edge (docs/architecture/WORKSPACE.md §2.1). pxrConfig.cmake is not
+# idempotent -- it re-creates imported targets -- so a consumer that has
+# already resolved OpenUSD does not resolve it twice.
+if(NOT pxr_FOUND AND NOT TARGET usd AND NOT TARGET usd_ms)
+    find_dependency(pxr CONFIG)
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/mmdSchemaTargets.cmake")
+check_required_components(mmdSchema)

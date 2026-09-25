@@ -48,7 +48,7 @@
 # published bundle and test tool (usd-vrm-plugins' ost report 45). Each is
 # re-pinned across the ecosystem together.
 #
-# Cell inventory -- seven:
+# Cell inventory -- ten:
 #   * workspace-graph-pr: the WORKSPACE.md §2 dependency gate, before anything
 #     builds.
 #   * workspace-pr-{windows,macos-arm64,linux}: the root CMake tree and its
@@ -65,6 +65,10 @@
 #     The Windows cell stops at L4: hosted-Windows `usdcat --flatten --out`
 #     writes CR into multi-line USDA strings, and the golden's `doc` is one
 #     (usd-vrm-plugins' Phase 3 dogfood report). macOS and Linux run L5.
+#   * mmdschema-pr-*: the same standalone `ost plugin build` and pyramid for
+#     the schema bundle -- L2 registration, L4 apply round trip, and L5 over
+#     its hand-authored fixture, with no importer in the session. Windows
+#     stops at L4 for the same reason: the golden's `doc` is multi-line.
 schema: 1
 
 bootstrap:
@@ -193,6 +197,55 @@ cells:
       uri: oci://ghcr.io/animu-sphere/openstrata-runtime-cy2026-usd@sha256:8d2d599489ee623044f4360ad3a2b979e2966e6ad2f949e5aa9083570e59cc4f
       expected_oci_digest: sha256:8d2d599489ee623044f4360ad3a2b979e2966e6ad2f949e5aa9083570e59cc4f
     bundle: plugins/usdMmdFileFormat
+    platform: cy2026
+    profile: usd
+    require_openusd: cy2026/linux/x86_64/gl
+    require_openusd_version: "26.08"
+    host_python: "3.13"
+    host_packages:
+      apt: [libx11-dev, libxt-dev]
+    up_to: 5
+
+  - name: mmdschema-pr-windows
+    lane: pull_request
+    runner: windows-hosted
+    runtime_artifact: sha256:ebb0c7da509ee14ada19ee5b461de6996aad0024b5c9640f12dde76912e849b5
+    runtime_remote:
+      uri: oci://ghcr.io/animu-sphere/openstrata-runtime-cy2026-usd@sha256:d3ff79a6f330558c3b9a427a927d340fe3dcab1fe89107faa0ea9f66a104b7bf
+      expected_oci_digest: sha256:d3ff79a6f330558c3b9a427a927d340fe3dcab1fe89107faa0ea9f66a104b7bf
+    bundle: plugins/mmdSchema
+    platform: cy2026
+    profile: usd
+    require_openusd: cy2026/windows/x86_64/gl
+    require_openusd_version: "26.08"
+    # Runtime validation links and executes an OpenUSD consumer.  The Windows
+    # runtime expects the matching host Python DLL on PATH.
+    host_python: "3.13"
+    up_to: 4
+
+  - name: mmdschema-pr-macos-arm64
+    lane: pull_request
+    runner: macos-arm64-hosted
+    runtime_artifact: sha256:8d1322126b8f3aa4dd1791184603d7e1b4571bd4d6d89dd80bb75bdf5eef397c
+    runtime_remote:
+      uri: oci://ghcr.io/animu-sphere/openstrata-runtime-cy2026-usd@sha256:8486d94286b60cc20b53c926757f1802442569f9d9a7eecdadf2c9895b2efeb6
+      expected_oci_digest: sha256:8486d94286b60cc20b53c926757f1802442569f9d9a7eecdadf2c9895b2efeb6
+    bundle: plugins/mmdSchema
+    platform: cy2026
+    profile: usd
+    require_openusd: cy2026/macos/arm64/metal
+    require_openusd_version: "26.08"
+    host_python: "3.13"
+    up_to: 5
+
+  - name: mmdschema-pr-linux
+    lane: pull_request
+    runner: linux-hosted
+    runtime_artifact: sha256:3bf31789daa60ef650df35ab276bd67d0c0ee44a960311f78835cc0962efe261
+    runtime_remote:
+      uri: oci://ghcr.io/animu-sphere/openstrata-runtime-cy2026-usd@sha256:8d2d599489ee623044f4360ad3a2b979e2966e6ad2f949e5aa9083570e59cc4f
+      expected_oci_digest: sha256:8d2d599489ee623044f4360ad3a2b979e2966e6ad2f949e5aa9083570e59cc4f
+    bundle: plugins/mmdSchema
     platform: cy2026
     profile: usd
     require_openusd: cy2026/linux/x86_64/gl

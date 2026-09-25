@@ -17,7 +17,9 @@ proves the prefix works on its own:
   3. the installed mmd_inspect and vmd_inspect read every fixture from the
      prefix's bin/;
   4. a Python host whose only plugin path is the prefix's opens a PMX through
-     the installed usdMmdFileFormat.
+     the installed usdMmdFileFormat;
+  5. the installed mmdSchema applies MmdMaterialAPI from a C++ consumer, and
+     reads a fallback through the prefix's registered definition.
 
   check_installed_consumer.py --build-dir build/windows-msvc --config Release
       --usd-root C:/usd/openusd-26.08 [--generator Ninja --make-program ...]
@@ -39,6 +41,7 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 FIXTURES = REPO / "plugins" / "usdMmdFileFormat" / "tests" / "fixtures"
 VMD_GENERATOR = REPO / "tests" / "fixtures" / "generate_vmd_fixtures.py"
 PLUGIN_RESOURCES = pathlib.Path("plugin", "resources", "usdMmdFileFormat")
+SCHEMA_RESOURCES = pathlib.Path("plugin", "resources", "mmdSchema")
 
 
 def run(command: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -63,7 +66,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     # makes lib64 on some Linux distributions; the plugin bundle's lib/ is
     # fixed by its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
     for package in ("mmdPmx", "mmdModel", "motionVmd", "mmdMotionBinding", "mmdControl",
-                    "mmdSkeletonAdapter", "mmdMotionAdapter"):
+                    "mmdSkeletonAdapter", "mmdMotionAdapter", "mmdSchema"):
         config_dirs = sorted(p.parent for p in prefix.glob(
             f"lib*/cmake/{package}/{package}Config.cmake"))
         if len(config_dirs) != 1:
@@ -82,18 +85,24 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
         pathlib.Path("include", "mmdControl", "Evaluator.h"),
         pathlib.Path("include", "mmdSkeletonAdapter", "Adapter.h"),
         pathlib.Path("include", "mmdMotionAdapter", "Adapter.h"),
+        pathlib.Path("include", "mmdSchema", "mmdMaterialAPI.h"),
         pathlib.Path("bin", executable("mmd_inspect")),
         pathlib.Path("bin", executable("vmd_inspect")),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
         PLUGIN_RESOURCES / "plugInfo.json",
         PLUGIN_RESOURCES / "buildInfo.json",
+        pathlib.Path("lib", shared_library("mmdSchema")),
+        SCHEMA_RESOURCES / "plugInfo.json",
+        SCHEMA_RESOURCES / "generatedSchema.usda",
     ]
     for relative in expected:
         if not (prefix / relative).is_file():
             errors.append(f"the prefix has no {relative.as_posix()}")
 
-    plug_info = prefix / PLUGIN_RESOURCES / "plugInfo.json"
-    if plug_info.is_file():
+    for plug_info in (prefix / PLUGIN_RESOURCES / "plugInfo.json",
+                      prefix / SCHEMA_RESOURCES / "plugInfo.json"):
+        if not plug_info.is_file():
+            continue
         for plugin in json.loads(plug_info.read_text(encoding="utf-8"))["Plugins"]:
             library_path = plugin["LibraryPath"]
             if os.path.isabs(library_path):
@@ -324,6 +333,23 @@ def main() -> int:
             return 1
         print(f"ok  the installed Phase 9 adapters built a shared MotionClip: "
               f"{adapter_lines[0]}")
+
+        # The schema, registered from the prefix alone.
+        schema_probes = sorted(build.rglob(executable("schema_probe")))
+        if not schema_probes:
+            print("the consumer built no schema_probe", file=sys.stderr)
+            return 1
+        schema_env = dict(runtime_env)
+        schema_env["PATH"] = os.pathsep.join([str(prefix / "lib"), schema_env["PATH"]])
+        schema_env["PXR_PLUGINPATH_NAME"] = str(prefix / SCHEMA_RESOURCES)
+        schema = subprocess.run([str(schema_probes[0])], text=True, encoding="utf-8",
+                                stdout=subprocess.PIPE, env=schema_env)
+        want = "schema=MmdMaterialAPI inputs=20 sphereMode=disabled"
+        if schema.returncode != 0 or schema.stdout.splitlines() != [want]:
+            print(f"the installed mmdSchema printed {schema.stdout!r}, expected {want}",
+                  file=sys.stderr)
+            return 1
+        print(f"ok  the installed mmdSchema applied its API: {want}")
 
         # The Python host, with only the prefix on the plugin path.
         env = dict(runtime_env)

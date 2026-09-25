@@ -77,6 +77,7 @@ add_subdirectory("libs/mmdMotionAdapter")
 # openstrata.plugin.yaml and a CMakeLists.txt. Named rather than globbed, so
 # adding a bundle is a visible edit here, in openstrata.toml, and in
 # WORKSPACE.md §1 -- in that order.
+add_subdirectory("plugins/mmdSchema")
 add_subdirectory("plugins/usdMmdFileFormat")
 
 # Workspace-level tests: the fixtures, and what spans components
