@@ -81,6 +81,7 @@ created ahead of that.
 | `mmdImaging` | plugin bundle (`usd-imaging`) | `plugins/mmdImaging/` | Exposes `MmdMaterialAPI` through UsdImaging data; no PMX parsing and no renderer-private GPU representation | Phase 8, after `MmdMaterialAPI` exists ([MATERIAL_POLICY.md §12](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere)) |
 | `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | MOT-O2 is resolved against `usd-motion-plugins`' standalone motion stage (`/Animation`) ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)) |
 | `mmd_convert` | CLI executable | `tools/mmdConvert/` | PMX → `.usda`/`.usdc` on disk | `usdcat` over the file format proves insufficient |
+| `mmd_usdz` | CLI executable | `tools/mmdUsdz/` | Materializes the stage the importer authors as a `.usdc` and packages it, with the textures it names, as a standard USDZ that opens without this repository's plugins. Reaches the importer through Plug at run time and links OpenUSD only. Its `.usdc` exists only inside the package, so it does not make `mmd_convert` real. | the USDZ packaging Phase begins ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)) |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |
 
 Naming follows `usd-vrm-plugins`: libraries and bundles are lower-camel
@@ -117,7 +118,14 @@ mmdMotionAdapter acceptance test
 usdVmdFileFormat ────→ motionVmd, OpenUSD; usd-motion-plugins motionUsd if
                        MOT-O2 says so
 mmd_convert ─────────→ usdMmdFileFormat's public entry point, OpenUSD
+mmd_usdz ────────────→ OpenUSD only (sdf, usd, usdUtils, usdValidation, hio);
+                       usdMmdFileFormat at run time, through Plug, never linked
 ```
+
+`mmd_usdz` packages exactly what the importer authors. It opens `.pmx`
+through the registered `SdfFileFormat`, as any OpenUSD host does. So it links
+neither the importer nor the parser nor the canonical model, and it cannot
+read a PMX differently from the importer.
 
 `mmdModel → mmdPmx` is fixed by the canonicalization signature,
 `Canonicalize(const pmx::Document&)`. Neither library links OpenUSD, which is
@@ -142,6 +150,7 @@ USD in the process
 | any component → `motion-connectors`, a device SDK, a network transport | live input is normalized by `motion-connectors` into the shared core, never read here |
 | `usdMmdFileFormat → hydra-toon` | the renderer consumes `MmdMaterialAPI` through the USD/UsdImaging contract, never the importer or PMX |
 | `usdMmdFileFormat → usd-stage-runner` | the importer has no update loop |
+| `mmd_usdz → mmdPmx`, `mmdModel`, or a link to `usdMmdFileFormat`; `usdMmdFileFormat → mmd_usdz` | packaging is a distribution step over the authored stage. A second reading of PMX could disagree with the importer, and the file format never writes a package |
 | parser, canonical model or importer → `usd-physics-plugins` | the static path only preserves physics; only a future MMD runtime adapter may consume the optional shared package ([PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy)) |
 | any component → Jolt, PhysX, Bullet or another physics backend | backend ownership is `usd-physics-plugins`'; even the future MMD coupling adapter depends only on the shared contract |
 | any component → OpenExec | nothing is evaluated at import |
