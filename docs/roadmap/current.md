@@ -3,8 +3,8 @@
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
 and expression interoperability wait on `usd-motion-plugins`; Phase 8
-implementation has not started, but its `MmdMaterialAPI`, its Material
-interface inputs and its Hydra boundary are now decided.
+has its `mmdSchema` bundle; its Material interface inputs and Hydra boundary
+are decided, and the importer migration is next.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -135,9 +135,14 @@ copying those values
   `UsdUVTexture.scale` exactly. The morph-modulated values and the texture
   slots are varying. The change is stage-contract v2
   ([report](../reports/2026-09-25-phase8-material-inputs.md)).
-- ⬜ Add the `mmdSchema` plugin with generated C++ accessors and tokens, and
-  Python through the schema registry; admit no other MMD schema by
-  association.
+- ✅ **`mmdSchema`** (2026-09-25): the `usd-schema` bundle registers
+  `MmdMaterialAPI`, the §4.1 inventory as `inputs:mmd:material:*`, with
+  C++ accessors (`UsdMmdMaterialAPI`, `UsdMmdTokens`) generated from
+  `schema/schema.usda`, and Python through the schema registry. It is also
+  installed as a CMake package. Its tests cover registration, the inventory,
+  connectability, the accessors and regeneration drift, and `ost plugin test`
+  runs its L0–L5 pyramid. It also has CI cells, and a probe in the
+  installed-consumer lane. It admits no other MMD schema.
 - ⬜ Apply `MmdMaterialAPI` and author the canonical inputs through it in
   `usdMmdFileFormat`, stamping stage-contract v2. A reader that supports both
   versions reads the v1 names from a v1 stage. Answer MAT-O6, the untextured

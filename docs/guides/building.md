@@ -302,19 +302,22 @@ python libs/motionVmd/tools/generate_cp932_table.py
 python libs/motionVmd/tools/generate_cp932_table.py --check
 ```
 
-The two L5 goldens, `minimal.pmx.golden.usda` and
-`recoverable/unsafe-texture-paths.pmx.golden.usda`, are the importer's output
-rather than the generator's. Regenerate each through the plugin's runtime
-session:
+The L5 goldens are not the generator's output. `minimal.pmx.golden.usda` and
+`recoverable/unsafe-texture-paths.pmx.golden.usda` are the importer's output.
+`mmdSchema`'s `basic.usda.golden.usda` flattens a hand-authored stage that
+applies `MmdMaterialAPI` with no importer in the session. Regenerate each
+through its bundle's runtime session:
 
 ```powershell
 ost plugin run plugins\usdMmdFileFormat -- usdcat --flatten plugins\usdMmdFileFormat\tests\fixtures\minimal.pmx --out plugins\usdMmdFileFormat\tests\fixtures\minimal.pmx.golden.usda
 ost plugin run plugins\usdMmdFileFormat -- usdcat --flatten plugins\usdMmdFileFormat\tests\fixtures\recoverable\unsafe-texture-paths.pmx --out plugins\usdMmdFileFormat\tests\fixtures\recoverable\unsafe-texture-paths.pmx.golden.usda
+ost plugin run plugins\mmdSchema -- usdcat --flatten plugins\mmdSchema\tests\fixtures\basic.usda --out plugins\mmdSchema\tests\fixtures\basic.usda.golden.usda
 ```
 
 `usdcat --flatten` writes the absolute path of the file into the stage's
 `doc`. Replace it with the bundle-relative path (`tests/fixtures/minimal.pmx`,
-`tests/fixtures/recoverable/unsafe-texture-paths.pmx`) before committing:
+`tests/fixtures/recoverable/unsafe-texture-paths.pmx`,
+`tests/fixtures/basic.usda`) before committing:
 `ost` ignores that line when it compares, and a committed file never carries a
 machine-local path. Flattening also makes every asset path absolute, which is
 why the second golden is of the fixture whose texture paths are all refused:

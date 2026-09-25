@@ -1,0 +1,46 @@
+# OpenStrata plugin bundle manifest.
+# A plugin is a self-describing bundle, not a bare shared library: this file is
+# the contract `ost plugin inspect|build|doctor|test` resolve against.
+#
+# mmdSchema holds the typed MMD API schemas -- today MmdMaterialAPI alone
+# (docs/design/MATERIAL_POLICY.md §4.3) -- as its own bundle, because
+# consumers read it without the importer: the UsdImaging adapter and
+# hydra-toon open composed stages and never parse PMX
+# (docs/architecture/WORKSPACE.md §1.2, §2.2).
+manifest:
+  schema: openstrata.plugin/v1alpha1
+plugin:
+  name: mmdSchema
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.1.0
+  kind: usd-schema
+license: Apache-2.0
+runtime:
+  # The one OpenUSD release this bundle supports; cmake/UsdMmdOpenUsd.cmake
+  # enforces the same pin at configure time for builds that never see ost
+  # (docs/architecture/DEPENDENCIES.md §1).
+  openusd: "==26.08"
+  # Source bundles inherit the resolved runtime ABI, so one manifest serves
+  # Windows (msvc143), macOS (libcxx) and Linux (libstdcxx).
+  cxx_abi: inherit
+schema:
+  codeless: false
+  source: schema/schema.usda
+  # The authored-data contract of the schema, independent of plugin.version.
+  # It bumps only on a breaking property, type or token change, with migration
+  # notes; the properties are stage-contract v1's (MATERIAL_POLICY.md §4.1).
+  contract: 1
+provides:
+  - usd-schema:MmdMaterialAPI
+requires:
+  capabilities: [usd-stage-read]
+usd:
+  # Where this bundle's plugInfo.json lives, relative to the bundle root.
+  plug_info: plugin/resources/mmdSchema/plugInfo.json
+# A hand-authored stage that applies the API, with no importer in the
+# session: the schema is verified on its own (WORKSPACE.md §6).
+tests:
+  smoke:
+    - tests/fixtures/basic.usda
+  roundtrip:
+    - tests/fixtures/basic.usda

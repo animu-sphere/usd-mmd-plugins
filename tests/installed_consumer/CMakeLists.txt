@@ -53,3 +53,14 @@ target_link_libraries(adapter_probe PRIVATE mmdMotionAdapter::mmdMotionAdapter)
 if(MSVC)
     target_compile_options(adapter_probe PRIVATE /utf-8)
 endif()
+
+# The Phase 8 schema bundle: its package config must find OpenUSD by itself,
+# and its generated headers must compile from the prefix alone.
+find_package(mmdSchema 0.1 CONFIG REQUIRED)
+
+add_executable(schema_probe schema_probe.cpp)
+target_link_libraries(schema_probe PRIVATE mmdSchema::mmdSchema)
+if(MSVC)
+    target_compile_options(schema_probe PRIVATE /utf-8)
+    target_compile_definitions(schema_probe PRIVATE NOMINMAX)
+endif()
