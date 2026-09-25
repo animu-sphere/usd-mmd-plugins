@@ -3,8 +3,8 @@
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
 and expression interoperability wait on `usd-motion-plugins`; Phase 8
-has its `mmdSchema` bundle; its Material interface inputs and Hydra boundary
-are decided, and the importer migration is next.
+has its `mmdSchema` bundle, and the importer authors stage-contract v2 with
+the fallback graphs connected; the UsdImaging adapter is next.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -143,13 +143,22 @@ copying those values
   connectability, the accessors and regeneration drift, and `ost plugin test`
   runs its L0–L5 pyramid. It also has CI cells, and a probe in the
   installed-consumer lane. It admits no other MMD schema.
-- ⬜ Apply `MmdMaterialAPI` and author the canonical inputs through it in
-  `usdMmdFileFormat`, stamping stage-contract v2. A reader that supports both
-  versions reads the v1 names from a v1 stage. Answer MAT-O6, the untextured
-  preview, with it.
-- ⬜ Connect `/preview` and `/mtlx` to the canonical inputs. Keep their
-  boundaries and static appearance, and review the goldens' renames and
-  connections as such.
+- ✅ **Importer on stage-contract v2** (2026-09-25): `usdMmdFileFormat`
+  applies `MmdMaterialAPI` to every material and authors the canonical inputs
+  through its accessors. It stamps version 2, and `mmdSchema` is a declared
+  and Plug-loaded runtime dependency. A safe texture slot states its sRGB
+  encoding on the canonical input. A connected shader reads its colour space
+  there, and without it Storm's MaterialX path drew textures lighter. MAT-O6
+  is resolved: the untextured `/preview` keeps a static copy
+  ([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
+- ✅ **Realizations connected** (2026-09-25): `/mtlx` reads diffuse and the
+  texture, and a textured `/preview` reads them too, through their graph
+  interface inputs. Over 15 local models, both contexts draw as v1 did, to
+  Storm's own render noise. A runtime diffuse override reaches both
+  realizations of a textured material, and `/mtlx` of an untextured one. An
+  untextured material whose texture path was refused draws in Storm's
+  translucent pass, which changes only its edges
+  ([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
 - ⬜ Implement a UsdImaging adapter that exposes `MmdMaterialAPI` to Hydra
   without making the importer depend on `hydra-toon`.
 - ⬜ Bring up the `hydra-toon` MMD path in this order: diffuse/alpha, toon

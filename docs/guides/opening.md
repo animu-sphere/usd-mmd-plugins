@@ -74,7 +74,7 @@ specific sphere, toon, edge and other semantics remain on the material prim.
   `mmd:bone:sourceName`, in joint order; joint paths use stable ASCII
   identifiers ([TEXT_ENCODING_POLICY.md §6](../design/TEXT_ENCODING_POLICY.md#6-stable-identifiers)).
 - A texture whose path is refused keeps its source string in the material's
-  `customData` and has no `mmd:material:*` asset attribute
+  `customData` and has no `inputs:mmd:material:*` asset input
   ([TEXT_ENCODING_POLICY.md §7.2](../design/TEXT_ENCODING_POLICY.md#72-unsafe-paths)).
 - `/Asset/morph` holds one prim per PMX morph. A vertex morph is a
   `UsdSkelBlendShape` the mesh lists in `skel:blendShapes`, so any UsdSkel

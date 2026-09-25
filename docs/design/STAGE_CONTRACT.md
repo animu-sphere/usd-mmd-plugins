@@ -1,6 +1,6 @@
 # Stage contract
 
-> Status: stage-contract version **1**. Each section becomes binding when the
+> Status: stage-contract version **2**. Each section becomes binding when the
 > Phase that first authors it lands with a fixture (Phase numbers are
 > [DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)); until then it may be
 > corrected here without a version bump. **Binding** since Phase 2: §2–§10
@@ -19,12 +19,12 @@
 > graph boundaries are binding from Phase 3; their interior shader node names
 > remain realization-local.
 >
-> `MmdMaterialAPI` is admitted but the current implementation, contract v1,
-> does not author it yet. It is authored as **contract v2**. The canonical
-> material values move from the schema-less `mmd:material:*` to the Material
-> interface inputs `inputs:mmd:material:*`, with the same types and meanings,
-> and the realization graphs connect to them. Readers have an explicit path
-> for both versions
+> **Contract v2** (Phase 8, 2026-09-25) applies `MmdMaterialAPI` to every
+> material. The canonical material values moved from contract v1's
+> schema-less `mmd:material:*` to the Material interface inputs
+> `inputs:mmd:material:*`, with the same types and meanings, and the
+> realization graphs connect to them. Readers have an explicit path for both
+> versions
 > ([MATERIAL_POLICY.md §14](MATERIAL_POLICY.md#14-migration-and-implementation-order)).
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
@@ -46,7 +46,7 @@ without reading PMX. It covers nothing a runtime produces (§15).
 ## 2. Contract version
 
 ```text
-/Asset.customData["mmd:stageContractVersion"] = 1      (int; 2 from the Phase 8 material migration)
+/Asset.customData["mmd:stageContractVersion"] = 2      (int)
 ```
 
 The version is stamped on `/Asset`, not in `customLayerData`, because layer
@@ -64,7 +64,7 @@ consumer can ignore.
 | Version | Change |
 | --- | --- |
 | 1 | Phases 0–7, v0.1.0. |
-| 2 | Phase 8 (planned). `MmdMaterialAPI` is applied, and the canonical material values are renamed from `mmd:material:<name>` to `inputs:mmd:material:<name>`, with the same types and meanings. The values a material morph modulates, and the texture slots, are varying. `/preview` and `/mtlx` connect to them ([MATERIAL_POLICY.md §4.1](MATERIAL_POLICY.md#41-attributes), [§14](MATERIAL_POLICY.md#14-migration-and-implementation-order)). |
+| 2 | Phase 8 (2026-09-25). `MmdMaterialAPI` is applied, and the canonical material values are renamed from `mmd:material:<name>` to `inputs:mmd:material:<name>`, with the same types and meanings. The values a material morph modulates, and the texture slots, are varying. `/preview` and `/mtlx` connect to them ([MATERIAL_POLICY.md §4.1](MATERIAL_POLICY.md#41-attributes), [§14](MATERIAL_POLICY.md#14-migration-and-implementation-order)). |
 
 ## 3. Authoring conventions
 
@@ -81,12 +81,12 @@ consumer can ignore.
   parallel array attribute on the prim that owns the elements
   (`mmd:bone:sourceName` on the Skeleton, for example).
 - **Semantics a consumer evaluates are namespaced attributes**:
-  `mmd:material:*`, `mmd:morph:*`, `mmd:rig:*`, `mmd:physics:*`. They are
+  `inputs:mmd:material:*`, `mmd:morph:*`, `mmd:rig:*`, `mmd:physics:*`. They are
   attributes rather than customData so they can be queried and overridden in a
-  stronger layer. The current implementation authors all of them as custom
-  attributes. From contract v2 the material family is the Material interface
-  inputs `inputs:mmd:material:*`, declared by `MmdMaterialAPI`, because
-  UsdShade connects only `inputs:`. The other families remain schema-less
+  stronger layer. The material family is the Material interface inputs
+  `inputs:mmd:material:*`, declared by `MmdMaterialAPI`, because UsdShade
+  connects only `inputs:` (contract v1 authored `mmd:material:*` as custom
+  attributes). The other families remain schema-less custom attributes
   ([DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test)).
 - **Per-vertex MMD data is a primvar** in the `mmd:` namespace
   (`primvars:mmd:uv1`, `primvars:mmd:edgeScale`, …), so it follows the mesh
@@ -107,7 +107,7 @@ consumer can ignore.
 │  └─ Mesh                      UsdGeomMesh + UsdSkelBindingAPI
 │     └─ <materialId>           UsdGeomSubset (familyName = materialBind), one per non-empty material
 ├─ mtl                          Scope
-│  └─ <materialId>              UsdShadeMaterial  (contract v2: + MmdMaterialAPI; graphs: MATERIAL_POLICY.md)
+│  └─ <materialId>              UsdShadeMaterial + MmdMaterialAPI (graphs: MATERIAL_POLICY.md)
 ├─ skel                         Scope
 │  └─ Skeleton                  UsdSkelSkeleton
 ├─ morph                        Scope                                       (Phase 4)
@@ -337,7 +337,7 @@ hair, skirts and accessories and avoids holes in generic viewers; single-sided
 materials then render their back faces too, which is usually invisible on
 closed surfaces. Otherwise `doubleSided` is not authored, and USD's fallback
 (`false`) applies. The per-material flag is preserved exactly as
-`mmd:material:doubleSided` (contract v2: `inputs:mmd:material:doubleSided`)
+`inputs:mmd:material:doubleSided` (contract v1: `mmd:material:doubleSided`)
 ([MATERIAL_POLICY.md §4](MATERIAL_POLICY.md#4-canonical-material-semantics)),
 and the capability matrix calls this *approximated* (STAGE-O3, decided in
 Phase 2).
@@ -445,11 +445,11 @@ vertex.
 One `UsdShadeMaterial` per PMX material at `/Asset/mtl/<materialId>`, in
 material-table order, carrying the MMD source semantics and two realization
 graphs, `preview` and `mtlx`. Bindings target the material prim, never a node
-inside it. Contract v1 authors the semantics as schema-less custom attributes,
-`mmd:material:*`. Contract v2 applies the single-apply `MmdMaterialAPI`,
-authors them through its generated accessors as Material interface inputs,
-`inputs:mmd:material:*`, and connects both graphs to them. Fully specified in
-[MATERIAL_POLICY.md](MATERIAL_POLICY.md).
+inside it. The material applies the single-apply `MmdMaterialAPI`, and the
+importer authors the semantics through its generated accessors as Material
+interface inputs, `inputs:mmd:material:*`, and connects both graphs to them.
+Contract v1 authored the same semantics as schema-less custom attributes,
+`mmd:material:*`. Fully specified in [MATERIAL_POLICY.md](MATERIAL_POLICY.md).
 
 Each material carries its provenance (`mmd:sourceName`,
 `mmd:sourceEnglishName`, `mmd:sourceIndex`, and the verbatim path of each
@@ -696,11 +696,18 @@ The stage tests assert, for every fixture that reaches the relevant Phase:
 
 - `defaultPrim == "Asset"` and `/Asset` has `kind = component`;
 - `upAxis == "Y"` and `metersPerUnit == 1`;
-- `/Asset.customData["mmd:stageContractVersion"] == 1`;
+- `/Asset.customData["mmd:stageContractVersion"] == 2`;
 - `/Asset` is a `UsdSkelRoot` exactly when the model has bones;
 - `/Asset/geo/Mesh` is a `UsdGeomMesh` with `subdivisionScheme = "none"`;
 - the `materialBind` subsets partition the faces, and each binds an existing
   `/Asset/mtl` material;
+- every material applies `MmdMaterialAPI` and authors each required canonical
+  input with the schema's type and variability, and no contract-v1
+  `mmd:material:*` name; a safe texture slot states its sRGB encoding;
+- every `/preview` and `/mtlx` shader input that reads a canonical value is
+  connected to its graph's interface input, and that one to the Material's
+  canonical input, except the untextured `/preview`, which copies diffuse
+  (MAT-O6);
 - `/Asset/skel/Skeleton` is a valid `UsdSkelSkeleton`: parent-before-child,
   unique joint paths, `bindTransforms` and `restTransforms` sized to `joints`;
 - the mesh's skel binding resolves, joint indices are in range, and each

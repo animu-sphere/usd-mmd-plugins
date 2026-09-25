@@ -160,7 +160,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | `UsdPreviewSurface` | approximated | approximated | 3 | [MATERIAL §5](../design/MATERIAL_POLICY.md#5-usdpreviewsurface-realization) |
 | MaterialX `gltf_pbr` | approximated | approximated | 3 | [MATERIAL §6](../design/MATERIAL_POLICY.md#6-materialx-gltf_pbr-realization) |
 | Native MMD material semantics | preserved | preserved | 3 | [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
-| `MmdMaterialAPI` application | — (planned for contract v2; current v1 properties are schema-less) | — (planned for contract v2; current v1 properties are schema-less) | 8 | [MATERIAL §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi), [§14](../design/MATERIAL_POLICY.md#14-migration-and-implementation-order) |
+| `MmdMaterialAPI` application | preserved (stage-contract v2) | preserved (stage-contract v2) | 8 | [MATERIAL §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi), [§14](../design/MATERIAL_POLICY.md#14-migration-and-implementation-order) |
 | Sphere textures | preserved | preserved | 3 | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
 | Toon ramps (individual and shared) | preserved | preserved | 3 | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
 | Edge / outline | preserved | preserved | 3 | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
@@ -178,7 +178,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | Fixed axis, local axes, external parent key | preserved | preserved | 5 | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
 | Transform layer, deform after physics, tail, rotatable / translatable / visible / operable | preserved | preserved | 5 | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
 | A control relation that names no bone (dropped, the rest kept) | supported | supported | 5 | [STAGE §12.3](../design/STAGE_CONTRACT.md#123-repairs) |
-| Display frames | — (parsed; contract v1 authors none) | unsupported (parsed, not authored) | 1 | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |
+| Display frames | — (parsed; no contract version authors them) | unsupported (parsed, not authored) | 1 | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |
 | Rigid bodies: shape, size, rest frame, mass, kinematic mode (`UsdPhysics`) | supported | supported | 6 | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
 | Rigid bodies: bone, collision group and mask, damping, restitution, friction, physics mode | preserved | preserved | 6 | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
 | Spring 6-DOF and 6-DOF joints: bodies, frames, limits (`UsdPhysics`) | supported | supported | 6 | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |

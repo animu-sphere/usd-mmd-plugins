@@ -95,7 +95,7 @@ live in a lower-camel directory.
 mmdPmx ──────────────→ (nothing in this repository; no OpenUSD)
 mmdModel ────────────→ mmdPmx                          (no OpenUSD)
 usdMmdFileFormat ────→ mmdModel, mmdPmx, OpenUSD
-                       mmdSchema                       (from Phase 8)
+                       mmdSchema                       (since Phase 8)
 mmd_inspect ─────────→ mmdPmx                          (no OpenUSD)
 motionVmd ───────────→ nothing                         (no OpenUSD)
 mmdMotionBinding ────→ mmdModel, motionVmd             (no OpenUSD)

@@ -201,17 +201,23 @@ relative to itself, and the installed bundle keeps the source bundle's shape.
 
 | Installed path | Content |
 | --- | --- |
-| `lib/libUsdMmdFileFormat.{dll,dylib,so}` | the plugin library; `mmdPmx` and `mmdModel` are linked in statically |
-| `plugin/resources/usdMmdFileFormat/plugInfo.json` | registration: format id and extension `pmx`, target `usd`; `LibraryPath` is relative (`../../../lib/…`) |
+| `lib/libUsdMmdFileFormat.{dll,dylib,so}` | the plugin library; `mmdPmx` and `mmdModel` are linked in statically, `mmdSchema`'s shared library dynamically |
+| `plugin/resources/usdMmdFileFormat/plugInfo.json` | registration: format id and extension `pmx`, target `usd`, and `UsdMmdMaterialAPI` as a plugin dependency; `LibraryPath` is relative (`../../../lib/…`) |
 | `plugin/resources/usdMmdFileFormat/buildInfo.json` | build metadata ([WORKSPACE.md §4](WORKSPACE.md#4-manifests-versioning-and-build-metadata)), stamped at build time so the git commit is the one built |
 | `openstrata.plugin.yaml` | the bundle manifest |
 
 A host makes the plugin available by putting
-`plugin/resources/usdMmdFileFormat` on `PXR_PLUGINPATH_NAME`, with OpenUSD
-26.08's libraries on the loader path. The current bundle needs no other package
-at run time. From the Phase 8 migration it will include `mmdSchema` in its
-declared plugin closure so the applied `MmdMaterialAPI` is discoverable;
-it will not depend on `mmdImaging` or `hydra-toon`.
+`plugin/resources/usdMmdFileFormat` and `mmdSchema`'s
+`plugin/resources/mmdSchema` on `PXR_PLUGINPATH_NAME`, with OpenUSD 26.08's
+libraries on the loader path. Since stage-contract v2 every material applies
+`MmdMaterialAPI`, so `mmdSchema` is in the bundle's declared closure
+(`requires.bundles`, schema contract 1). No loader path names `mmdSchema`'s
+library: the plugin dependency makes Plug load it first, from the path its own
+`plugInfo.json` gives, and the importer's library then binds to the loaded
+one. A host that registers the importer without the schema gets Plug's
+`Load failed: unknown dependent class 'UsdMmdMaterialAPI'` and no `.pmx`
+format, never a stage whose materials lost their schema. The bundle does not
+depend on `mmdImaging` or `hydra-toon`.
 
 ## `mmd_inspect`
 

@@ -317,9 +317,9 @@ only if it passes:
 
 If not, the value stays as provenance, custom data, or is not authored.
 
-Stage-contract v1 has **no custom typed prim schemas and no applied API
-schemas**. Semantics that a consumer evaluates are authored as namespaced
-custom attributes (`mmd:material:*`, `mmd:morph:*`, …)
+Stage-contract v2 has **no custom typed prim schemas and one applied API
+schema**, `MmdMaterialAPI`. Every other semantic a consumer evaluates is
+authored as namespaced custom attributes (`mmd:morph:*`, `mmd:rig:*`, …)
 ([STAGE_CONTRACT.md §3](STAGE_CONTRACT.md#3-authoring-conventions)).
 
 `MmdMaterialAPI` passed the test on 2026-09-22: `hydra-toon` must discover MMD
@@ -663,7 +663,7 @@ the Phase that first authors it lands with a fixture, and binding from then.
 | Implementation policy | Here | Why | Status |
 | --- | --- | --- | --- |
 | §6.1, §6.8 — `/Asset` is a `UsdGeomXform`; `/Asset/rig/SkelRoot/Skeleton` | `/Asset` is the `UsdSkelRoot` when the model has bones; the skeleton is `/Asset/skel/Skeleton` | `UsdSkel` only skins geometry beneath a `SkelRoot`, so meshes under `/Asset/geo` would not deform under `/Asset/rig/SkelRoot`. The `skel`/`rig` split is `usd-vrm-plugins`' layout and matches §7.3's own deformation/control split ([STAGE_CONTRACT.md §4.1](STAGE_CONTRACT.md#41-why-asset-is-the-skelroot)). | binding (Phase 2) |
-| §10 — a `native` child under each material | Native semantics are properties of the `UsdShadeMaterial` itself: `mmd:material:*` attributes in stage-contract v1, and from v2 Material interface inputs `inputs:mmd:material:*` declared by `MmdMaterialAPI` | A child graph reads as a third realization; the material prim is where identity and semantics already live. The API formalizes those properties without becoming a realization, and as interface inputs the realizations connect to them ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding for properties on the material (Phases 2 and 3); API and inputs scheduled in Phase 8 |
+| §10 — a `native` child under each material | Native semantics are properties of the `UsdShadeMaterial` itself: `mmd:material:*` attributes in stage-contract v1, and from v2 Material interface inputs `inputs:mmd:material:*` declared by `MmdMaterialAPI` | A child graph reads as a third realization; the material prim is where identity and semantics already live. The API formalizes those properties without becoming a realization, and as interface inputs the realizations connect to them ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding for properties on the material (Phases 2 and 3); API and inputs since stage-contract v2 (Phase 8) |
 | §27 — `customLayerData.mmdSchemaContractVersion` | `/Asset.customData.mmd:stageContractVersion` | Layer metadata is not composed, so it is lost once the asset is referenced; `/Asset` customData travels with the reference, and matches `vrm:schemaContractVersion` ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)). | binding (Phase 0) |
 | §19 — `mmdModel` may or may not depend on `mmdPmx`; OpenUSD unspecified | `mmdModel → mmdPmx`; no OpenUSD in either | §26's `Canonicalize(const pmx::Document&)` settles the first; the second keeps canonical MMD usable by non-USD tools ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)). | binding (Phase 2) |
 | §15.2 — stable-ID precedence includes transliteration and recognized roles | Contract v1 uses the English name or an index fallback only | Both a transliteration table and a role table would become part of the stage ABI; they stay open until a consumer needs them ([TEXT_ENCODING_POLICY.md §6](TEXT_ENCODING_POLICY.md#6-stable-identifiers)). | binding (Phase 2) |
