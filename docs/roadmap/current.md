@@ -3,8 +3,8 @@
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
 and expression interoperability wait on `usd-motion-plugins`; Phase 8
-implementation has not started, but its `MmdMaterialAPI` and Hydra boundary are
-now decided.
+implementation has not started, but its `MmdMaterialAPI`, its Material
+interface inputs and its Hydra boundary are now decided.
 
 Two Phases remain, and they run in this order although they are numbered the
 other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
@@ -117,8 +117,9 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
 
 Phase 3 remains complete: contract-v1 stages already preserve every canonical
 MMD material value and carry generic `preview` and `mtlx` fallbacks. Phase 8
-formalizes that existing contract for an MMD-aware renderer; it does not replace
-or reinterpret the fallbacks
+formalizes that contract for an MMD-aware renderer as stage-contract v2. It
+keeps the fallbacks, and connects them to the canonical values instead of
+copying those values
 ([MATERIAL_POLICY.md](../design/MATERIAL_POLICY.md)).
 
 - ✅ **Schema decision and attribute inventory** (2026-09-22):
@@ -126,15 +127,24 @@ or reinterpret the fallbacks
   `mmd:material:*` names, types and meanings are retained, neutral fallbacks are
   fixed, provenance stays outside the API, and MAT-O4 is resolved as an
   UsdImaging adapter rather than a third realization graph.
-- ⬜ Add the `mmdSchema` plugin with generated C++/Python accessors and tokens;
-  admit no other MMD schema by association.
-- ⬜ Apply `MmdMaterialAPI` and author through it in `usdMmdFileFormat` as an
-  additive stage-contract v1 change. Test both directions of compatibility:
-  schema-aware consumers read earlier schema-less v1 attributes, while existing
-  consumers can ignore `apiSchemas` and still read the unchanged properties and
-  fallback graphs.
-- ⬜ Keep `/preview` and `/mtlx` output, appearance and golden coverage stable
-  while migrating the canonical authoring path.
+- ✅ **Canonical values as Material interface inputs** (2026-09-25, MAT-O5):
+  UsdShade connects only `inputs:`, so a plain `mmd:material:*` attribute
+  cannot drive a realization. In Storm the connection is ignored without an
+  error. The values become `inputs:mmd:material:*` with the same types. RGBA
+  stays `color4f`, because a textured preview connects it to
+  `UsdUVTexture.scale` exactly. The morph-modulated values and the texture
+  slots are varying. The change is stage-contract v2
+  ([report](../reports/2026-09-25-phase8-material-inputs.md)).
+- ⬜ Add the `mmdSchema` plugin with generated C++ accessors and tokens, and
+  Python through the schema registry; admit no other MMD schema by
+  association.
+- ⬜ Apply `MmdMaterialAPI` and author the canonical inputs through it in
+  `usdMmdFileFormat`, stamping stage-contract v2. A reader that supports both
+  versions reads the v1 names from a v1 stage. Answer MAT-O6, the untextured
+  preview, with it.
+- ⬜ Connect `/preview` and `/mtlx` to the canonical inputs. Keep their
+  boundaries and static appearance, and review the goldens' renames and
+  connections as such.
 - ⬜ Implement a UsdImaging adapter that exposes `MmdMaterialAPI` to Hydra
   without making the importer depend on `hydra-toon`.
 - ⬜ Bring up the `hydra-toon` MMD path in this order: diffuse/alpha, toon

@@ -85,9 +85,10 @@ contract is [docs/design/PHYSICS_INTEGRATION.md](docs/design/PHYSICS_INTEGRATION
 `MmdMaterialAPI` passed the
 [admission test](docs/design/DESIGN_POLICY.md#6-the-schema-admission-test) on
 2026-09-22 for the `hydra-toon` consumer. The current stage-contract v1 still
-uses schema-less `mmd:material:*` attributes; Phase 8 adds `mmdSchema`, applies
-the API as a backward-compatible contract-v1 addition, and adds the independent
-`mmdImaging` bridge without renaming those properties. Identities and dependency
+uses schema-less `mmd:material:*` attributes. Phase 8 adds `mmdSchema` and
+applies the API as stage-contract v2. That version moves the values to
+Material interface inputs `inputs:mmd:material:*`, which the fallback graphs
+connect to. Phase 8 also adds the independent `mmdImaging` bridge. Identities and dependency
 directions are fixed in
 [docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md).
 
@@ -97,7 +98,7 @@ directions are fixed in
 /Asset                    UsdSkelRoot, kind = component, defaultPrim; Y-up, meters
   geo/Mesh                UsdGeomMesh, skinned; one GeomSubset per material
   mtl/<material>          UsdShadeMaterial: MMD semantics + /preview and /mtlx graphs
-                          (Phase 8 target: + MmdMaterialAPI)
+                          (Phase 8, contract v2: + MmdMaterialAPI)
   skel/Skeleton           UsdSkelSkeleton in canonical joint order
   morph/<morph>           UsdSkelBlendShape for vertex morphs; others preserved declaratively
   rig/Bones, rig/ik/<bone> MMD control semantics: IK chains, append relations, axes — never solved

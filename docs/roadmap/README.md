@@ -128,9 +128,10 @@ Where things stand, as of 2026-09-25:
   role-table version 2
   ([report](../reports/2026-09-25-phase9-upper-chest.md)).
 - Phase 8 follows Phase 9. Before renderer composition, this repository adds
-  the admitted `MmdMaterialAPI`, applies it as a backward-compatible
-  contract-v1 addition without renaming any `mmd:material:*` property, and
-  supplies the UsdImaging bridge consumed by `hydra-toon`. The shared renderer
+  the admitted `MmdMaterialAPI`, applies it as stage-contract v2 with the
+  canonical values as Material interface inputs `inputs:mmd:material:*` that
+  the fallback graphs connect to
+  ([report](../reports/2026-09-25-phase8-material-inputs.md)), and supplies the UsdImaging bridge consumed by `hydra-toon`. The shared renderer
   may normalize MMD and MToon privately, but their USD schemas remain separate.
   The rest of avatar composition is owned mostly outside this repository. Its
   MMD physics work consumes the already-authored stage through
@@ -163,6 +164,8 @@ schedules them.
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
 | PMX-O4 | Morph category from display frames | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |
 | MAT-O4 | How `hydra-toon` reads MMD semantics | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved 2026-09-22 — `MmdMaterialAPI` + UsdImaging adapter; implementation is Phase 8 |
+| MAT-O5 | How a changed canonical value reaches a realization | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | resolved 2026-09-25 — `inputs:mmd:material:*`, connected; stage-contract v2 |
+| MAT-O6 | The untextured `/preview`, which cannot split a `color4f` diffuse | [MATERIAL §13](../design/MATERIAL_POLICY.md#13-open-questions) | the Phase 8 importer migration |
 | MOT-O4 | Camera and light tracks | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer |
 | MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
 | MOT-O11 | Whether a knee starts from its keyed rotation | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (MMD's output to compare against) |
