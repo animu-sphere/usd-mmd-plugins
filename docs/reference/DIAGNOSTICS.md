@@ -104,6 +104,7 @@ Codes are `MMD_<FAMILY>_<EVENT>`, upper snake case.
 | `MMD_PHYSICS_` | rigid bodies, joints, soft bodies |
 | `MMD_MOTION_` | VMD and motion binding (Phase 7), control evaluation (Phase 9) |
 | `MMD_USD_` | the source → USD boundary |
+| `MMD_PKG_` | USDZ packaging by `mmd_usdz` (Phase 10) |
 
 A code is never renamed, never reused for a different event, and never changes
 severity. An event that needs a different severity gets a new code.
@@ -239,3 +240,18 @@ raises; every other code is reserved.
 Validation codes for the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist)
 (default prim, up axis, unit, skel binding, material binding) are added with the
 validator, in the `MMD_USD_` family.
+
+### 5.8 Packaging (Phase 10)
+
+For `mmd_usdz`, an `error` also means that no package is written.
+
+| Code | Severity | Raised by | Defined in |
+| --- | --- | --- | --- |
+| `MMD_PKG_INPUT_UNREADABLE` | fatal | `mmd_usdz` | [PACKAGING §10](../design/PACKAGING_POLICY.md#10-command-line) |
+| `MMD_PKG_WRITE_FAILED` | fatal | `mmd_usdz` | [PACKAGING §11](../design/PACKAGING_POLICY.md#11-diagnostics-and-exit-status) |
+| `MMD_PKG_MISSING_ASSET` | error | `mmd_usdz` | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization) |
+| `MMD_PKG_UNEXPECTED_DEPENDENCY` | error | `mmd_usdz` | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization) |
+| `MMD_PKG_UNSUPPORTED_TEXTURE` | error | `mmd_usdz` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| `MMD_PKG_ASSET_NAME_COLLISION` | error | `mmd_usdz` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| `MMD_PKG_VALIDATION_FAILED` | error | `mmd_usdz` | [PACKAGING §9](../design/PACKAGING_POLICY.md#9-validation) |
+| `MMD_PKG_TEXTURE_CONVERTED` | info | `mmd_usdz` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |

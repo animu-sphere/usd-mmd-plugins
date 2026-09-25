@@ -11,12 +11,12 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started · ⛔ blocked
 
 | Document | Contents |
 | --- | --- |
-| [current.md](current.md) | The remaining milestones — Phase 9 shared motion adoption, then the Phase 8 material-schema, renderer, avatar and physics composition work — and the part of each this repository owes or waits for. |
+| [current.md](current.md) | The remaining milestones — Phase 9 shared motion adoption, then the Phase 8 material-schema, renderer, avatar and physics composition work, and Phase 10 USDZ packaging — and the part of each this repository owes or waits for. |
 | [../releases/](../releases/README.md) | What each released version shipped, and how a release is cut. |
 
 ## One sequence
 
-This repository has one phase sequence, `Phase 0`–`Phase 9`, defined in
+This repository has one phase sequence, `Phase 0`–`Phase 10`, defined in
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases). A phase is a
 unit of scope; a release is a scheduling decision. The mapping between them is
 made **only** in the table below.
@@ -38,6 +38,7 @@ in.** No other document states a version for a Phase.
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | ⬜ | unassigned; schema/adapter work is here, composition is owned mostly outside this repository |
 | 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the A-pose rest (MOT-O10) is measured and, with expression interoperability, waits on `usd-motion-plugins`; role-table version 2 resolves MOT-O12 | unassigned |
+| 10 | USDZ packaging (`mmd_usdz`) | ⬜ designed ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)), measured, not started | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -49,7 +50,7 @@ yet: Phase 8's consumer may still show a contract wrong
 
 Where things stand, as of 2026-09-25:
 
-- The documentation baseline exists: the design policy, six focused design
+- The documentation baseline exists: the design policy, seven focused design
   contracts, the workspace contract, and reference pages that state what is
   implemented.
 - Phase 0, the workspace skeleton, is done: `.pmx` opens as a stage through
@@ -137,6 +138,14 @@ Where things stand, as of 2026-09-25:
   MMD physics work consumes the already-authored stage through
   `usd-physics-plugins`; the importer never gains a renderer or solver
   ([PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md)).
+- Phase 10, USDZ packaging, was added on 2026-09-25 from the packaging memo,
+  and designed after measuring OpenUSD's own packaging over the local models
+  ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md),
+  [report](../reports/2026-09-25-usdz-packaging-probe.md)). `mmd_usdz`
+  materializes the importer's stage and packages it with its textures. It
+  converts BMP, which 31 of the 41 local PMX files name, to PNG, so that the
+  package is standard USDZ. It needs only the importer's stage, so it does
+  not wait for Phases 8 or 9.
 
 ## Open decisions
 
@@ -170,6 +179,8 @@ schedules them.
 | MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
 | MOT-O11 | Whether a knee starts from its keyed rotation | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (MMD's output to compare against) |
 | MOT-O12 | Where `上半身3` falls in the role table | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved 2026-09-25 — table version 2 |
+| PKG-O1 | How the USDZ archive becomes byte-deterministic | [PACKAGING §18](../design/PACKAGING_POLICY.md#18-open-questions) | Phase 10 step 2 |
+| PKG-O2 | Non-ASCII archive names in ZIP tools that are not OpenUSD | [PACKAGING §18](../design/PACKAGING_POLICY.md#18-open-questions) | Phase 10 step 3 |
 
 ## Quality bar (applies to every Phase)
 

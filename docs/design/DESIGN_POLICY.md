@@ -12,7 +12,8 @@
 > is, where its boundaries are, and the order it is built in. It is distilled
 > from the 2026-09-15 implementation policy, and aligned on 2026-09-17 with the
 > `usd-motion-plugins` design policy, the ecosystem's motion architecture
-> (§20). Six focused documents own the
+> (§20), and extended on 2026-09-25 by the USDZ packaging memo (Phase 10).
+> Seven focused documents own the
 > detail of one area each, and **on its own area the focused document wins**:
 >
 > | Area | Owning document |
@@ -23,6 +24,7 @@
 > | Text, names, identifiers and paths | [TEXT_ENCODING_POLICY.md](TEXT_ENCODING_POLICY.md) |
 > | The MMD motion boundary, MMD control evaluation, and the hand-off to the shared motion core | [MOTION_CONTRACT.md](MOTION_CONTRACT.md) |
 > | Future MMD physics coupling and the hand-off to shared simulation | [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md) |
+> | USDZ packaging for distribution (`mmd_usdz`) | [PACKAGING_POLICY.md](PACKAGING_POLICY.md) |
 > | Component identities and dependency edges | [architecture/WORKSPACE.md](../architecture/WORKSPACE.md) |
 >
 > Section numbers are stable so other documents can cite them ("design policy
@@ -268,7 +270,11 @@ clock.
 diagnostics — without USD, so a parser question can be answered without an
 importer in the way. `vmd_inspect` does the same for a VMD, with `motionVmd`
 alone. `mmd_convert` (PMX → `.usda`/`.usdc` on disk) follows only
-when `usdcat` over the file format proves insufficient.
+when `usdcat` over the file format proves insufficient. `mmd_usdz`
+(Phase 10) packages the imported stage and its textures as a USDZ that opens
+without this repository's plugins. It is a distribution step over the stage,
+never part of the importer
+([PACKAGING_POLICY.md](PACKAGING_POLICY.md)).
 
 ### 5.6 `mmdControl` — MMD control evaluation (Phase 9)
 
@@ -514,7 +520,7 @@ may describe what they showed.
 
 ## 14. Phases
 
-This repository has **one** phase sequence, written `Phase 0`–`Phase 9`, and
+This repository has **one** phase sequence, written `Phase 0`–`Phase 10`, and
 this section is its source of truth. A phase is not a release; which release
 carries a phase is decided in the
 [roadmap](../roadmap/README.md#status-at-a-glance), never here. Should a second
@@ -532,11 +538,14 @@ sequence ever appear, both get a qualifier, as they do in `usd-vrm-plugins`.
 | **7 — VMD** | Model-independent `libs/motionVmd` (defined as extraction-ready; VMD stays here since 2026-09-17, §9.1), bound to a model by `mmdMotionBinding`; the hand-off to the shared motion core is Phase 9; `usdVmdFileFormat` only once direct stage-open has a contract. | Per [MOTION_CONTRACT.md](MOTION_CONTRACT.md). |
 | **8 — avatar runtime composition** | Composition through OpenStrata with `usd-vrm-plugins`, `usd-motion-plugins`, `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and `usd-stage-runner`, under `usd-avatar-runtime`; this repository first supplies `MmdMaterialAPI` and its UsdImaging bridge, while MMD-specific physics coupling follows [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md). | The runtime, not this repository, is the avatar execution environment; `hydra-toon` consumes MMD semantics without PMX or importer dependencies, and physics can progress from `followBone` through dynamic bodies to bone feedback without putting a renderer or solver in the importer. |
 | **9 — shared motion core adoption** | `mmdControl` evaluates a bound motion over the control rig; `mmdMotionAdapter` builds a `MotionClip`, while `mmdSkeletonAdapter` builds a `SkeletonDescriptor`, `SourceRestPose` and humanoid `RetargetMap`, against `usd-motion-plugins`' installed `motionCore` and `motionRetarget`; MOT-O5, MOT-O6 and MOT-O7 resolved ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)). | On synthetic rigs with known answers, IK and append evaluation match; the same inputs give the same bits; a VMD-derived `MotionClip`, authored by the shared core as `UsdSkelAnimation`, poses the PMX stage's skeleton with legs driven by IK; the same clip retargets to a non-MMD synthetic skeleton through the shared retarget with no MMD code on that path; no generic motion algorithm exists in this repository. |
+| **10 — USDZ packaging** | `mmd_usdz` materializes the stage the importer authors as a `.usdc` and packages it, with every texture it names, as a standard USDZ; a texture USDZ cannot hold is converted to PNG losslessly ([PACKAGING_POLICY.md](PACKAGING_POLICY.md)). Step 1: a minimal package with validation. Step 2: robust assets and a deterministic archive (PKG-O1). Step 3: portability, including `--portable-paths` (PKG-O2). Step 4: a packaging layer shared with `usd-vrm-plugins`, only once a second packager exists. | For every fixture, the package opens in a process with no MMD plugin, passes `usdchecker`, and matches the `.pmx` stage prim for prim and value for value, texture renames aside; the importer is unchanged. |
 
 Phases are numbered in the order they were defined, not the order they run.
 Phase 9 was added on 2026-09-17, when the motion architecture was settled
 (§20), and it runs **before** the MMD half of Phase 8: the runtime composes
 this repository's evaluated motion rather than evaluating MMD itself.
+Phase 10 was added on 2026-09-25 from the USDZ packaging memo. It needs only
+the importer's stage, so it can run alongside Phases 8 and 9.
 
 ### 14.1 First substantial release — definition of done
 

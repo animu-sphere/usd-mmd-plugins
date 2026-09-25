@@ -43,10 +43,10 @@ place that says what is implemented.
   the central rule (parse MMD, normalize it once, author conventional OpenUSD,
   keep evaluation and rendering outside the importer), the component
   responsibilities, the schema admission test, the testing policy, the
-  **Phase 0–9** sequence, the decisions frozen early, where the design
+  **Phase 0–10** sequence, the decisions frozen early, where the design
   departs from the 2026-09-15 implementation policy it was distilled from, and
   how it aligns with the `usd-motion-plugins` design policy (§20).
-- Six focused contracts own one area each, and on that area they win over the
+- Seven focused contracts own one area each, and on that area they win over the
   design policy:
   - [design/STAGE_CONTRACT.md](design/STAGE_CONTRACT.md) — the exact authored
     stage: hierarchy, types, metadata, the coordinate conversion, skeleton,
@@ -65,7 +65,10 @@ place that says what is implemented.
   - [design/PHYSICS_INTEGRATION.md](design/PHYSICS_INTEGRATION.md) — the
     proposed runtime boundary after static physics preservation: MMD coupling
     here, generic simulation in `usd-physics-plugins`, execution order in
-    `usd-stage-runner`, and composition in `usd-avatar-runtime`.
+    `usd-stage-runner`, and composition in `usd-avatar-runtime`;
+  - [design/PACKAGING_POLICY.md](design/PACKAGING_POLICY.md) — the proposed
+    `mmd_usdz` tool: how the imported stage and its textures become a
+    standard USDZ that opens without this repository's plugins.
 - [architecture/WORKSPACE.md](architecture/WORKSPACE.md) is the binding
   **workspace contract**. When a document disagrees with it about structure, it
   wins, and structural changes go there first, in their own pull request.
