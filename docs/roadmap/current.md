@@ -82,12 +82,12 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   `usd-motion-plugins` to take a target rest distinct from the stage's bind
   rest, and to publish the T-pose directions. A level-arm clip already
   reaches a PMX target 40° low today.
-- ⬜ **MOT-O12**: `上半身3` sits between `上半身` and `上半身2` in both local
-  models that have it, against role-table version 1's `chest` →
-  `upperChest`. With a motion that keys `上半身2`, arms land up to 26° off on
-  targets without `upperChest`. A version-2 table that maps by the model's
-  chain is proposed
-  ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)).
+- ✅ **MOT-O12** (2026-09-25): role-table version 2. As a target, `上半身2`
+  and `上半身3` bind in the model's chain order. As a source, `upperChest` is
+  never emitted, because the shared retarget drops a joint a target lacks.
+  Arms from models with `上半身3` below `上半身2` went from at most 25° off
+  to at most 2.5°
+  ([report](../reports/2026-09-25-phase9-upper-chest.md)).
 - ✅ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** (2026-09-21): digest-pinned
   `motionCore` and `motionRetarget` v0.5.0 packages; role-table version 1;
   stage-token `SkeletonDescriptor`, source rest and target `RetargetMap`;

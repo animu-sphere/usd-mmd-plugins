@@ -319,7 +319,7 @@ def main() -> int:
         if (adapted.returncode != 0 or len(adapter_lines) != 1
                 or not adapter_lines[0].startswith("samples=")
                 or f"joints={joints}" not in adapter_lines[0]
-                or not adapter_lines[0].endswith("roleTable=1")):
+                or not adapter_lines[0].endswith("roleTable=2")):
             print(f"the installed adapters printed {adapted.stdout!r}", file=sys.stderr)
             return 1
         print(f"ok  the installed Phase 9 adapters built a shared MotionClip: "

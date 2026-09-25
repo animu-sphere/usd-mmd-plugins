@@ -48,7 +48,7 @@ TestRolesAndSkeleton()
     const int arm = AddBone(model, "左腕", "Bip001", "LeftArm", spine, {0.3, 1.5, 0.0}, 8);
 
     const mmd::skeleton::AdaptedSkeleton adapted = mmd::skeleton::Adapt(model);
-    assert(adapted.roleTableVersion == 1);
+    assert(adapted.roleTableVersion == 2);
     assert(adapted.SourceJoint(HumanJoint::Hips) == lower);
     assert(adapted.SourceJoint(HumanJoint::Spine) == spine);
     assert(adapted.SourceJoint(HumanJoint::LeftUpperLeg) == leftD);
@@ -87,6 +87,58 @@ TestTargetHipsRequiresBothLegs()
     assert(!adapted.targetMap.IsMapped(HumanJoint::Hips));
 }
 
+// MOT-O12: as a target, `上半身2` and `上半身3` bind `chest` and `upperChest`
+// in the model's own order, ancestor first; as a source, `chest` is the bone
+// the neck hangs from and `upperChest` is never emitted.
+void
+TestUpperBodyFollowsTheChain()
+{
+    // Conventional: 上半身 → 上半身2 → 上半身3 → 首.
+    {
+        mmd::CanonicalDocument model;
+        const int spine = AddBone(model, "上半身", "", "Spine", mmd::kNone, {0.0, 1.0, 0.0}, 0);
+        const int two = AddBone(model, "上半身2", "", "Spine2", spine, {0.0, 1.1, 0.0}, 1);
+        const int three = AddBone(model, "上半身3", "", "Spine3", two, {0.0, 1.2, 0.0}, 2);
+        AddBone(model, "首", "", "Neck", three, {0.0, 1.4, 0.0}, 3);
+        const mmd::skeleton::AdaptedSkeleton adapted = mmd::skeleton::Adapt(model);
+        assert(adapted.targetMap.GetJointIndex(HumanJoint::Chest) == two);
+        assert(adapted.targetMap.GetJointIndex(HumanJoint::UpperChest) == three);
+        assert(adapted.SourceJoint(HumanJoint::Chest) == three);
+        assert(adapted.SourceJoint(HumanJoint::UpperChest) == -1);
+        assert(!adapted.sourcePresent.test(static_cast<std::size_t>(HumanJoint::UpperChest)));
+        assert(adapted.sourceRest.parents[static_cast<std::size_t>(HumanJoint::Neck)] ==
+               static_cast<std::size_t>(HumanJoint::Chest));
+    }
+    // Inserted: 上半身 → 上半身3 → 上半身2 → 首, as both local models with 上半身3 are.
+    {
+        mmd::CanonicalDocument model;
+        const int spine = AddBone(model, "上半身", "", "Spine", mmd::kNone, {0.0, 1.0, 0.0}, 0);
+        const int three = AddBone(model, "上半身3", "", "Spine3", spine, {0.0, 1.1, 0.0}, 1);
+        const int two = AddBone(model, "上半身2", "", "Spine2", three, {0.0, 1.2, 0.0}, 2);
+        AddBone(model, "首", "", "Neck", two, {0.0, 1.4, 0.0}, 3);
+        const mmd::skeleton::AdaptedSkeleton adapted = mmd::skeleton::Adapt(model);
+        assert(adapted.targetMap.GetJointIndex(HumanJoint::Chest) == three);
+        assert(adapted.targetMap.GetJointIndex(HumanJoint::UpperChest) == two);
+        assert(adapted.SourceJoint(HumanJoint::Chest) == two);
+        assert(adapted.SourceJoint(HumanJoint::UpperChest) == -1);
+        const std::size_t chest = static_cast<std::size_t>(HumanJoint::Chest);
+        assert(adapted.sourceRest.parents[chest] == static_cast<std::size_t>(HumanJoint::Spine));
+        assert(std::abs(adapted.sourceRest.localTranslations[chest][1] - 0.2f) < 1.0e-6f);
+    }
+    // Off the chain: 上半身3 is a sibling of 上半身2, so it binds nothing.
+    {
+        mmd::CanonicalDocument model;
+        const int spine = AddBone(model, "上半身", "", "Spine", mmd::kNone, {0.0, 1.0, 0.0}, 0);
+        const int two = AddBone(model, "上半身2", "", "Spine2", spine, {0.0, 1.2, 0.0}, 1);
+        AddBone(model, "上半身3", "", "Spine3", spine, {0.0, 1.1, 0.0}, 2);
+        const mmd::skeleton::AdaptedSkeleton adapted = mmd::skeleton::Adapt(model);
+        assert(adapted.SourceJoint(HumanJoint::Chest) == two);
+        assert(adapted.SourceJoint(HumanJoint::UpperChest) == -1);
+        assert(adapted.targetMap.GetJointIndex(HumanJoint::Chest) == two);
+        assert(!adapted.targetMap.IsMapped(HumanJoint::UpperChest));
+    }
+}
+
 } // namespace
 
 int
@@ -94,5 +146,6 @@ main()
 {
     TestRolesAndSkeleton();
     TestTargetHipsRequiresBothLegs();
+    TestUpperBodyFollowsTheChain();
     return 0;
 }

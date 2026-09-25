@@ -33,6 +33,9 @@
 > Revised 2026-09-25: MOT-O10 is narrowed by a measured comparison, MOT-O12 is
 > opened, and §10.7 records that the shared core has promoted no common
 > expression semantic yet.
+> Revised again the same day: MOT-O12 is resolved by table version 2 (§12.2,
+> §12.5). `上半身2` and `上半身3` bind as a target in the model's own chain
+> order, and a source never emits `upperChest`.
 
 ---
 
@@ -294,7 +297,6 @@ as a whole.
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
 | MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes. Measured 2026-09-25 ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton, today's identity rest leaves every arm segment off by that angle (median 40°); a rest aimed from the rest bone directions of the **arm chain alone** (shoulder, upper arm, lower arm, hand) onto the lateral axis removes it (≤ 0.04°), while the same construction on the whole body flips the chest where `上半身3` lies below `上半身2` and levels feet no humanoid rest levels. A source rest is correct only with the same rest stated for a PMX **target**: stated on the source alone, PMX to PMX goes from a median 2.5° to 40°, and a level-arm source already reaches a PMX target 40° low today. So the source half waits for the target half | `usd-motion-plugins`: a retarget target rest distinct from the bind rest `/Asset/skel/Skeleton` states, and the T-pose directions as public vocabulary rather than `motionSource`'s private table |
 | MOT-O11 | Whether a plane link starts from its keyed rotation. §11.7 starts an enabled chain's plane angles at zero, so a knee's keyed rotation never reaches the pose and the knee is solved from straight; three.js r168 starts from the keyed rotation. On a motion that keys its legs' rotations alongside their goals, that start alone leaves a median 0.05 mm where §11.7 leaves 2.4 mm, and moves the knees a median 4.6 mm and at most 66 mm; on an IK-authored motion it changes little ([report](../reports/2026-09-19-phase9-ik-reference.md)). Which MMD does | MMD's output on a motion that keys its IK links |
-| MOT-O12 | Where `上半身3` falls in the role table. In both local models that have it, the chain is `上半身` → `上半身3` → `上半身2` → `首`, with the neck and shoulders under `上半身2`; §12.2's version 1 maps `上半身2` to `chest` and `上半身3` to `upperChest`, against that order. A motion that keys `上半身2` then gives `neck` the chest's rotation a second time, cancelled only on a target that binds `upperChest`: onto targets without it, arms land a median 6–8° and at most 26° off ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)). Proposed: version 2 maps by the model's chain, `上半身3` to `chest` and `上半身2` to `upperChest` where `上半身3` is the ancestor | a table version 2, checked against models with `上半身3` in both orders if any exist |
 
 Resolved:
 
@@ -306,6 +308,7 @@ Resolved:
 | MOT-O5 | Which MMD bones (`全ての親`, `センター`, `グルーブ`) become `RootMotion` and which stay hips-local motion | none is chosen: the root is the evaluated world transform of the joint `hips` maps to, so every ancestor's motion reaches it, and nothing of it stays in a local rotation below (§12.3) | Phase 9, 2026-09-19 |
 | MOT-O6 | Which MMD bone names map to which `HumanJoint`, how English names and variants are matched, and how the table is versioned | table version 1, §12.2: exact source names, deforming (`D`) bones first; English names and spelling variants never match (§12.1); the version is recorded with every clip and bumped with any entry (§12.5) | Phase 9, 2026-09-19 |
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
+| MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
 
 ## 10. Normalizing into the shared motion core
 
@@ -704,9 +707,9 @@ MMD. It names roles; it never claims a model is a humanoid.
   none of whose candidates it has is unmapped.
 - An explicitly authored map always wins over the table (§10.4).
 
-### 12.2 The table, version 1
+### 12.2 The table
 
-Left side shown; the right side is the same with `右` for `左`. Candidates in
+Version 2 (§12.5). Left side shown; the right side is the same with `右` for `左`. Candidates in
 order, deforming (`D`) bones first: in a model that has them they are the
 bones the skin follows, and the non-`D` bone is the one the IK solves and
 the `D` bone appends.
@@ -715,8 +718,8 @@ the `D` bone appends.
 | --- | --- |
 | `hips` | as a source: `下半身`. As a target: the nearest joint that is an ancestor of the `spine` joint and of both `upperLeg` joints (§12.3) |
 | `spine` | `上半身` |
-| `chest` | `上半身2` |
-| `upperChest` | `上半身3` |
+| `chest` | as a source: `上半身2`, or `上半身3` where it is `上半身2`'s descendant (the bone the neck hangs from). As a target: of `上半身2` and `上半身3`, the one that is the other's ancestor; `上半身2` alone otherwise |
+| `upperChest` | as a source: never. As a target: of `上半身2` and `上半身3`, the one that is the other's descendant; unbound where neither is the other's ancestor |
 | `neck` | `首` |
 | `head` | `頭` |
 | `leftEye` | `左目` |
@@ -740,6 +743,21 @@ their own; IK bones (`左足ＩＫ`, `左つま先ＩＫ`) and IK tips (`左つ�
 twist bones (`左腕捩`, `左手捩`), `左肩P`/`左肩C`, `腰キャンセル左`, and every
 bone the table does not name. A model without `左親指０` maps `左親指１` to
 `…Proximal` all the same: an entry never shifts to fill a missing one.
+
+**The upper chest.** `上半身3` has no fixed place. In both local models that
+have it, it sits *between* `上半身` and `上半身2` (`上半身` → `上半身3` →
+`上半身2` → `首`), with the neck and shoulders under `上半身2`. So as a target
+the two bones bind in the model's own chain order. As a source,
+`upperChest` is never emitted. The shared retarget drops an intermediate joint
+a target lacks rather than folding it into its child (its RETARGETING_POLICY
+§4.1, case 6). An emitted `upperChest` would therefore misplace the neck and
+arms of every target without one: up to 25° on the local corpus under version
+1, whose fixed order also doubled the chest's rotation there. The bone the
+neck hangs from, carried as `chest`, already holds every torso rotation below
+it in its world rotation (§12.3). What is lost is only how a bend divides
+between two torso bones
+([report](../reports/2026-09-25-phase9-upper-chest.md)). This is the one
+role, besides `hips`, that a source and a target bind differently.
 
 ### 12.3 Evaluated motion as `HumanJoint` rotations and root motion
 
@@ -804,7 +822,9 @@ thirteenth, a 68-bone partial without legs, resolves the upper body.
 
 ### 12.5 Version
 
-The table is **version 1**. Any change to an entry — a candidate added,
+The table is **version 2**, since 2026-09-25. Version 1 (2026-09-19) mapped
+`上半身2` to `chest` and `上半身3` to `upperChest` on both sides; version 2
+changed only those two rows (MOT-O12). Any change to an entry — a candidate added,
 removed or reordered, a role mapped differently — changes which joint a
 clip drives, so it is a new version, recorded in the changelog. The version
 is a constant of `mmdSkeletonAdapter`, reported with every map it builds and

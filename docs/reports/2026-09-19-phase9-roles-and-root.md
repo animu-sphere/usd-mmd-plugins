@@ -19,7 +19,7 @@ Windows 11. No library of this repository was changed for them.
    comparison and under NFKC, which English names those bones carry, and
    each one's parent.
 2. **The table.** The same script resolved
-   [MOTION_CONTRACT.md §12.2](../design/MOTION_CONTRACT.md#122-the-table-version-1)'s
+   [MOTION_CONTRACT.md §12.2](../design/MOTION_CONTRACT.md#122-the-table)'s
    table, version 1, against each of the 13, and found each one's nearest
    common ancestor of `上半身` and both upper legs.
 3. **Rest arms.** A second Python reader, of the PMX bone table alone,
@@ -110,7 +110,7 @@ them into the legs' rotations before a clip exists
 ## What this decided
 
 - **MOT-O6**: table version 1 as
-  [§12.2](../design/MOTION_CONTRACT.md#122-the-table-version-1) states it —
+  [§12.2](../design/MOTION_CONTRACT.md#122-the-table) states it —
   exact source names, `D` bones first, no English name and no folded
   spelling, and a required set every character here resolves.
 - **MOT-O5**: no MMD bone is chosen as the root. `センター` carries the motion

@@ -15,7 +15,7 @@
 
 namespace mmd::skeleton {
 
-inline constexpr int kRoleTableVersion = 1;
+inline constexpr int kRoleTableVersion = 2;
 
 /// Everything the shared motion core needs from one canonical PMX skeleton.
 /// Source joints build VMD-derived clips; the target map drives the PMX stage.
@@ -31,7 +31,7 @@ struct AdaptedSkeleton {
     int SourceJoint(openstrata::motion::HumanJoint role) const noexcept;
 };
 
-/// Applies role-table version 1 to `model`, and builds target data whose joint
+/// Applies role-table version 2 to `model`, and builds target data whose joint
 /// tokens and rest transforms exactly match /Asset/skel/Skeleton.
 AdaptedSkeleton Adapt(const CanonicalDocument& model);
 
