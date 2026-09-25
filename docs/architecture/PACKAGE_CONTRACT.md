@@ -153,7 +153,7 @@ the first installed-consumer fixture lands:
 
 | Bundle | Discovery | Public responsibility |
 | --- | --- | --- |
-| `mmdSchema` | OpenUSD plug registry and generated C++/Python API | Single-apply `MmdMaterialAPI`, its `mmd:material:*` declarations and tokens; no PMX record mirror |
+| `mmdSchema` | OpenUSD plug registry and generated C++ API; Python through the schema registry | Single-apply `MmdMaterialAPI`, its `inputs:mmd:material:*` declarations and tokens; no PMX record mirror |
 | `mmdImaging` | OpenUSD plug registry | UsdImaging adapter from a composed `MmdMaterialAPI` to renderer-consumable Hydra data; no parser, importer or GPU implementation |
 
 The two bundles are separately discoverable: tools that only inspect the

@@ -19,10 +19,12 @@
 > graph boundaries are binding from Phase 3; their interior shader node names
 > remain realization-local.
 >
-> `MmdMaterialAPI` is admitted but not yet authored by the current contract-v1
-> implementation. Its planned application is additive within contract v1: the
-> existing `mmd:material:*` names, types and meanings remain unchanged, and
-> readers have an explicit compatibility path
+> `MmdMaterialAPI` is admitted but the current implementation, contract v1,
+> does not author it yet. It is authored as **contract v2**. The canonical
+> material values move from the schema-less `mmd:material:*` to the Material
+> interface inputs `inputs:mmd:material:*`, with the same types and meanings,
+> and the realization graphs connect to them. Readers have an explicit path
+> for both versions
 > ([MATERIAL_POLICY.md §14](MATERIAL_POLICY.md#14-migration-and-implementation-order)).
 >
 > This document fixes the exact USD that `usdMmdFileFormat` authors from a PMX:
@@ -44,7 +46,7 @@ without reading PMX. It covers nothing a runtime produces (§15).
 ## 2. Contract version
 
 ```text
-/Asset.customData["mmd:stageContractVersion"] = 1      (int)
+/Asset.customData["mmd:stageContractVersion"] = 1      (int; 2 from the Phase 8 material migration)
 ```
 
 The version is stamped on `/Asset`, not in `customLayerData`, because layer
@@ -56,9 +58,13 @@ layer's `customLayerData` is no longer visible from the composed stage, while
 The version increments **only** when downstream interpretation changes
 incompatibly: a path, type, name, unit, basis, or property meaning a consumer
 could depend on. It does not change for parser refactors, diagnostic wording,
-build-system changes, performance work, the addition of a property a consumer
-can ignore, or applying `MmdMaterialAPI` while its existing properties retain
-the same names, types and meanings.
+build-system changes, performance work, or the addition of a property a
+consumer can ignore.
+
+| Version | Change |
+| --- | --- |
+| 1 | Phases 0–7, v0.1.0. |
+| 2 | Phase 8 (planned). `MmdMaterialAPI` is applied, and the canonical material values are renamed from `mmd:material:<name>` to `inputs:mmd:material:<name>`, with the same types and meanings. The values a material morph modulates, and the texture slots, are varying. `/preview` and `/mtlx` connect to them ([MATERIAL_POLICY.md §4.1](MATERIAL_POLICY.md#41-attributes), [§14](MATERIAL_POLICY.md#14-migration-and-implementation-order)). |
 
 ## 3. Authoring conventions
 
@@ -78,8 +84,9 @@ the same names, types and meanings.
   `mmd:material:*`, `mmd:morph:*`, `mmd:rig:*`, `mmd:physics:*`. They are
   attributes rather than customData so they can be queried and overridden in a
   stronger layer. The current implementation authors all of them as custom
-  attributes; Phase 8 applies `MmdMaterialAPI` and declares the existing
-  material names verbatim, while the other families remain schema-less
+  attributes. From contract v2 the material family is the Material interface
+  inputs `inputs:mmd:material:*`, declared by `MmdMaterialAPI`, because
+  UsdShade connects only `inputs:`. The other families remain schema-less
   ([DESIGN_POLICY.md §6](DESIGN_POLICY.md#6-the-schema-admission-test)).
 - **Per-vertex MMD data is a primvar** in the `mmd:` namespace
   (`primvars:mmd:uv1`, `primvars:mmd:edgeScale`, …), so it follows the mesh
@@ -100,7 +107,7 @@ the same names, types and meanings.
 │  └─ Mesh                      UsdGeomMesh + UsdSkelBindingAPI
 │     └─ <materialId>           UsdGeomSubset (familyName = materialBind), one per non-empty material
 ├─ mtl                          Scope
-│  └─ <materialId>              UsdShadeMaterial  (Phase 8: + MmdMaterialAPI; graphs: MATERIAL_POLICY.md)
+│  └─ <materialId>              UsdShadeMaterial  (contract v2: + MmdMaterialAPI; graphs: MATERIAL_POLICY.md)
 ├─ skel                         Scope
 │  └─ Skeleton                  UsdSkelSkeleton
 ├─ morph                        Scope                                       (Phase 4)
@@ -330,7 +337,7 @@ hair, skirts and accessories and avoids holes in generic viewers; single-sided
 materials then render their back faces too, which is usually invisible on
 closed surfaces. Otherwise `doubleSided` is not authored, and USD's fallback
 (`false`) applies. The per-material flag is preserved exactly as
-`mmd:material:doubleSided`
+`mmd:material:doubleSided` (contract v2: `inputs:mmd:material:doubleSided`)
 ([MATERIAL_POLICY.md §4](MATERIAL_POLICY.md#4-canonical-material-semantics)),
 and the capability matrix calls this *approximated* (STAGE-O3, decided in
 Phase 2).
@@ -436,28 +443,28 @@ vertex.
 ## 10. Materials
 
 One `UsdShadeMaterial` per PMX material at `/Asset/mtl/<materialId>`, in
-material-table order, carrying the MMD source semantics as `mmd:material:*`
-attributes and two realization graphs, `preview` and `mtlx`. Bindings target
-the material prim, never a node inside it. The current implementation authors
-schema-less custom attributes; Phase 8 applies the single-apply
-`MmdMaterialAPI` and authors the same properties through its generated
-accessors. Fully specified in
+material-table order, carrying the MMD source semantics and two realization
+graphs, `preview` and `mtlx`. Bindings target the material prim, never a node
+inside it. Contract v1 authors the semantics as schema-less custom attributes,
+`mmd:material:*`. Contract v2 applies the single-apply `MmdMaterialAPI`,
+authors them through its generated accessors as Material interface inputs,
+`inputs:mmd:material:*`, and connects both graphs to them. Fully specified in
 [MATERIAL_POLICY.md](MATERIAL_POLICY.md).
 
 Each material carries its provenance (`mmd:sourceName`,
 `mmd:sourceEnglishName`, `mmd:sourceIndex`, and the verbatim path of each
-texture slot that names a texture), `mmd:material:doubleSided`, and the three
-texture slots — `mmd:material:texture`, `sphereTexture`, and `toonTexture`
-for an individual toon ramp — each authored only when its path is safe. The
-full MMD semantics are authored as `mmd:material:*` attributes, and both
+texture slot that names a texture), `doubleSided`, and the three texture
+slots — `texture`, `sphereTexture`, and `toonTexture` for an individual toon
+ramp — each authored only when its path is safe. The full MMD semantics are
+authored under the material namespace of the stamped version, and both
 portable realization graphs are present from Phase 3 as specified by
 MATERIAL_POLICY.md.
 
 `MmdMaterialAPI` is canonical identification and declaration, not a third
-realization. A schema-aware consumer uses its generated accessors when the API
-is applied and accepts the same schema-less property names on an earlier
-contract-v1 asset. PreviewSurface and MaterialX remain generic fallbacks and are
-never used to reconstruct canonical MMD values.
+realization. A consumer that reads both versions uses the generated accessors
+on a contract-v2 asset and the schema-less `mmd:material:*` names on a
+contract-v1 asset. PreviewSurface and MaterialX remain generic fallbacks and
+are never used to reconstruct canonical MMD values.
 
 The material-table index is also MMD's **draw order**, which alpha-blended
 MMD rendering depends on; it is preserved as `mmd:sourceIndex` and consumers

@@ -319,19 +319,20 @@ If not, the value stays as provenance, custom data, or is not authored.
 
 Stage-contract v1 has **no custom typed prim schemas and no applied API
 schemas**. Semantics that a consumer evaluates are authored as namespaced
-custom attributes (`mmd:material:*`, `mmd:morph:*`, …), so a later applied API
-can declare the names verbatim
+custom attributes (`mmd:material:*`, `mmd:morph:*`, …)
 ([STAGE_CONTRACT.md §3](STAGE_CONTRACT.md#3-authoring-conventions)).
 
 `MmdMaterialAPI` passed the test on 2026-09-22: `hydra-toon` must discover MMD
 materials and read their canonical values from a composed USD stage without
-PMX access. The single-apply API declares only the existing
-`mmd:material:*` contract; provenance remains `customData`, and morph, rig and
-physics properties remain schema-less until they independently pass this test.
-Applying the API is a backward-compatible stage-contract v1 addition: the
-property names, types and meanings do not change, and existing readers may
-ignore the applied-schema metadata
-([MATERIAL_POLICY.md §4.3](MATERIAL_POLICY.md#43-mmdmaterialapi)). A generated
+PMX access. The single-apply API declares only the canonical material
+values; provenance remains `customData`, and morph, rig and physics properties
+remain schema-less until they independently pass this test. It declares them
+as Material interface inputs, `inputs:mmd:material:*`, so that the realization
+graphs can connect to them. That renames stage-contract v1's
+`mmd:material:*`, with the same types and meanings, and so it is
+stage-contract v2
+([MATERIAL_POLICY.md §4.3](MATERIAL_POLICY.md#43-mmdmaterialapi),
+[report](../reports/2026-09-25-phase8-material-inputs.md)). A generated
 API plus a UsdImaging adapter is the renderer boundary; a third material
 realization graph is not. `mmdSchema` must not become a dump of the PMX binary
 structure.
@@ -662,7 +663,7 @@ the Phase that first authors it lands with a fixture, and binding from then.
 | Implementation policy | Here | Why | Status |
 | --- | --- | --- | --- |
 | §6.1, §6.8 — `/Asset` is a `UsdGeomXform`; `/Asset/rig/SkelRoot/Skeleton` | `/Asset` is the `UsdSkelRoot` when the model has bones; the skeleton is `/Asset/skel/Skeleton` | `UsdSkel` only skins geometry beneath a `SkelRoot`, so meshes under `/Asset/geo` would not deform under `/Asset/rig/SkelRoot`. The `skel`/`rig` split is `usd-vrm-plugins`' layout and matches §7.3's own deformation/control split ([STAGE_CONTRACT.md §4.1](STAGE_CONTRACT.md#41-why-asset-is-the-skelroot)). | binding (Phase 2) |
-| §10 — a `native` child under each material | Native semantics are `mmd:material:*` attributes on the `UsdShadeMaterial` itself, declared by `MmdMaterialAPI` from Phase 8 | A child graph reads as a third realization; the material prim is where identity and semantics already live. The API formalizes the existing attributes without becoming a realization ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding for attributes (Phases 2 and 3); API authoring scheduled in Phase 8 |
+| §10 — a `native` child under each material | Native semantics are properties of the `UsdShadeMaterial` itself: `mmd:material:*` attributes in stage-contract v1, and from v2 Material interface inputs `inputs:mmd:material:*` declared by `MmdMaterialAPI` | A child graph reads as a third realization; the material prim is where identity and semantics already live. The API formalizes those properties without becoming a realization, and as interface inputs the realizations connect to them ([MATERIAL_POLICY.md §3](MATERIAL_POLICY.md#3-hierarchy)). | binding for properties on the material (Phases 2 and 3); API and inputs scheduled in Phase 8 |
 | §27 — `customLayerData.mmdSchemaContractVersion` | `/Asset.customData.mmd:stageContractVersion` | Layer metadata is not composed, so it is lost once the asset is referenced; `/Asset` customData travels with the reference, and matches `vrm:schemaContractVersion` ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)). | binding (Phase 0) |
 | §19 — `mmdModel` may or may not depend on `mmdPmx`; OpenUSD unspecified | `mmdModel → mmdPmx`; no OpenUSD in either | §26's `Canonicalize(const pmx::Document&)` settles the first; the second keeps canonical MMD usable by non-USD tools ([WORKSPACE.md §2](../architecture/WORKSPACE.md#2-dependency-directions)). | binding (Phase 2) |
 | §15.2 — stable-ID precedence includes transliteration and recognized roles | Contract v1 uses the English name or an index fallback only | Both a transliteration table and a role table would become part of the stage ABI; they stay open until a consumer needs them ([TEXT_ENCODING_POLICY.md §6](TEXT_ENCODING_POLICY.md#6-stable-identifiers)). | binding (Phase 2) |

@@ -160,7 +160,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | `UsdPreviewSurface` | approximated | approximated | 3 | [MATERIAL §5](../design/MATERIAL_POLICY.md#5-usdpreviewsurface-realization) |
 | MaterialX `gltf_pbr` | approximated | approximated | 3 | [MATERIAL §6](../design/MATERIAL_POLICY.md#6-materialx-gltf_pbr-realization) |
 | Native MMD material semantics | preserved | preserved | 3 | [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
-| `MmdMaterialAPI` application | — (planned; current v1 properties are schema-less) | — (planned; current v1 properties are schema-less) | 8 | [MATERIAL §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi), [§14](../design/MATERIAL_POLICY.md#14-migration-and-implementation-order) |
+| `MmdMaterialAPI` application | — (planned for contract v2; current v1 properties are schema-less) | — (planned for contract v2; current v1 properties are schema-less) | 8 | [MATERIAL §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi), [§14](../design/MATERIAL_POLICY.md#14-migration-and-implementation-order) |
 | Sphere textures | preserved | preserved | 3 | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
 | Toon ramps (individual and shared) | preserved | preserved | 3 | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
 | Edge / outline | preserved | preserved | 3 | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
