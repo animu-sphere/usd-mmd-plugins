@@ -8,6 +8,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace mmd::skeleton {
@@ -140,6 +141,45 @@ IsAncestor(const std::vector<Bone>& bones, int ancestor, int joint)
     return false;
 }
 
+// Version 2 (MOTION_CONTRACT.md §12.2, MOT-O12). As a target, `上半身2` and
+// `上半身3` take `chest` and `upperChest` in the order the model chains them,
+// ancestor first; where neither is the other's ancestor, `上半身3` is off the
+// neck's chain and `upperChest` is left unbound.
+void
+OrderUpperBody(const CanonicalDocument& model, std::array<int, HumanJointCount>& joints)
+{
+    int& chest = joints[static_cast<std::size_t>(HumanJoint::Chest)];
+    int& upperChest = joints[static_cast<std::size_t>(HumanJoint::UpperChest)];
+    if (chest == kUnmapped || upperChest == kUnmapped) {
+        return;
+    }
+    if (IsAncestor(model.skeleton.bones, chest, upperChest)) {
+        return;
+    }
+    if (IsAncestor(model.skeleton.bones, upperChest, chest)) {
+        std::swap(chest, upperChest);
+        return;
+    }
+    upperChest = kUnmapped;
+}
+
+// As a source, `upperChest` is never emitted: `chest` is the upper-body bone
+// the neck and shoulders hang from, whose evaluated world rotation already
+// holds every torso bone below it. The shared retarget drops an intermediate
+// joint a target lacks rather than folding it into its child (its
+// RETARGETING_POLICY §4.1, case 6), so an emitted `upperChest` would move the
+// neck and arms of every target without one.
+void
+SourceUpperBody(std::array<int, HumanJointCount>& joints)
+{
+    int& chest = joints[static_cast<std::size_t>(HumanJoint::Chest)];
+    int& upperChest = joints[static_cast<std::size_t>(HumanJoint::UpperChest)];
+    if (upperChest != kUnmapped) {
+        chest = upperChest;
+        upperChest = kUnmapped;
+    }
+}
+
 int
 TargetHips(const CanonicalDocument& model, const std::array<int, HumanJointCount>& source)
 {
@@ -177,11 +217,16 @@ Adapt(const CanonicalDocument& model)
     adapted.sourceJoints.fill(kUnmapped);
     adapted.requiredJoints = RequiredJoints();
 
+    std::array<int, HumanJointCount> targetJoints{};
+    targetJoints.fill(kUnmapped);
     for (const RoleSpec& spec : RoleSpecs()) {
-        const int joint = FindBone(model, spec.candidates);
-        const std::size_t role = static_cast<std::size_t>(spec.role);
-        adapted.sourceJoints[role] = joint;
-        adapted.sourcePresent.set(role, joint != kUnmapped);
+        targetJoints[static_cast<std::size_t>(spec.role)] = FindBone(model, spec.candidates);
+    }
+    OrderUpperBody(model, targetJoints);
+    adapted.sourceJoints = targetJoints;
+    SourceUpperBody(adapted.sourceJoints);
+    for (std::size_t role = 0; role < HumanJointCount; ++role) {
+        adapted.sourcePresent.set(role, adapted.sourceJoints[role] != kUnmapped);
     }
 
     std::vector<std::string> tokens;
@@ -202,7 +247,7 @@ Adapt(const CanonicalDocument& model)
     }
 
     for (const RoleSpec& spec : RoleSpecs()) {
-        int joint = adapted.SourceJoint(spec.role);
+        int joint = targetJoints[static_cast<std::size_t>(spec.role)];
         if (spec.role == HumanJoint::Hips) {
             joint = TargetHips(model, adapted.sourceJoints);
         }

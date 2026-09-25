@@ -118,7 +118,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | Capability | Current | Contract |
 | --- | :---: | --- |
 | Stage-token `SkeletonDescriptor` with canonical rest translations | supported | [MOTION §10.4](../design/MOTION_CONTRACT.md#104-skeleton-and-humanoid-map) |
-| Role-table version 1, exact Japanese source names, deforming `D` candidates first, English names ignored | supported | [MOTION §12.1](../design/MOTION_CONTRACT.md#121-matching), [§12.2](../design/MOTION_CONTRACT.md#122-the-table-version-1) |
+| Role-table version 2, exact Japanese source names, deforming `D` candidates first, English names ignored; `上半身2`/`上半身3` bound in chain order as a target, no source `upperChest` | supported | [MOTION §12.1](../design/MOTION_CONTRACT.md#121-matching), [§12.2](../design/MOTION_CONTRACT.md#122-the-table) |
 | Source role mapping and `SourceRestPose`; target `RetargetMap` with hips at the common spine/leg ancestor | supported | [MOTION §12.3](../design/MOTION_CONTRACT.md#123-evaluated-motion-as-humanjoint-rotations-and-root-motion) |
 | Evaluated world rotations made local to the nearest mapped humanoid ancestor | supported | [MOTION §12.3](../design/MOTION_CONTRACT.md#123-evaluated-motion-as-humanjoint-rotations-and-root-motion) |
 | Root motion from the evaluated world transform of the source hips role | supported | [MOTION §10.5](../design/MOTION_CONTRACT.md#105-time-coordinates-and-root-motion) |

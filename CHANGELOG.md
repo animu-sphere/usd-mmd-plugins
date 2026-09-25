@@ -15,6 +15,16 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
 
 ## [Unreleased]
 
+### Changed
+
+- **Role-table version 2 (MOT-O12).** `mmdSkeletonAdapter` now reports
+  `roleTableVersion` 2. As a target, `上半身2` and `上半身3` bind `chest` and
+  `upperChest` in the model's own chain order, and `上半身3` binds nothing
+  where it is off the neck's chain. As a source, `upperChest` is never
+  emitted: `chest` is the bone the neck hangs from. On the local corpus, arms
+  from models that place `上半身3` below `上半身2` were up to 25° off on
+  targets without it. They are now within 2.5°, as every other pair is.
+
 ### Added
 
 - **Phase 9 shared-motion adapters.** `mmdSkeletonAdapter` implements role-table

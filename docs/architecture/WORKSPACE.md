@@ -58,7 +58,7 @@ And the evaluator Phase 9 created
 | Identity | Kind | Directory | Manifest | Role | Created in | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `mmdControl` | plain static CMake library | `libs/mmdControl/` | `openstrata.library.yaml` | MMD control evaluation: samples a bound motion's Bézier curves at an explicit time, and evaluates bone morphs, append transforms and IK chains over `mmdModel`'s control semantics into deformation-joint local transforms. No OpenUSD, no `usd-motion-plugins`. | Phase 9 | exists |
-| `mmdSkeletonAdapter` | plain static CMake library | `libs/mmdSkeletonAdapter/` | `openstrata.library.yaml` | Exposes a canonical PMX skeleton as `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose`; owns role-table version 1 and no retarget algorithm. | Phase 9 | exists |
+| `mmdSkeletonAdapter` | plain static CMake library | `libs/mmdSkeletonAdapter/` | `openstrata.library.yaml` | Exposes a canonical PMX skeleton as `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose`; owns role-table version 2 and no retarget algorithm. | Phase 9 | exists |
 | `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | `openstrata.library.yaml` | Converts fully evaluated `mmdControl` output into `MotionClip`, using `mmdSkeletonAdapter` for roles and source rest; owns no target-avatar knowledge. | Phase 9 | exists |
 
 ### 1.2 Later, only when their responsibility is real

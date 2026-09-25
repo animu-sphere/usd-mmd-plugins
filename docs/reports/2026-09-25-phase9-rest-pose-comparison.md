@@ -1,5 +1,7 @@
 # Phase 9 A-pose rest against a level-arm rest (2026-09-25)
 
+> Later: MOT-O12 was resolved the same day by role-table version 2 ([report](2026-09-25-phase9-upper-chest.md)).
+
 Dated evidence from real runs; append-only
 ([contributing/documentation.md](../contributing/documentation.md)).
 
@@ -124,7 +126,7 @@ pose.
 
 In both models that have `上半身3`, the hierarchy is `上半身` → `上半身3` →
 `上半身2` → `首`, with `首` and the shoulders' `肩P` under `上半身2`.
-[MOTION_CONTRACT.md §12.2](../design/MOTION_CONTRACT.md#122-the-table-version-1)
+[MOTION_CONTRACT.md §12.2](../design/MOTION_CONTRACT.md#122-the-table)
 maps `上半身2` to `chest` and `上半身3` to `upperChest`, so the vocabulary's
 chest → upperChest runs against the model's own chain. For a motion that
 keys `上半身2`, `neck` then carries the chest's rotation a second time. It is
