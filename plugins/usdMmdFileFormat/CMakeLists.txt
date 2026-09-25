@@ -36,6 +36,14 @@ if(NOT TARGET mmdModel::mmdModel)
     find_package(mmdModel CONFIG REQUIRED)
 endif()
 
+# mmdSchema, whose MmdMaterialAPI the importer applies and authors through its
+# accessors (MATERIAL_POLICY.md §4.3). A bundle, not a library: ost builds and
+# installs the manifest's requires.bundles closure before configuring this
+# one, and the composed root build has already added it.
+if(NOT TARGET mmdSchema::mmdSchema)
+    find_package(mmdSchema CONFIG REQUIRED)
+endif()
+
 set(PLUGIN_NAME UsdMmdFileFormat)
 
 add_library(${PLUGIN_NAME} SHARED
@@ -46,7 +54,10 @@ target_compile_features(${PLUGIN_NAME} PRIVATE cxx_std_20)
 target_include_directories(${PLUGIN_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     ${PXR_INCLUDE_DIRS})
-target_link_libraries(${PLUGIN_NAME} PRIVATE mmdModel::mmdModel mmdPmx::mmdPmx)
+# mmdSchema's MMDSCHEMA_API is ARCH_IMPORT here, so the authorer imports the
+# typed API across the shared-library boundary.
+target_link_libraries(${PLUGIN_NAME} PRIVATE
+    mmdModel::mmdModel mmdPmx::mmdPmx mmdSchema::mmdSchema)
 usdmmd_target_defaults(${PLUGIN_NAME})
 
 # The OpenUSD monolith when the install has one, else the discrete libraries

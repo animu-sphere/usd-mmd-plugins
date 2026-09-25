@@ -51,23 +51,23 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 
 | PMX field | USD | Phase |
 | --- | --- | :---: |
-| (material semantics contract) | Current contract v1: schema-less `mmd:material:*`, as the rows below name them; contract v2 (Phase 8): the same `<name>`s as `inputs:mmd:material:*`, declared by applied `MmdMaterialAPI`, with both realizations connected to them | 8 |
+| (material semantics contract) | Stage-contract v2: `inputs:mmd:material:*`, as the rows below name them, declared by applied `MmdMaterialAPI`, with both realizations connected to them; contract v1 authored the same `<name>`s as schema-less `mmd:material:*` | 8 |
 | name / English name | `Mtl` identifier; customData `mmd:sourceName` / `mmd:sourceEnglishName` | 2 |
 | (table index) | `Mtl` customData `mmd:sourceIndex` (= draw order) | 2 |
 | face count | `Mesh/<materialId>` `GeomSubset.indices` + `material:binding` | 2 |
-| diffuse | `Mtl.mmd:material:diffuseColor`; `preview` `diffuseColor`/`opacity`; `mtlx` `base_color`/`alpha` | 3 |
-| specular | `Mtl.mmd:material:specularColor` | 3 |
-| specular power | `Mtl.mmd:material:specularPower`; `roughness` in both realizations | 3 |
-| ambient | `Mtl.mmd:material:ambientColor` | 3 |
-| flag `0x01` | `Mtl.mmd:material:doubleSided`; `Mesh.doubleSided` if any material that draws a face has it | 2 |
-| flags `0x02`–`0x80` | `Mtl.mmd:material:groundShadow` … `drawLines` | 3 |
-| edge color / size | `Mtl.mmd:material:edgeColor` / `edgeSize` | 3 |
-| texture | `Mtl.mmd:material:texture` and customData `mmd:sourceTexturePath` | 2 |
+| diffuse | `Mtl.inputs:mmd:material:diffuseColor`; `preview` `diffuseColor`/`opacity`; `mtlx` `base_color`/`alpha` | 3 |
+| specular | `Mtl.inputs:mmd:material:specularColor` | 3 |
+| specular power | `Mtl.inputs:mmd:material:specularPower`; `roughness` in both realizations | 3 |
+| ambient | `Mtl.inputs:mmd:material:ambientColor` | 3 |
+| flag `0x01` | `Mtl.inputs:mmd:material:doubleSided`; `Mesh.doubleSided` if any material that draws a face has it | 2 |
+| flags `0x02`–`0x80` | `Mtl.inputs:mmd:material:groundShadow` … `drawLines` | 3 |
+| edge color / size | `Mtl.inputs:mmd:material:edgeColor` / `edgeSize` | 3 |
+| texture | `Mtl.inputs:mmd:material:texture` and customData `mmd:sourceTexturePath` | 2 |
 | texture | base texture node in both realizations | 3 |
-| sphere texture | `Mtl.mmd:material:sphereTexture` and customData `mmd:sourceSphereTexturePath` | 2 |
-| sphere mode | `Mtl.mmd:material:sphereMode` | 3 |
-| toon reference: a texture | `Mtl.mmd:material:toonTexture` and customData `mmd:sourceToonTexturePath` | 2 |
-| toon reference + value | `Mtl.mmd:material:toonSource`; `sharedToonIndex` for a shared slot | 3 |
+| sphere texture | `Mtl.inputs:mmd:material:sphereTexture` and customData `mmd:sourceSphereTexturePath` | 2 |
+| sphere mode | `Mtl.inputs:mmd:material:sphereMode` | 3 |
+| toon reference: a texture | `Mtl.inputs:mmd:material:toonTexture` and customData `mmd:sourceToonTexturePath` | 2 |
+| toon reference + value | `Mtl.inputs:mmd:material:toonSource`; `sharedToonIndex` for a shared slot | 3 |
 | memo | `Mtl` customData `mmd:sourceMemo` | 3 |
 
 ## Bones
@@ -105,7 +105,7 @@ Paths are abbreviated: `Mesh` is `/Asset/geo/Mesh`, `Skel` is
 
 | PMX field | USD | Phase |
 | --- | --- | :---: |
-| all | not authored in contract v1 (kept in the canonical model) | — |
+| all | not authored (kept in the canonical model) | — |
 
 ## Physics
 

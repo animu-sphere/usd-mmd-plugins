@@ -16,7 +16,7 @@ def Xform "Asset" (
             string sourceFormat = "PMX"
             string sourceName = "minimal"
             string sourceVersion = "2.0"
-            int stageContractVersion = 1
+            int stageContractVersion = 2
         }
     }
     kind = "component"

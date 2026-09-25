@@ -1,15 +1,16 @@
 # Material policy
 
-> Status: **binding for Phase 3 and for the planned material-schema migration**.
+> Status: **binding; stage-contract v2 since 2026-09-25**.
 > Phase 3 authors one `UsdShadeMaterial` per PMX material, the canonical
 > values in §4.1, provenance in §4.2, and the two portable realizations.
-> Stage-contract v1 authors those values as schema-less custom attributes named
-> `mmd:material:*`. `MmdMaterialAPI` passed the schema admission test on
+> Stage-contract v1 authored those values as schema-less custom attributes
+> named `mmd:material:*`. `MmdMaterialAPI` passed the schema admission test on
 > 2026-09-22. On 2026-09-25 the canonical values became Material interface
 > inputs, `inputs:mmd:material:*`, because UsdShade connects nothing else
-> ([report](../reports/2026-09-25-phase8-material-inputs.md)). Phase 8 applies
-> the API, authors those inputs, and connects the realizations to them, as
-> stage-contract v2 (§4.3, §14). This document fixes the hierarchy, canonical
+> ([report](../reports/2026-09-25-phase8-material-inputs.md)). The same day
+> the importer applied the API, authored those inputs and connected the
+> realizations to them, as stage-contract v2 (§4.3, §14;
+> [report](../reports/2026-09-25-phase8-importer-contract-v2.md)). This document fixes the hierarchy, canonical
 > MMD semantics, portable realizations and renderer boundary. It follows the
 > shape of `usd-vrm-plugins`' material architecture without treating MMD as
 > MToon, and on material questions it wins over
@@ -58,7 +59,7 @@ static (§5, MAT-O6).
 
 ```text
 /Asset/mtl/<materialId>                  UsdShadeMaterial
-    applied API: MmdMaterialAPI           (Phase 8, stage-contract v2)
+    applied API: MmdMaterialAPI           (stage-contract v2)
     inputs:mmd:material:*                canonical MMD semantics (§4)
                                          (v1: schema-less mmd:material:*)
     customData: provenance (§4.2)
@@ -66,13 +67,13 @@ static (§5, MAT-O6).
     outputs:mtlx:surface  → mtlx.outputs:surface
     MaterialXConfigAPI, config:mtlx:version = "1.39"
     /preview                             UsdShadeNodeGraph
-        inputs:*  → the Material's inputs:mmd:material:*   (v2)
+        inputs:*  → the Material's inputs:mmd:material:*   (textured only, §5)
         outputs:surface → surface.outputs:surface
         /surface                         UsdPreviewSurface
         /stReader                        UsdPrimvarReader_float2   (textured only)
         /baseTexture                     UsdUVTexture              (textured only)
     /mtlx                                UsdShadeNodeGraph
-        inputs:*  → the Material's inputs:mmd:material:*   (v2)
+        inputs:*  → the Material's inputs:mmd:material:*
         outputs:surface → surface.outputs:surface
         /surface                         ND_gltf_pbr_surfaceshader
         …                                texture nodes (textured only)
@@ -158,6 +159,15 @@ shader's default instead. §14 says how a reader handles both versions.
 Colors are authored as stored: MMD specifies them without a declared color
 space, and the importer does not reinterpret them.
 
+A texture slot's asset states its encoding: `colorSpace =
+"srgb_rec709_scene"`, OpenUSD's name for sRGB-encoded Rec.709. MMD's images
+are 8-bit sRGB colour images, and MMD reads them without colour management.
+The metadata must sit on the canonical input. UsdImaging reads a connected
+shader input's colour space from the attribute that produces its value, not
+from the shader input. Without it, Storm's MaterialX path reads the texture as
+linear, and the model draws visibly lighter
+([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
+
 ### 4.2 Provenance
 
 `customData` on the material: `mmd:sourceName`, `mmd:sourceEnglishName`,
@@ -242,11 +252,15 @@ remain on the Material's canonical inputs (§4.1).
   the input that carries `texture`. Storm follows a time-sampled diffuse
   through that connection frame by frame
   ([report](../reports/2026-09-25-phase8-material-inputs.md)).
+  `sourceColorSpace = "sRGB"` stays explicit on the texture node.
 - An untextured material has no connection this node set can express:
   `UsdPreviewSurface` cannot split a `color4f` into the `color3f` for
-  `emissiveColor` and the `float` for `opacity`. Until MAT-O6 is answered, the
-  untextured graph holds a static copy of diffuse RGB and alpha, as
-  stage-contract v1 does.
+  `emissiveColor` and the `float` for `opacity`. The untextured graph holds a
+  static copy of diffuse RGB and alpha, and it has no interface input (MAT-O6).
+  A runtime override of that material's diffuse reaches `/mtlx` and an
+  MMD-aware renderer, but not this graph. Storm prefers `/mtlx` whenever it has
+  MaterialX, so this graph is the fallback of a renderer without MaterialX
+  ([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
 
 The canonical `specularPower` remains available for an MMD-aware realization;
 this portable path does not convert it because it intentionally has no lit
@@ -295,8 +309,8 @@ variant as data, so a consumer never has to know which form the source used:
 | `toonSource` | Authored | Meaning |
 | --- | --- | --- |
 | `none` | nothing else | no toon ramp |
-| `individual` | `mmd:material:toonTexture` | a texture resolved like any other (§4.2) |
-| `shared` | `mmd:material:sharedToonIndex` | MMD's shared ramp *N*; the consumer supplies the image |
+| `individual` | `inputs:mmd:material:toonTexture` | a texture resolved like any other (§4.2) |
+| `shared` | `inputs:mmd:material:sharedToonIndex` | MMD's shared ramp *N*; the consumer supplies the image |
 
 The shared ramps belong to MMD, not to the model, and this project does not
 redistribute them. So no asset path is invented for a shared slot: an asset
@@ -397,7 +411,7 @@ working concrete adapters, not designed ahead of them.
 | MAT-O3 | Missing individual toon texture | resolved: preserve the source path and provenance, author a safe asset path when available so USD validation can report an unresolved file, and never fall back to a shared ramp | Phase 3 |
 | MAT-O4 | How `hydra-toon` reads MMD semantics | resolved: applied `MmdMaterialAPI` + UsdImaging adapter; no toon realization graph | design fixed 2026-09-22; implementation in Phase 8 |
 | MAT-O5 | How a changed canonical value reaches a realization | resolved 2026-09-25: the canonical values are Material interface inputs, `inputs:mmd:material:*`, and the realizations connect to them; RGBA stays `color4f` ([report](../reports/2026-09-25-phase8-material-inputs.md)) | stage-contract v2 |
-| MAT-O6 | An untextured `/preview`: `UsdPreviewSurface` has no node that splits the `color4f` diffuse into `emissiveColor` and `opacity` | open. A direct `color4f` → `color3f` connection works in Storm but is not a UsdShade promise and gives no alpha; a fileless `UsdUVTexture` whose `fallback` is connected follows both, but Storm warns every frame. Until answered, the untextured graph copies the values | the importer migration (§14 step 3) |
+| MAT-O6 | An untextured `/preview`: `UsdPreviewSurface` has no node that splits the `color4f` diffuse into `emissiveColor` and `opacity` | resolved 2026-09-25: the untextured graph copies diffuse RGB and alpha, statically. A direct `color4f` → `color3f` connection works in Storm but is not a UsdShade promise and gives no alpha; a fileless `UsdUVTexture` whose `fallback` is connected follows both, but Storm warns every frame. A runtime diffuse override reaches `/mtlx`, which Storm prefers, and the MMD-aware path, not this fallback (§5; [report](../reports/2026-09-25-phase8-importer-contract-v2.md)) | the importer migration (§14 step 3) |
 
 ## 14. Migration and implementation order
 
@@ -408,14 +422,15 @@ The policy is implemented in the following order:
    fallbacks.
 2. **Schema bundle.** Add `mmdSchema` with the single-apply
    `MmdMaterialAPI`, generated C++ accessors and token declarations (§4.3).
-3. **Importer migration — stage-contract v2.** Apply the API and author the
-   canonical inputs through its accessors, with the same values stage-contract
+3. **Importer migration — stage-contract v2. Complete 2026-09-25.** Apply
+   the API and author the canonical inputs through its accessors, with the same values stage-contract
    v1 authored under `mmd:material:*`. Stamp version 2
    ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)), and author
    no v1 name beside the v2 one: two authoritative copies of a value are what
    §2 forbids.
-4. **Realizations connect.** `/preview` and `/mtlx` read the canonical inputs
-   through their graph interface inputs (§5, §6). Their boundaries and their
+4. **Realizations connect. Complete 2026-09-25.** `/preview` and `/mtlx`
+   read the canonical inputs through their graph interface inputs (§5, §6).
+   Their boundaries and their
    static appearance stay as they are; the golden baselines change by the
    property renames and the new connections, reviewed as such.
 5. **Hydra bridge.** Implement and test the UsdImaging adapter independently

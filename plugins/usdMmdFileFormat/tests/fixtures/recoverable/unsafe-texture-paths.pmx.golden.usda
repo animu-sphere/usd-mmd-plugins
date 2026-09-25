@@ -19,7 +19,7 @@ not a distributed model"""
             string sourceFormat = "PMX"
             string sourceName = "サンプル2.0"
             string sourceVersion = "2.0"
-            int stageContractVersion = 1
+            int stageContractVersion = 2
         }
     }
     kind = "component"
@@ -96,7 +96,7 @@ not a distributed model"""
     def Scope "mtl"
     {
         def Material "hair" (
-            apiSchemas = ["MaterialXConfigAPI"]
+            apiSchemas = ["MmdMaterialAPI", "MaterialXConfigAPI"]
             customData = {
                 dictionary mmd = {
                     string sourceEnglishName = "hair"
@@ -111,22 +111,22 @@ not a distributed model"""
         )
         {
             string config:mtlx:version = "1.39"
-            custom uniform color3f mmd:material:ambientColor = (0.4, 0.4, 0.4)
-            custom uniform bool mmd:material:castSelfShadow = 0
-            custom uniform color4f mmd:material:diffuseColor = (0.8, 0.8, 0.8, 1)
-            custom uniform bool mmd:material:doubleSided = 1
-            custom uniform bool mmd:material:drawEdge = 1
-            custom uniform bool mmd:material:drawLines = 0
-            custom uniform bool mmd:material:drawPoints = 0
-            custom uniform color4f mmd:material:edgeColor = (0, 0, 0, 1)
-            custom uniform float mmd:material:edgeSize = 1
-            custom uniform bool mmd:material:groundShadow = 0
-            custom uniform bool mmd:material:receiveSelfShadow = 0
-            custom uniform color3f mmd:material:specularColor = (0.1, 0.1, 0.1)
-            custom uniform float mmd:material:specularPower = 8
-            custom uniform token mmd:material:sphereMode = "add"
-            custom uniform token mmd:material:toonSource = "individual"
-            custom uniform bool mmd:material:vertexColor = 0
+            color3f inputs:mmd:material:ambientColor = (0.4, 0.4, 0.4)
+            uniform bool inputs:mmd:material:castSelfShadow = 0
+            color4f inputs:mmd:material:diffuseColor = (0.8, 0.8, 0.8, 1)
+            uniform bool inputs:mmd:material:doubleSided = 1
+            uniform bool inputs:mmd:material:drawEdge = 1
+            uniform bool inputs:mmd:material:drawLines = 0
+            uniform bool inputs:mmd:material:drawPoints = 0
+            color4f inputs:mmd:material:edgeColor = (0, 0, 0, 1)
+            float inputs:mmd:material:edgeSize = 1
+            uniform bool inputs:mmd:material:groundShadow = 0
+            uniform bool inputs:mmd:material:receiveSelfShadow = 0
+            color3f inputs:mmd:material:specularColor = (0.1, 0.1, 0.1)
+            float inputs:mmd:material:specularPower = 8
+            uniform token inputs:mmd:material:sphereMode = "add"
+            uniform token inputs:mmd:material:toonSource = "individual"
+            uniform bool inputs:mmd:material:vertexColor = 0
             token outputs:mtlx:surface.connect = </Asset/mtl/hair/mtlx.outputs:surface>
             token outputs:surface.connect = </Asset/mtl/hair/preview.outputs:surface>
 
@@ -149,26 +149,46 @@ not a distributed model"""
 
             def NodeGraph "mtlx"
             {
+                color4f inputs:diffuseColor.connect = </Asset/mtl/hair.inputs:mmd:material:diffuseColor>
                 token outputs:surface.connect = </Asset/mtl/hair/mtlx/surface.outputs:surface>
 
                 def Shader "surface"
                 {
                     uniform token info:id = "ND_gltf_pbr_surfaceshader"
-                    float inputs:alpha = 1
+                    float inputs:alpha.connect = </Asset/mtl/hair/mtlx/baseColorSplit.outputs:outa>
                     int inputs:alpha_mode = 2
                     color3f inputs:base_color = (0, 0, 0)
-                    color3f inputs:emissive = (0.8, 0.8, 0.8)
+                    color3f inputs:emissive.connect = </Asset/mtl/hair/mtlx/baseColorRgb.outputs:out>
                     float inputs:ior = 1.5
                     float inputs:metallic = 0
                     float inputs:roughness = 1
                     float inputs:specular = 0
                     token outputs:surface
                 }
+
+                def Shader "baseColorSplit"
+                {
+                    uniform token info:id = "ND_separate4_color4"
+                    color4f inputs:in.connect = </Asset/mtl/hair/mtlx.inputs:diffuseColor>
+                    float outputs:outa
+                    float outputs:outb
+                    float outputs:outg
+                    float outputs:outr
+                }
+
+                def Shader "baseColorRgb"
+                {
+                    uniform token info:id = "ND_combine3_color3"
+                    float inputs:in1.connect = </Asset/mtl/hair/mtlx/baseColorSplit.outputs:outr>
+                    float inputs:in2.connect = </Asset/mtl/hair/mtlx/baseColorSplit.outputs:outg>
+                    float inputs:in3.connect = </Asset/mtl/hair/mtlx/baseColorSplit.outputs:outb>
+                    color3f outputs:out
+                }
             }
         }
 
         def Material "skin" (
-            apiSchemas = ["MaterialXConfigAPI"]
+            apiSchemas = ["MmdMaterialAPI", "MaterialXConfigAPI"]
             customData = {
                 dictionary mmd = {
                     string sourceEnglishName = "skin"
@@ -183,22 +203,22 @@ not a distributed model"""
         )
         {
             string config:mtlx:version = "1.39"
-            custom uniform color3f mmd:material:ambientColor = (0.4, 0.4, 0.4)
-            custom uniform bool mmd:material:castSelfShadow = 1
-            custom uniform color4f mmd:material:diffuseColor = (0.8, 0.8, 0.8, 1)
-            custom uniform bool mmd:material:doubleSided = 0
-            custom uniform bool mmd:material:drawEdge = 0
-            custom uniform bool mmd:material:drawLines = 0
-            custom uniform bool mmd:material:drawPoints = 0
-            custom uniform color4f mmd:material:edgeColor = (0, 0, 0, 1)
-            custom uniform float mmd:material:edgeSize = 1
-            custom uniform bool mmd:material:groundShadow = 1
-            custom uniform bool mmd:material:receiveSelfShadow = 1
-            custom uniform color3f mmd:material:specularColor = (0.1, 0.1, 0.1)
-            custom uniform float mmd:material:specularPower = 8
-            custom uniform token mmd:material:sphereMode = "disabled"
-            custom uniform token mmd:material:toonSource = "individual"
-            custom uniform bool mmd:material:vertexColor = 0
+            color3f inputs:mmd:material:ambientColor = (0.4, 0.4, 0.4)
+            uniform bool inputs:mmd:material:castSelfShadow = 1
+            color4f inputs:mmd:material:diffuseColor = (0.8, 0.8, 0.8, 1)
+            uniform bool inputs:mmd:material:doubleSided = 0
+            uniform bool inputs:mmd:material:drawEdge = 0
+            uniform bool inputs:mmd:material:drawLines = 0
+            uniform bool inputs:mmd:material:drawPoints = 0
+            color4f inputs:mmd:material:edgeColor = (0, 0, 0, 1)
+            float inputs:mmd:material:edgeSize = 1
+            uniform bool inputs:mmd:material:groundShadow = 1
+            uniform bool inputs:mmd:material:receiveSelfShadow = 1
+            color3f inputs:mmd:material:specularColor = (0.1, 0.1, 0.1)
+            float inputs:mmd:material:specularPower = 8
+            uniform token inputs:mmd:material:sphereMode = "disabled"
+            uniform token inputs:mmd:material:toonSource = "individual"
+            uniform bool inputs:mmd:material:vertexColor = 0
             token outputs:mtlx:surface.connect = </Asset/mtl/skin/mtlx.outputs:surface>
             token outputs:surface.connect = </Asset/mtl/skin/preview.outputs:surface>
 
@@ -221,20 +241,40 @@ not a distributed model"""
 
             def NodeGraph "mtlx"
             {
+                color4f inputs:diffuseColor.connect = </Asset/mtl/skin.inputs:mmd:material:diffuseColor>
                 token outputs:surface.connect = </Asset/mtl/skin/mtlx/surface.outputs:surface>
 
                 def Shader "surface"
                 {
                     uniform token info:id = "ND_gltf_pbr_surfaceshader"
-                    float inputs:alpha = 1
+                    float inputs:alpha.connect = </Asset/mtl/skin/mtlx/baseColorSplit.outputs:outa>
                     int inputs:alpha_mode = 2
                     color3f inputs:base_color = (0, 0, 0)
-                    color3f inputs:emissive = (0.8, 0.8, 0.8)
+                    color3f inputs:emissive.connect = </Asset/mtl/skin/mtlx/baseColorRgb.outputs:out>
                     float inputs:ior = 1.5
                     float inputs:metallic = 0
                     float inputs:roughness = 1
                     float inputs:specular = 0
                     token outputs:surface
+                }
+
+                def Shader "baseColorSplit"
+                {
+                    uniform token info:id = "ND_separate4_color4"
+                    color4f inputs:in.connect = </Asset/mtl/skin/mtlx.inputs:diffuseColor>
+                    float outputs:outa
+                    float outputs:outb
+                    float outputs:outg
+                    float outputs:outr
+                }
+
+                def Shader "baseColorRgb"
+                {
+                    uniform token info:id = "ND_combine3_color3"
+                    float inputs:in1.connect = </Asset/mtl/skin/mtlx/baseColorSplit.outputs:outr>
+                    float inputs:in2.connect = </Asset/mtl/skin/mtlx/baseColorSplit.outputs:outg>
+                    float inputs:in3.connect = </Asset/mtl/skin/mtlx/baseColorSplit.outputs:outb>
+                    color3f outputs:out
                 }
             }
         }

@@ -31,6 +31,16 @@ requires:
       version: ">=0.1,<0.2"
     - id: mmdModel
       version: ">=0.1,<0.2"
+  # MmdMaterialAPI, which every material applies from stage-contract v2
+  # (MATERIAL_POLICY.md §4.3). ost builds the bundle before configuring this
+  # one and composes it into every session and package of this one, so the
+  # applied schema is discoverable wherever the importer runs. The contract
+  # pin selects the schema's authored-data contract, independent of its
+  # implementation version.
+  bundles:
+    - id: mmdSchema
+      version: ">=0.1,<0.2"
+      contract: 1
 usd:
   # Where this bundle's plugInfo.json lives, relative to the bundle root.
   plug_info: plugin/resources/usdMmdFileFormat/plugInfo.json

@@ -37,10 +37,15 @@ usdmmd_openusd_root(_usd_root)
 
 # The plugin as a host finds it: through the bundle's own plugInfo.json, whose
 # relative LibraryPath points at the library staged into the bundle's lib/.
+# With it, the registration of the mmdSchema bundle it requires. No search
+# path names the schema's library: Plug loads it first, from the path its own
+# plugInfo.json gives, because the importer's names it as a dependency.
+set(_schema_bundle "${PROJECT_SOURCE_DIR}/plugins/mmdSchema")
 set(_plugin_env
     "PATH=path_list_prepend:${_usd_root}/bin"
     "PATH=path_list_prepend:${_usd_root}/lib"
     "PYTHONPATH=path_list_prepend:${_usd_root}/lib/python"
+    "PXR_PLUGINPATH_NAME=path_list_prepend:${_schema_bundle}/plugin/resources/mmdSchema"
     "PXR_PLUGINPATH_NAME=path_list_prepend:${_bundle}/plugin/resources/usdMmdFileFormat")
 
 # Every fixture opened with Usd.Stage.Open, against fixtures.json and the
@@ -51,6 +56,16 @@ add_test(NAME usdMmdFileFormat_stage_open
         --fixtures "${_fixtures}")
 set_tests_properties(usdMmdFileFormat_stage_open PROPERTIES
     ENVIRONMENT_MODIFICATION "${_plugin_env}")
+
+# The importer without the schema bundle it requires: Plug must refuse to load
+# it, naming the schema type its plugInfo.json depends on.
+add_test(NAME usdMmdFileFormat_schema_required
+    COMMAND "${USDMMD_TEST_PYTHON}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/integration/test_schema_required.py"
+        --fixtures "${_fixtures}")
+set_tests_properties(usdMmdFileFormat_schema_required PROPERTIES
+    ENVIRONMENT_MODIFICATION
+        "PATH=path_list_prepend:${_usd_root}/bin;PATH=path_list_prepend:${_usd_root}/lib;PYTHONPATH=path_list_prepend:${_usd_root}/lib/python;PXR_PLUGINPATH_NAME=set:${_bundle}/plugin/resources/usdMmdFileFormat")
 
 # The same open under a directory no single ANSI code page can spell, from a
 # Python host (TEXT_ENCODING_POLICY.md §4).

@@ -15,7 +15,8 @@ the aggregate, into a fresh prefix outside the repository:
 
 `--no-inject` leaves only the runtime and the installed bundle on the
 discovery path, and the stage check opens the fixture at `/Asset`, asserts
-that the plugin which opened it is the installed one, and that the installed
+that the plugin which opened it is the installed one, that its materials
+apply `MmdMaterialAPI` from the installed `mmdSchema`, and that the installed
 `buildInfo.json` names this VERSION. The fixtures are copied under a
 non-ASCII directory first (TEXT_ENCODING_POLICY.md).
 
@@ -53,6 +54,13 @@ plugin = Plug.Registry().GetPluginWithName("UsdMmdFileFormat")
 assert plugin and plugin.isLoaded, "UsdMmdFileFormat is not loaded after the open"
 where = pathlib.Path(plugin.path).resolve()
 assert prefix in where.parents, f"the plugin loaded from {where}, not the installed product"
+
+# Stage contract 2: every material applies the installed mmdSchema's API.
+schema = Plug.Registry().GetPluginWithName("mmdSchema")
+assert schema and prefix in pathlib.Path(schema.path).resolve().parents, \
+    f"mmdSchema is not registered from the installed product: {schema and schema.path}"
+hair = stage.GetPrimAtPath("/Asset/mtl/hair")
+assert hair.HasAPI("MmdMaterialAPI"), hair.GetAppliedSchemas()
 
 stamp = json.loads((bundle / "plugin" / "resources" / "usdMmdFileFormat" / "buildInfo.json")
                    .read_text(encoding="utf-8"))

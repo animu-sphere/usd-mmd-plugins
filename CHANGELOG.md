@@ -11,7 +11,8 @@ The **stage-contract version** is tracked separately from the package version:
 it changes only when the downstream interpretation of the authored stage
 changes incompatibly
 ([docs/design/STAGE_CONTRACT.md §2](docs/design/STAGE_CONTRACT.md#2-contract-version)).
-Stage-contract version: **1**, authored since the Phase 0 importer.
+Stage-contract version: **2**, authored since the Phase 8 importer migration
+(version 1 from the Phase 0 importer through v0.1.0).
 
 ## [Unreleased]
 
@@ -25,11 +26,25 @@ Stage-contract version: **1**, authored since the Phase 0 importer.
   (`UsdMmdMaterialAPI`, `UsdMmdTokens`) are generated from
   `schema/schema.usda` by `tools/generate_schema.py`, committed, and installed
   as the `mmdSchema` CMake package; Python reads the schema through the
-  registry. The importer does not apply it yet: stage contract 2 does. The
-  bundle is a release member.
+  registry. The importer applies it from stage contract 2. The bundle is a
+  release member.
 
 ### Changed
 
+- **Stage-contract version 2 (Phase 8).** Every material applies
+  `MmdMaterialAPI`, and its canonical values are Material interface inputs,
+  `inputs:mmd:material:<name>`. They replace contract v1's schema-less
+  `mmd:material:<name>` with the same types and meanings. Morph-modulated
+  values and texture slots are varying. A safe texture slot carries
+  `colorSpace = "srgb_rec709_scene"`. `/mtlx` connects to diffuse and the
+  texture, and a textured `/preview` connects to them too, through each
+  graph's own interface inputs. An untextured `/preview` keeps a static copy
+  (MAT-O6). Both contexts draw 15 local models as v1 did in Storm, and a
+  runtime diffuse override now reaches them. `usdMmdFileFormat` now requires
+  the `mmdSchema` bundle at run time. Its `plugInfo.json` names
+  `UsdMmdMaterialAPI` as a plugin dependency, so a host registers both
+  bundles and needs no loader path for the schema's library. The goldens
+  change by these renames and connections only.
 - **Role-table version 2 (MOT-O12).** `mmdSkeletonAdapter` now reports
   `roleTableVersion` 2. As a target, `上半身2` and `上半身3` bind `chest` and
   `upperChest` in the model's own chain order, and `上半身3` binds nothing
