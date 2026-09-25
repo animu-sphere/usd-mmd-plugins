@@ -1,5 +1,7 @@
 # Phase 9 skeletal motion acceptance (2026-09-22)
 
+> Later: MOT-O10 was measured on 2026-09-25 ([report](2026-09-25-phase9-rest-pose-comparison.md)).
+
 Dated evidence from real runs; append-only
 ([contributing/documentation.md](../contributing/documentation.md)).
 

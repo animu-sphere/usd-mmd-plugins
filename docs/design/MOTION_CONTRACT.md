@@ -30,6 +30,9 @@
 > the PMX skeleton, rest pose and versioned humanoid mapping.
 > Revised again on 2026-09-21: `usd-motion-plugins` v0.5.0 shipped installable
 > `motionCore` and `motionRetarget`, and both adapters implemented §10 and §12.
+> Revised 2026-09-25: MOT-O10 is narrowed by a measured comparison, MOT-O12 is
+> opened, and §10.7 records that the shared core has promoted no common
+> expression semantic yet.
 
 ---
 
@@ -289,8 +292,9 @@ as a whole.
 | MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motionUsd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
-| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal ([report](../reports/2026-09-19-phase9-roles-and-root.md)) — not the level arms a VRM's identity rest describes. Whether `mmdSkeletonAdapter` states a `SourceRestPose` measured from the rest bone directions (as the shared core's BVH profiles state `rest-offsets`), and against which reference directions, or leaves the difference to a retarget option | a measured A-pose-to-level-arm retarget comparison; the first generic skeletal acceptance used identity rest rotations and could not answer it ([report](../reports/2026-09-22-phase9-motion-acceptance.md)) |
+| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes. Measured 2026-09-25 ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton, today's identity rest leaves every arm segment off by that angle (median 40°); a rest aimed from the rest bone directions of the **arm chain alone** (shoulder, upper arm, lower arm, hand) onto the lateral axis removes it (≤ 0.04°), while the same construction on the whole body flips the chest where `上半身3` lies below `上半身2` and levels feet no humanoid rest levels. A source rest is correct only with the same rest stated for a PMX **target**: stated on the source alone, PMX to PMX goes from a median 2.5° to 40°, and a level-arm source already reaches a PMX target 40° low today. So the source half waits for the target half | `usd-motion-plugins`: a retarget target rest distinct from the bind rest `/Asset/skel/Skeleton` states, and the T-pose directions as public vocabulary rather than `motionSource`'s private table |
 | MOT-O11 | Whether a plane link starts from its keyed rotation. §11.7 starts an enabled chain's plane angles at zero, so a knee's keyed rotation never reaches the pose and the knee is solved from straight; three.js r168 starts from the keyed rotation. On a motion that keys its legs' rotations alongside their goals, that start alone leaves a median 0.05 mm where §11.7 leaves 2.4 mm, and moves the knees a median 4.6 mm and at most 66 mm; on an IK-authored motion it changes little ([report](../reports/2026-09-19-phase9-ik-reference.md)). Which MMD does | MMD's output on a motion that keys its IK links |
+| MOT-O12 | Where `上半身3` falls in the role table. In both local models that have it, the chain is `上半身` → `上半身3` → `上半身2` → `首`, with the neck and shoulders under `上半身2`; §12.2's version 1 maps `上半身2` to `chest` and `上半身3` to `upperChest`, against that order. A motion that keys `上半身2` then gives `neck` the chest's rotation a second time, cancelled only on a target that binds `upperChest`: onto targets without it, arms land a median 6–8° and at most 26° off ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)). Proposed: version 2 maps by the model's chain, `上半身3` to `chest` and `上半身2` to `upperChest` where `上半身3` is the ancestor | a table version 2, checked against models with `上半身3` in both orders if any exist |
 
 Resolved:
 
@@ -453,7 +457,11 @@ the bound weight as a scalar. That source-preserving channel is retained even
 when an optional semantic expression is emitted beside it.
 
 The shared core owns common expression vocabulary; this repository owns any
-mapping from an MMD source name to that vocabulary. Such a mapping is explicit,
+mapping from an MMD source name to that vocabulary. As of `usd-motion-plugins`
+v0.5.x there is none: a common semantic such as `face/blinkLeft` is promoted
+only by a revision of the shared motion contract, never invented by a mapping
+(its MOTION_CONTRACT.md §6), and none has been promoted, so this repository
+emits source channels only. Such a mapping is explicit,
 versioned and limited to high-confidence conventions such as blink and basic
 mouth visemes. It preserves the original channel, diagnoses ambiguity and
 never turns an unknown model-specific morph into a guess. Generic motion code
