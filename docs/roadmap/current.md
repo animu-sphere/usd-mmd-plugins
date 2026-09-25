@@ -1,13 +1,16 @@
-# Phase 9, then Phase 8 — shared motion, material and avatar composition
+# Phase 9, then Phase 8, and Phase 10 — shared motion, material and avatar composition, and USDZ packaging
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
 and expression interoperability wait on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, and the importer authors stage-contract v2 with
-the fallback graphs connected; the UsdImaging adapter is next.
+the fallback graphs connected; the UsdImaging adapter is next. Phase 10,
+USDZ packaging, has its design and has not started.
 
-Two Phases remain, and they run in this order although they are numbered the
-other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
+Three Phases remain. Phases 9 and 8 run in this order although they are
+numbered the other way, and Phase 10 needs only the importer's stage, so it
+can run alongside either
+([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
 
 - **Phase 9 — shared motion core adoption.** This repository evaluates MMD
   motion over the control rig (`mmdControl`) and hands the result to
@@ -21,6 +24,9 @@ other way ([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
   `usd-stage-runner` through
   OpenStrata. Most of it is owned outside this repository: the runtime, not
   this repository, is the avatar execution environment.
+- **Phase 10 — USDZ packaging.** `mmd_usdz` packages the imported stage and
+  its textures as a standard USDZ that opens without this repository's
+  plugins ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)).
 
 What is listed here is only the part this repository owes, or waits for; what
 the runtime consumes from here today is [v0.1.0](../releases/v0.1.0.md).
@@ -210,7 +216,35 @@ shared physics step, body → bone feedback, then final pose consumption.
 playback state. PMX parsing and `Usd.Stage.Open("model.pmx")` remain usable
 without any physics runtime.
 
+## Phase 10 — what remains
+
+The design was measured first with OpenUSD 26.08's own packaging over the
+local models
+([report](../reports/2026-09-25-usdz-packaging-probe.md)). A `.pmx` handed to
+OpenUSD's packager as it stands becomes the package's root layer. A
+materialized `.usdc` with its textures at their stage-relative paths opens
+without the plugins. 31 of the 41 local PMX files name a BMP, which USDZ
+cannot hold.
+
+- ⬜ **Step 1 — a minimal package.** `tools/mmdUsdz/` with its manifest, CI
+  cell and product membership
+  ([WORKSPACE.md §1.2](../architecture/WORKSPACE.md#12-later-only-when-their-responsibility-is-real)).
+  Open, discover, convert BMP and TGA to PNG, materialize, write with
+  `SdfZipFileWriter`, validate, and move into place
+  ([PACKAGING_POLICY.md §3](../design/PACKAGING_POLICY.md#3-pipeline)). The
+  `MMD_PKG_` diagnostics. Fixtures with BMP, a `.spa` holding BMP, TGA,
+  non-ASCII names, a shared texture and a missing one. A plugin-free open
+  test, `usdchecker`, and the `.pmx`-against-`.usdz` comparison.
+- ⬜ **Step 2 — robust assets and a deterministic archive.** Name
+  collisions, relative-path normalization checked against the importer's,
+  and missing-asset reporting. PKG-O1: the same input gives the same bytes in
+  any time zone.
+- ⬜ **Step 3 — portability.** `--portable-paths` (PKG-O2), and non-ASCII
+  input and output paths in CI on every platform.
+- ⬜ **Step 4 — a shared packaging layer**, only once `usd-vrm-plugins` has a
+  packager too, extracted from the two working tools.
+
 ## Completion criteria
 
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)'s acceptance for
-Phase 9 and for Phase 8.
+Phase 9, for Phase 8 and for Phase 10.
