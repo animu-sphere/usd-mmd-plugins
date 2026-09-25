@@ -14,7 +14,10 @@ import pathlib
 
 from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade, UsdSkel, UsdValidation, Vt
 
-STAGE_CONTRACT_VERSION = 1
+STAGE_CONTRACT_VERSION = 2
+# The canonical material values MmdMaterialAPI declares that a PMX material
+# may leave unauthored; every other one is authored (MATERIAL_POLICY.md §4.1).
+CONDITIONAL_MATERIAL_INPUTS = {"texture", "sphereTexture", "toonTexture", "sharedToonIndex"}
 WEIGHT_TOLERANCE = 1e-5
 
 _VALIDATORS = None
@@ -131,7 +134,7 @@ class Checker:
 
         custom = asset.GetCustomDataByKey
         expect(custom("mmd:stageContractVersion") == STAGE_CONTRACT_VERSION,
-               "mmd:stageContractVersion is not 1")
+               f"mmd:stageContractVersion is not {STAGE_CONTRACT_VERSION}")
         expect(custom("mmd:sourceFormat") == "PMX", "mmd:sourceFormat is not PMX")
         expect(custom("mmd:sourceVersion") == self.expectation["sourceVersion"],
                f"mmd:sourceVersion is {custom('mmd:sourceVersion')!r}")
@@ -211,8 +214,9 @@ class Checker:
                    and custom("mmd:sourceEnglishName") == m["englishName"]
                    and custom("mmd:sourceIndex") == m["sourceIndex"],
                    f"{path} provenance is {prim.GetCustomData()}")
-            expect(prim.GetAttribute("mmd:material:doubleSided").Get() == m["doubleSided"],
-                   f"{path} mmd:material:doubleSided")
+            self.canonical_inputs(prim, path)
+            expect(prim.GetAttribute("inputs:mmd:material:doubleSided").Get() == m["doubleSided"],
+                   f"{path} inputs:mmd:material:doubleSided")
             self.material_graphs(prim, path, m)
             for slot, key in (("texture", "mmd:sourceTexturePath"),
                               ("sphereTexture", "mmd:sourceSphereTexturePath"),
@@ -243,6 +247,40 @@ class Checker:
                 mesh, UsdGeom.Tokens.face, UsdShade.Tokens.materialBind)
             expect(valid, f"the materialBind family is not valid: {reason}")
 
+    def canonical_inputs(self, prim: Usd.Prim, path: str) -> None:
+        """MmdMaterialAPI applied, and its canonical values authored as
+        Material interface inputs with the schema's types and variability;
+        no stage-contract v1 name beside them (MATERIAL_POLICY.md §4.1, §14)."""
+        expect = self.expect
+        expect(prim.HasAPI("MmdMaterialAPI"),
+               f"{path} does not apply MmdMaterialAPI: {prim.GetAppliedSchemas()}")
+        definition = Usd.SchemaRegistry().FindAppliedAPIPrimDefinition("MmdMaterialAPI")
+        expect(definition is not None, "MmdMaterialAPI is not registered")
+        material = UsdShade.Material(prim)
+        toon_source = prim.GetAttribute("inputs:mmd:material:toonSource").Get()
+        for name in definition.GetPropertyNames():
+            short = name.removeprefix("inputs:mmd:material:")
+            attr = prim.GetAttribute(name)
+            if short == "sharedToonIndex":
+                required = toon_source == "shared"
+                expect(attr.HasAuthoredValue() == required,
+                       f"{path}.{name} is {'not ' if required else ''}authored for "
+                       f"toonSource {toon_source!r}")
+            elif short not in CONDITIONAL_MATERIAL_INPUTS:
+                expect(attr.HasAuthoredValue(), f"{path}.{name} is not authored")
+            if not attr.HasAuthoredValue():
+                continue
+            spec = definition.GetAttributeDefinition(name)
+            expect(attr.GetTypeName() == spec.GetTypeName()
+                   and attr.GetVariability() == spec.GetVariability(),
+                   f"{path}.{name} is {attr.GetTypeName()} {attr.GetVariability()}, "
+                   f"the schema declares {spec.GetTypeName()} {spec.GetVariability()}")
+            expect(bool(material.GetInput(f"mmd:material:{short}")),
+                   f"{path}.{name} is not a Material input")
+        legacy = [a.GetName() for a in prim.GetAttributes()
+                  if a.GetName().startswith("mmd:material:")]
+        expect(not legacy, f"{path} still authors stage-contract v1 names {legacy}")
+
     def material_graphs(self, material: Usd.Prim, path: str, want: dict) -> None:
         """Validate the VRM-like unlit portable material realizations."""
         expect = self.expect
@@ -270,11 +308,6 @@ class Checker:
                f"{path}/preview/surface diffuseColor is not black")
         expect(preview_surface.GetAttribute("inputs:emissiveColor").IsValid(),
                f"{path}/preview/surface has no emissiveColor")
-        for input_name in ("mmd:material:diffuseColor", "mmd:material:specularColor",
-                           "mmd:material:specularPower", "mmd:material:ambientColor",
-                           "mmd:material:sphereMode", "mmd:material:toonSource"):
-            expect(material.GetAttribute(input_name).IsValid(),
-                   f"{path} has no preserved {input_name}")
         expect(connections(preview, "surface") ==
                [f"{path}/preview/surface.outputs:surface"],
                f"{path}/preview output is not connected to its surface shader")
@@ -303,49 +336,87 @@ class Checker:
         expect(config.IsValid() and config.Get() == "1.39",
                f"{path} has no MaterialX 1.39 config")
 
-        diffuse_color = material.GetAttribute("mmd:material:diffuseColor").Get()
+        diffuse = material.GetAttribute("inputs:mmd:material:diffuseColor")
+        diffuse_color = diffuse.Get()
         expected_alpha_mode = 2 if want["textures"].get("texture") is not None \
             or diffuse_color[3] < 1.0 else 0
         expect(mtlx_surface.GetAttribute("inputs:alpha_mode").Get() == expected_alpha_mode,
                f"{path}/mtlx/surface alpha_mode is not {expected_alpha_mode}")
 
+        def reads(graph: str, node: str, input_name: str, canonical: Usd.Attribute) -> None:
+            """The node's input is connected to its graph's interface input,
+            which is connected to the Material's canonical input: the value
+            the realization reads is the canonical one (MATERIAL §2, §3)."""
+            where = f"{path}/{graph}/{node}.inputs:{input_name}"
+            node_input = UsdShade.Input(
+                self.stage.GetPrimAtPath(f"{path}/{graph}/{node}").GetAttribute(
+                    f"inputs:{input_name}"))
+            expect(bool(node_input), f"{where} does not exist")
+            sources, _ = node_input.GetConnectedSources()
+            expect(len(sources) == 1
+                   and sources[0].source.GetPath() == Sdf.Path(f"{path}/{graph}"),
+                   f"{where} is not connected to its graph's interface")
+            producers = node_input.GetValueProducingAttributes(False)
+            expect([a.GetPath() for a in producers] == [canonical.GetPath()],
+                   f"{where} reads {[str(a.GetPath()) for a in producers]}, "
+                   f"expected {canonical.GetPath()}")
+
+        # Both graphs read diffuse from the canonical input, except the
+        # untextured preview (MAT-O6), which copies it exactly.
+        for node, node_id in (("baseColorSplit", "ND_separate4_color4"),
+                              ("baseColorRgb", "ND_combine3_color3")):
+            shader_id(child(f"mtlx/{node}", "Shader"), node_id)
         texture_want = want["textures"].get("texture")
         textured = texture_want is not None and texture_want["asset"] is not None
         if textured:
+            texture = material.GetAttribute("inputs:mmd:material:texture")
             preview_texture = child("preview/baseTexture", "Shader")
             shader_id(preview_texture, "UsdUVTexture")
             expect(preview_texture.GetAttribute("inputs:sourceColorSpace").Get() == "sRGB",
                    f"{path}/preview/baseTexture is not marked sRGB")
+            reads("preview", "baseTexture", "scale", diffuse)
+            reads("preview", "baseTexture", "file", texture)
             for node, node_id in (("baseTexture", "ND_image_color4"),
-                                  ("baseColorFactor", "ND_multiply_color4"),
-                                  ("baseColorSplit", "ND_separate4_color4"),
-                                  ("baseColorRgb", "ND_combine3_color3")):
+                                  ("baseColorFactor", "ND_multiply_color4")):
                 shader_id(child(f"mtlx/{node}", "Shader"), node_id)
+            reads("mtlx", "baseColorFactor", "in2", diffuse)
+            reads("mtlx", "baseTexture", "file", texture)
         else:
             expect(not self.stage.GetPrimAtPath(f"{path}/preview/baseTexture").IsValid(),
                    f"{path} has a preview texture node without a base texture")
             expect(not self.stage.GetPrimAtPath(f"{path}/mtlx/baseTexture").IsValid(),
                    f"{path} has an mtlx texture node without a base texture")
+            emissive = preview_surface.GetAttribute("inputs:emissiveColor")
+            opacity = preview_surface.GetAttribute("inputs:opacity")
+            expect(not emissive.HasAuthoredConnections()
+                   and not opacity.HasAuthoredConnections()
+                   and tuple(emissive.Get()) == tuple(diffuse_color)[:3]
+                   and opacity.Get() == diffuse_color[3],
+                   f"{path}/preview/surface does not copy diffuse {diffuse_color}")
+            reads("mtlx", "baseColorSplit", "in", diffuse)
 
     def texture_slot(self, prim: Usd.Prim, slot: str, key: str, want: dict | None) -> None:
         """The verbatim source path as provenance whenever the slot names a
         texture; the anchored asset path only when it is safe; and it
         resolves exactly when the file is beside the fixture (TEXT §7)."""
-        attr = prim.GetAttribute(f"mmd:material:{slot}")
-        where = f"{prim.GetPath()}.mmd:material:{slot}"
+        attr = prim.GetAttribute(f"inputs:mmd:material:{slot}")
+        where = f"{prim.GetPath()}.inputs:mmd:material:{slot}"
         if want is None:
-            self.expect(not attr.IsValid(), f"{where} is authored for an empty slot")
+            self.expect(not attr.HasAuthoredValue(), f"{where} is authored for an empty slot")
             self.expect(not prim.HasCustomDataKey(key), f"{prim.GetPath()} has {key}")
             return
         self.expect(prim.GetCustomDataByKey(key) == want["source"],
                     f"{prim.GetPath()} {key} is {prim.GetCustomDataByKey(key)!r}")
         if want["asset"] is None:
-            self.expect(not attr.IsValid(), f"{where} is authored for an unsafe path")
+            self.expect(not attr.HasAuthoredValue(), f"{where} is authored for an unsafe path")
             return
         value = attr.Get()
         self.expect(attr.GetTypeName() == Sdf.ValueTypeNames.Asset
                     and value.path == want["asset"],
                     f"{where} is {value!r}, expected @{want['asset']}@")
+        # The encoding a connected texture node reads, as OpenUSD names it.
+        self.expect(attr.GetColorSpace() == "srgb_rec709_scene",
+                    f"{where} colorSpace is {attr.GetColorSpace()!r}")
         self.expect(bool(value.resolvedPath) == want["resolves"],
                     f"{where} resolves to {value.resolvedPath!r}")
 

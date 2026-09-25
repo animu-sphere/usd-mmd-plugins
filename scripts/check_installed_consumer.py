@@ -17,7 +17,7 @@ proves the prefix works on its own:
   3. the installed mmd_inspect and vmd_inspect read every fixture from the
      prefix's bin/;
   4. a Python host whose only plugin path is the prefix's opens a PMX through
-     the installed usdMmdFileFormat;
+     the installed usdMmdFileFormat, with MmdMaterialAPI applied;
   5. the installed mmdSchema applies MmdMaterialAPI from a C++ consumer, and
      reads a fallback through the prefix's registered definition.
 
@@ -114,7 +114,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     build_info = prefix / PLUGIN_RESOURCES / "buildInfo.json"
     if build_info.is_file():
         info = json.loads(build_info.read_text(encoding="utf-8"))
-        if info.get("stageContractVersion") != 1:
+        if info.get("stageContractVersion") != 2:
             errors.append(f"buildInfo.json stageContractVersion is "
                           f"{info.get('stageContractVersion')!r}")
         if info.get("openusdVersion") != "26.08":
@@ -351,9 +351,11 @@ def main() -> int:
             return 1
         print(f"ok  the installed mmdSchema applied its API: {want}")
 
-        # The Python host, with only the prefix on the plugin path.
+        # The Python host, with only the prefix on the plugin path: the
+        # importer and the schema bundle it requires.
         env = dict(runtime_env)
-        env["PXR_PLUGINPATH_NAME"] = str(prefix / PLUGIN_RESOURCES)
+        env["PXR_PLUGINPATH_NAME"] = os.pathsep.join(
+            [str(prefix / PLUGIN_RESOURCES), str(prefix / SCHEMA_RESOURCES)])
         env["PYTHONPATH"] = os.pathsep.join(
             [str(args.usd_root / "lib" / "python"), env.get("PYTHONPATH", "")])
         run([sys.executable, source / "open_stage.py", prefix,
