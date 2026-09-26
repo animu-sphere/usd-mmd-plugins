@@ -30,7 +30,7 @@ place that says what is implemented.
 | --- | --- | --- |
 | [architecture/](architecture/) | How the workspace is structured: component identities, dependency directions, build modes, external dependencies, installed packages. | [WORKSPACE.md](architecture/WORKSPACE.md) · [DEPENDENCIES.md](architecture/DEPENDENCIES.md) · [PACKAGE_CONTRACT.md](architecture/PACKAGE_CONTRACT.md) |
 | [design/](design/) | What the importer authors and why. | [DESIGN_POLICY.md](design/DESIGN_POLICY.md) |
-| [guides/](guides/) | How to accomplish a task, with commands that have been run. | [building.md](guides/building.md) · [opening.md](guides/opening.md) · [inspecting.md](guides/inspecting.md) |
+| [guides/](guides/) | How to accomplish a task, with commands that have been run. | [building.md](guides/building.md) · [opening.md](guides/opening.md) · [inspecting.md](guides/inspecting.md) · [exporting.md](guides/exporting.md) |
 | [reference/](reference/) | Facts about the current tree: what is supported, which diagnostics exist, where each PMX field lands. | [CAPABILITY_MATRIX.md](reference/CAPABILITY_MATRIX.md) · [DIAGNOSTICS.md](reference/DIAGNOSTICS.md) · [SOURCE_MAPPING.md](reference/SOURCE_MAPPING.md) |
 | [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
 | [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
@@ -66,7 +66,7 @@ place that says what is implemented.
     proposed runtime boundary after static physics preservation: MMD coupling
     here, generic simulation in `usd-physics-plugins`, execution order in
     `usd-stage-runner`, and composition in `usd-avatar-runtime`;
-  - [design/PACKAGING_POLICY.md](design/PACKAGING_POLICY.md) — the proposed
+  - [design/PACKAGING_POLICY.md](design/PACKAGING_POLICY.md) — the
     `mmd_export` tool: how the imported stage and its textures become a
     standard USDZ that opens without this repository's plugins.
 - [architecture/WORKSPACE.md](architecture/WORKSPACE.md) is the binding

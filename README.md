@@ -81,6 +81,7 @@ contract is [docs/design/PHYSICS_INTEGRATION.md](docs/design/PHYSICS_INTEGRATION
 | `mmdSkeletonAdapter` | plain C++ library | exposes the PMX skeleton, source rest and versioned humanoid map to `usd-motion-plugins`; no retarget algorithm | exists |
 | `mmdMotionAdapter` | plain C++ library | turns fully evaluated MMD poses into `MotionClip`; no target-avatar knowledge | exists |
 | `vmd_inspect` | CLI | what a VMD contains, without a model or USD | exists ([guide](docs/guides/inspecting.md)) |
+| `mmd_export` | CLI | the imported stage written out as conventional OpenUSD; a self-contained USDZ that opens without these plugins, BMP and TGA converted to PNG | `.usdz` ([guide](docs/guides/exporting.md)) |
 
 `MmdMaterialAPI` passed the
 [admission test](docs/design/DESIGN_POLICY.md#6-the-schema-admission-test) on

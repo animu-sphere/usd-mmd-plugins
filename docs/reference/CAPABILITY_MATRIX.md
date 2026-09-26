@@ -187,6 +187,25 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | Undefined shape, mode or joint type; a joint whose body is missing | supported | supported | 6 | [STAGE §13.3](../design/STAGE_CONTRACT.md#133-repairs) |
 | Soft bodies (2.1) | unsupported (parsed, not authored) | unsupported (parsed, not authored) | 1 | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
 
+## Export (`mmd_export`)
+
+What the exporter writes from the imported stage, in a process that loads the
+importer through Plug. Each claim is backed by the `packaging/` fixtures, the
+tool's unit and fixture tests, and the
+[local-model report](../reports/2026-09-26-phase10-mmd-export-local-models.md).
+
+| Capability | Current | Contract |
+| --- | :---: | --- |
+| `.pmx` → a standard USDZ that opens with no MMD plugin and passes `usdchecker` | supported | [PACKAGING §1–§9](../design/PACKAGING_POLICY.md#1-scope) |
+| The package's stage is the importer's, spec for spec, texture renames aside | supported | [PACKAGING §4](../design/PACKAGING_POLICY.md#4-materialization) |
+| Textures at the paths the stage names them by, UTF-8 names kept, each once | supported | [PACKAGING §5](../design/PACKAGING_POLICY.md#5-package-layout) |
+| BMP (under any extension) and TGA converted to PNG losslessly; PNG or JPEG under another extension renamed | supported | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| A missing, unsupported or colliding texture: nothing written | supported | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization), [§7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| Validation before the output is replaced, the `usdchecker` validators included | supported | [PACKAGING §9](../design/PACKAGING_POLICY.md#9-validation) |
+| Non-ASCII input and output paths | supported | [PACKAGING §10](../design/PACKAGING_POLICY.md#10-command-line) |
+| A byte-deterministic archive | — (Phase 10 step 2, PKG-O1) | [PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism) |
+| `.usdc` / `.usda` output | — (when `usdcat` proves insufficient) | [PACKAGING §16](../design/PACKAGING_POLICY.md#16-later) |
+
 ## Outside the PMX importer
 
 | Capability | Status | Where it belongs |
@@ -203,6 +222,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | VMD bake to `UsdSkelAnimation` | — (end-to-end acceptance remains) | `mmdControl` evaluates, the adapters normalize, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
 | PMD | — (not planned) | `mmdPmd`, if ever |
 | PMX / VMD writing | — (not planned) | [DESIGN_POLICY.md §2.4](../design/DESIGN_POLICY.md#24-reader-first) |
+| Export to a format that is not USD (FBX, glTF, …) | unsupported by design | [PACKAGING §15](../design/PACKAGING_POLICY.md#15-non-goals) |
 
 ## See also
 

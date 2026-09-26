@@ -5,7 +5,8 @@ skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
 and expression interoperability wait on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, and the importer authors stage-contract v2 with
 the fallback graphs connected; the UsdImaging adapter is next. Phase 10,
-USDZ packaging, has its design and has not started.
+USDZ packaging, has its step 1: `mmd_export` writes a validated USDZ that
+opens without the plugins, for every fixture and all 41 local models.
 
 Three Phases remain. Phases 9 and 8 run in this order although they are
 numbered the other way, and Phase 10 needs only the importer's stage, so it
@@ -226,15 +227,21 @@ materialized `.usdc` with its textures at their stage-relative paths opens
 without the plugins. 31 of the 41 local PMX files name a BMP, which USDZ
 cannot hold.
 
-- ⬜ **Step 1 — a minimal package.** `tools/mmdExport/` with its manifest, CI
-  cell and product membership
-  ([WORKSPACE.md §1.2](../architecture/WORKSPACE.md#12-later-only-when-their-responsibility-is-real)).
+- ✅ **Step 1 — a minimal package** (2026-09-26). `mmd_export` in
+  `tools/mmdExport/`, a workspace and release member, built and tested by
+  the workspace cells, and run from the installed product by the product
+  smoke
+  ([WORKSPACE.md §1.1](../architecture/WORKSPACE.md#11-first-target)).
   Open, discover, convert BMP and TGA to PNG, materialize, write with
   `SdfZipFileWriter`, validate, and move into place
-  ([PACKAGING_POLICY.md §3](../design/PACKAGING_POLICY.md#3-pipeline)). The
-  `MMD_PKG_` diagnostics. Fixtures with BMP, a `.spa` holding BMP, TGA,
-  non-ASCII names, a shared texture and a missing one. A plugin-free open
-  test, `usdchecker`, and the `.pmx`-against-`.usdz` comparison.
+  ([PACKAGING_POLICY.md §3](../design/PACKAGING_POLICY.md#3-pipeline)), with
+  the `MMD_PKG_` diagnostics. The `packaging/` fixtures hold BMP, a `.spa`
+  holding BMP, TGA, JPEG, a PNG under `.sph`, non-ASCII names, a shared toon,
+  and a missing, an unsupported and a colliding texture. A plugin-free open,
+  `usdchecker` and the `.pmx`-against-`.usdz` comparison pass for every
+  fixture and for all 41 local models
+  ([guide](../guides/exporting.md),
+  [report](../reports/2026-09-26-phase10-mmd-export-local-models.md)).
 - ⬜ **Step 2 — robust assets and a deterministic archive.** Name
   collisions, relative-path normalization checked against the importer's,
   and missing-asset reporting. PKG-O1: the same input gives the same bytes in

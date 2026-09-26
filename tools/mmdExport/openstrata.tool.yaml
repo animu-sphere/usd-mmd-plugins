@@ -1,0 +1,17 @@
+# OpenStrata workspace-tool descriptor.
+#
+# mmd_export writes the stage the importer authors out as conventional
+# OpenUSD. Version 1 writes a standard USDZ, with every texture the stage
+# names, that opens without this repository's plugins
+# (docs/design/PACKAGING_POLICY.md). It links OpenUSD only and reaches the
+# importer at run time through Plug, so it declares no library edge
+# (docs/architecture/WORKSPACE.md §2.1). It ships in the product beside the
+# importer it needs at run time.
+schema: openstrata.tool/v1alpha1
+tool:
+  id: mmd_export
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.1.0
+  license: Apache-2.0
+executables: [mmd_export]
+directories: [bin]

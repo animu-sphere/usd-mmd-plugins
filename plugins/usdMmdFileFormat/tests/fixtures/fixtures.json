@@ -1829,6 +1829,3376 @@
       "skinned": false
     }
   },
+  "packaging/missing-texture.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 2,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 3,
+      "softBodies": 0,
+      "textures": 2,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "a texture that does not resolve: no package",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": false,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "missing",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "missing",
+          "name": "無い",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/無い.png",
+              "resolves": false,
+              "source": "tex\\無い.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "blendShapes": [
+          "blink"
+        ],
+        "doubleSided": false,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "morphs": [
+        {
+          "englishName": "blink",
+          "id": "blink",
+          "name": "まばたき",
+          "offsets": [
+            [
+              0.0,
+              -0.00800000037997961,
+              0.0
+            ],
+            [
+              0.0,
+              -0.004000000189989805,
+              -0.0015999999595806003
+            ]
+          ],
+          "panel": "eye",
+          "pointIndices": [
+            0,
+            5
+          ],
+          "sourceIndex": 0,
+          "type": "vertex"
+        },
+        {
+          "englishName": "smile",
+          "id": "smile",
+          "members": [
+            "blink",
+            "morph_0002"
+          ],
+          "name": "笑い",
+          "panel": "mouth",
+          "sourceIndex": 1,
+          "type": "group",
+          "weights": [
+            1.0,
+            0.5
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0002",
+          "joints": [
+            1
+          ],
+          "name": "肩",
+          "panel": "other",
+          "rotations": [
+            [
+              0.0,
+              0.0,
+              0.13052619993686676,
+              0.9914448857307434
+            ]
+          ],
+          "sourceIndex": 2,
+          "translations": [
+            [
+              0.0,
+              0.01600000075995922,
+              0.0
+            ]
+          ],
+          "type": "bone"
+        },
+        {
+          "englishName": "uv",
+          "id": "uv",
+          "name": "UV",
+          "panel": "other",
+          "pointIndices": [
+            3
+          ],
+          "sourceIndex": 3,
+          "type": "uv",
+          "uvOffsets": [
+            [
+              0.10000000149011612,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0004",
+          "name": "追加UV",
+          "panel": "hidden",
+          "pointIndices": [
+            4
+          ],
+          "sourceIndex": 4,
+          "type": "uv1",
+          "uvOffsets": [
+            [
+              0.0,
+              0.5,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "diffuseColors": [
+            [
+              1.0,
+              1.0,
+              1.0,
+              0.5
+            ]
+          ],
+          "englishName": "material",
+          "id": "material",
+          "materialIndices": [
+            -1
+          ],
+          "materialOperations": [
+            "multiply"
+          ],
+          "name": "材質",
+          "panel": "other",
+          "sourceIndex": 5,
+          "type": "material"
+        }
+      ],
+      "physics": {
+        "joints": [
+          {
+            "body0": "head",
+            "body1": "rigidBody_0001",
+            "englishName": "",
+            "id": "joint_0000",
+            "limits": {
+              "rotX": [
+                -5.729578018188477,
+                11.459156036376953
+              ],
+              "rotY": [
+                -11.459156036376953,
+                17.18873405456543
+              ],
+              "rotZ": [
+                -22.918312072753906,
+                17.18873405456543
+              ],
+              "transX": [
+                -0.03999999910593033,
+                0.03999999910593033
+              ],
+              "transZ": [
+                -0.019999999552965164,
+                0.07999999821186066
+              ]
+            },
+            "localPos0": [
+              0.02725920081138611,
+              -0.044058121740818024,
+              -0.07011289149522781
+            ],
+            "localPos1": [
+              -0.013360529206693172,
+              0.030272338539361954,
+              0.06711990386247635
+            ],
+            "localRot0": [
+              0.05721030384302139,
+              -0.21026644110679626,
+              0.05808226764202118,
+              0.974238932132721
+            ],
+            "localRot1": [
+              0.19993436336517334,
+              0.006433593574911356,
+              0.2138567715883255,
+              0.9561643004417419
+            ],
+            "name": "頭-髪",
+            "orientation": [
+              -0.06407134979963303,
+              -0.09115754812955856,
+              0.14357218146324158,
+              0.9833474159240723
+            ],
+            "position": [
+              0.14,
+              1.06,
+              -0.02
+            ],
+            "rigidBodyA": 0,
+            "rigidBodyB": 1,
+            "rotationLowerLimit": [
+              -0.10000000149011612,
+              -0.20000000298023224,
+              -0.4000000059604645
+            ],
+            "rotationSpring": [
+              5.0,
+              6.0,
+              7.0
+            ],
+            "rotationUpperLimit": [
+              0.20000000298023224,
+              0.30000001192092896,
+              0.30000001192092896
+            ],
+            "sourceIndex": 0,
+            "translationLowerLimit": [
+              -0.03999999910593033,
+              0.07999999821186066,
+              -0.019999999552965164
+            ],
+            "translationSpring": [
+              0.0,
+              10.0,
+              20.0
+            ],
+            "translationUpperLimit": [
+              0.03999999910593033,
+              0.0,
+              0.07999999821186066
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          },
+          {
+            "body0": "rigidBody_0001",
+            "body1": "chest",
+            "englishName": "",
+            "id": "joint_0001",
+            "limits": {
+              "rotX": [
+                -57.295780181884766,
+                57.295780181884766
+              ],
+              "rotY": [
+                -28.647890090942383,
+                28.647890090942383
+              ],
+              "rotZ": [
+                0.0,
+                0.0
+              ],
+              "transX": [
+                0.0,
+                0.0
+              ],
+              "transY": [
+                0.0,
+                0.0
+              ],
+              "transZ": [
+                0.0,
+                0.0
+              ]
+            },
+            "localPos0": [
+              0.05218634754419327,
+              -0.025077378377318382,
+              0.015738818794488907
+            ],
+            "localPos1": [
+              -0.022016452625393867,
+              0.054231297224760056,
+              0.013200085610151291
+            ],
+            "localRot0": [
+              0.5272102355957031,
+              -0.08068269491195679,
+              0.40934959053993225,
+              0.7402517199516296
+            ],
+            "localRot1": [
+              0.41287046670913696,
+              0.2861250638961792,
+              -0.18736721575260162,
+              0.844135046005249
+            ],
+            "name": "髪-胸",
+            "orientation": [
+              0.26610031723976135,
+              -0.12854111194610596,
+              0.4155384302139282,
+              0.8602299690246582
+            ],
+            "position": [
+              0.2,
+              0.98,
+              -0.02
+            ],
+            "rigidBodyA": 1,
+            "rigidBodyB": 2,
+            "rotationLowerLimit": [
+              -1.0,
+              -0.5,
+              0.0
+            ],
+            "rotationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotationUpperLimit": [
+              1.0,
+              0.5,
+              0.0
+            ],
+            "sourceIndex": 1,
+            "translationLowerLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationUpperLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          }
+        ],
+        "rigidBodies": [
+          {
+            "angularDamping": 0.25,
+            "bone": 1,
+            "collisionGroup": 1,
+            "collisionMask": 65533,
+            "englishName": "head",
+            "friction": 0.75,
+            "id": "head",
+            "kinematic": true,
+            "linearDamping": 0.5,
+            "mass": 1.0,
+            "mode": "followBone",
+            "name": "頭",
+            "orientation": [
+              -0.14357218146324158,
+              0.10602051019668579,
+              0.06407134979963303,
+              0.9818561673164368
+            ],
+            "position": [
+              0.12,
+              1.12,
+              0.04
+            ],
+            "restitution": 0.125,
+            "shape": "sphere",
+            "size": [
+              0.12,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.11999999731779099,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 0
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": -1,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "",
+            "friction": 0.75,
+            "id": "rigidBody_0001",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.5,
+            "mode": "dynamic",
+            "name": "髪",
+            "orientation": [
+              -0.23744933307170868,
+              -0.13589514791965485,
+              -0.0908302292227745,
+              0.9575490355491638
+            ],
+            "position": [
+              0.16,
+              1.0,
+              -0.06
+            ],
+            "restitution": 0.125,
+            "shape": "capsule",
+            "size": [
+              0.04,
+              0.16,
+              0.0
+            ],
+            "sizeFloat": [
+              0.03999999910593033,
+              0.1599999964237213,
+              0.0
+            ],
+            "sourceIndex": 1
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": 2,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "chest",
+            "friction": 0.75,
+            "id": "chest",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.0,
+            "mode": "dynamicWithBone",
+            "name": "胸",
+            "orientation": [
+              -0.03572738170623779,
+              -0.5760614275932312,
+              0.38274064660072327,
+              0.7213780879974365
+            ],
+            "position": [
+              0.24,
+              0.96,
+              0.02
+            ],
+            "restitution": 0.125,
+            "shape": "box",
+            "size": [
+              0.08,
+              0.04,
+              0.02
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.03999999910593033,
+              0.019999999552965164
+            ],
+            "sourceIndex": 2
+          }
+        ],
+        "sourceRelations": {
+          "joints": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              2
+            ]
+          ],
+          "rigidBodies": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              -1
+            ],
+            [
+              2,
+              2
+            ]
+          ]
+        }
+      },
+      "rig": {
+        "bones": [
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.07999999821186066,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": true,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": 2,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": true,
+            "appendRatio": 0.5,
+            "appendRotation": true,
+            "appendSource": 1,
+            "appendTranslation": true,
+            "deformAfterPhysics": false,
+            "externalParentKey": 3,
+            "fixedAxis": [
+              -0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "hasExternalParent": true,
+            "hasFixedAxis": true,
+            "hasLocalAxes": true,
+            "localAxisX": [
+              0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "localAxisZ": [
+              0.6000000238418579,
+              0.0,
+              0.800000011920929
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.07999999821186066,
+              0.019999999552965164,
+              0.03999999910593033
+            ],
+            "transformLayer": 1,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          }
+        ],
+        "ikChains": [
+          {
+            "effector": 2,
+            "englishName": "LeftWrist IK",
+            "id": "LeftWrist_IK",
+            "joint": 3,
+            "limitAngle": 2.0,
+            "links": [
+              {
+                "hasLimits": true,
+                "joint": 1,
+                "lower": [
+                  0.009999999776482582,
+                  -0.5,
+                  -0.25
+                ],
+                "upper": [
+                  3.0999999046325684,
+                  0.5,
+                  0.75
+                ]
+              },
+              {
+                "hasLimits": false,
+                "joint": 0,
+                "lower": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "upper": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              }
+            ],
+            "loopCount": 40,
+            "name": "左手首ＩＫ",
+            "sourceIndex": 3
+          }
+        ],
+        "sourceRelations": {
+          "appends": [
+            [
+              2,
+              1
+            ]
+          ],
+          "ikChains": [
+            [
+              3,
+              2,
+              [
+                1,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
+  "packaging/name-collision.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 2,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 3,
+      "softBodies": 0,
+      "textures": 2,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "a BMP whose converted name is another texture's: no package",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": false,
+          "englishName": "shade",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "shade",
+          "name": "影",
+          "sourceIndex": 0,
+          "textures": {
+            "toonTexture": {
+              "asset": "./toon/影.bmp",
+              "resolves": true,
+              "source": "toon\\影.bmp"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "shade2",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "shade2",
+          "name": "影2",
+          "sourceIndex": 1,
+          "textures": {
+            "toonTexture": {
+              "asset": "./toon/影.bmp.png",
+              "resolves": true,
+              "source": "toon\\影.bmp.png"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "blendShapes": [
+          "blink"
+        ],
+        "doubleSided": false,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "morphs": [
+        {
+          "englishName": "blink",
+          "id": "blink",
+          "name": "まばたき",
+          "offsets": [
+            [
+              0.0,
+              -0.00800000037997961,
+              0.0
+            ],
+            [
+              0.0,
+              -0.004000000189989805,
+              -0.0015999999595806003
+            ]
+          ],
+          "panel": "eye",
+          "pointIndices": [
+            0,
+            5
+          ],
+          "sourceIndex": 0,
+          "type": "vertex"
+        },
+        {
+          "englishName": "smile",
+          "id": "smile",
+          "members": [
+            "blink",
+            "morph_0002"
+          ],
+          "name": "笑い",
+          "panel": "mouth",
+          "sourceIndex": 1,
+          "type": "group",
+          "weights": [
+            1.0,
+            0.5
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0002",
+          "joints": [
+            1
+          ],
+          "name": "肩",
+          "panel": "other",
+          "rotations": [
+            [
+              0.0,
+              0.0,
+              0.13052619993686676,
+              0.9914448857307434
+            ]
+          ],
+          "sourceIndex": 2,
+          "translations": [
+            [
+              0.0,
+              0.01600000075995922,
+              0.0
+            ]
+          ],
+          "type": "bone"
+        },
+        {
+          "englishName": "uv",
+          "id": "uv",
+          "name": "UV",
+          "panel": "other",
+          "pointIndices": [
+            3
+          ],
+          "sourceIndex": 3,
+          "type": "uv",
+          "uvOffsets": [
+            [
+              0.10000000149011612,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0004",
+          "name": "追加UV",
+          "panel": "hidden",
+          "pointIndices": [
+            4
+          ],
+          "sourceIndex": 4,
+          "type": "uv1",
+          "uvOffsets": [
+            [
+              0.0,
+              0.5,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "diffuseColors": [
+            [
+              1.0,
+              1.0,
+              1.0,
+              0.5
+            ]
+          ],
+          "englishName": "material",
+          "id": "material",
+          "materialIndices": [
+            -1
+          ],
+          "materialOperations": [
+            "multiply"
+          ],
+          "name": "材質",
+          "panel": "other",
+          "sourceIndex": 5,
+          "type": "material"
+        }
+      ],
+      "physics": {
+        "joints": [
+          {
+            "body0": "head",
+            "body1": "rigidBody_0001",
+            "englishName": "",
+            "id": "joint_0000",
+            "limits": {
+              "rotX": [
+                -5.729578018188477,
+                11.459156036376953
+              ],
+              "rotY": [
+                -11.459156036376953,
+                17.18873405456543
+              ],
+              "rotZ": [
+                -22.918312072753906,
+                17.18873405456543
+              ],
+              "transX": [
+                -0.03999999910593033,
+                0.03999999910593033
+              ],
+              "transZ": [
+                -0.019999999552965164,
+                0.07999999821186066
+              ]
+            },
+            "localPos0": [
+              0.02725920081138611,
+              -0.044058121740818024,
+              -0.07011289149522781
+            ],
+            "localPos1": [
+              -0.013360529206693172,
+              0.030272338539361954,
+              0.06711990386247635
+            ],
+            "localRot0": [
+              0.05721030384302139,
+              -0.21026644110679626,
+              0.05808226764202118,
+              0.974238932132721
+            ],
+            "localRot1": [
+              0.19993436336517334,
+              0.006433593574911356,
+              0.2138567715883255,
+              0.9561643004417419
+            ],
+            "name": "頭-髪",
+            "orientation": [
+              -0.06407134979963303,
+              -0.09115754812955856,
+              0.14357218146324158,
+              0.9833474159240723
+            ],
+            "position": [
+              0.14,
+              1.06,
+              -0.02
+            ],
+            "rigidBodyA": 0,
+            "rigidBodyB": 1,
+            "rotationLowerLimit": [
+              -0.10000000149011612,
+              -0.20000000298023224,
+              -0.4000000059604645
+            ],
+            "rotationSpring": [
+              5.0,
+              6.0,
+              7.0
+            ],
+            "rotationUpperLimit": [
+              0.20000000298023224,
+              0.30000001192092896,
+              0.30000001192092896
+            ],
+            "sourceIndex": 0,
+            "translationLowerLimit": [
+              -0.03999999910593033,
+              0.07999999821186066,
+              -0.019999999552965164
+            ],
+            "translationSpring": [
+              0.0,
+              10.0,
+              20.0
+            ],
+            "translationUpperLimit": [
+              0.03999999910593033,
+              0.0,
+              0.07999999821186066
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          },
+          {
+            "body0": "rigidBody_0001",
+            "body1": "chest",
+            "englishName": "",
+            "id": "joint_0001",
+            "limits": {
+              "rotX": [
+                -57.295780181884766,
+                57.295780181884766
+              ],
+              "rotY": [
+                -28.647890090942383,
+                28.647890090942383
+              ],
+              "rotZ": [
+                0.0,
+                0.0
+              ],
+              "transX": [
+                0.0,
+                0.0
+              ],
+              "transY": [
+                0.0,
+                0.0
+              ],
+              "transZ": [
+                0.0,
+                0.0
+              ]
+            },
+            "localPos0": [
+              0.05218634754419327,
+              -0.025077378377318382,
+              0.015738818794488907
+            ],
+            "localPos1": [
+              -0.022016452625393867,
+              0.054231297224760056,
+              0.013200085610151291
+            ],
+            "localRot0": [
+              0.5272102355957031,
+              -0.08068269491195679,
+              0.40934959053993225,
+              0.7402517199516296
+            ],
+            "localRot1": [
+              0.41287046670913696,
+              0.2861250638961792,
+              -0.18736721575260162,
+              0.844135046005249
+            ],
+            "name": "髪-胸",
+            "orientation": [
+              0.26610031723976135,
+              -0.12854111194610596,
+              0.4155384302139282,
+              0.8602299690246582
+            ],
+            "position": [
+              0.2,
+              0.98,
+              -0.02
+            ],
+            "rigidBodyA": 1,
+            "rigidBodyB": 2,
+            "rotationLowerLimit": [
+              -1.0,
+              -0.5,
+              0.0
+            ],
+            "rotationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotationUpperLimit": [
+              1.0,
+              0.5,
+              0.0
+            ],
+            "sourceIndex": 1,
+            "translationLowerLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationUpperLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          }
+        ],
+        "rigidBodies": [
+          {
+            "angularDamping": 0.25,
+            "bone": 1,
+            "collisionGroup": 1,
+            "collisionMask": 65533,
+            "englishName": "head",
+            "friction": 0.75,
+            "id": "head",
+            "kinematic": true,
+            "linearDamping": 0.5,
+            "mass": 1.0,
+            "mode": "followBone",
+            "name": "頭",
+            "orientation": [
+              -0.14357218146324158,
+              0.10602051019668579,
+              0.06407134979963303,
+              0.9818561673164368
+            ],
+            "position": [
+              0.12,
+              1.12,
+              0.04
+            ],
+            "restitution": 0.125,
+            "shape": "sphere",
+            "size": [
+              0.12,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.11999999731779099,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 0
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": -1,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "",
+            "friction": 0.75,
+            "id": "rigidBody_0001",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.5,
+            "mode": "dynamic",
+            "name": "髪",
+            "orientation": [
+              -0.23744933307170868,
+              -0.13589514791965485,
+              -0.0908302292227745,
+              0.9575490355491638
+            ],
+            "position": [
+              0.16,
+              1.0,
+              -0.06
+            ],
+            "restitution": 0.125,
+            "shape": "capsule",
+            "size": [
+              0.04,
+              0.16,
+              0.0
+            ],
+            "sizeFloat": [
+              0.03999999910593033,
+              0.1599999964237213,
+              0.0
+            ],
+            "sourceIndex": 1
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": 2,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "chest",
+            "friction": 0.75,
+            "id": "chest",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.0,
+            "mode": "dynamicWithBone",
+            "name": "胸",
+            "orientation": [
+              -0.03572738170623779,
+              -0.5760614275932312,
+              0.38274064660072327,
+              0.7213780879974365
+            ],
+            "position": [
+              0.24,
+              0.96,
+              0.02
+            ],
+            "restitution": 0.125,
+            "shape": "box",
+            "size": [
+              0.08,
+              0.04,
+              0.02
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.03999999910593033,
+              0.019999999552965164
+            ],
+            "sourceIndex": 2
+          }
+        ],
+        "sourceRelations": {
+          "joints": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              2
+            ]
+          ],
+          "rigidBodies": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              -1
+            ],
+            [
+              2,
+              2
+            ]
+          ]
+        }
+      },
+      "rig": {
+        "bones": [
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.07999999821186066,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": true,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": 2,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": true,
+            "appendRatio": 0.5,
+            "appendRotation": true,
+            "appendSource": 1,
+            "appendTranslation": true,
+            "deformAfterPhysics": false,
+            "externalParentKey": 3,
+            "fixedAxis": [
+              -0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "hasExternalParent": true,
+            "hasFixedAxis": true,
+            "hasLocalAxes": true,
+            "localAxisX": [
+              0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "localAxisZ": [
+              0.6000000238418579,
+              0.0,
+              0.800000011920929
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.07999999821186066,
+              0.019999999552965164,
+              0.03999999910593033
+            ],
+            "transformLayer": 1,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          }
+        ],
+        "ikChains": [
+          {
+            "effector": 2,
+            "englishName": "LeftWrist IK",
+            "id": "LeftWrist_IK",
+            "joint": 3,
+            "limitAngle": 2.0,
+            "links": [
+              {
+                "hasLimits": true,
+                "joint": 1,
+                "lower": [
+                  0.009999999776482582,
+                  -0.5,
+                  -0.25
+                ],
+                "upper": [
+                  3.0999999046325684,
+                  0.5,
+                  0.75
+                ]
+              },
+              {
+                "hasLimits": false,
+                "joint": 0,
+                "lower": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "upper": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              }
+            ],
+            "loopCount": 40,
+            "name": "左手首ＩＫ",
+            "sourceIndex": 3
+          }
+        ],
+        "sourceRelations": {
+          "appends": [
+            [
+              2,
+              1
+            ]
+          ],
+          "ikChains": [
+            [
+              3,
+              2,
+              [
+                1,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
+  "packaging/textures.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 2,
+      "materials": 3,
+      "morphs": 6,
+      "rigidBodies": 3,
+      "softBodies": 0,
+      "textures": 6,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "every texture kind packaging decides on: PNG and JPEG kept, BMP under .spa and .bmp and a TGA converted, a PNG under .sph renamed, one toon two materials share",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./spa/光沢.spa",
+              "resolves": true,
+              "source": "spa\\光沢.spa"
+            },
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            },
+            "toonTexture": {
+              "asset": "./toon/トゥーン.tga",
+              "resolves": true,
+              "source": "toon\\トゥーン.tga"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "skin",
+          "faces": [
+            1,
+            1
+          ],
+          "id": "skin",
+          "name": "肌",
+          "sourceIndex": 1,
+          "textures": {
+            "sphereTexture": {
+              "asset": "./sph/反射.sph",
+              "resolves": true,
+              "source": "sph\\反射.sph"
+            },
+            "texture": {
+              "asset": "./tex/肌.jpg",
+              "resolves": true,
+              "source": "tex\\肌.jpg"
+            },
+            "toonTexture": {
+              "asset": "./toon/トゥーン.tga",
+              "resolves": true,
+              "source": "toon\\トゥーン.tga"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "eye",
+          "faces": [
+            2,
+            1
+          ],
+          "id": "eye",
+          "name": "目",
+          "sourceIndex": 2,
+          "textures": {
+            "texture": {
+              "asset": "./tex/目.bmp",
+              "resolves": true,
+              "source": "tex\\目.bmp"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "blendShapes": [
+          "blink"
+        ],
+        "doubleSided": true,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "morphs": [
+        {
+          "englishName": "blink",
+          "id": "blink",
+          "name": "まばたき",
+          "offsets": [
+            [
+              0.0,
+              -0.00800000037997961,
+              0.0
+            ],
+            [
+              0.0,
+              -0.004000000189989805,
+              -0.0015999999595806003
+            ]
+          ],
+          "panel": "eye",
+          "pointIndices": [
+            0,
+            5
+          ],
+          "sourceIndex": 0,
+          "type": "vertex"
+        },
+        {
+          "englishName": "smile",
+          "id": "smile",
+          "members": [
+            "blink",
+            "morph_0002"
+          ],
+          "name": "笑い",
+          "panel": "mouth",
+          "sourceIndex": 1,
+          "type": "group",
+          "weights": [
+            1.0,
+            0.5
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0002",
+          "joints": [
+            1
+          ],
+          "name": "肩",
+          "panel": "other",
+          "rotations": [
+            [
+              0.0,
+              0.0,
+              0.13052619993686676,
+              0.9914448857307434
+            ]
+          ],
+          "sourceIndex": 2,
+          "translations": [
+            [
+              0.0,
+              0.01600000075995922,
+              0.0
+            ]
+          ],
+          "type": "bone"
+        },
+        {
+          "englishName": "uv",
+          "id": "uv",
+          "name": "UV",
+          "panel": "other",
+          "pointIndices": [
+            3
+          ],
+          "sourceIndex": 3,
+          "type": "uv",
+          "uvOffsets": [
+            [
+              0.10000000149011612,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0004",
+          "name": "追加UV",
+          "panel": "hidden",
+          "pointIndices": [
+            4
+          ],
+          "sourceIndex": 4,
+          "type": "uv1",
+          "uvOffsets": [
+            [
+              0.0,
+              0.5,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "diffuseColors": [
+            [
+              1.0,
+              1.0,
+              1.0,
+              0.5
+            ]
+          ],
+          "englishName": "material",
+          "id": "material",
+          "materialIndices": [
+            -1
+          ],
+          "materialOperations": [
+            "multiply"
+          ],
+          "name": "材質",
+          "panel": "other",
+          "sourceIndex": 5,
+          "type": "material"
+        }
+      ],
+      "physics": {
+        "joints": [
+          {
+            "body0": "head",
+            "body1": "rigidBody_0001",
+            "englishName": "",
+            "id": "joint_0000",
+            "limits": {
+              "rotX": [
+                -5.729578018188477,
+                11.459156036376953
+              ],
+              "rotY": [
+                -11.459156036376953,
+                17.18873405456543
+              ],
+              "rotZ": [
+                -22.918312072753906,
+                17.18873405456543
+              ],
+              "transX": [
+                -0.03999999910593033,
+                0.03999999910593033
+              ],
+              "transZ": [
+                -0.019999999552965164,
+                0.07999999821186066
+              ]
+            },
+            "localPos0": [
+              0.02725920081138611,
+              -0.044058121740818024,
+              -0.07011289149522781
+            ],
+            "localPos1": [
+              -0.013360529206693172,
+              0.030272338539361954,
+              0.06711990386247635
+            ],
+            "localRot0": [
+              0.05721030384302139,
+              -0.21026644110679626,
+              0.05808226764202118,
+              0.974238932132721
+            ],
+            "localRot1": [
+              0.19993436336517334,
+              0.006433593574911356,
+              0.2138567715883255,
+              0.9561643004417419
+            ],
+            "name": "頭-髪",
+            "orientation": [
+              -0.06407134979963303,
+              -0.09115754812955856,
+              0.14357218146324158,
+              0.9833474159240723
+            ],
+            "position": [
+              0.14,
+              1.06,
+              -0.02
+            ],
+            "rigidBodyA": 0,
+            "rigidBodyB": 1,
+            "rotationLowerLimit": [
+              -0.10000000149011612,
+              -0.20000000298023224,
+              -0.4000000059604645
+            ],
+            "rotationSpring": [
+              5.0,
+              6.0,
+              7.0
+            ],
+            "rotationUpperLimit": [
+              0.20000000298023224,
+              0.30000001192092896,
+              0.30000001192092896
+            ],
+            "sourceIndex": 0,
+            "translationLowerLimit": [
+              -0.03999999910593033,
+              0.07999999821186066,
+              -0.019999999552965164
+            ],
+            "translationSpring": [
+              0.0,
+              10.0,
+              20.0
+            ],
+            "translationUpperLimit": [
+              0.03999999910593033,
+              0.0,
+              0.07999999821186066
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          },
+          {
+            "body0": "rigidBody_0001",
+            "body1": "chest",
+            "englishName": "",
+            "id": "joint_0001",
+            "limits": {
+              "rotX": [
+                -57.295780181884766,
+                57.295780181884766
+              ],
+              "rotY": [
+                -28.647890090942383,
+                28.647890090942383
+              ],
+              "rotZ": [
+                0.0,
+                0.0
+              ],
+              "transX": [
+                0.0,
+                0.0
+              ],
+              "transY": [
+                0.0,
+                0.0
+              ],
+              "transZ": [
+                0.0,
+                0.0
+              ]
+            },
+            "localPos0": [
+              0.05218634754419327,
+              -0.025077378377318382,
+              0.015738818794488907
+            ],
+            "localPos1": [
+              -0.022016452625393867,
+              0.054231297224760056,
+              0.013200085610151291
+            ],
+            "localRot0": [
+              0.5272102355957031,
+              -0.08068269491195679,
+              0.40934959053993225,
+              0.7402517199516296
+            ],
+            "localRot1": [
+              0.41287046670913696,
+              0.2861250638961792,
+              -0.18736721575260162,
+              0.844135046005249
+            ],
+            "name": "髪-胸",
+            "orientation": [
+              0.26610031723976135,
+              -0.12854111194610596,
+              0.4155384302139282,
+              0.8602299690246582
+            ],
+            "position": [
+              0.2,
+              0.98,
+              -0.02
+            ],
+            "rigidBodyA": 1,
+            "rigidBodyB": 2,
+            "rotationLowerLimit": [
+              -1.0,
+              -0.5,
+              0.0
+            ],
+            "rotationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotationUpperLimit": [
+              1.0,
+              0.5,
+              0.0
+            ],
+            "sourceIndex": 1,
+            "translationLowerLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationUpperLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          }
+        ],
+        "rigidBodies": [
+          {
+            "angularDamping": 0.25,
+            "bone": 1,
+            "collisionGroup": 1,
+            "collisionMask": 65533,
+            "englishName": "head",
+            "friction": 0.75,
+            "id": "head",
+            "kinematic": true,
+            "linearDamping": 0.5,
+            "mass": 1.0,
+            "mode": "followBone",
+            "name": "頭",
+            "orientation": [
+              -0.14357218146324158,
+              0.10602051019668579,
+              0.06407134979963303,
+              0.9818561673164368
+            ],
+            "position": [
+              0.12,
+              1.12,
+              0.04
+            ],
+            "restitution": 0.125,
+            "shape": "sphere",
+            "size": [
+              0.12,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.11999999731779099,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 0
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": -1,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "",
+            "friction": 0.75,
+            "id": "rigidBody_0001",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.5,
+            "mode": "dynamic",
+            "name": "髪",
+            "orientation": [
+              -0.23744933307170868,
+              -0.13589514791965485,
+              -0.0908302292227745,
+              0.9575490355491638
+            ],
+            "position": [
+              0.16,
+              1.0,
+              -0.06
+            ],
+            "restitution": 0.125,
+            "shape": "capsule",
+            "size": [
+              0.04,
+              0.16,
+              0.0
+            ],
+            "sizeFloat": [
+              0.03999999910593033,
+              0.1599999964237213,
+              0.0
+            ],
+            "sourceIndex": 1
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": 2,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "chest",
+            "friction": 0.75,
+            "id": "chest",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.0,
+            "mode": "dynamicWithBone",
+            "name": "胸",
+            "orientation": [
+              -0.03572738170623779,
+              -0.5760614275932312,
+              0.38274064660072327,
+              0.7213780879974365
+            ],
+            "position": [
+              0.24,
+              0.96,
+              0.02
+            ],
+            "restitution": 0.125,
+            "shape": "box",
+            "size": [
+              0.08,
+              0.04,
+              0.02
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.03999999910593033,
+              0.019999999552965164
+            ],
+            "sourceIndex": 2
+          }
+        ],
+        "sourceRelations": {
+          "joints": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              2
+            ]
+          ],
+          "rigidBodies": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              -1
+            ],
+            [
+              2,
+              2
+            ]
+          ]
+        }
+      },
+      "rig": {
+        "bones": [
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.07999999821186066,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": true,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": 2,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": true,
+            "appendRatio": 0.5,
+            "appendRotation": true,
+            "appendSource": 1,
+            "appendTranslation": true,
+            "deformAfterPhysics": false,
+            "externalParentKey": 3,
+            "fixedAxis": [
+              -0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "hasExternalParent": true,
+            "hasFixedAxis": true,
+            "hasLocalAxes": true,
+            "localAxisX": [
+              0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "localAxisZ": [
+              0.6000000238418579,
+              0.0,
+              0.800000011920929
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.07999999821186066,
+              0.019999999552965164,
+              0.03999999910593033
+            ],
+            "transformLayer": 1,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          }
+        ],
+        "ikChains": [
+          {
+            "effector": 2,
+            "englishName": "LeftWrist IK",
+            "id": "LeftWrist_IK",
+            "joint": 3,
+            "limitAngle": 2.0,
+            "links": [
+              {
+                "hasLimits": true,
+                "joint": 1,
+                "lower": [
+                  0.009999999776482582,
+                  -0.5,
+                  -0.25
+                ],
+                "upper": [
+                  3.0999999046325684,
+                  0.5,
+                  0.75
+                ]
+              },
+              {
+                "hasLimits": false,
+                "joint": 0,
+                "lower": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "upper": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              }
+            ],
+            "loopCount": 40,
+            "name": "左手首ＩＫ",
+            "sourceIndex": 3
+          }
+        ],
+        "sourceRelations": {
+          "appends": [
+            [
+              2,
+              1
+            ]
+          ],
+          "ikChains": [
+            [
+              3,
+              2,
+              [
+                1,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
+  "packaging/unsupported-texture.pmx": {
+    "counts": {
+      "bones": 4,
+      "displayFrames": 3,
+      "faces": 9,
+      "joints": 2,
+      "materials": 2,
+      "morphs": 6,
+      "rigidBodies": 3,
+      "softBodies": 0,
+      "textures": 2,
+      "vertices": 6
+    },
+    "diagnostics": [
+      "MMD_SKEL_SDEF_APPROXIMATED"
+    ],
+    "modelName": "サンプル2.0",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "a GIF, which USDZ does not hold and packaging does not convert: no package",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.64,
+            0.0
+          ],
+          "englishName": "center",
+          "name": "センター",
+          "path": "center",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.12,
+            1.04,
+            0.0
+          ],
+          "englishName": "LeftArm",
+          "name": "左腕",
+          "path": "center/LeftArm",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.24,
+            0.96,
+            0.0
+          ],
+          "englishName": "LeftElbow",
+          "name": "左ひじ",
+          "path": "center/LeftArm/LeftElbow",
+          "sourceIndex": 2
+        },
+        {
+          "bind": [
+            0.36,
+            0.88,
+            0.0
+          ],
+          "englishName": "LeftWrist IK",
+          "name": "左手首ＩＫ",
+          "path": "center/LeftWrist_IK",
+          "sourceIndex": 3
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": false,
+          "englishName": "hair",
+          "faces": [
+            0,
+            1
+          ],
+          "id": "hair",
+          "name": "髪",
+          "sourceIndex": 0,
+          "textures": {
+            "texture": {
+              "asset": "./tex/髪.png",
+              "resolves": true,
+              "source": "tex\\髪.png"
+            }
+          }
+        },
+        {
+          "doubleSided": false,
+          "englishName": "animated",
+          "faces": [
+            1,
+            2
+          ],
+          "id": "animated",
+          "name": "動く",
+          "sourceIndex": 1,
+          "textures": {
+            "texture": {
+              "asset": "./tex/動く.gif",
+              "resolves": true,
+              "source": "tex\\動く.gif"
+            }
+          }
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "blendShapes": [
+          "blink"
+        ],
+        "doubleSided": false,
+        "faces": 3,
+        "familyType": "partition",
+        "influences": 4,
+        "points": 6,
+        "sdef": true,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            0.07999999821186066,
+            0.8799999952316284,
+            0.03999999910593033
+          ],
+          "st": [
+            0.125,
+            0.125
+          ]
+        }
+      },
+      "morphs": [
+        {
+          "englishName": "blink",
+          "id": "blink",
+          "name": "まばたき",
+          "offsets": [
+            [
+              0.0,
+              -0.00800000037997961,
+              0.0
+            ],
+            [
+              0.0,
+              -0.004000000189989805,
+              -0.0015999999595806003
+            ]
+          ],
+          "panel": "eye",
+          "pointIndices": [
+            0,
+            5
+          ],
+          "sourceIndex": 0,
+          "type": "vertex"
+        },
+        {
+          "englishName": "smile",
+          "id": "smile",
+          "members": [
+            "blink",
+            "morph_0002"
+          ],
+          "name": "笑い",
+          "panel": "mouth",
+          "sourceIndex": 1,
+          "type": "group",
+          "weights": [
+            1.0,
+            0.5
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0002",
+          "joints": [
+            1
+          ],
+          "name": "肩",
+          "panel": "other",
+          "rotations": [
+            [
+              0.0,
+              0.0,
+              0.13052619993686676,
+              0.9914448857307434
+            ]
+          ],
+          "sourceIndex": 2,
+          "translations": [
+            [
+              0.0,
+              0.01600000075995922,
+              0.0
+            ]
+          ],
+          "type": "bone"
+        },
+        {
+          "englishName": "uv",
+          "id": "uv",
+          "name": "UV",
+          "panel": "other",
+          "pointIndices": [
+            3
+          ],
+          "sourceIndex": 3,
+          "type": "uv",
+          "uvOffsets": [
+            [
+              0.10000000149011612,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "englishName": "",
+          "id": "morph_0004",
+          "name": "追加UV",
+          "panel": "hidden",
+          "pointIndices": [
+            4
+          ],
+          "sourceIndex": 4,
+          "type": "uv1",
+          "uvOffsets": [
+            [
+              0.0,
+              0.5,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        {
+          "diffuseColors": [
+            [
+              1.0,
+              1.0,
+              1.0,
+              0.5
+            ]
+          ],
+          "englishName": "material",
+          "id": "material",
+          "materialIndices": [
+            -1
+          ],
+          "materialOperations": [
+            "multiply"
+          ],
+          "name": "材質",
+          "panel": "other",
+          "sourceIndex": 5,
+          "type": "material"
+        }
+      ],
+      "physics": {
+        "joints": [
+          {
+            "body0": "head",
+            "body1": "rigidBody_0001",
+            "englishName": "",
+            "id": "joint_0000",
+            "limits": {
+              "rotX": [
+                -5.729578018188477,
+                11.459156036376953
+              ],
+              "rotY": [
+                -11.459156036376953,
+                17.18873405456543
+              ],
+              "rotZ": [
+                -22.918312072753906,
+                17.18873405456543
+              ],
+              "transX": [
+                -0.03999999910593033,
+                0.03999999910593033
+              ],
+              "transZ": [
+                -0.019999999552965164,
+                0.07999999821186066
+              ]
+            },
+            "localPos0": [
+              0.02725920081138611,
+              -0.044058121740818024,
+              -0.07011289149522781
+            ],
+            "localPos1": [
+              -0.013360529206693172,
+              0.030272338539361954,
+              0.06711990386247635
+            ],
+            "localRot0": [
+              0.05721030384302139,
+              -0.21026644110679626,
+              0.05808226764202118,
+              0.974238932132721
+            ],
+            "localRot1": [
+              0.19993436336517334,
+              0.006433593574911356,
+              0.2138567715883255,
+              0.9561643004417419
+            ],
+            "name": "頭-髪",
+            "orientation": [
+              -0.06407134979963303,
+              -0.09115754812955856,
+              0.14357218146324158,
+              0.9833474159240723
+            ],
+            "position": [
+              0.14,
+              1.06,
+              -0.02
+            ],
+            "rigidBodyA": 0,
+            "rigidBodyB": 1,
+            "rotationLowerLimit": [
+              -0.10000000149011612,
+              -0.20000000298023224,
+              -0.4000000059604645
+            ],
+            "rotationSpring": [
+              5.0,
+              6.0,
+              7.0
+            ],
+            "rotationUpperLimit": [
+              0.20000000298023224,
+              0.30000001192092896,
+              0.30000001192092896
+            ],
+            "sourceIndex": 0,
+            "translationLowerLimit": [
+              -0.03999999910593033,
+              0.07999999821186066,
+              -0.019999999552965164
+            ],
+            "translationSpring": [
+              0.0,
+              10.0,
+              20.0
+            ],
+            "translationUpperLimit": [
+              0.03999999910593033,
+              0.0,
+              0.07999999821186066
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          },
+          {
+            "body0": "rigidBody_0001",
+            "body1": "chest",
+            "englishName": "",
+            "id": "joint_0001",
+            "limits": {
+              "rotX": [
+                -57.295780181884766,
+                57.295780181884766
+              ],
+              "rotY": [
+                -28.647890090942383,
+                28.647890090942383
+              ],
+              "rotZ": [
+                0.0,
+                0.0
+              ],
+              "transX": [
+                0.0,
+                0.0
+              ],
+              "transY": [
+                0.0,
+                0.0
+              ],
+              "transZ": [
+                0.0,
+                0.0
+              ]
+            },
+            "localPos0": [
+              0.05218634754419327,
+              -0.025077378377318382,
+              0.015738818794488907
+            ],
+            "localPos1": [
+              -0.022016452625393867,
+              0.054231297224760056,
+              0.013200085610151291
+            ],
+            "localRot0": [
+              0.5272102355957031,
+              -0.08068269491195679,
+              0.40934959053993225,
+              0.7402517199516296
+            ],
+            "localRot1": [
+              0.41287046670913696,
+              0.2861250638961792,
+              -0.18736721575260162,
+              0.844135046005249
+            ],
+            "name": "髪-胸",
+            "orientation": [
+              0.26610031723976135,
+              -0.12854111194610596,
+              0.4155384302139282,
+              0.8602299690246582
+            ],
+            "position": [
+              0.2,
+              0.98,
+              -0.02
+            ],
+            "rigidBodyA": 1,
+            "rigidBodyB": 2,
+            "rotationLowerLimit": [
+              -1.0,
+              -0.5,
+              0.0
+            ],
+            "rotationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotationUpperLimit": [
+              1.0,
+              0.5,
+              0.0
+            ],
+            "sourceIndex": 1,
+            "translationLowerLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationUpperLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          }
+        ],
+        "rigidBodies": [
+          {
+            "angularDamping": 0.25,
+            "bone": 1,
+            "collisionGroup": 1,
+            "collisionMask": 65533,
+            "englishName": "head",
+            "friction": 0.75,
+            "id": "head",
+            "kinematic": true,
+            "linearDamping": 0.5,
+            "mass": 1.0,
+            "mode": "followBone",
+            "name": "頭",
+            "orientation": [
+              -0.14357218146324158,
+              0.10602051019668579,
+              0.06407134979963303,
+              0.9818561673164368
+            ],
+            "position": [
+              0.12,
+              1.12,
+              0.04
+            ],
+            "restitution": 0.125,
+            "shape": "sphere",
+            "size": [
+              0.12,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.11999999731779099,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 0
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": -1,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "",
+            "friction": 0.75,
+            "id": "rigidBody_0001",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.5,
+            "mode": "dynamic",
+            "name": "髪",
+            "orientation": [
+              -0.23744933307170868,
+              -0.13589514791965485,
+              -0.0908302292227745,
+              0.9575490355491638
+            ],
+            "position": [
+              0.16,
+              1.0,
+              -0.06
+            ],
+            "restitution": 0.125,
+            "shape": "capsule",
+            "size": [
+              0.04,
+              0.16,
+              0.0
+            ],
+            "sizeFloat": [
+              0.03999999910593033,
+              0.1599999964237213,
+              0.0
+            ],
+            "sourceIndex": 1
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": 2,
+            "collisionGroup": 2,
+            "collisionMask": 65531,
+            "englishName": "chest",
+            "friction": 0.75,
+            "id": "chest",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 0.0,
+            "mode": "dynamicWithBone",
+            "name": "胸",
+            "orientation": [
+              -0.03572738170623779,
+              -0.5760614275932312,
+              0.38274064660072327,
+              0.7213780879974365
+            ],
+            "position": [
+              0.24,
+              0.96,
+              0.02
+            ],
+            "restitution": 0.125,
+            "shape": "box",
+            "size": [
+              0.08,
+              0.04,
+              0.02
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.03999999910593033,
+              0.019999999552965164
+            ],
+            "sourceIndex": 2
+          }
+        ],
+        "sourceRelations": {
+          "joints": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              2
+            ]
+          ],
+          "rigidBodies": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              -1
+            ],
+            [
+              2,
+              2
+            ]
+          ]
+        }
+      },
+      "rig": {
+        "bones": [
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.07999999821186066,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": true,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": 2,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": true,
+            "appendRatio": 0.5,
+            "appendRotation": true,
+            "appendSource": 1,
+            "appendTranslation": true,
+            "deformAfterPhysics": false,
+            "externalParentKey": 3,
+            "fixedAxis": [
+              -0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "hasExternalParent": true,
+            "hasFixedAxis": true,
+            "hasLocalAxes": true,
+            "localAxisX": [
+              0.800000011920929,
+              0.0,
+              -0.6000000238418579
+            ],
+            "localAxisZ": [
+              0.6000000238418579,
+              0.0,
+              0.800000011920929
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.07999999821186066,
+              0.019999999552965164,
+              0.03999999910593033
+            ],
+            "transformLayer": 1,
+            "translatable": false,
+            "visible": true
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": true,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": true
+          }
+        ],
+        "ikChains": [
+          {
+            "effector": 2,
+            "englishName": "LeftWrist IK",
+            "id": "LeftWrist_IK",
+            "joint": 3,
+            "limitAngle": 2.0,
+            "links": [
+              {
+                "hasLimits": true,
+                "joint": 1,
+                "lower": [
+                  0.009999999776482582,
+                  -0.5,
+                  -0.25
+                ],
+                "upper": [
+                  3.0999999046325684,
+                  0.5,
+                  0.75
+                ]
+              },
+              {
+                "hasLimits": false,
+                "joint": 0,
+                "lower": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "upper": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              }
+            ],
+            "loopCount": 40,
+            "name": "左手首ＩＫ",
+            "sourceIndex": 3
+          }
+        ],
+        "sourceRelations": {
+          "appends": [
+            [
+              2,
+              1
+            ]
+          ],
+          "ikChains": [
+            [
+              3,
+              2,
+              [
+                1,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "skinned": true
+    }
+  },
   "recoverable/bone-parent-cycle.pmx": {
     "counts": {
       "bones": 4,

@@ -1,8 +1,11 @@
 # USDZ packaging policy
 
-> Status: **proposed**, 2026-09-25. Nothing here is implemented. Each section
-> becomes binding when the Phase 10 step that first implements it lands with a
-> fixture ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
+> Status: 2026-09-26. §1–§12 and §14 are **binding**: Phase 10 step 1
+> implements them with fixtures ([report](../reports/2026-09-26-phase10-mmd-export-local-models.md)).
+> §13 is proposed until step 2 makes the archive deterministic, and §16 lists
+> what is not built. A section becomes binding when the Phase 10 step that
+> first implements it lands with a fixture
+> ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
 >
 > This document owns `mmd_export`, the tool that writes an MMD model out as
 > conventional OpenUSD, and the distribution boundary it sits on. Its first
@@ -290,7 +293,15 @@ exits non-zero on any `error` or `fatal`
 this tool an `error` also means no package is written. The importer's own
 recoverable diagnostics, recorded in `/Asset.customData["mmd:diagnostics"]`,
 are printed first, unchanged. They describe the stage, which is also the
-package's stage.
+package's stage, so they never decide the exit status.
+
+Every diagnostic goes to standard error. The exit status is `0` when the
+package was written, `1` when an `error` stopped it, `2` when the input could
+not be read or the output not written (a `fatal`), and `3` for a usage error,
+the other tools' scheme. OpenUSD's own warnings are not printed: the
+importer's are already on the stage, and each step folds the errors it
+expects into its `MMD_PKG_` diagnostic. An error no step expected is printed
+as `OpenUSD: <text>`.
 
 | Code | Severity | Raised when |
 | --- | --- | --- |
@@ -314,17 +325,30 @@ packaging has a code of its own.
   narrow input and output:
 
   ```cpp
-  // tools/mmdExport/src -- private to the tool; not installed.
-  SdfLayerRefPtr     OpenModel(const fs::path& input, Diagnostics*);
-  PackagePlan        Discover(const SdfLayerHandle&, Diagnostics*);  // files, archive paths, conversions
-  bool               ConvertTextures(PackagePlan*, const fs::path& scratch, Diagnostics*);
-  SdfLayerRefPtr     Materialize(const SdfLayerHandle&, const PackagePlan&, const fs::path& scratch, Diagnostics*);
-  bool               WritePackage(const SdfLayerHandle& root, const PackagePlan&, const fs::path& out, Diagnostics*);
-  bool               ValidatePackage(const fs::path& usdz, Diagnostics*);
+  // tools/mmdExport/src/Packaging.h -- private to the tool; not installed.
+  SdfLayerRefPtr OpenModel(const fs::path& input, Diagnostics*);
+  PackagePlan    Discover(const SdfLayerHandle&, const std::string& rootLayer,
+                          Diagnostics*);                       // files, archive paths, §7's kind
+  bool           ConvertTextures(const PackagePlan&, const fs::path& scratch,
+                                 Diagnostics*);                // stages every texture, converting
+  SdfLayerRefPtr Materialize(const SdfLayerHandle&, const PackagePlan&,
+                             const fs::path& scratch, Diagnostics*);
+  bool           ValidateMaterialized(const SdfLayerHandle& root, Diagnostics*);
+  bool           WritePackage(const SdfLayerHandle& root, const PackagePlan&,
+                              const fs::path& usdz, Diagnostics*);
+  bool           ValidatePackage(const fs::path& usdz, const PackagePlan&, Diagnostics*);
+  bool           MoveIntoPlace(const fs::path& from, const fs::path& to, Diagnostics*);
   ```
 
   `main` parses the command line and calls them in order. The unit tests call
-  each one directly.
+  each one directly. Every texture is staged beside the materialized layer at
+  its archive path, so the layer's paths resolve there before anything is
+  archived (§9), and so step 2 can give every staged file one time (PKG-O1).
+- **The rename is the tool's own.** OpenUSD's `UsdUtilsModifyAssetPaths` drops
+  the empty elements of an asset array even when asked to keep them, and §4
+  drops nothing. Materialization therefore rewrites only the `SdfAssetPath`
+  values §7 renames, wherever a field holds one: a default, an array, a time
+  sample or a dictionary.
 - **No public packaging library yet.** `usd-vrm-plugins`' `vrm_export`
   may one day want the same archive steps. A shared library is extracted when
   it does, from two working tools (§16), not before.
@@ -363,15 +387,23 @@ Fixtures stay synthetic
 ([DESIGN_POLICY.md §13](DESIGN_POLICY.md#13-testing-policy)):
 `generate_fixtures.py` writes the PMX files, and writes the textures they
 name, including BMP, a `.spa` holding BMP, TGA, non-ASCII names, a texture
-two materials share, and one missing file.
+two materials share, and one missing file. They are the `packaging/`
+fixtures: `textures.pmx` names one file of each kind §7 decides on, with 2×2
+images so a moved row or channel cannot pass, and `missing-texture.pmx`,
+`unsupported-texture.pmx` (a GIF) and `name-collision.pmx` each stop the
+run. The importer's own stage tests open them too.
 
-- **Unit.** Materialization keeps every spec (layer diff empty except the
-  rewritten asset paths). Each row of §7 gives its outcome, and a converted
-  PNG decodes to the source's pixels. The name-collision, missing-file and
-  unsupported-format cases write nothing.
-- **Integration.** `mmd_export` runs on each fixture. A **separate process with
-  no MMD plugin on its path** opens the result, checks §9's post-write list,
-  and runs `usdchecker`.
+- **Unit** (`mmdExport_unit`, over `.usda` layers and images it writes, with
+  no MMD plugin). Materialization keeps every spec (layer diff empty except
+  the rewritten asset paths). Each row of §7 gives its outcome, and a
+  converted PNG decodes to the source's pixels. The name-collision,
+  missing-file and unsupported-format cases write nothing.
+- **Integration** (`mmd_export_fixtures`). `mmd_export` runs on each fixture.
+  A **separate process with no MMD plugin on its path** opens the result,
+  checks §8 and §9's post-write list, and runs `usdchecker`. A converted
+  texture decodes to the generator's pixels, a kept one is the source's
+  bytes, and a refused run leaves an existing output as it was. The product
+  smoke runs the installed tool against the installed importer.
 - **Compatibility.** For each fixture, the `.pmx` opened with the plugins and
   the `.usdz` opened without them have the same prim paths, types, applied
   schema tokens, metadata and property values. Texture asset values are
@@ -379,6 +411,9 @@ two materials share, and one missing file.
 - **Non-ASCII paths.** An input directory and an output path that no single
   ANSI code page can spell, as
   [the stage tests](../../tests/integration/test_unicode_paths.py) already use.
+  On Windows OpenUSD 26.08's `usdchecker` cannot open such a path at all (it
+  has no UTF-8 code page), so there the package is checked by the tool's
+  in-process validators and the plugin-free process alone.
 - **Local models.** A dated report records the tool over the locally held
   models. Models distributed by their creators are never committed.
 

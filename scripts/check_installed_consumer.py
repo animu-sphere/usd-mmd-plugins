@@ -88,6 +88,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
         pathlib.Path("include", "mmdSchema", "mmdMaterialAPI.h"),
         pathlib.Path("bin", executable("mmd_inspect")),
         pathlib.Path("bin", executable("vmd_inspect")),
+        pathlib.Path("bin", executable("mmd_export")),
         pathlib.Path("lib", shared_library("UsdMmdFileFormat")),
         PLUGIN_RESOURCES / "plugInfo.json",
         PLUGIN_RESOURCES / "buildInfo.json",

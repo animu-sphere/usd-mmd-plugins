@@ -18,6 +18,22 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Added
 
+- **`mmd_export`, Phase 10 step 1** (`tools/mmdExport/`). It writes the stage
+  the importer authors for a `.pmx` as a standard USDZ: the stage
+  materialized spec for spec as `<name>.usdc`, first, then every texture it
+  names at the path the stage names it by. BMP (under any extension) and TGA
+  are converted to PNG losslessly, and a PNG or JPEG under another extension
+  is renamed. The stage's path for such a texture is the one thing rewritten.
+  The package is validated before the output is replaced, including every
+  validator `usdchecker` runs, and it opens with no MMD plugin. It reaches
+  the importer through Plug and links OpenUSD only. A missing, unsupported
+  or colliding texture writes nothing, with `MMD_PKG_` diagnostics; the
+  exit status is 0, 1, 2 or 3 as the other tools'. The output's extension
+  names the format, `.usdz` only for now, the counterpart of
+  `usd-vrm-plugins`' `vrm_export`. It is a release member, and the product
+  smoke runs it installed. `packaging/` fixtures, unit, boundary and fixture
+  tests, and a run over the 41 local models: all package, open without the
+  plugins, pass `usdchecker`, and match their `.pmx` stages.
 - **`mmdSchema`, the Phase 8 schema bundle.** It registers the single-apply
   `MmdMaterialAPI`, which is Material-only and declares the canonical
   material values as Material interface inputs, `inputs:mmd:material:*`.

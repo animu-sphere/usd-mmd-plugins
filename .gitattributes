@@ -4,11 +4,16 @@
 *.pmx binary
 
 # The texture files the generator writes beside the fixtures are images, and
-# compared byte for byte like the fixtures. `.sph` is MMD's name for a BMP
-# used as a sphere map.
+# compared byte for byte like the fixtures. `.sph` and `.spa` are MMD's names
+# for an image used as a sphere map; the packaging fixtures add TGA, JPEG and
+# GIF.
 *.png binary
 *.bmp binary
 *.sph binary
+*.spa binary
+*.tga binary
+*.jpg binary
+*.gif binary
 
 # The fixture manifest is compared byte for byte with what the generator writes
 # (`generate_fixtures.py --check`), and the generator writes '\n'.
