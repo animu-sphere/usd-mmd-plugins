@@ -442,11 +442,15 @@ first.
 6. Every build mode of §5 works, and every component builds against installed
    siblings.
 7. No component keeps a private copy of a facility another component owns.
-   One exception, and its reason: `motionVmd` declares its own diagnostic
-   record, `Result<T>` and diagnostic list, the same shape as `mmdPmx`'s,
-   because a VMD parses without a model and §2.2 forbids it `mmdPmx`; binding
-   carries its diagnostics into `mmdPmx`'s record field for field
-   ([DIAGNOSTICS.md §1](../reference/DIAGNOSTICS.md#1-the-record)).
+   Two exceptions, each for the same reason, §2.2. `motionVmd` declares its
+   own diagnostic record, `Result<T>` and diagnostic list, the same shape as
+   `mmdPmx`'s, because a VMD parses without a model and §2.2 forbids it
+   `mmdPmx`; binding carries its diagnostics into `mmdPmx`'s record field for
+   field ([DIAGNOSTICS.md §1](../reference/DIAGNOSTICS.md#1-the-record)).
+   `mmd_export` keeps a list of code, severity and message of its own,
+   private to the tool, because §2.2 forbids it `mmdPmx` too. It prints
+   `CODE: message` as the other tools do, and relays the importer's
+   diagnostics as the text the stage records, never through a type.
 8. A capability is claimed only with a fixture behind it
    ([CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md)).
 9. This repository consumes `usd-motion-plugins` and is never consumed by it
