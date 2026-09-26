@@ -391,7 +391,7 @@ third `toon` realization graph, and `hydra-toon` does not depend on
 `usdMmdFileFormat`, `mmdModel` or `mmdPmx`.
 
 `hydra-toon` may normalize `MmdMaterialAPI` and the independent
-`VrmMtoonMaterialAPI` into a renderer-private runtime representation. That is
+`VrmMToonAPI` into a renderer-private runtime representation. That is
 an implementation convenience, not a claim that MMD and MToon have the same
 material model. MMD-only concepts — sphere multiply/add, sub-texture UVs,
 shared toon slots, ground/self-shadow flags and vertex edge scale — remain

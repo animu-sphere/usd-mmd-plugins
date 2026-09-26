@@ -171,7 +171,7 @@ copying those values
 - ⬜ Bring up the `hydra-toon` MMD path in this order: diffuse/alpha, toon
   ramp, sphere multiply/add, sub-texture, outline, shadow flags, material morph
   runtime, then advanced UV and vertex-color behavior.
-- ⬜ After both `VrmMtoonMaterialAPI` and `MmdMaterialAPI` paths work, evaluate
+- ⬜ After both `VrmMToonAPI` and `MmdMaterialAPI` paths work, evaluate
   renderer-private common code. Do not introduce a USD-level `ToonMaterialAPI`
   until the two concrete implementations demonstrate stable common semantics.
 
