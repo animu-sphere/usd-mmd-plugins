@@ -7,11 +7,12 @@ installed-consumer lane
 ([WORKSPACE.md §6](WORKSPACE.md#6-tests)) builds against a clean repository
 prefix plus the explicitly pinned external motion packages to keep it true.
 
-Status (2026-09-22): the two Phase 0 packages exist, `mmd_inspect` installs
+Status (2026-09-26): the two Phase 0 packages exist, `mmd_inspect` installs
 with the workspace since Phase 1, `mmdModel` since Phase 2, `motionVmd`,
 `mmdMotionBinding` and `vmd_inspect` since Phase 7, and `mmdControl`,
 `mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9, and the `mmdSchema`
-bundle since Phase 8 (2026-09-25). Identities and
+bundle since Phase 8 (2026-09-25), and `mmd_export` since Phase 10
+(2026-09-26). Identities and
 dependency edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not
 restate them.
 
@@ -243,3 +244,21 @@ An executable, found on `PATH` rather than by CMake, like `mmd_inspect`.
 
 It embeds the same UTF-8 `activeCodePage` manifest on Windows. The
 installed-consumer lane runs it from the prefix over every VMD fixture.
+
+## `mmd_export`
+
+An executable, found on `PATH` rather than by CMake, like `mmd_inspect`. It
+exports no CMake package and no headers.
+
+| Installed path | Content |
+| --- | --- |
+| `${CMAKE_INSTALL_BINDIR}/mmd_export` (`.exe` on Windows) | the tool; its private packaging library is linked in statically, and it links OpenUSD's `tf`, `vt`, `ar`, `sdf`, `usd`, `usdUtils`, `usdValidation` and `hio` shared libraries |
+
+Unlike the inspection tools it needs OpenUSD 26.08 at run time, on the
+library path, and it needs this repository's `usdMmdFileFormat` and
+`mmdSchema` bundles registered with Plug (`PXR_PLUGINPATH_NAME`, or an
+OpenStrata session over the installed product). It never links either: a
+host without them gets `MMD_PKG_INPUT_UNREADABLE`
+([PACKAGING_POLICY.md §10](../design/PACKAGING_POLICY.md#10-command-line)).
+It embeds the same UTF-8 `activeCodePage` manifest on Windows. The product
+smoke runs the installed tool against the installed importer.

@@ -23,6 +23,7 @@ members = [
   "libs/mmdMotionAdapter",
   "tools/mmdInspect",
   "tools/vmdInspect",
+  "tools/mmdExport",
 ]
 # The aggregate product: every bundle and tool that ships. A library ships as
 # a dependency of the bundle that links it, never as a member of its own.
@@ -31,4 +32,5 @@ release_members = [
   "mmdSchema",
   "mmd_inspect",
   "vmd_inspect",
+  "mmd_export",
 ]

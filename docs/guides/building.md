@@ -51,8 +51,9 @@ The Windows preset names no generator, so CMake picks the newest Visual Studio
 installed. The build tree is `build/windows-msvc/`. The plugin library is
 staged into the bundle itself, `plugins/usdMmdFileFormat/lib/`, where the
 bundle's `plugInfo.json` expects it, `mmd_inspect` into
-`tools/mmdInspect/bin/`, and `vmd_inspect` into `tools/vmdInspect/bin/`
-([inspecting.md](inspecting.md) says how to use them). That is where `ost`
+`tools/mmdInspect/bin/`, `vmd_inspect` into `tools/vmdInspect/bin/`
+([inspecting.md](inspecting.md) says how to use them), and `mmd_export` into
+`tools/mmdExport/bin/` ([exporting.md](exporting.md)). That is where `ost`
 reads them too, which is why they are not in the build tree
 ([ost report 01](../reports/ost/01-2026-09-24-v0.23.3-a-bundle-is-staged-in-its-source-tree.md)).
 
@@ -82,6 +83,9 @@ reads them too, which is why they are not in the build tree
 | `mmd_inspect_boundaries` | `mmd_inspect` links `mmdPmx` and nothing else, and imports no OpenUSD library |
 | `vmd_inspect_fixtures` | `vmd_inspect` reads every generated VMD fixture as its `fixtures.json` says, from an ASCII and a non-ASCII directory |
 | `vmd_inspect_boundaries` | `vmd_inspect` links `motionVmd` and nothing else, includes no model library, and imports no OpenUSD library |
+| `mmdExport_unit` | each export step over `.usda` layers and images the suite writes, with no MMD plugin: every row of the texture table, discovery's missing, unsupported, colliding and unexpected files, BMP (24- and 32-bit) and TGA converted to PNG pixel for pixel, materialization spec for spec with only the renamed paths changed, the archive's entry order and validation, and replacing the output whole or not at all |
+| `mmd_export_boundaries` | `mmd_export` includes no parser, model, importer or schema header, links only the OpenUSD libraries it declares, and imports neither the importer's nor the schema's library |
+| `mmd_export_fixtures` | `mmd_export` packages the generated fixtures; a process with no MMD plugin opens each package, finds every layer and texture inside it, and `usdchecker` passes it; each package holds the `.pmx`'s stage value for value, texture renames aside; converted textures decode to the generator's pixels; a missing, unsupported or colliding texture and an unreadable model write nothing; and again from and into non-ASCII directories |
 | `workspace_fixtures` | the committed fixtures and texture files are exactly what the generator writes |
 | `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees; the diagnostic catalog matches the declared codes |
 | `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says; each stage that opens holds what `fixtures.json` says it must — identifiers, joint paths, bind translations, material subsets, texture asset paths and whether they resolve, a vertex through the conversion, every morph prim and, for each blend shape, the points UsdSkel moves when it is driven to weight 1 — passes the stage checklist, and passes every validator OpenUSD registers |

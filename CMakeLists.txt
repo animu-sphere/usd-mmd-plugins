@@ -80,6 +80,11 @@ add_subdirectory("libs/mmdMotionAdapter")
 add_subdirectory("plugins/mmdSchema")
 add_subdirectory("plugins/usdMmdFileFormat")
 
+# The exporter: OpenUSD only, and the importer at run time through Plug
+# (docs/design/PACKAGING_POLICY.md §2). After the bundles, so its tests can
+# name them on the plugin path.
+add_subdirectory("tools/mmdExport")
+
 # Workspace-level tests: the fixtures, and what spans components
 # (WORKSPACE.md §6).
 if(USDMMD_BUILD_TESTS)

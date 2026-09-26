@@ -5,9 +5,8 @@
 # workspace on the same three cells and digest-pinned runtimes as the pull
 # request lanes, proves the packaged artifacts, and assembles a DRAFT GitHub
 # release: per target the usdMmdFileFormat and mmdSchema bundles, the
-# mmd_inspect and vmd_inspect tools and the aggregate product, each with its
-# manifest; a
-# source archive; SHA256SUMS; and notes rendered from the changelog through
+# mmd_inspect, vmd_inspect and mmd_export tools and the aggregate product,
+# each with its manifest; a source archive; SHA256SUMS; and notes rendered from the changelog through
 # docs/contributing/RELEASE_NOTES_TEMPLATE.md. Publishing the draft is a
 # human decision (docs/releases/README.md).
 #
@@ -197,7 +196,7 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
-      # ORDER MATTERS. The root tree builds the plain libraries and both tools,
+      # ORDER MATTERS. The root tree builds the plain libraries and the tools,
       # which no `ost plugin build` reaches -- `plugin package --workspace`
       # needs their binaries -- and it also rewrites the bundle's lib/ without
       # bundle-managed provenance. So the root build comes first and the bundle

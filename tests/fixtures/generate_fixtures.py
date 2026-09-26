@@ -542,14 +542,95 @@ def bmp(rgb: tuple[int, int, int]) -> bytes:
     return header + info + pixel
 
 
+def bmp_image(pixels: list[list[tuple]], alpha: bool) -> bytes:
+    """A BMP of `pixels` (rows top to bottom, RGBA), stored bottom-up as BMP
+    does: 24-bit with each row padded to 4 bytes, or 32-bit BGRA, whose alpha
+    byte a BI_RGB reader takes as alpha unless every one is zero."""
+    height, width = len(pixels), len(pixels[0])
+    rows = b""
+    for row in reversed(pixels):
+        if alpha:
+            data = b"".join(bytes((b, g, r, a)) for r, g, b, a in row)
+        else:
+            data = b"".join(bytes((b, g, r)) for r, g, b, _ in row)
+        rows += data + b"\0" * (-len(data) % 4)
+    info = struct.pack("<IiiHHIIiiII", 40, width, height, 1, 32 if alpha else 24, 0,
+                       len(rows), 2835, 2835, 0, 0)
+    header = struct.pack("<2sIHHI", b"BM", 14 + len(info) + len(rows), 0, 0,
+                         14 + len(info))
+    return header + info + rows
+
+
+def tga_image(pixels: list[list[tuple]]) -> bytes:
+    """An uncompressed 32-bit truecolor TGA of `pixels` (rows top to bottom,
+    RGBA), stored from the bottom-left origin, TGA's default."""
+    height, width = len(pixels), len(pixels[0])
+    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 32,
+                         0x08)  # eight alpha bits, bottom-left origin
+    return header + b"".join(bytes((b, g, r, a)) for row in reversed(pixels)
+                             for r, g, b, a in row)
+
+
+def jpeg_gray() -> bytes:
+    """A 1x1 baseline JPEG, mid grey: one quantization table of ones, one
+    Huffman code per table, and a scan of one DC difference of zero and an
+    end-of-block. Packaging stores a JPEG byte for byte, so nothing decodes
+    it; it has to be a JPEG, not a particular one."""
+    def segment(marker: int, body: bytes) -> bytes:
+        return struct.pack(">HH", marker, len(body) + 2) + body
+
+    one_code = bytes([1] + [0] * 15)  # one code of length 1
+    return (b"\xff\xd8"
+            + segment(0xFFDB, b"\x00" + b"\x01" * 64)
+            + segment(0xFFC0, struct.pack(">BHHB", 8, 1, 1, 1) + b"\x01\x11\x00")
+            + segment(0xFFC4, b"\x00" + one_code + b"\x00"    # DC: category 0
+                      + b"\x10" + one_code + b"\x00")         # AC: end of block
+            + segment(0xFFDA, b"\x01\x01\x00\x00\x3f\x00")
+            + b"\x3f"  # the codes 0, 0, padded with ones
+            + b"\xff\xd9")
+
+
+# A 1x1 GIF: a format USDZ does not hold and packaging does not convert.
+GIF = (b"GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00"
+       b",\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;")
+
+# The images packaging converts, as their pixels: 2x2, so a row order or a
+# channel order that is wrong cannot pass (PACKAGING_POLICY.md §7, §14). Rows
+# top to bottom, RGBA; `alpha` is whether the file stores an alpha channel.
+PACKAGING_IMAGES = {
+    "packaging/spa/光沢.spa": {"alpha": False, "pixels": [
+        [(255, 0, 0, 255), (0, 255, 0, 255)],
+        [(0, 0, 255, 255), (255, 255, 0, 255)]]},
+    "packaging/toon/トゥーン.tga": {"alpha": True, "pixels": [
+        [(10, 20, 30, 255), (40, 50, 60, 128)],
+        [(70, 80, 90, 0), (200, 150, 100, 64)]]},
+    "packaging/tex/目.bmp": {"alpha": True, "pixels": [
+        [(1, 2, 3, 255), (4, 5, 6, 200)],
+        [(7, 8, 9, 100), (250, 240, 230, 0)]]},
+}
+
 # Every texture the sample models name, beside the fixtures at the top of the
 # fixture directory -- so the samples' textures resolve, and the fixtures in
-# subdirectories name the same paths and do not.
+# subdirectories name the same paths and do not. The packaging fixtures name
+# theirs in packaging/, one file of each kind PACKAGING_POLICY.md §7 decides
+# on; packaging/tex/無い.png is named and missing on purpose.
 TEXTURES = {
     "tex/髪.png": png((64, 40, 32, 255)),
     "tex/肌.png": png((250, 220, 200, 255)),
     "sph/光沢.sph": bmp((255, 255, 255)),
     "toon/ト ゥ ー ン.bmp": bmp((200, 200, 200)),
+    "packaging/tex/髪.png": png((64, 40, 32, 255)),
+    "packaging/spa/光沢.spa": bmp_image(
+        PACKAGING_IMAGES["packaging/spa/光沢.spa"]["pixels"], alpha=False),
+    "packaging/toon/トゥーン.tga": tga_image(
+        PACKAGING_IMAGES["packaging/toon/トゥーン.tga"]["pixels"]),
+    "packaging/tex/肌.jpg": jpeg_gray(),
+    "packaging/sph/反射.sph": png((128, 128, 255, 255)),
+    "packaging/tex/目.bmp": bmp_image(
+        PACKAGING_IMAGES["packaging/tex/目.bmp"]["pixels"], alpha=True),
+    "packaging/tex/動く.gif": GIF,
+    "packaging/toon/影.bmp": bmp((90, 90, 90)),
+    "packaging/toon/影.bmp.png": png((90, 90, 90, 255)),
 }
 
 
@@ -1307,6 +1388,44 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
             "vertex the empty table does not hold is dropped",
             parser=["MMD_PMX_INDEX_OUT_OF_RANGE"],
             importer=["MMD_MORPH_NO_SKELETON"]),
+    })
+
+    # Phase 10: what packaging does with each kind of texture
+    # (PACKAGING_POLICY.md §14). Each opens as the sample does; the textures
+    # it names are in packaging/.
+    def packaging(textures: list[str], materials: list[dict]) -> dict:
+        model = sample_model(2.0, UTF16LE, 1, 0)
+        model["textures"] = textures
+        model["materials"] = materials
+        return model
+
+    entries.update({
+        "packaging/textures.pmx": opens(packaging(
+            ["tex\\髪.png", "spa\\光沢.spa", "toon\\トゥーン.tga", "tex\\肌.jpg",
+             "sph\\反射.sph", "tex\\目.bmp"],
+            [material("髪", "hair", 3, ("texture", 2), texture=0, sphere=1, flags=0x01),
+             material("肌", "skin", 3, ("texture", 2), texture=3, sphere=4),
+             material("目", "eye", 3, ("shared", 0), texture=5)]),
+            "every texture kind packaging decides on: PNG and JPEG kept, BMP "
+            "under .spa and .bmp and a TGA converted, a PNG under .sph renamed, "
+            "one toon two materials share", importer=sdef),
+        "packaging/missing-texture.pmx": opens(packaging(
+            ["tex\\髪.png", "tex\\無い.png"],
+            [material("髪", "hair", 3, ("shared", 0), texture=0),
+             material("無い", "missing", 6, ("shared", 0), texture=1)]),
+            "a texture that does not resolve: no package", importer=sdef),
+        "packaging/unsupported-texture.pmx": opens(packaging(
+            ["tex\\髪.png", "tex\\動く.gif"],
+            [material("髪", "hair", 3, ("shared", 0), texture=0),
+             material("動く", "animated", 6, ("shared", 0), texture=1)]),
+            "a GIF, which USDZ does not hold and packaging does not convert: "
+            "no package", importer=sdef),
+        "packaging/name-collision.pmx": opens(packaging(
+            ["toon\\影.bmp", "toon\\影.bmp.png"],
+            [material("影", "shade", 3, ("texture", 0)),
+             material("影2", "shade2", 6, ("texture", 1))]),
+            "a BMP whose converted name is another texture's: no package",
+            importer=sdef),
     })
 
     # Recoverable: the model opens, and the stage records why it is not exact.

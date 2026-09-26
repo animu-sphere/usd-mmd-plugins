@@ -4,14 +4,15 @@
 
 The release workflow runs this over the product archive it is about to
 publish. Every other lane tests a build tree or one bundle's package; this is
-the only check of what a user actually installs -- all three members, from
-the aggregate, into a fresh prefix outside the repository:
+the only check of what a user actually installs -- every member, from the
+aggregate, into a fresh prefix outside the repository:
 
   ost plugin product install --prefix <scratch>/prefix <product>
   <prefix>/tools/mmd_inspect/bin/mmd_inspect --json <a PMX fixture>
   <prefix>/tools/vmd_inspect/bin/vmd_inspect --json <a generated VMD>
   ost plugin run plugins/usdMmdFileFormat --no-inject \\
       --plugin-path <prefix>/bundles/usdMmdFileFormat -- python <stage check>
+  ost plugin run ... -- <prefix>/tools/mmd_export/bin/mmd_export <fixture> <out.usdz>
 
 `--no-inject` leaves only the runtime and the installed bundle on the
 discovery path, and the stage check opens the fixture at `/Asset`, asserts
@@ -135,11 +136,23 @@ def main() -> int:
 
         check = scratch / "stage_check.py"
         check.write_text(STAGE_CHECK, encoding="utf-8")
-        result = run([args.ost, "plugin", "run", str(REPO / "plugins" / "usdMmdFileFormat"),
-                      "--no-inject", "--plugin-path", str(prefix / "bundles" / "usdMmdFileFormat"),
-                      "--", args.python, str(check), str(prefix), str(pmx), version])
+        session = [args.ost, "plugin", "run", str(REPO / "plugins" / "usdMmdFileFormat"),
+                   "--no-inject", "--plugin-path", str(prefix / "bundles" / "usdMmdFileFormat"),
+                   "--"]
+        result = run(session + [args.python, str(check), str(prefix), str(pmx), version])
         if result.returncode != 0:
             raise SystemExit(f"FAIL: the stage check exited {result.returncode}")
+
+        # mmd_export in the same session: it reaches the installed importer
+        # through Plug, as any host does, and packages the fixture with the
+        # textures it names (PACKAGING_POLICY.md §10).
+        for folder in ("tex", "sph", "toon"):
+            shutil.copytree(FIXTURE.parent / folder, inputs / folder)
+        usdz = inputs / "サンプル.usdz"
+        result = run(session + [str(tool(prefix, "mmd_export")), str(pmx), str(usdz)])
+        if result.returncode != 0 or not usdz.is_file():
+            raise SystemExit(f"FAIL: mmd_export exited {result.returncode}")
+        print(f"mmd_export: packaged {pmx.name} as {usdz.name}")
     finally:
         if args.keep:
             print(f"kept {scratch}")

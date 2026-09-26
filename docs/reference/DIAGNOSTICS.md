@@ -132,8 +132,11 @@ severity. An event that needs a different severity gets a new code.
   canonical model and binding bound their lists with the same
   [`mmd::DiagnosticList`](../../libs/mmdPmx/include/mmdPmx/DiagnosticList.h);
   `motionVmd` bounds its own the same way, per section.
-- **Tools** (`mmd_inspect`, `vmd_inspect`) print every diagnostic and set their
-  exit status by the most severe one.
+- **Tools** (`mmd_inspect`, `vmd_inspect`, `mmd_export`) print every
+  diagnostic and set their exit status by the most severe one. `mmd_export`
+  prints the importer's recorded diagnostics first, as the stage holds them;
+  they describe the stage and never decide its exit status
+  ([PACKAGING_POLICY.md §11](../design/PACKAGING_POLICY.md#11-diagnostics-and-exit-status)).
 - **Validation** codes are raised by checks over an already-imported stage, not
   by the importer.
 
@@ -247,11 +250,11 @@ For `mmd_export`, an `error` also means that no package is written.
 
 | Code | Severity | Raised by | Defined in |
 | --- | --- | --- | --- |
-| `MMD_PKG_INPUT_UNREADABLE` | fatal | `mmd_export` | [PACKAGING §10](../design/PACKAGING_POLICY.md#10-command-line) |
-| `MMD_PKG_WRITE_FAILED` | fatal | `mmd_export` | [PACKAGING §11](../design/PACKAGING_POLICY.md#11-diagnostics-and-exit-status) |
-| `MMD_PKG_MISSING_ASSET` | error | `mmd_export` | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization) |
-| `MMD_PKG_UNEXPECTED_DEPENDENCY` | error | `mmd_export` | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization) |
-| `MMD_PKG_UNSUPPORTED_TEXTURE` | error | `mmd_export` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
-| `MMD_PKG_ASSET_NAME_COLLISION` | error | `mmd_export` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
-| `MMD_PKG_VALIDATION_FAILED` | error | `mmd_export` | [PACKAGING §9](../design/PACKAGING_POLICY.md#9-validation) |
-| `MMD_PKG_TEXTURE_CONVERTED` | info | `mmd_export` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| `MMD_PKG_INPUT_UNREADABLE` *emitted* | fatal | `mmd_export` | [PACKAGING §10](../design/PACKAGING_POLICY.md#10-command-line) |
+| `MMD_PKG_WRITE_FAILED` *emitted* | fatal | `mmd_export` | [PACKAGING §11](../design/PACKAGING_POLICY.md#11-diagnostics-and-exit-status) |
+| `MMD_PKG_MISSING_ASSET` *emitted* | error | `mmd_export` | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization) |
+| `MMD_PKG_UNEXPECTED_DEPENDENCY` *emitted* | error | `mmd_export` | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization) |
+| `MMD_PKG_UNSUPPORTED_TEXTURE` *emitted* | error | `mmd_export` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| `MMD_PKG_ASSET_NAME_COLLISION` *emitted* | error | `mmd_export` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| `MMD_PKG_VALIDATION_FAILED` *emitted* | error | `mmd_export` | [PACKAGING §9](../design/PACKAGING_POLICY.md#9-validation) |
+| `MMD_PKG_TEXTURE_CONVERTED` *emitted* | info | `mmd_export` | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |

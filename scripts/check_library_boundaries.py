@@ -19,10 +19,16 @@ link-line and include gates for one library under libs/ (the graph gate is
     static archive has no import table of its own, so a forbidden edge shows
     up in what its consumers load.
 
+A component WORKSPACE.md §2.1 allows OpenUSD -- mmd_export -- passes
+`--allow-openusd`: OpenUSD includes, `find_package(pxr)` and OpenUSD imports
+are then its edges, while plugin registration stays forbidden, and
+`--forbid-import` names a library of this repository it must still not load.
+
 Usage:
   check_library_boundaries.py --name mmdPmx --source libs/mmdPmx
       --link-file <build>/mmdPmx_link.txt --binary <build>/mmdPmx_tests.exe
       [--allow mmdPmx::mmdPmx ...] [--forbid-include mmdModel/ ...]
+      [--allow-openusd] [--forbid-import UsdMmdFileFormat ...]
 """
 
 from __future__ import annotations
@@ -42,6 +48,14 @@ FORBIDDEN_SOURCE = re.compile(
     re.IGNORECASE)
 FORBIDDEN_CMAKE = re.compile(
     r"find_package\s*\(\s*(?:pxr|Bullet|PhysX|Jolt)\b", re.IGNORECASE)
+# With --allow-openusd: still no physics SDK and no plugin registration.
+FORBIDDEN_SOURCE_WITH_OPENUSD = re.compile(
+    r"#\s*include\s*[<\"](?:btBulletDynamicsCommon|PxPhysicsAPI|Jolt/)"
+    r"|TF_REGISTRY_FUNCTION|SDF_DEFINE_FILE_FORMAT"
+    r"|AR_DEFINE_(?:PACKAGE_)?RESOLVER",
+    re.IGNORECASE)
+FORBIDDEN_CMAKE_WITH_OPENUSD = re.compile(
+    r"find_package\s*\(\s*(?:Bullet|PhysX|Jolt)\b", re.IGNORECASE)
 FORBIDDEN_FILES = {"openstrata.plugin.yaml", "pluginfo.json", "pluginfo.json.in"}
 
 # OpenUSD's shared libraries: usd_tf.dll on Windows, libusd_tf.so on Linux,
@@ -133,11 +147,13 @@ def check(args: argparse.Namespace) -> list[str]:
             errors.append(f"plugin registration file is forbidden: {path}")
 
     sibling = _forbidden_include(args.forbid_include)
+    source_rule = FORBIDDEN_SOURCE_WITH_OPENUSD if args.allow_openusd else FORBIDDEN_SOURCE
+    cmake_rule = FORBIDDEN_CMAKE_WITH_OPENUSD if args.allow_openusd else FORBIDDEN_CMAKE
     for area in (source / "include", source / "src"):
         for path in area.rglob("*"):
             if path.is_file() and path.suffix.lower() in SOURCE_SUFFIXES:
                 text = path.read_text(encoding="utf-8")
-                if FORBIDDEN_SOURCE.search(text):
+                if source_rule.search(text):
                     errors.append(f"OpenUSD, physics or plugin API: {path}")
                 if sibling and sibling.search(text):
                     errors.append(f"{args.name} includes a component WORKSPACE.md "
@@ -145,7 +161,7 @@ def check(args: argparse.Namespace) -> list[str]:
 
     for cmake in [source / "CMakeLists.txt", *source.rglob("*.cmake"),
                   *source.rglob("*.cmake.in")]:
-        if cmake.is_file() and FORBIDDEN_CMAKE.search(
+        if cmake.is_file() and cmake_rule.search(
                 cmake.read_text(encoding="utf-8")):
             errors.append(f"{args.name} CMake must not resolve OpenUSD or a "
                           f"physics engine: {cmake}")
@@ -162,11 +178,24 @@ def check(args: argparse.Namespace) -> list[str]:
         errors.append(f"could not inspect {args.binary}: {exc}")
         dependencies = ""
     for match in sorted(set(USD_LIBRARY.findall(dependencies))):
+        if args.allow_openusd:
+            continue
         if args.allow_openusd_foundation and USD_FOUNDATION_LIBRARY.match(match):
             continue
         errors.append(f"{args.binary.name}, which links only {args.name}, "
                       f"imports the OpenUSD library {match}")
+    for name in args.forbid_import:
+        if _imports(dependencies, name):
+            errors.append(f"{args.binary.name} imports {name}, which WORKSPACE.md "
+                          f"§2.2 forbids {args.name}")
     return errors
+
+
+def _imports(dependencies: str, name: str) -> bool:
+    """Whether a dependency listing names the shared library `name`, in any
+    platform's spelling (name.dll, libname.so, libname.dylib)."""
+    return bool(re.search(r"\b(?:lib)?" + re.escape(name) + r"\.(?:dll|so|dylib)\b",
+                          dependencies, re.IGNORECASE))
 
 
 def selftest() -> int:
@@ -192,6 +221,18 @@ def selftest() -> int:
     expect(not sibling.search('#include "motionVmd/Reader.h"'),
            "an allowed include is rejected as a sibling")
     expect(_forbidden_include([]) is None, "no prefix still forbids something")
+    expect(not FORBIDDEN_SOURCE_WITH_OPENUSD.search("#include <pxr/pxr.h>"),
+           "--allow-openusd still rejects a pxr include")
+    expect(bool(FORBIDDEN_SOURCE_WITH_OPENUSD.search("TF_REGISTRY_FUNCTION(TfType)")),
+           "--allow-openusd admits plugin registration")
+    expect(not FORBIDDEN_CMAKE_WITH_OPENUSD.search("find_package(pxr REQUIRED CONFIG)"),
+           "--allow-openusd still rejects find_package(pxr)")
+    for listing in ("    libUsdMmdFileFormat.dll\n", "\tlibUsdMmdFileFormat.so [NEEDED]\n",
+                    "\t@rpath/libUsdMmdFileFormat.dylib (compat)\n"):
+        expect(_imports(listing, "UsdMmdFileFormat"),
+               f"a forbidden import is not caught in {listing!r}")
+    expect(not _imports("    usd_sdf.dll\n", "UsdMmdFileFormat"),
+           "an OpenUSD import is mistaken for a forbidden one")
     expect(bool(FORBIDDEN_CMAKE.search("find_package(pxr REQUIRED CONFIG)")),
            "find_package(pxr) is not caught")
     for name in ("usd_tf.dll", "libusd_sdf.so", "libusd_usd.dylib",
@@ -242,6 +283,10 @@ def main() -> int:
                         help="a header prefix WORKSPACE.md §2.2 forbids, e.g. mmdPmx/")
     parser.add_argument("--allow-openusd-foundation", action="store_true",
                         help="allow only the arch/tf/gf/js/trace/work/plug/vt runtime leaves")
+    parser.add_argument("--allow-openusd", action="store_true",
+                        help="OpenUSD is an allowed edge (WORKSPACE.md §2.1: mmd_export)")
+    parser.add_argument("--forbid-import", action="append", default=[],
+                        help="a shared library the binary must not import, e.g. UsdMmdFileFormat")
     args = parser.parse_args()
 
     errors = check(args)

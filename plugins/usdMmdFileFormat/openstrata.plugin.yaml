@@ -80,6 +80,10 @@ tests:
     - tests/fixtures/recoverable/morph-no-mesh.pmx
     - tests/fixtures/recoverable/rig-broken-relations.pmx
     - tests/fixtures/recoverable/physics-repairs.pmx
+    - tests/fixtures/packaging/textures.pmx
+    - tests/fixtures/packaging/missing-texture.pmx
+    - tests/fixtures/packaging/unsupported-texture.pmx
+    - tests/fixtures/packaging/name-collision.pmx
   roundtrip:
     - tests/fixtures/minimal.pmx
     - tests/fixtures/recoverable/unsafe-texture-paths.pmx
