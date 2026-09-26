@@ -38,7 +38,7 @@ in.** No other document states a version for a Phase.
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | ⬜ | unassigned; schema/adapter work is here, composition is owned mostly outside this repository |
 | 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the A-pose rest (MOT-O10) is measured and, with expression interoperability, waits on `usd-motion-plugins`; role-table version 2 resolves MOT-O12 | unassigned |
-| 10 | USDZ packaging (`mmd_usdz`) | ⬜ designed ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)), measured, not started | unassigned |
+| 10 | USDZ packaging (`mmd_export`) | ⬜ designed ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)), measured, not started | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -141,11 +141,13 @@ Where things stand, as of 2026-09-25:
 - Phase 10, USDZ packaging, was added on 2026-09-25 from the packaging memo,
   and designed after measuring OpenUSD's own packaging over the local models
   ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md),
-  [report](../reports/2026-09-25-usdz-packaging-probe.md)). `mmd_usdz`
+  [report](../reports/2026-09-25-usdz-packaging-probe.md)). `mmd_export`
   materializes the importer's stage and packages it with its textures. It
   converts BMP, which 31 of the 41 local PMX files name, to PNG, so that the
   package is standard USDZ. It needs only the importer's stage, so it does
-  not wait for Phases 8 or 9.
+  not wait for Phases 8 or 9. The tool, first reserved as `mmd_usdz`, became
+  `mmd_export` on 2026-09-26, to pair with `usd-vrm-plugins`' `vrm_export`;
+  `.usdz` is its first format.
 
 ## Open decisions
 

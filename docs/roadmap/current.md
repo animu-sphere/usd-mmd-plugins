@@ -24,7 +24,7 @@ can run alongside either
   `usd-stage-runner` through
   OpenStrata. Most of it is owned outside this repository: the runtime, not
   this repository, is the avatar execution environment.
-- **Phase 10 — USDZ packaging.** `mmd_usdz` packages the imported stage and
+- **Phase 10 — USDZ packaging.** `mmd_export` packages the imported stage and
   its textures as a standard USDZ that opens without this repository's
   plugins ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)).
 
@@ -226,7 +226,7 @@ materialized `.usdc` with its textures at their stage-relative paths opens
 without the plugins. 31 of the 41 local PMX files name a BMP, which USDZ
 cannot hold.
 
-- ⬜ **Step 1 — a minimal package.** `tools/mmdUsdz/` with its manifest, CI
+- ⬜ **Step 1 — a minimal package.** `tools/mmdExport/` with its manifest, CI
   cell and product membership
   ([WORKSPACE.md §1.2](../architecture/WORKSPACE.md#12-later-only-when-their-responsibility-is-real)).
   Open, discover, convert BMP and TGA to PNG, materialize, write with
