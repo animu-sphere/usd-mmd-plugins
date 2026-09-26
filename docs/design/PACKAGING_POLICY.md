@@ -4,8 +4,10 @@
 > becomes binding when the Phase 10 step that first implements it lands with a
 > fixture ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
 >
-> This document owns `mmd_usdz`, the tool that turns an MMD model into a
-> self-contained USDZ, and the distribution boundary it sits on. It is
+> This document owns `mmd_export`, the tool that writes an MMD model out as
+> conventional OpenUSD, and the distribution boundary it sits on. Its first
+> format, and the only one this document yet defines, is a self-contained
+> USDZ. It is
 > distilled from the 2026-09-25 USDZ packaging memo. §17 lists where it
 > departs from the memo, and why. It was measured first, with OpenUSD 26.08's
 > own packaging functions over locally held models
@@ -22,8 +24,9 @@
 
 ## 1. Scope
 
-`mmd_usdz` takes a model this repository's importer opens (`.pmx`) and writes
-a USDZ archive. The archive holds the stage the importer authors, as a
+`mmd_export` takes a model this repository's importer opens (`.pmx`) and writes
+it out in the format its output's extension names. Version 1 writes one
+format, a USDZ archive (§10). The archive holds the stage the importer authors, as a
 `.usdc`, and every texture that stage names. It opens in an OpenUSD
 installation that has none of this repository's plugins.
 
@@ -32,14 +35,14 @@ authoring. The importer's job is unchanged:
 
 ```text
 MMD format ──usdMmdFileFormat──→ conventional OpenUSD         (import; DESIGN_POLICY.md §1)
-conventional OpenUSD ──mmd_usdz──→ self-contained USDZ        (distribution; this document)
+conventional OpenUSD ──mmd_export──→ self-contained USDZ      (distribution; this document)
 ```
 
 ## 2. The boundary
 
 - **A tool, not the file format.** `usdMmdFileFormat` never writes a package,
-  and nothing about packaging enters it. `mmd_usdz` is its own executable in
-  `tools/mmdUsdz/`
+  and nothing about packaging enters it. `mmd_export` is its own executable in
+  `tools/mmdExport/`
   ([WORKSPACE.md §1.2](../architecture/WORKSPACE.md#12-later-only-when-their-responsibility-is-real)).
 - **What the importer authors, and nothing else.** The tool opens the model
   through the registered `SdfFileFormat`, as any OpenUSD host does, and links
@@ -82,7 +85,7 @@ no file behind, and never a partial one.
 The importer returns an anonymous layer that exists only while its `.pmx` is
 open. Materialization writes that layer's content, spec for spec, into a new
 binary layer, `<name>.usdc`, in a private temporary directory. `<name>` is the
-output file's stem: `mmd_usdz model.pmx out.usdz` writes `out.usdc`.
+output file's stem: `mmd_export model.pmx out.usdz` writes `out.usdc`.
 
 - **Nothing added, nothing dropped.** Stage metadata (`defaultPrim = "Asset"`,
   `upAxis = "Y"`, `metersPerUnit = 1`), `/Asset` and everything below it,
@@ -260,11 +263,13 @@ without the plugin. So that proof is a test (§14), not a per-run check.
 ## 10. Command line
 
 ```text
-mmd_usdz <input.pmx> <output.usdz>
+mmd_export <input.pmx> <output.usdz>
 ```
 
-- The output's extension must be `.usdz`, and an existing file at that path
-  is replaced only after validation passes.
+- The output's extension names the format. Version 1 writes `.usdz` alone,
+  and any other extension is a usage error until a section here defines it
+  (§16). An existing file at the output path is replaced only after
+  validation passes.
 - `--help` and `--version` are the only options in version 1. Every
   archive-level detail is OpenUSD's, including compression, alignment and
   entry method, and the command line exposes none of them.
@@ -305,11 +310,11 @@ packaging has a code of its own.
 ## 12. Implementation boundary
 
 - **One executable, one private library.** The steps of §3 live in a
-  tool-private static library in `tools/mmdUsdz/`, each a function with a
+  tool-private static library in `tools/mmdExport/`, each a function with a
   narrow input and output:
 
   ```cpp
-  // tools/mmdUsdz/src -- private to the tool; not installed.
+  // tools/mmdExport/src -- private to the tool; not installed.
   SdfLayerRefPtr     OpenModel(const fs::path& input, Diagnostics*);
   PackagePlan        Discover(const SdfLayerHandle&, Diagnostics*);  // files, archive paths, conversions
   bool               ConvertTextures(PackagePlan*, const fs::path& scratch, Diagnostics*);
@@ -320,7 +325,7 @@ packaging has a code of its own.
 
   `main` parses the command line and calls them in order. The unit tests call
   each one directly.
-- **No public packaging library yet.** A `vrm_usdz` in `usd-vrm-plugins`
+- **No public packaging library yet.** `usd-vrm-plugins`' `vrm_export`
   may one day want the same archive steps. A shared library is extracted when
   it does, from two working tools (§16), not before.
 - **Why not `UsdUtilsCreateNewUsdzPackage`.** It was the first thing
@@ -335,7 +340,7 @@ packaging has a code of its own.
   therefore calls OpenUSD's lower-level functions itself: discovery with
   `UsdUtilsComputeAllDependencies`, the archive with `SdfZipFileWriter`.
   Both are OpenUSD's, so this is not a ZIP writer of the tool's own.
-- **Build.** `mmd_usdz` is built after OpenUSD is resolved and ships in the
+- **Build.** `mmd_export` is built after OpenUSD is resolved and ships in the
   product beside `mmd_inspect`. Its tests need the importer and schema
   bundles built, as the stage tests do.
 
@@ -364,7 +369,7 @@ two materials share, and one missing file.
   rewritten asset paths). Each row of §7 gives its outcome, and a converted
   PNG decodes to the source's pixels. The name-collision, missing-file and
   unsupported-format cases write nothing.
-- **Integration.** `mmd_usdz` runs on each fixture. A **separate process with
+- **Integration.** `mmd_export` runs on each fixture. A **separate process with
   no MMD plugin on its path** opens the result, checks §9's post-write list,
   and runs `usdchecker`.
 - **Compatibility.** For each fixture, the `.pmx` opened with the plugins and
@@ -379,8 +384,9 @@ two materials share, and one missing file.
 
 ## 15. Non-goals
 
-- A general exporter or converter. `mmd_export` and PMX → anything-but-USDZ
-  are not this tool.
+- A general converter. `mmd_export` writes conventional OpenUSD and nothing
+  else: never PMX, FBX, glTF or another non-USD format. A USD format other
+  than USDZ joins it only with its own section here (§16).
 - A ZIP, image codec or archive layout of this repository's own.
 - The PMX, or any MMD source, inside the package.
 - Flattening composition as the default.
@@ -394,6 +400,11 @@ two materials share, and one missing file.
 
 Each is added only when a user needs it, with its own section here first:
 
+- `.usdc` and `.usda` output, when `usdcat` over the file format proves
+  insufficient: the materialized layer written to the output path, with the
+  textures it names written beside it at the same relative paths, so it
+  resolves anywhere it is moved together with them. This is what
+  WORKSPACE.md's former `mmd_convert` reservation was for;
 - `--portable-paths`: ASCII archive names (`textures/tex_0001.png`), with the
   asset paths rewritten to match (the answer to PKG-O2 for tools that are not
   OpenUSD);
@@ -405,8 +416,8 @@ Each is added only when a user needs it, with its own section here first:
 - `--allow-missing-assets`;
 - PMD input, once `mmdPmd` exists
   ([WORKSPACE.md §1.2](../architecture/WORKSPACE.md#12-later-only-when-their-responsibility-is-real));
-- a packaging library shared with `usd-vrm-plugins`, once `vrm_usdz` exists
-  and the common part is visible in both.
+- a packaging library shared with `usd-vrm-plugins`, once its `vrm_export`
+  packages too and the common part is visible in both.
 
 ## 17. Where this document departs from the packaging memo
 
@@ -417,7 +428,8 @@ Each is added only when a user needs it, with its own section here first:
 | §5 — `--validate` as an option | Validation always runs (§9) | The memo's version-1 guarantees (§14–§15) are validation results. An unvalidated package would claim them without checking. |
 | §3, §14 — `.pmx` or `.pmd` input | `.pmx` only | This repository has no PMD reader yet (`mmdPmd` is reserved). The tool accepts whatever the registered file formats open, so PMD follows `mmdPmd` with no change here. |
 | §10 — OpenUSD's USDZ packaging API | OpenUSD's discovery and ZIP writer, called step by step (§12) | The one-call API gives no control over entry order or timestamps, so the archive cannot be made deterministic, and it failed on a non-ASCII output path from a Python host. Still no ZIP writer of this repository's own. |
-| §11 — `tools/mmd_usdz/` | `tools/mmdUsdz/` | Executables are `snake_case` in a lower-camel directory, like `tools/mmdInspect/` ([WORKSPACE.md §1.2](../architecture/WORKSPACE.md#12-later-only-when-their-responsibility-is-real)). |
+| §11 — `tools/mmd_usdz/` | `tools/mmdExport/` | Executables are `snake_case` in a lower-camel directory, like `tools/mmdInspect/` ([WORKSPACE.md §1.2](../architecture/WORKSPACE.md#12-later-only-when-their-responsibility-is-real)). |
+| §3 — the tool is `mmd_usdz`; §4 names `mmd_export` the better choice once the tool writes more than one format | `mmd_export` (§1, §10), writing `.usdz` only in version 1 | It pairs with `usd-vrm-plugins`' `vrm_export`, which writes `.usda`, `.usdc` and `.usdz` from one tool, so `usd-avatar-runtime` and a user see one convention in both repositories. The format follows the output's extension, so more formats need no new tool, and WORKSPACE.md's `mmd_convert` reservation is folded in. Decided by the user on 2026-09-26. |
 | §13 — links `usdMmd` and friends | Links OpenUSD only, and reaches the importer through Plug | The importer is a plugin bundle, not a library to link. Opening it as any host does is also what guarantees the package matches `Usd.Stage.Open` (§2). |
 | §21 — Phase 1–4 | Phase 10, steps 1–4 | This repository has one phase sequence ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). |
 

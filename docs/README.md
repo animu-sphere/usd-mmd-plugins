@@ -67,7 +67,7 @@ place that says what is implemented.
     here, generic simulation in `usd-physics-plugins`, execution order in
     `usd-stage-runner`, and composition in `usd-avatar-runtime`;
   - [design/PACKAGING_POLICY.md](design/PACKAGING_POLICY.md) — the proposed
-    `mmd_usdz` tool: how the imported stage and its textures become a
+    `mmd_export` tool: how the imported stage and its textures become a
     standard USDZ that opens without this repository's plugins.
 - [architecture/WORKSPACE.md](architecture/WORKSPACE.md) is the binding
   **workspace contract**. When a document disagrees with it about structure, it
