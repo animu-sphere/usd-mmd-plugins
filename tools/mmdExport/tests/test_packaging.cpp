@@ -350,6 +350,45 @@ TestDiscoverNamespaces()
 }
 
 void
+TestPortablePlan()
+{
+    const TempDir dir("portable");
+    WriteFile(dir.path() / "a.bmp", Bmp(kOpaque, false));
+    WriteFile(dir.path() / "a.bmp.png/child.PNG", kPng);
+    WriteFile(dir.path() / "model.usdc/child.JPEG", kJpeg);
+    WriteFile(dir.path() / PathFromUtf8("髪.png"), kPng);
+    WriteFile(dir.path() / "z.AVIF", {});
+    WriteFile(dir.path() / "z.EXR", {});
+    const auto layer = WriteLayer(dir.path() / "m.usda",
+                                  ModelUsda({"./髪.png",
+                                             "./z.EXR",
+                                             "./model.usdc/child.JPEG",
+                                             "./a.bmp",
+                                             "./z.AVIF",
+                                             "./a.bmp.png/child.PNG",
+                                             "./髪.png"}));
+    Diagnostics diagnostics;
+    const auto plan = Discover(layer, "出力.usdc", &diagnostics, true);
+    assert(!diagnostics.HasErrors());
+    assert(plan.rootLayer == "model.usdc");
+    std::vector<std::string> archive;
+    for (const auto& asset : plan.assets) {
+        archive.push_back(asset.archivePath);
+    }
+    assert((archive == std::vector<std::string>{"textures/tex_0001.png",
+                                                "textures/tex_0002.png",
+                                                "textures/tex_0003.jpeg",
+                                                "textures/tex_0004.avif",
+                                                "textures/tex_0005.exr",
+                                                "textures/tex_0006.png"}));
+    assert(plan.assets.front().authoredPath == "./a.bmp");
+    assert(plan.assets.front().kind.action == TextureAction::Convert);
+    assert(plan.assets.back().authoredPath == "./髪.png");
+    assert(plan.assets.back().kind.action == TextureAction::Keep);
+    std::puts("portable: source order, ASCII root and textures, disjoint namespace");
+}
+
+void
 TestConvert()
 {
     const TempDir dir("convert");
@@ -380,7 +419,7 @@ TestConvert()
 }
 
 void
-TestMaterialize()
+TestMaterialize(bool portable = false)
 {
     const TempDir dir("materialize");
     WriteFile(dir.path() / "a.bmp", Bmp(kOpaque, false));
@@ -393,17 +432,20 @@ TestMaterialize()
         WriteLayer(dir.path() / "m.usda", ModelUsda({"./a.bmp", "./b.png"}, extra));
 
     Diagnostics diagnostics;
-    const PackagePlan plan = Discover(layer, "out.usdc", &diagnostics);
+    const PackagePlan plan = Discover(layer, "out.usdc", &diagnostics, portable);
     const fs::path scratch = dir.path() / "scratch";
     const SdfLayerRefPtr root = Materialize(layer, plan, scratch, &diagnostics);
     assert(root && !diagnostics.HasErrors());
-    assert(
-        fs::equivalent(PathFromUtf8(root->GetRealPath()), PackageDirectory(scratch) / "out.usdc"));
+    assert(fs::equivalent(PathFromUtf8(root->GetRealPath()),
+                          PackageDirectory(scratch) / PathFromUtf8(plan.rootLayer)));
     assert(root->GetFileFormat()->GetFormatId() == TfToken("usdc"));
 
     // Spec for spec: every field of every spec is the source's, but for the
-    // one converted texture's asset paths.
-    const std::map<std::string, std::string> renamed{{"./a.bmp", "./a.bmp.png"}};
+    // renamed texture asset paths (kept textures too in portable mode).
+    std::map<std::string, std::string> renamed{{"./a.bmp", "./a.bmp.png"}};
+    if (portable) {
+        renamed = {{"./a.bmp", "./textures/tex_0001.png"}, {"./b.png", "./textures/tex_0002.png"}};
+    }
     const auto rename = [&](const SdfAssetPath& p) {
         const auto it = renamed.find(p.GetAssetPath());
         return SdfAssetPath(it == renamed.end() ? p.GetAssetPath() : it->second);
@@ -457,8 +499,8 @@ TestMaterialize()
     std::size_t rootSpecs = 0;
     root->Traverse(SdfPath::AbsoluteRootPath(), [&](const SdfPath&) { ++rootSpecs; });
     assert(rootSpecs == specs);
-    assert(rewritten == 3); // tex0, many, sampled; provenance is a string
-    std::puts("materialize: spec for spec, only the converted texture renamed");
+    assert(rewritten == (portable ? 4 : 3)); // tex0, [tex1,] many, sampled; not provenance
+    std::puts("materialize: spec for spec, only texture asset paths rewritten");
 }
 
 /// The whole pipeline over a model-shaped layer, as `main` runs it.
@@ -571,8 +613,10 @@ main()
     TestDiscoverErrors();
     TestDiscoverPlan();
     TestDiscoverNamespaces();
+    TestPortablePlan();
     TestConvert();
     TestMaterialize();
+    TestMaterialize(true);
     TestWriteAndValidate();
     TestMoveIntoPlace();
     std::puts("mmdExport unit tests passed");

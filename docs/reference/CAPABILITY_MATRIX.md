@@ -199,8 +199,9 @@ tool's unit and fixture tests, and the
 | `.pmx` → a standard USDZ that opens with no MMD plugin and passes `usdchecker` | supported | [PACKAGING §1–§9](../design/PACKAGING_POLICY.md#1-scope) |
 | The package's stage is the importer's, spec for spec, texture renames aside | supported | [PACKAGING §4](../design/PACKAGING_POLICY.md#4-materialization) |
 | Textures at the paths the stage names them by, UTF-8 names kept, each once | supported | [PACKAGING §5](../design/PACKAGING_POLICY.md#5-package-layout) |
+| `--portable-paths`: ASCII root and texture names, deterministic numbering, provenance and image content kept | supported | [PACKAGING §5.1](../design/PACKAGING_POLICY.md#51-portable-archive-names) |
 | BMP (under any extension) and TGA converted to PNG losslessly; PNG or JPEG under another extension renamed | supported | [PACKAGING §7](../design/PACKAGING_POLICY.md#7-texture-formats) |
-| A missing, unsupported or colliding texture: nothing written | supported | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization), [§7](../design/PACKAGING_POLICY.md#7-texture-formats) |
+| A missing or unsupported texture: nothing written; a colliding texture also stops the default layout | supported | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization), [§7](../design/PACKAGING_POLICY.md#7-texture-formats) |
 | Validation before the output is replaced, the `usdchecker` validators included | supported | [PACKAGING §9](../design/PACKAGING_POLICY.md#9-validation) |
 | Non-ASCII input and output paths | supported | [PACKAGING §10](../design/PACKAGING_POLICY.md#10-command-line) |
 | A byte-deterministic archive across runs, source mtimes and time zones, for the same input bytes, output stem and tool/OpenUSD build | supported | [PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism) |

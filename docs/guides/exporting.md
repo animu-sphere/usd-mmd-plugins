@@ -6,7 +6,8 @@ version writes one format: a USDZ that holds the stage and every texture it
 names, and opens in an OpenUSD installation that has none of this
 repository's plugins
 ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)). Every command on this
-page has been run, on Windows 11 in PowerShell, on 2026-09-26.
+page has been run, on Windows 11 in PowerShell, on 2026-09-26; the portable
+example was run on 2026-09-27.
 
 The build puts it in `tools/mmdExport/bin/`, and an install in the prefix's
 `bin/` ([building.md](building.md)).
@@ -65,11 +66,28 @@ On Windows, OpenUSD 26.08's `usdchecker` cannot open a path with characters
 outside the ANSI code page. `mmd_export` can, and it has already run the
 same validators before writing.
 
+## ASCII names inside the archive
+
+For ZIP tools that do not recognize OpenUSD's UTF-8 entry names, use:
+
+```powershell
+tools\mmdExport\bin\mmd_export.exe --portable-paths plugins\usdMmdFileFormat\tests\fixtures\sample-2.0-utf16.pmx build\export\portable.usdz
+```
+
+The archive starts with `model.usdc`, followed by `textures/tex_0001.png`
+and the other numbered textures. All archive names are ASCII, including
+when the output filename is Japanese. The stage's asset paths follow those
+names; provenance retains the source names, and image conversion is unchanged.
+Numbering follows source-path byte order and is deterministic
+([§5.1](../design/PACKAGING_POLICY.md#51-portable-archive-names)).
+Non-ASCII input and output paths work in both modes.
+
 ## When it writes nothing
 
 A texture that does not resolve, one USDZ cannot hold and the tool does not
 convert, or a converted name the model already has, stops the run. The
-output path is left as it was:
+output path is left as it was. Portable names avoid the default layout's
+name collisions; missing and unsupported textures still stop either mode:
 
 ```powershell
 tools\mmdExport\bin\mmd_export.exe plugins\usdMmdFileFormat\tests\fixtures\packaging\missing-texture.pmx build\export\missing.usdz

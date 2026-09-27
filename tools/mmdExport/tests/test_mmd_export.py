@@ -18,7 +18,9 @@ the importer on PXR_PLUGINPATH_NAME as any host does:
     rest are in byte order;
   * a missing, unsupported or colliding texture, and a model the importer
     refuses, write nothing and leave an existing output as it was;
-  * the whole run again from a directory, and into one, that no single ANSI
+  * both default and portable names, including source-name collisions that
+    portable names avoid and a conventional ZIP reader's ASCII names;
+  * both modes from and into directories and filenames that no single ANSI
     code page can spell (without `usdchecker` on Windows, which cannot open
     such a path).
 """
@@ -60,11 +62,12 @@ class Context:
         self.without_plugins.pop("PXR_PLUGINPATH_NAME", None)
 
     def package(self, pmx: pathlib.Path, usdz: pathlib.Path,
-                timezone: str | None = None) -> tuple[int, list[str]]:
+                timezone: str | None = None, portable: bool = False) -> tuple[int, list[str]]:
         environment = dict(self.with_plugins)
         if timezone is not None:
             environment["TZ"] = timezone
-        result = subprocess.run([str(self.tool), str(pmx), str(usdz)],
+        options = ["--portable-paths"] if portable else []
+        result = subprocess.run([str(self.tool), *options, str(pmx), str(usdz)],
                                 env=environment, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         return result.returncode, result.stderr.decode("utf-8").splitlines()
@@ -188,12 +191,19 @@ def texture_paths(expectation: dict) -> list[str]:
 
 def check_packages(ctx: Context, fixtures: pathlib.Path, manifest: dict, generator,
                    out_dir: pathlib.Path, work: pathlib.Path, names: list[str],
-                   usdchecker: bool = True) -> None:
+                   usdchecker: bool = True, portable: bool = False,
+                   unicode_names: bool = False) -> None:
     for name in names:
         expectation = manifest[name]
         pmx = fixtures / name
-        usdz = out_dir / (pathlib.PurePosixPath(name).stem + ".usdz")
-        status, lines = ctx.package(pmx, usdz)
+        stem = pathlib.PurePosixPath(name).stem
+        if unicode_names:
+            renamed = pmx.with_name("モデル-é-" + pmx.name)
+            shutil.copyfile(pmx, renamed)
+            pmx = renamed
+            stem = "出力-é-" + stem
+        usdz = out_dir / (stem + ".usdz")
+        status, lines = ctx.package(pmx, usdz, portable=portable)
         where = f"{name} -> {usdz.name}"
         assert status == 0, f"{where}: exit {status}\n" + "\n".join(lines)
         assert usdz.is_file(), f"{where}: no package"
@@ -211,9 +221,20 @@ def check_packages(ctx: Context, fixtures: pathlib.Path, manifest: dict, generat
 
         # The archive: the root layer, then every texture once, in byte order.
         names_in = {r: expected_archive_name(r, data) for r, data in sources.items()}
+        if portable:
+            names_in = {
+                r: f"textures/tex_{i:04d}." + names_in[r].rsplit(".", 1)[-1].lower()
+                for i, r in enumerate(sorted(sources, key=lambda s: s.encode("utf-8")), 1)
+            }
         archive = entries(usdz)
         stem = usdz.stem
-        assert archive[0][0] == stem + ".usdc", f"{where}: first entry {archive[0][0]}"
+        root_name = "model.usdc" if portable else stem + ".usdc"
+        assert archive[0][0] == root_name, f"{where}: first entry {archive[0][0]}"
+        if portable:
+            # A conventional ZIP reader needs no OpenUSD-specific UTF-8 repair.
+            with zipfile.ZipFile(usdz) as standard_zip:
+                assert standard_zip.namelist() == [n for n, _ in archive]
+                assert all(n.isascii() for n in standard_zip.namelist())
         assert [n for n, _ in archive[1:]] == sorted(
             names_in.values(), key=lambda s: s.encode("utf-8")), \
             f"{where}: entries {[n for n, _ in archive]}"
@@ -265,7 +286,8 @@ def first_difference(a, b, where: str = "") -> str:
     return f"{where}: {a!r} != {b!r}"
 
 
-def check_refusals(ctx: Context, fixtures: pathlib.Path, out_dir: pathlib.Path) -> None:
+def check_refusals(ctx: Context, fixtures: pathlib.Path, out_dir: pathlib.Path,
+                   portable: bool = False) -> None:
     cases = {
         "packaging/missing-texture.pmx": (1, "MMD_PKG_MISSING_ASSET"),
         "packaging/unsupported-texture.pmx": (1, "MMD_PKG_UNSUPPORTED_TEXTURE"),
@@ -275,9 +297,11 @@ def check_refusals(ctx: Context, fixtures: pathlib.Path, out_dir: pathlib.Path) 
     }
     sentinel = b"an older package"
     for name, (status, code) in cases.items():
+        if portable and code == "MMD_PKG_ASSET_NAME_COLLISION":
+            continue  # Portable names use their own namespace; checked as a success.
         usdz = out_dir / "refused.usdz"
         usdz.write_bytes(sentinel)
-        got, lines = ctx.package(fixtures / name, usdz)
+        got, lines = ctx.package(fixtures / name, usdz, portable=portable)
         codes = [line.split(":", 1)[0] for line in lines]
         assert got == status, f"{name}: exit {got}, expected {status}\n" + "\n".join(lines)
         assert code in codes, f"{name}: {code} not among {codes}"
@@ -302,11 +326,12 @@ def check_refusals(ctx: Context, fixtures: pathlib.Path, out_dir: pathlib.Path) 
     print("ok  usage errors and a missing importer")
 
 
-def check_determinism(ctx: Context, fixtures: pathlib.Path, root: pathlib.Path) -> None:
+def check_determinism(ctx: Context, fixtures: pathlib.Path, root: pathlib.Path,
+                      portable: bool = False) -> None:
     """Different processes, source mtimes, scratch paths and local time zones."""
     original = None
     for index, timezone in enumerate(("UTC0", "JST-9", "PST8PDT", "UTC0")):
-        folder = root / f"determinism-{index}"
+        folder = root / f"determinism-{portable}-{index}"
         shutil.copytree(fixtures / "packaging", folder / "input")
         sources = list((folder / "input").rglob("*"))
         stamp = 946684800 + index * 12345678
@@ -315,8 +340,9 @@ def check_determinism(ctx: Context, fixtures: pathlib.Path, root: pathlib.Path) 
                 os.utime(path, (stamp, stamp))
         before = {p: (p.read_bytes(), p.stat().st_mtime_ns)
                   for p in sources if p.is_file()}
-        usdz = folder / "out.usdz"
-        status, lines = ctx.package(folder / "input/textures.pmx", usdz, timezone)
+        # Portable root naming also removes output-stem dependence.
+        usdz = folder / (f"出力-é-{index}.usdz" if portable else "out.usdz")
+        status, lines = ctx.package(folder / "input/textures.pmx", usdz, timezone, portable)
         assert status == 0, f"{timezone}: {lines}"
         data = usdz.read_bytes()
         if original is None:
@@ -360,6 +386,13 @@ def main() -> int:
         check_refusals(ctx, fixtures, out_dir)
         check_determinism(ctx, fixtures, root)
 
+        portable_out = root / "portable"
+        portable_out.mkdir()
+        check_packages(ctx, fixtures, manifest, generator, portable_out, work,
+                       packaged + ["packaging/name-collision.pmx"], portable=True)
+        check_refusals(ctx, fixtures, portable_out, portable=True)
+        check_determinism(ctx, fixtures, root, portable=True)
+
         # From, and into, directories no single ANSI code page can spell.
         unicode_fixtures = root / UNICODE_DIR / "fixtures"
         shutil.copytree(fixtures, unicode_fixtures)
@@ -369,7 +402,11 @@ def main() -> int:
         # Windows it cannot open this path at all; the tool ran the same
         # validators in process, and the plugin-free probe still opens it.
         check_packages(ctx, unicode_fixtures, manifest, generator, unicode_out, work,
-                       ["packaging/textures.pmx"], usdchecker=sys.platform != "win32")
+                       ["packaging/textures.pmx"], usdchecker=sys.platform != "win32",
+                       unicode_names=True)
+        check_packages(ctx, unicode_fixtures, manifest, generator, unicode_out, work,
+                       ["packaging/textures.pmx"], usdchecker=sys.platform != "win32",
+                       portable=True, unicode_names=True)
     print("mmd_export fixture tests passed")
     return 0
 
