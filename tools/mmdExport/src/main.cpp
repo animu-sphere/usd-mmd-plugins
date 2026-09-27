@@ -4,7 +4,7 @@
 // format the output's extension names (docs/design/PACKAGING_POLICY.md).
 // Version 1 writes one format, a self-contained USDZ.
 //
-//   mmd_export <input.pmx> <output.usdz>
+//   mmd_export [--portable-paths] <input.pmx> <output.usdz>
 //
 // Opens the model through the registered importer, packages the stage it
 // authors with every texture it names, validates the package, and only then
@@ -39,10 +39,11 @@ constexpr int kUsageError = 3;
 void
 PrintUsage(std::FILE* to)
 {
-    std::fputs("usage: mmd_export <input.pmx> <output.usdz>\n"
+    std::fputs("usage: mmd_export [--portable-paths] <input.pmx> <output.usdz>\n"
                "  The output's extension names the format; this version writes .usdz.\n"
                "  --help     this text\n"
                "  --version  the tool's version\n"
+               "  --portable-paths  ASCII archive names, with texture paths rewritten\n"
                "The importer must be on OpenUSD's plugin path (PXR_PLUGINPATH_NAME).\n"
                "exit status: 0 packaged, 1 not packaged, 2 not read or not written, 3 usage\n",
                to);
@@ -144,7 +145,7 @@ private:
 
 int
 Run(const mmdexport::fs::path& input, const mmdexport::fs::path& output,
-    mmdexport::Diagnostics* diagnostics)
+    mmdexport::Diagnostics* diagnostics, bool portablePaths)
 {
     using namespace mmdexport;
 
@@ -171,7 +172,8 @@ Run(const mmdexport::fs::path& input, const mmdexport::fs::path& output,
         if (!model) {
             return kNotReadOrWritten;
         }
-        const PackagePlan plan = Discover(model, Utf8(target.stem()) + ".usdc", diagnostics);
+        const PackagePlan plan =
+            Discover(model, Utf8(target.stem()) + ".usdc", diagnostics, portablePaths);
         if (diagnostics->HasErrors()) {
             return kNotPackaged;
         }
@@ -211,6 +213,7 @@ int
 main(int argc, char** argv)
 {
     std::vector<const char*> paths;
+    bool portablePaths = false;
     for (int i = 1; i < argc; ++i) {
         const std::string_view arg = argv[i];
         if (arg == "-h" || arg == "--help") {
@@ -220,6 +223,10 @@ main(int argc, char** argv)
         if (arg == "--version") {
             std::printf("mmd_export %s\n", MMDEXPORT_VERSION);
             return kPackaged;
+        }
+        if (arg == "--portable-paths") {
+            portablePaths = true;
+            continue;
         }
         if (arg.starts_with("-") || paths.size() == 2) {
             std::fprintf(stderr, "mmd_export: unexpected argument '%s'\n", argv[i]);
@@ -248,7 +255,7 @@ main(int argc, char** argv)
     const Utf8Console console;
     const Quiet quiet;
     mmdexport::Diagnostics diagnostics;
-    const int status = Run(input, output, &diagnostics);
+    const int status = Run(input, output, &diagnostics, portablePaths);
     for (const mmdexport::Diagnostic& d : diagnostics.All()) {
         const std::string line = mmdexport::Diagnostics::Format(d) + "\n";
         std::fwrite(line.data(), 1, line.size(), stderr);

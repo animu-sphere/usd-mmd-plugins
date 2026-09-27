@@ -5,8 +5,9 @@ skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
 and expression interoperability wait on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, and the importer authors stage-contract v2 with
 the fallback graphs connected; the UsdImaging adapter is next. Phase 10,
-USDZ packaging, has steps 1 and 2: `mmd_export` writes a validated USDZ that
-opens without the plugins, and its archive is deterministic across time zones.
+USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
+opens without the plugins, its archive is deterministic across time zones,
+and `--portable-paths` offers ASCII archive names.
 
 Three Phases remain. Phases 9 and 8 run in this order although they are
 numbered the other way, and Phase 10 needs only the importer's stage, so it
@@ -249,8 +250,13 @@ fixture-tested. PKG-O1 is resolved by fixed local timestamps on private
 copies, with byte comparisons across time zones and source mtimes
 ([PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism)).
 
-- ⬜ **Step 3 — portability.** `--portable-paths` (PKG-O2), and non-ASCII
-  input and output paths in CI on every platform.
+Step 3 is complete (2026-09-27): `--portable-paths` resolves PKG-O2 with
+ASCII root and texture names ([PACKAGING §5.1](../design/PACKAGING_POLICY.md#51-portable-archive-names)).
+The fixture suite covers both modes with non-ASCII input/output directories
+and filenames in every platform's workspace CI cell. Unit, boundary and
+fixture tests passed locally on Windows; Linux and macOS execution remains
+for CI.
+
 - ⬜ **Step 4 — a shared packaging layer**, only once `usd-vrm-plugins` has a
   packager too, extracted from the two working tools.
 

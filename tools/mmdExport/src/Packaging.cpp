@@ -349,10 +349,11 @@ OpenModel(const fs::path& input, Diagnostics* diagnostics)
 }
 
 PackagePlan
-Discover(const SdfLayerHandle& layer, const std::string& rootLayer, Diagnostics* diagnostics)
+Discover(const SdfLayerHandle& layer, const std::string& rootLayer, Diagnostics* diagnostics,
+         bool portablePaths)
 {
     PackagePlan plan;
-    plan.rootLayer = rootLayer;
+    plan.rootLayer = portablePaths ? "model.usdc" : rootLayer;
 
     const Dependencies found = ComputeDependencies(layer);
     for (const SdfLayerRefPtr& other : found.layers) {
@@ -390,6 +391,31 @@ Discover(const SdfLayerHandle& layer, const std::string& rootLayer, Diagnostics*
             continue;
         }
         plan.assets.push_back({authored, archivePath + kind.appended, source, kind});
+    }
+
+    if (portablePaths) {
+        // Number source paths, not discovery traversal order or converted names.
+        // A separate namespace means source-side conversion collisions do not
+        // apply. Keep the action: renaming a kept image must never re-encode it.
+        std::sort(plan.assets.begin(),
+                  plan.assets.end(),
+                  [](const PackageAsset& a, const PackageAsset& b) {
+                      return a.authoredPath < b.authoredPath;
+                  });
+        for (std::size_t i = 0; i < plan.assets.size(); ++i) {
+            PackageAsset& asset = plan.assets[i];
+            std::string number = std::to_string(i + 1);
+            if (number.size() < 4) {
+                number.insert(0, 4 - number.size(), '0');
+            }
+            asset.archivePath = "textures/tex_" + number + "." + Extension(asset.archivePath);
+        }
+        std::sort(plan.assets.begin(),
+                  plan.assets.end(),
+                  [](const PackageAsset& a, const PackageAsset& b) {
+                      return a.archivePath < b.archivePath;
+                  });
+        return plan;
     }
 
     // File names also occupy their directory namespace: a converted file
@@ -549,7 +575,7 @@ Materialize(const SdfLayerHandle& layer, const PackagePlan& plan, const fs::path
     // renamed texture is named by its new name. Provenance keeps the source's.
     std::map<std::string, std::string> renamed;
     for (const PackageAsset& asset : plan.assets) {
-        if (asset.kind.action != TextureAction::Keep) {
+        if (asset.authoredPath != "./" + asset.archivePath) {
             renamed.emplace(asset.authoredPath, "./" + asset.archivePath);
         }
     }

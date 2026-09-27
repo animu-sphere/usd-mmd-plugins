@@ -55,7 +55,7 @@ struct PackageAsset {
     /// The asset path as the stage authors it: "./spa/光沢.spa".
     std::string authoredPath;
     /// Where the file is stored in the archive: the authored path less its
-    /// "./", with what §7 appends, e.g. "spa/光沢.spa.png".
+    /// "./", with what §7 appends, or a portable ASCII name (§5.1).
     std::string archivePath;
     /// The file the authored path resolves to, beside the model.
     fs::path source;
@@ -63,7 +63,7 @@ struct PackageAsset {
 };
 
 struct PackagePlan {
-    /// "<output stem>.usdc", the package's first entry (§4, §5).
+    /// "<output stem>.usdc", or "model.usdc" with portable paths (§5.1).
     std::string rootLayer;
     /// Every file the stage names, once each, in byte order of archivePath.
     std::vector<PackageAsset> assets;
@@ -81,15 +81,16 @@ PXR_NS::SdfLayerRefPtr OpenModel(const fs::path& input, Diagnostics* diagnostics
 /// Every file the layer names, resolved beside it, with its archive path and
 /// what §7 does with it. An error for each file that is missing (§6),
 /// unsupported or would collide (§7), and for any layer beside the input.
+/// portablePaths assigns ASCII names in authored-path byte order (§5.1).
 PackagePlan Discover(const PXR_NS::SdfLayerHandle& layer, const std::string& rootLayer,
-                     Diagnostics* diagnostics);
+                     Diagnostics* diagnostics, bool portablePaths = false);
 
 /// Stages every asset of the plan in PackageDirectory(scratch) at its archive
 /// path: a copy, or a lossless PNG through Hio for a Convert.
 bool ConvertTextures(const PackagePlan& plan, const fs::path& scratch, Diagnostics* diagnostics);
 
 /// The layer's content, spec for spec, as PackageDirectory(scratch)/rootLayer,
-/// with only the asset paths of renamed and converted textures rewritten.
+/// with only the asset paths whose archive names differ rewritten.
 PXR_NS::SdfLayerRefPtr Materialize(const PXR_NS::SdfLayerHandle& layer, const PackagePlan& plan,
                                    const fs::path& scratch, Diagnostics* diagnostics);
 
@@ -99,8 +100,8 @@ bool ValidateMaterialized(const PXR_NS::SdfLayerHandle& root, Diagnostics* diagn
 /// The archive: the root layer first, then every asset in the plan's order,
 /// each from where ConvertTextures staged it, with a fixed local timestamp
 /// on the private copies (§13). Source files are never touched.
-bool WritePackage(const PXR_NS::SdfLayerHandle& root, const PackagePlan& plan,
-                  const fs::path& usdz, Diagnostics* diagnostics);
+bool WritePackage(const PXR_NS::SdfLayerHandle& root, const PackagePlan& plan, const fs::path& usdz,
+                  Diagnostics* diagnostics);
 
 /// §9's checks on the written package, the usdchecker validators included.
 bool ValidatePackage(const fs::path& usdz, const PackagePlan& plan, Diagnostics* diagnostics);

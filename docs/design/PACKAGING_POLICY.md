@@ -2,7 +2,8 @@
 
 > Status: 2026-09-27. §1–§12 and §14 are **binding**: Phase 10 step 1
 > implements them with fixtures ([report](../reports/2026-09-26-phase10-mmd-export-local-models.md)).
-> §13 is **binding** since step 2's deterministic-archive tests, and §16 lists
+> §13 is **binding** since step 2's deterministic-archive tests; step 3 adds
+> §5.1's portable names and their fixture tests. §16 lists
 > what is not built. A section becomes binding when the Phase 10 step that
 > first implements it lands with a fixture
 > ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
@@ -19,7 +20,8 @@
 > The stage a package carries is the one
 > [STAGE_CONTRACT.md](STAGE_CONTRACT.md) fixes. On that stage, the stage
 > contract wins. This document adds only what packaging does to it, and that
-> is one thing: it rewrites the path of a texture it converts (§7).
+> is one thing: it rewrites texture asset paths for conversion (§7) or
+> portable archive names (§5.1).
 >
 > Section numbers are stable.
 
@@ -89,6 +91,7 @@ The importer returns an anonymous layer that exists only while its `.pmx` is
 open. Materialization writes that layer's content, spec for spec, into a new
 binary layer, `<name>.usdc`, in a private temporary directory. `<name>` is the
 output file's stem: `mmd_export model.pmx out.usdz` writes `out.usdc`.
+With `--portable-paths`, the root is always `model.usdc` (§5.1).
 
 - **Nothing added, nothing dropped.** Stage metadata (`defaultPrim = "Asset"`,
   `upAxis = "Y"`, `metersPerUnit = 1`), `/Asset` and everything below it,
@@ -96,8 +99,8 @@ output file's stem: `mmd_export model.pmx out.usdz` writes `out.usdc`.
   provenance key travel unchanged. The package adds no version, time,
   path or tool name of its own
   ([STAGE_CONTRACT.md §3](STAGE_CONTRACT.md#3-authoring-conventions)).
-- **One change.** A converted texture's asset path is rewritten to the
-  converted file's name (§7). The verbatim source path stays in the material's
+- **One change.** A renamed texture's asset path is rewritten to its
+  archive name (§7, §5.1). The verbatim source path stays in the material's
   provenance, `mmd:sourceTexturePath` and its siblings
   ([MATERIAL_POLICY.md §4.2](MATERIAL_POLICY.md#42-provenance)).
 - **Binary.** The root layer is `.usdc`, for size and load time. A package is
@@ -142,6 +145,28 @@ this layout too.
   a second normalization. The source spellings stay in provenance.
 - **Order.** The root layer first, as the USDZ specification requires, then
   the textures in byte order of their archive paths.
+
+### 5.1 Portable archive names
+
+`--portable-paths` opts into an ASCII-only archive namespace (PKG-O2).
+The root is always `model.usdc`, even when the output filename is non-ASCII.
+Every texture gets `textures/tex_0001.<ext>`, numbered from 1 in UTF-8 byte
+order of the distinct authored source paths. Numbers have at least four
+digits and grow beyond 9999. The extension is the lowercase extension of
+the file §7 would store: `png`, `jpg`, `jpeg`, `exr` or `avif`.
+The root still comes first and textures are stored in archive-path byte order.
+
+All affected asset values are rewritten, including kept textures, arrays,
+time samples and dictionaries. Source strings in provenance are unchanged.
+Image conversion follows §7 exactly; renaming a kept PNG or JPEG does not
+re-encode it. Shared authored paths still get one entry.
+
+These names occupy a separate namespace: collisions between source names
+and §7's appended names no longer stop a portable export. Missing,
+unsupported and unexpected dependencies still do. The default layout and
+its collision checks are unchanged. Input paths and the output filename
+remain Unicode; only names inside the archive become ASCII. No ZIP flags
+are patched, and a conventional ZIP reader can read the names as written.
 
 ## 6. Discovery and localization
 
@@ -272,14 +297,14 @@ without the plugin. So that proof is a test (§14), not a per-run check.
 ## 10. Command line
 
 ```text
-mmd_export <input.pmx> <output.usdz>
+mmd_export [--portable-paths] <input.pmx> <output.usdz>
 ```
 
 - The output's extension names the format. Version 1 writes `.usdz` alone,
   and any other extension is a usage error until a section here defines it
   (§16). An existing file at the output path is replaced only after
   validation passes.
-- `--help` and `--version` are the only options in version 1. Every
+- `--portable-paths` selects §5.1; `--help` and `--version` describe the tool. Every
   archive-level detail is OpenUSD's, including compression, alignment and
   entry method, and the command line exposes none of them.
 - The importer must be on OpenUSD's plugin path, as it is for any host. The
@@ -334,7 +359,7 @@ packaging has a code of its own.
   // tools/mmdExport/src/Packaging.h -- private to the tool; not installed.
   SdfLayerRefPtr OpenModel(const fs::path& input, Diagnostics*);
   PackagePlan    Discover(const SdfLayerHandle&, const std::string& rootLayer,
-                          Diagnostics*);                       // files, archive paths, §7's kind
+                          Diagnostics*, bool portablePaths = false); // §5.1, §7
   bool           ConvertTextures(const PackagePlan&, const fs::path& scratch,
                                  Diagnostics*);                // stages every texture, converting
   SdfLayerRefPtr Materialize(const SdfLayerHandle&, const PackagePlan&,
@@ -353,7 +378,7 @@ packaging has a code of its own.
 - **The rename is the tool's own.** OpenUSD's `UsdUtilsModifyAssetPaths` drops
   the empty elements of an asset array even when asked to keep them, and §4
   drops nothing. Materialization therefore rewrites only the `SdfAssetPath`
-  values §7 renames, wherever a field holds one: a default, an array, a time
+  values §7 or §5.1 renames, wherever a field holds one: a default, an array, a time
   sample or a dictionary.
 - **No public packaging library yet.** `usd-vrm-plugins`' `vrm_export`
   may one day want the same archive steps. A shared library is extracted when
@@ -380,7 +405,9 @@ For the same model and texture bytes, output stem, and tool/OpenUSD build,
 the package must be byte-identical across repeated runs, source modification
 times, temporary directories and process time zones. Equality across
 different OpenUSD or image-codec versions is not promised. The output stem
-matters because it names the root layer (§4).
+matters because it names the root layer (§4). With `--portable-paths`, the
+root name is fixed, so changing the output stem also leaves the bytes unchanged.
+Equality is promised within a naming mode, not between the two modes.
 
 Before `SdfZipFileWriter` adds each entry, packaging sets its private copy's
 modification time to **2000-01-01 00:00:00 in local time**. The ZIP writer
@@ -429,12 +456,16 @@ run. The importer's own stage tests open them too.
   parents, with several source paths sharing one texture.
   Unit tests cover file/directory collisions, distinct missing paths and
   rejection of asset paths the importer would not author.
-- **Non-ASCII paths.** An input directory and an output path that no single
+- **Portable paths.** The same stage comparison and image checks with ASCII
+  names, a conventional ZIP reader, source-name collisions that now succeed,
+  and byte equality across time zones, source mtimes and output stems.
+- **Non-ASCII paths.** Input and output directories and filenames that no single
   ANSI code page can spell, as
   [the stage tests](../../tests/integration/test_unicode_paths.py) already use.
   On Windows OpenUSD 26.08's `usdchecker` cannot open such a path at all (it
   has no UTF-8 code page), so there the package is checked by the tool's
-  in-process validators and the plugin-free process alone.
+  in-process validators and the plugin-free process alone. Both naming modes
+  run in the fixture suite used by the Windows, Linux and macOS workspace CI cells.
 - **Local models.** A dated report records the tool over the locally held
   models. Models distributed by their creators are never committed.
 
@@ -461,9 +492,6 @@ Each is added only when a user needs it, with its own section here first:
   textures it names written beside it at the same relative paths, so it
   resolves anywhere it is moved together with them. This is what
   WORKSPACE.md's former `mmd_convert` reservation was for;
-- `--portable-paths`: ASCII archive names (`textures/tex_0001.png`), with the
-  asset paths rewritten to match (the answer to PKG-O2 for tools that are not
-  OpenUSD);
 - `--flatten`, for consumers that cannot compose;
 - `--report <file.json>`: the files packaged, those converted, and every
   diagnostic;
@@ -494,4 +522,4 @@ Each is added only when a user needs it, with its own section here first:
 | Id | Question | Proposed answer | Resolve by |
 | --- | --- | --- | --- |
 | PKG-O1 | How the archive becomes byte-deterministic | Resolved: fixed local 2000-01-01 timestamps on private copies, through the stat-compatible time setter (§13); source files unchanged. | Phase 10 step 2, 2026-09-27 |
-| PKG-O2 | Non-ASCII archive names in ZIP tools that are not OpenUSD | Keep UTF-8 names (OpenUSD reads them). A consumer that needs ASCII uses `--portable-paths`. The flag is not patched into OpenUSD's writer. | Phase 10 step 3 |
+| PKG-O2 | Non-ASCII archive names in ZIP tools that are not OpenUSD | Resolved: UTF-8 names by default; `--portable-paths` gives an ASCII root and texture names (§5.1), with no ZIP flag patch. | Phase 10 step 3, 2026-09-27 |
