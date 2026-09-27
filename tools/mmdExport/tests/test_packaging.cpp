@@ -65,7 +65,8 @@ WriteFile(const fs::path& path, const Bytes& bytes)
 {
     fs::create_directories(path.parent_path());
     std::ofstream out(path, std::ios::binary);
-    out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+    out.write(reinterpret_cast<const char*>(bytes.data()),
+              static_cast<std::streamsize>(bytes.size()));
 }
 
 void
@@ -208,7 +209,9 @@ TestClassify()
         WriteFile(file, bytes);
         return ClassifyTexture(name, file);
     };
-    const auto is = [](const TextureKind& k, TextureAction action, const std::string& appended,
+    const auto is = [](const TextureKind& k,
+                       TextureAction action,
+                       const std::string& appended,
                        const std::string& decoder) {
         return k.action == action && k.appended == appended && k.decoder == decoder;
     };
@@ -238,8 +241,8 @@ TestClassify()
     assert(is(kind("q.gif", kGif), TextureAction::Unsupported, "", ""));
     assert(is(kind("r.dds", {'D', 'D', 'S', ' '}), TextureAction::Unsupported, "", ""));
     assert(is(kind("s.png", {}), TextureAction::Unsupported, "", ""));
-    assert(is(ClassifyTexture("t.png", dir.path() / "absent.png"), TextureAction::Unsupported,
-              "", ""));
+    assert(is(
+        ClassifyTexture("t.png", dir.path() / "absent.png"), TextureAction::Unsupported, "", ""));
     std::puts("classify: every row of PACKAGING_POLICY.md §7");
 }
 
@@ -254,10 +257,15 @@ TestDiscoverErrors()
     WriteFile(model / "tex/g.gif", kGif);
     WriteFile(model / "tex/c.sph", kPng);
     WriteFile(model / "tex/c.sph.png", kPng); // named too
-    const SdfLayerRefPtr layer = WriteLayer(
-        model / "m.usda", ModelUsda({"./tex/a.png", "./tex/b.bmp", "./tex/g.gif",
-                                     "./tex/無い.png", "./tex/c.sph", "./tex/c.sph.png",
-                                     "../outside.png", "/absolute.png"}));
+    const SdfLayerRefPtr layer = WriteLayer(model / "m.usda",
+                                            ModelUsda({"./tex/a.png",
+                                                       "./tex/b.bmp",
+                                                       "./tex/g.gif",
+                                                       "./tex/無い.png",
+                                                       "./tex/c.sph",
+                                                       "./tex/c.sph.png",
+                                                       "../outside.png",
+                                                       "/absolute.png"}));
 
     Diagnostics diagnostics;
     const PackagePlan plan = Discover(layer, "out.usdc", &diagnostics);
@@ -288,9 +296,9 @@ TestDiscoverPlan()
     WriteFile(dir.path() / "a.png", kPng);
     WriteFile(dir.path() / "a/b.bmp", Bmp(kOpaque, false));
     WriteFile(dir.path() / "a/c.spa", kJpeg);
-    const SdfLayerRefPtr layer = WriteLayer(
-        dir.path() / "m.usda",
-        ModelUsda({"./z.png", "./a/b.bmp", "./a.png", "./a/c.spa", "./z.png"}));
+    const SdfLayerRefPtr layer =
+        WriteLayer(dir.path() / "m.usda",
+                   ModelUsda({"./z.png", "./a/b.bmp", "./a.png", "./a/c.spa", "./z.png"}));
 
     Diagnostics diagnostics;
     const PackagePlan plan = Discover(layer, "out.usdc", &diagnostics);
@@ -308,6 +316,40 @@ TestDiscoverPlan()
 }
 
 void
+TestDiscoverNamespaces()
+{
+    const TempDir dir("namespaces");
+    WriteFile(dir.path() / "a.bmp", Bmp(kOpaque, false));
+    WriteFile(dir.path() / "a.bmp.png/child.png", kPng);
+    WriteFile(dir.path() / "out.usdc/child.png", kPng);
+    const auto layer = WriteLayer(dir.path() / "m.usda",
+                                  ModelUsda({"./a.bmp",
+                                             "./a.bmp.png/child.png",
+                                             "./out.usdc/child.png",
+                                             "./missing.png",
+                                             "./missing.png",
+                                             "./other-missing.png"}));
+    Diagnostics diagnostics;
+    Discover(layer, "out.usdc", &diagnostics);
+    assert(diagnostics.Count(code::AssetNameCollision) == 2);
+    assert(diagnostics.Count(code::MissingAsset) == 2); // once per authored path
+    assert(!fs::exists(dir.path() / "out.usdc/out.usdc"));
+
+    // The exporter consumes normalized paths, never silently repairs them.
+    const auto noncanonical = WriteLayer(dir.path() / "paths.usda",
+                                         ModelUsda({"a.bmp",
+                                                    "./a/../a.bmp",
+                                                    "./a//b.png",
+                                                    "./a/./b.png",
+                                                    "./../outside.png",
+                                                    "./C:/drive.png"}));
+    Diagnostics paths;
+    Discover(noncanonical, "out.usdc", &paths);
+    assert(paths.Count(code::UnexpectedDependency) == 6);
+    std::puts("discover: directory collisions, unique missing paths, canonical paths only");
+}
+
+void
 TestConvert()
 {
     const TempDir dir("convert");
@@ -316,9 +358,8 @@ TestConvert()
     WriteFile(model / "tex/t.bmp", Bmp(kTranslucent, true));
     WriteFile(model / "toon/u.tga", Tga(kTranslucent));
     WriteFile(model / "tex/k.png", kPng);
-    const SdfLayerRefPtr layer =
-        WriteLayer(model / "m.usda",
-                   ModelUsda({"./spa/s.spa", "./tex/t.bmp", "./toon/u.tga", "./tex/k.png"}));
+    const SdfLayerRefPtr layer = WriteLayer(
+        model / "m.usda", ModelUsda({"./spa/s.spa", "./tex/t.bmp", "./toon/u.tga", "./tex/k.png"}));
 
     Diagnostics diagnostics;
     const PackagePlan plan = Discover(layer, "out.usdc", &diagnostics);
@@ -344,10 +385,10 @@ TestMaterialize()
     const TempDir dir("materialize");
     WriteFile(dir.path() / "a.bmp", Bmp(kOpaque, false));
     WriteFile(dir.path() / "b.png", kPng);
-    const std::string extra =
-        "    custom asset[] many = [@./a.bmp@, @./b.png@, @@]\n"
-        "    custom asset sampled.timeSamples = {\n        1: @./a.bmp@,\n        2: @./b.png@,\n    }\n"
-        "    custom string provenance = \"./a.bmp\"\n";
+    const std::string extra = "    custom asset[] many = [@./a.bmp@, @./b.png@, @@]\n"
+                              "    custom asset sampled.timeSamples = {\n        1: @./a.bmp@,\n   "
+                              "     2: @./b.png@,\n    }\n"
+                              "    custom string provenance = \"./a.bmp\"\n";
     const SdfLayerRefPtr layer =
         WriteLayer(dir.path() / "m.usda", ModelUsda({"./a.bmp", "./b.png"}, extra));
 
@@ -356,7 +397,8 @@ TestMaterialize()
     const fs::path scratch = dir.path() / "scratch";
     const SdfLayerRefPtr root = Materialize(layer, plan, scratch, &diagnostics);
     assert(root && !diagnostics.HasErrors());
-    assert(fs::equivalent(PathFromUtf8(root->GetRealPath()), PackageDirectory(scratch) / "out.usdc"));
+    assert(
+        fs::equivalent(PathFromUtf8(root->GetRealPath()), PackageDirectory(scratch) / "out.usdc"));
     assert(root->GetFileFormat()->GetFormatId() == TfToken("usdc"));
 
     // Spec for spec: every field of every spec is the source's, but for the
@@ -401,8 +443,12 @@ TestMaterialize()
             const VtValue want = expected(source);
             const VtValue got = root->GetField(path, field);
             if (got != want) {
-                std::fprintf(stderr, "%s %s: %s != %s\n", path.GetText(), field.GetText(),
-                             TfStringify(got).c_str(), TfStringify(want).c_str());
+                std::fprintf(stderr,
+                             "%s %s: %s != %s\n",
+                             path.GetText(),
+                             field.GetText(),
+                             TfStringify(got).c_str(),
+                             TfStringify(want).c_str());
             }
             assert(got == want);
             rewritten += want == source ? 0 : 1;
@@ -446,8 +492,8 @@ TestWriteAndValidate()
     WriteFile(model / PathFromUtf8("tex/髪.png"), kPng);
     WriteFile(model / "toon/t.bmp", Bmp(kOpaque, false));
     WriteFile(model / "b.png", kPng);
-    const SdfLayerRefPtr layer = WriteLayer(
-        model / "m.usda", ModelUsda({"./toon/t.bmp", "./tex/髪.png", "./b.png"}));
+    const SdfLayerRefPtr layer =
+        WriteLayer(model / "m.usda", ModelUsda({"./toon/t.bmp", "./tex/髪.png", "./b.png"}));
 
     Diagnostics diagnostics;
     const fs::path scratch = dir.path() / "scratch";
@@ -475,7 +521,18 @@ TestWriteAndValidate()
     const SdfLayerRefPtr bare = WriteLayer(dir.path() / "bare/bare.usda", "#usda 1.0\n");
     Diagnostics bareDiagnostics;
     assert(!ValidateMaterialized(bare, &bareDiagnostics));
-    assert(bareDiagnostics.Count(code::ValidationFailed) == 4); // defaultPrim, /Asset, upAxis, metersPerUnit
+    assert(bareDiagnostics.Count(code::ValidationFailed) ==
+           4); // defaultPrim, /Asset, upAxis, metersPerUnit
+
+    // A staged file lost before archiving is a write failure, including
+    // failure to set its fixed timestamp. No unfinished archive survives.
+    fs::remove(PackageDirectory(scratch) / "b.png");
+    Diagnostics missing;
+    const auto root = SdfLayer::FindOrOpen(Utf8(PackageDirectory(scratch) / "out.usdc"));
+    const fs::path failed = scratch / "failed.usdz";
+    assert(!WritePackage(root, packaged.plan, failed, &missing));
+    assert(missing.Count(code::WriteFailed) == 1 && missing.HasFatal());
+    assert(!fs::exists(failed));
     std::puts("package: archive order, UTF-8 names, and validation");
 }
 
@@ -487,8 +544,8 @@ TestMoveIntoPlace()
     WriteFile(dir.path() / PathFromUtf8("出力/out.usdz"), {9});
 
     Diagnostics diagnostics;
-    assert(MoveIntoPlace(dir.path() / "new.usdz", dir.path() / PathFromUtf8("出力/out.usdz"),
-                         &diagnostics));
+    assert(MoveIntoPlace(
+        dir.path() / "new.usdz", dir.path() / PathFromUtf8("出力/out.usdz"), &diagnostics));
     std::ifstream in(dir.path() / PathFromUtf8("出力/out.usdz"), std::ios::binary);
     const Bytes bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     assert((bytes == Bytes{1, 2, 3}));
@@ -513,6 +570,7 @@ main()
     TestClassify();
     TestDiscoverErrors();
     TestDiscoverPlan();
+    TestDiscoverNamespaces();
     TestConvert();
     TestMaterialize();
     TestWriteAndValidate();

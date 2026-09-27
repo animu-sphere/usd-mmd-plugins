@@ -47,6 +47,13 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Changed
 
+- **`mmd_export`, Phase 10 step 2 (PKG-O1).** Private staged files receive
+  a fixed local timestamp, so repeated runs with the same input bytes,
+  output stem and tool/OpenUSD build produce identical USDZ bytes across
+  time zones and source modification times. Source files stay untouched.
+  Discovery also detects file/directory conflicts with converted textures
+  and the root layer. Tests cover normalized PMX path aliases, unique
+  missing-path diagnostics, timestamp failures and archive reproducibility.
 - **Stage-contract version 2 (Phase 8).** Every material applies
   `MmdMaterialAPI`, and its canonical values are Material interface inputs,
   `inputs:mmd:material:<name>`. They replace contract v1's schema-less

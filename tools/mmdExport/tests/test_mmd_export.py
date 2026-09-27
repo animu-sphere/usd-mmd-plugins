@@ -59,9 +59,13 @@ class Context:
         self.without_plugins = dict(os.environ)
         self.without_plugins.pop("PXR_PLUGINPATH_NAME", None)
 
-    def package(self, pmx: pathlib.Path, usdz: pathlib.Path) -> tuple[int, list[str]]:
+    def package(self, pmx: pathlib.Path, usdz: pathlib.Path,
+                timezone: str | None = None) -> tuple[int, list[str]]:
+        environment = dict(self.with_plugins)
+        if timezone is not None:
+            environment["TZ"] = timezone
         result = subprocess.run([str(self.tool), str(pmx), str(usdz)],
-                                env=self.with_plugins, stdout=subprocess.PIPE,
+                                env=environment, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         return result.returncode, result.stderr.decode("utf-8").splitlines()
 
@@ -298,6 +302,34 @@ def check_refusals(ctx: Context, fixtures: pathlib.Path, out_dir: pathlib.Path) 
     print("ok  usage errors and a missing importer")
 
 
+def check_determinism(ctx: Context, fixtures: pathlib.Path, root: pathlib.Path) -> None:
+    """Different processes, source mtimes, scratch paths and local time zones."""
+    original = None
+    for index, timezone in enumerate(("UTC0", "JST-9", "PST8PDT", "UTC0")):
+        folder = root / f"determinism-{index}"
+        shutil.copytree(fixtures / "packaging", folder / "input")
+        sources = list((folder / "input").rglob("*"))
+        stamp = 946684800 + index * 12345678
+        for path in sources:
+            if path.is_file():
+                os.utime(path, (stamp, stamp))
+        before = {p: (p.read_bytes(), p.stat().st_mtime_ns)
+                  for p in sources if p.is_file()}
+        usdz = folder / "out.usdz"
+        status, lines = ctx.package(folder / "input/textures.pmx", usdz, timezone)
+        assert status == 0, f"{timezone}: {lines}"
+        data = usdz.read_bytes()
+        if original is None:
+            original = data
+        assert data == original, f"archive bytes changed in {timezone}"
+        with zipfile.ZipFile(usdz) as archive:
+            for entry in archive.infolist():
+                assert entry.date_time == (2000, 1, 1, 0, 0, 0), entry.date_time
+        for path, (content, modified) in before.items():
+            assert path.read_bytes() == content and path.stat().st_mtime_ns == modified, path
+    print("ok  deterministic bytes across time zones and source mtimes; sources unchanged")
+
+
 def main() -> int:
     sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -311,7 +343,8 @@ def main() -> int:
         print("note: no usdchecker in this OpenUSD; the in-tool validators still run")
     generator = load_generator(args.generator)
 
-    packaged = ["packaging/textures.pmx", "sample-2.0-utf16.pmx", "minimal.pmx"]
+    packaged = ["packaging/textures.pmx", "packaging/normalized-paths.pmx",
+                "sample-2.0-utf16.pmx", "minimal.pmx"]
     with tempfile.TemporaryDirectory(prefix="mmd-export-") as scratch:
         root = pathlib.Path(scratch)
         fixtures = root / "fixtures"
@@ -325,6 +358,7 @@ def main() -> int:
         out_dir.mkdir()
         check_packages(ctx, fixtures, manifest, generator, out_dir, work, packaged)
         check_refusals(ctx, fixtures, out_dir)
+        check_determinism(ctx, fixtures, root)
 
         # From, and into, directories no single ANSI code page can spell.
         unicode_fixtures = root / UNICODE_DIR / "fixtures"

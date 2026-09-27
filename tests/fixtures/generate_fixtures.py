@@ -1400,6 +1400,14 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
         return model
 
     entries.update({
+        "packaging/normalized-paths.pmx": opens(packaging(
+            [".\\tex\\unused\\..\\髪.png", "tex//./髪.png", "./tex/髪.png",
+             "./spa/../spa//光沢.spa"],
+            [material("髪", "hair", 3, ("shared", 0), texture=0, sphere=3),
+             material("髪2", "hair2", 3, ("shared", 0), texture=1),
+             material("髪3", "hair3", 3, ("shared", 0), texture=2)]),
+            "path aliases normalized by the importer share one package entry; "
+            "source spelling stays in provenance", importer=sdef),
         "packaging/textures.pmx": opens(packaging(
             ["tex\\髪.png", "spa\\光沢.spa", "toon\\トゥーン.tga", "tex\\肌.jpg",
              "sph\\反射.sph", "tex\\目.bmp"],

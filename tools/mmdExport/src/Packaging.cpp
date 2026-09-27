@@ -29,12 +29,20 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <map>
 #include <random>
 #include <set>
 #include <system_error>
+
+#ifdef _WIN32
+#include <sys/utime.h>
+#else
+#include <utime.h>
+#endif
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
@@ -129,7 +137,10 @@ ComputeDependencies(const SdfLayerHandle& layer)
     std::vector<std::string> resolved;
     TfErrorMark mark;
     UsdUtilsComputeAllDependencies(
-        SdfAssetPath(layer->GetIdentifier()), &out.layers, &resolved, &out.unresolved,
+        SdfAssetPath(layer->GetIdentifier()),
+        &out.layers,
+        &resolved,
+        &out.unresolved,
         [&out, &layer](const SdfLayerHandle& from, const UsdUtilsDependencyInfo& info) {
             if (get_pointer(from) == get_pointer(layer)) {
                 out.assetPaths.insert(info.GetAssetPath());
@@ -296,8 +307,7 @@ OpenModel(const fs::path& input, Diagnostics* diagnostics)
 {
     std::error_code ec;
     if (!fs::is_regular_file(input, ec)) {
-        diagnostics->Add(code::InputUnreadable,
-                         Quoted(Utf8(input)) + " is not a file");
+        diagnostics->Add(code::InputUnreadable, Quoted(Utf8(input)) + " is not a file");
         return {};
     }
     const std::string path = Utf8(fs::absolute(input, ec));
@@ -318,8 +328,7 @@ OpenModel(const fs::path& input, Diagnostics* diagnostics)
             diagnostics->Relay(error.GetCommentary());
         }
         mark.Clear();
-        diagnostics->Add(code::InputUnreadable,
-                         Quoted(path) + " could not be read");
+        diagnostics->Add(code::InputUnreadable, Quoted(path) + " could not be read");
         return {};
     }
     mark.Clear();
@@ -383,35 +392,52 @@ Discover(const SdfLayerHandle& layer, const std::string& rootLayer, Diagnostics*
         plan.assets.push_back({authored, archivePath + kind.appended, source, kind});
     }
 
-    // A name §7 makes must not be one the model already has: in the stage,
-    // on disk beside the model, or the root layer's.
+    // File names also occupy their directory namespace: a converted file
+    // cannot replace the directory of another asset, nor can the root.
     std::set<std::string> named{plan.rootLayer};
-    for (const PackageAsset& asset : plan.assets) {
-        named.insert(asset.authoredPath.substr(2));
+    for (const std::string& authored : found.assetPaths) {
+        const std::string path = ArchivePathOf(authored);
+        if (!path.empty()) {
+            named.insert(path);
+        }
     }
+    const auto conflicts = [&named](const std::string& path, bool includeExact) {
+        if (includeExact && named.count(path)) {
+            return true;
+        }
+        for (std::size_t slash = path.find('/'); slash != std::string::npos;
+             slash = path.find('/', slash + 1)) {
+            if (named.count(path.substr(0, slash))) {
+                return true;
+            }
+        }
+        const std::string prefix = path + '/';
+        const auto child = named.lower_bound(prefix);
+        return child != named.end() && child->starts_with(prefix);
+    };
     for (const PackageAsset& asset : plan.assets) {
         if (asset.kind.action == TextureAction::Keep) {
-            if (asset.archivePath == plan.rootLayer) {
+            if (asset.archivePath == plan.rootLayer || conflicts(asset.archivePath, false)) {
                 diagnostics->Add(code::AssetNameCollision,
-                                 Quoted(asset.authoredPath) + " has the root layer's name");
+                                 Quoted(asset.authoredPath) +
+                                     " conflicts with another file or directory in the package");
             }
             continue;
         }
         std::error_code ec;
         fs::path beside = asset.source;
         beside += PathFromUtf8(asset.kind.appended);
-        if (named.count(asset.archivePath) != 0 || fs::exists(beside, ec)) {
+        if (conflicts(asset.archivePath, true) || fs::exists(beside, ec)) {
             diagnostics->Add(code::AssetNameCollision,
                              Quoted(asset.authoredPath) + " would be stored as " +
-                                 Quoted(asset.archivePath) +
-                                 ", a name the model already has");
+                                 Quoted(asset.archivePath) + ", a name the model already has");
         }
     }
 
-    std::sort(plan.assets.begin(), plan.assets.end(),
-              [](const PackageAsset& a, const PackageAsset& b) {
-                  return a.archivePath < b.archivePath;
-              });
+    std::sort(
+        plan.assets.begin(), plan.assets.end(), [](const PackageAsset& a, const PackageAsset& b) {
+            return a.archivePath < b.archivePath;
+        });
     return plan;
 }
 
@@ -432,7 +458,8 @@ ConvertTextures(const PackagePlan& plan, const fs::path& scratch, Diagnostics* d
 
         if (asset.kind.action != TextureAction::Convert) {
             if (!fs::copy_file(asset.source, staged, fs::copy_options::overwrite_existing, ec)) {
-                return Fail(diagnostics, code::WriteFailed,
+                return Fail(diagnostics,
+                            code::WriteFailed,
                             "could not copy " + Quoted(asset.authoredPath) + " (" + ec.message() +
                                 ")");
             }
@@ -446,7 +473,8 @@ ConvertTextures(const PackagePlan& plan, const fs::path& scratch, Diagnostics* d
         const fs::path in = work / (stem + "." + asset.kind.decoder);
         const fs::path out = work / (stem + ".png");
         if (!fs::copy_file(asset.source, in, fs::copy_options::overwrite_existing, ec)) {
-            return Fail(diagnostics, code::WriteFailed,
+            return Fail(diagnostics,
+                        code::WriteFailed,
                         "could not copy " + Quoted(asset.authoredPath) + " (" + ec.message() + ")");
         }
 
@@ -454,7 +482,8 @@ ConvertTextures(const PackagePlan& plan, const fs::path& scratch, Diagnostics* d
         const HioImageSharedPtr image = HioImage::OpenForReading(Utf8(in));
         const HioFormat format = image ? image->GetFormat() : HioFormatInvalid;
         if (!image || HioGetHioType(format) != HioTypeUnsignedByte) {
-            ok = Fail(diagnostics, code::UnsupportedTexture,
+            ok = Fail(diagnostics,
+                      code::UnsupportedTexture,
                       WithReason(Quoted(asset.authoredPath) + " could not be decoded as an 8-bit " +
                                      (asset.kind.decoder == "bmp" ? "BMP" : "TGA"),
                                  TakeErrors(mark)));
@@ -471,20 +500,23 @@ ConvertTextures(const PackagePlan& plan, const fs::path& scratch, Diagnostics* d
         spec.flipped = false;
         spec.data = pixels.data();
         if (!image->Read(spec)) {
-            ok = Fail(diagnostics, code::UnsupportedTexture,
-                      WithReason(Quoted(asset.authoredPath) + " could not be decoded",
-                                 TakeErrors(mark)));
+            ok = Fail(
+                diagnostics,
+                code::UnsupportedTexture,
+                WithReason(Quoted(asset.authoredPath) + " could not be decoded", TakeErrors(mark)));
             continue;
         }
         const HioImageSharedPtr png = HioImage::OpenForWriting(Utf8(out));
         if (!png || !png->Write(spec)) {
-            return Fail(diagnostics, code::WriteFailed,
+            return Fail(diagnostics,
+                        code::WriteFailed,
                         WithReason("could not write the PNG of " + Quoted(asset.authoredPath),
                                    TakeErrors(mark)));
         }
         fs::rename(out, staged, ec);
         if (ec) {
-            return Fail(diagnostics, code::WriteFailed,
+            return Fail(diagnostics,
+                        code::WriteFailed,
                         "could not stage the PNG of " + Quoted(asset.authoredPath) + " (" +
                             ec.message() + ")");
         }
@@ -506,7 +538,8 @@ Materialize(const SdfLayerHandle& layer, const PackagePlan& plan, const fs::path
     TfErrorMark mark;
     SdfLayerRefPtr root = SdfLayer::CreateNew(Utf8(path));
     if (!root) {
-        Fail(diagnostics, code::WriteFailed,
+        Fail(diagnostics,
+             code::WriteFailed,
              WithReason("could not create " + Quoted(plan.rootLayer), TakeErrors(mark)));
         return {};
     }
@@ -525,13 +558,15 @@ Materialize(const SdfLayerHandle& layer, const PackagePlan& plan, const fs::path
     }
 
     if (!root->Save()) {
-        Fail(diagnostics, code::WriteFailed,
+        Fail(diagnostics,
+             code::WriteFailed,
              WithReason("could not write " + Quoted(plan.rootLayer), TakeErrors(mark)));
         return {};
     }
     const std::string reason = TakeErrors(mark);
     if (!reason.empty()) {
-        Fail(diagnostics, code::WriteFailed,
+        Fail(diagnostics,
+             code::WriteFailed,
              "materializing " + Quoted(plan.rootLayer) + " raised: " + reason);
         return {};
     }
@@ -543,8 +578,7 @@ ValidateMaterialized(const SdfLayerHandle& root, Diagnostics* diagnostics)
 {
     bool ok = true;
     const auto failed = [&](const std::string& check) {
-        ok = Fail(diagnostics, code::ValidationFailed,
-                  "the materialized layer: " + check);
+        ok = Fail(diagnostics, code::ValidationFailed, "the materialized layer: " + check);
     };
 
     TfErrorMark mark;
@@ -593,16 +627,49 @@ WritePackage(const SdfLayerHandle& root, const PackagePlan& plan, const fs::path
              Diagnostics* diagnostics)
 {
     const fs::path staged = PathFromUtf8(root->GetRealPath()).parent_path();
+    // SdfZipFileWriter converts each mtime with localtime. Build the fixed
+    // wall-clock date in this process's time zone, not as a fixed UTC epoch,
+    // so every zone writes the same DOS date. Touch only private copies.
+    std::tm date{};
+    date.tm_year = 100;
+    date.tm_mon = 0;
+    date.tm_mday = 1;
+    date.tm_isdst = -1;
+    const std::time_t local = std::mktime(&date);
+    if (local == static_cast<std::time_t>(-1)) {
+        return Fail(diagnostics, code::WriteFailed, "could not form the fixed archive time");
+    }
     TfErrorMark mark;
     SdfZipFileWriter writer = SdfZipFileWriter::CreateNew(Utf8(usdz));
     if (!writer) {
-        return Fail(diagnostics, code::WriteFailed,
+        return Fail(diagnostics,
+                    code::WriteFailed,
                     WithReason("could not create the archive", TakeErrors(mark)));
     }
     const auto add = [&](const std::string& archivePath) {
-        if (writer.AddFile(Utf8(staged / PathFromUtf8(archivePath)), archivePath).empty()) {
+        const fs::path file = staged / PathFromUtf8(archivePath);
+        // Match OpenUSD's stat-based timestamp reader. On Windows the CRT's
+        // stat/utime pair accounts for both TZ and the OS time zone; setting
+        // a filesystem-clock time directly does not invert that reader.
+#ifdef _WIN32
+        __utimbuf64 times{local, local};
+        const int result = _wutime64(file.c_str(), &times);
+#else
+        const utimbuf times{local, local};
+        const int result = utime(file.c_str(), &times);
+#endif
+        if (result != 0) {
+            const std::error_code ec(errno, std::generic_category());
             writer.Discard();
-            return Fail(diagnostics, code::WriteFailed,
+            return Fail(diagnostics,
+                        code::WriteFailed,
+                        "could not set the archive time of " + Quoted(archivePath) + " (" +
+                            ec.message() + ")");
+        }
+        if (writer.AddFile(Utf8(file), archivePath).empty()) {
+            writer.Discard();
+            return Fail(diagnostics,
+                        code::WriteFailed,
                         WithReason("could not add " + Quoted(archivePath) + " to the archive",
                                    TakeErrors(mark)));
         }
@@ -618,7 +685,8 @@ WritePackage(const SdfLayerHandle& root, const PackagePlan& plan, const fs::path
         }
     }
     if (!writer.Save()) {
-        return Fail(diagnostics, code::WriteFailed,
+        return Fail(diagnostics,
+                    code::WriteFailed,
                     WithReason("could not save the archive", TakeErrors(mark)));
     }
     mark.Clear();
@@ -726,7 +794,8 @@ ValidatePackage(const fs::path& usdz, const PackagePlan& plan, Diagnostics* diag
     UsdValidationValidatorMetadataVector metadata =
         UsdValidationRegistry::GetInstance().GetAllValidatorMetadata();
     const TfToken rootPackageOnly("usdUtilsValidators:RootPackageValidator");
-    metadata.erase(std::remove_if(metadata.begin(), metadata.end(),
+    metadata.erase(std::remove_if(metadata.begin(),
+                                  metadata.end(),
                                   [&](const UsdValidationValidatorMetadata& m) {
                                       return m.name == rootPackageOnly;
                                   }),
@@ -752,14 +821,14 @@ MoveIntoPlace(const fs::path& from, const fs::path& to, Diagnostics* diagnostics
     std::error_code ec;
     if (!fs::copy_file(from, partial, fs::copy_options::overwrite_existing, ec)) {
         fs::remove(partial, ec);
-        return Fail(diagnostics, code::WriteFailed,
-                    "could not write beside " + Quoted(Utf8(to)));
+        return Fail(diagnostics, code::WriteFailed, "could not write beside " + Quoted(Utf8(to)));
     }
     fs::rename(partial, to, ec);
     if (ec) {
         const std::string reason = ec.message();
         fs::remove(partial, ec);
-        return Fail(diagnostics, code::WriteFailed,
+        return Fail(diagnostics,
+                    code::WriteFailed,
                     "could not replace " + Quoted(Utf8(to)) + " (" + reason + ")");
     }
     return true;

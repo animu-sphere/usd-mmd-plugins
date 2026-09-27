@@ -38,7 +38,7 @@ in.** No other document states a version for a Phase.
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | ⬜ | unassigned; schema/adapter work is here, composition is owned mostly outside this repository |
 | 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the A-pose rest (MOT-O10) is measured and, with expression interoperability, waits on `usd-motion-plugins`; role-table version 2 resolves MOT-O12 | unassigned |
-| 10 | USDZ packaging (`mmd_export`) | 🚧 step 1 done: a validated USDZ that opens without the plugins ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md), [report](../reports/2026-09-26-phase10-mmd-export-local-models.md)); a deterministic archive (step 2) is next | unassigned |
+| 10 | USDZ packaging (`mmd_export`) | 🚧 steps 1–2 done: a validated USDZ that opens without the plugins, robust asset paths and a deterministic archive ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)); portability (step 3) is next | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -181,7 +181,7 @@ schedules them.
 | MOT-O8 | Evaluating MMD motion from a stage alone | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | a consumer that holds only the stage |
 | MOT-O11 | Whether a knee starts from its keyed rotation | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | nothing (MMD's output to compare against) |
 | MOT-O12 | Where `上半身3` falls in the role table | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved 2026-09-25 — table version 2 |
-| PKG-O1 | How the USDZ archive becomes byte-deterministic | [PACKAGING §18](../design/PACKAGING_POLICY.md#18-open-questions) | Phase 10 step 2 |
+| PKG-O1 | How the USDZ archive becomes byte-deterministic | [PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism) | resolved 2026-09-27 — Phase 10 step 2 |
 | PKG-O2 | Non-ASCII archive names in ZIP tools that are not OpenUSD | [PACKAGING §18](../design/PACKAGING_POLICY.md#18-open-questions) | Phase 10 step 3 |
 
 ## Quality bar (applies to every Phase)
