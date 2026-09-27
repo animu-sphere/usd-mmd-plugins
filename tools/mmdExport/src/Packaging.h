@@ -97,7 +97,8 @@ PXR_NS::SdfLayerRefPtr Materialize(const PXR_NS::SdfLayerHandle& layer, const Pa
 bool ValidateMaterialized(const PXR_NS::SdfLayerHandle& root, Diagnostics* diagnostics);
 
 /// The archive: the root layer first, then every asset in the plan's order,
-/// each from where ConvertTextures staged it.
+/// each from where ConvertTextures staged it, with a fixed local timestamp
+/// on the private copies (§13). Source files are never touched.
 bool WritePackage(const PXR_NS::SdfLayerHandle& root, const PackagePlan& plan,
                   const fs::path& usdz, Diagnostics* diagnostics);
 

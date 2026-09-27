@@ -203,7 +203,7 @@ tool's unit and fixture tests, and the
 | A missing, unsupported or colliding texture: nothing written | supported | [PACKAGING §6](../design/PACKAGING_POLICY.md#6-discovery-and-localization), [§7](../design/PACKAGING_POLICY.md#7-texture-formats) |
 | Validation before the output is replaced, the `usdchecker` validators included | supported | [PACKAGING §9](../design/PACKAGING_POLICY.md#9-validation) |
 | Non-ASCII input and output paths | supported | [PACKAGING §10](../design/PACKAGING_POLICY.md#10-command-line) |
-| A byte-deterministic archive | — (Phase 10 step 2, PKG-O1) | [PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism) |
+| A byte-deterministic archive across runs, source mtimes and time zones, for the same input bytes, output stem and tool/OpenUSD build | supported | [PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism) |
 | `.usdc` / `.usda` output | — (when `usdcat` proves insufficient) | [PACKAGING §16](../design/PACKAGING_POLICY.md#16-later) |
 
 ## Outside the PMX importer

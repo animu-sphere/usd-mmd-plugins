@@ -1,8 +1,8 @@
 # USDZ packaging policy
 
-> Status: 2026-09-26. §1–§12 and §14 are **binding**: Phase 10 step 1
+> Status: 2026-09-27. §1–§12 and §14 are **binding**: Phase 10 step 1
 > implements them with fixtures ([report](../reports/2026-09-26-phase10-mmd-export-local-models.md)).
-> §13 is proposed until step 2 makes the archive deterministic, and §16 lists
+> §13 is **binding** since step 2's deterministic-archive tests, and §16 lists
 > what is not built. A section becomes binding when the Phase 10 step that
 > first implements it lands with a fixture
 > ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
@@ -137,7 +137,9 @@ this layout too.
   writer does not set the ZIP UTF-8 flag. So a general ZIP tool may show
   those names garbled, while every OpenUSD reader resolves them (PKG-O2).
 - **One entry per file.** A texture that several materials name is stored
-  once.
+  once. Source spellings that the importer normalizes to the same asset path
+  share that entry; packaging consumes the normalized path without applying
+  a second normalization. The source spellings stay in provenance.
 - **Order.** The root layer first, as the USDZ specification requires, then
   the textures in byte order of their archive paths.
 
@@ -153,6 +155,8 @@ the archive at the path the stage names it by, less the leading `./`.
 - **Missing is an error.** A path the stage authors that does not resolve is
   `MMD_PKG_MISSING_ASSET`, and no package is written. A package that silently
   drops a texture draws differently from the stage it came from.
+  Each distinct authored missing path is reported once, even if several
+  materials or shader inputs name it; discovery reports all of them.
   `--allow-missing-assets` is later (§16).
 - **Refused paths are already absent.** A texture path the importer refused
   has no asset path on the stage, so there is nothing to package. The
@@ -201,7 +205,9 @@ losslessly**, rather than stored as it is (non-compliant) or refused.
   JPEG, `spa/s.spa.jpg`. A name made this way does
   not collide with another source file, unless the model already has a file
   of that exact name. That is `MMD_PKG_ASSET_NAME_COLLISION`, and no package
-  is written.
+  is written. A directory also occupies the name: a converted file cannot
+  replace another asset's parent directory. The root layer's name is
+  reserved as a file, so a texture cannot occupy it or a directory below it.
 - **Only the path changes.** The stage's asset path for that slot is
   rewritten to the new name (§4). The slot's `colorSpace`, the realizations'
   connections, and the verbatim source path in provenance stay as they are.
@@ -309,7 +315,7 @@ as `OpenUSD: <text>`.
 | `MMD_PKG_MISSING_ASSET` | error | an asset path the stage authors does not resolve (§6) |
 | `MMD_PKG_UNEXPECTED_DEPENDENCY` | error | discovery reports a layer other than the input (§6) |
 | `MMD_PKG_UNSUPPORTED_TEXTURE` | error | a texture is neither USDZ-ready nor convertible (§7) |
-| `MMD_PKG_ASSET_NAME_COLLISION` | error | a converted or renamed texture's name is taken (§7) |
+| `MMD_PKG_ASSET_NAME_COLLISION` | error | a texture or root-layer name conflicts with a file or directory (§7) |
 | `MMD_PKG_VALIDATION_FAILED` | error | a §9 check fails |
 | `MMD_PKG_WRITE_FAILED` | fatal | the `.usdc`, a converted image or the archive cannot be written |
 | `MMD_PKG_TEXTURE_CONVERTED` | info | a texture was converted to PNG (§7) |
@@ -343,7 +349,7 @@ packaging has a code of its own.
   `main` parses the command line and calls them in order. The unit tests call
   each one directly. Every texture is staged beside the materialized layer at
   its archive path, so the layer's paths resolve there before anything is
-  archived (§9), and so step 2 can give every staged file one time (PKG-O1).
+  archived (§9). Step 2 gives every staged file one fixed time (PKG-O1).
 - **The rename is the tool's own.** OpenUSD's `UsdUtilsModifyAssetPaths` drops
   the empty elements of an asset array even when asked to keep them, and §4
   drops nothing. Materialization therefore rewrites only the `SdfAssetPath`
@@ -370,16 +376,25 @@ packaging has a code of its own.
 
 ## 13. Determinism
 
-The same input should give the same package, byte for byte, so that a
-release artifact can be checked. The materialized `.usdc` already is
-([report](../reports/2026-09-25-usdz-packaging-probe.md)). The archive is not
-yet. `SdfZipFileWriter` records each file's modification time, converted
-from local time into the ZIP's DOS format. A copy made during the run
-therefore carries the current time. Two runs of OpenUSD's one-call packager
-on the same model, four seconds apart, gave archives whose entries differed
-in that field and in no other. Phase 10 step 2
-makes the archive deterministic (PKG-O1). Until then, §5's entry order is
-already fixed.
+For the same model and texture bytes, output stem, and tool/OpenUSD build,
+the package must be byte-identical across repeated runs, source modification
+times, temporary directories and process time zones. Equality across
+different OpenUSD or image-codec versions is not promised. The output stem
+matters because it names the root layer (§4).
+
+Before `SdfZipFileWriter` adds each entry, packaging sets its private copy's
+modification time to **2000-01-01 00:00:00 in local time**. The ZIP writer
+converts that time back to local time for its DOS field, so every entry
+records the same date in every time zone. A fixed UTC epoch would not do
+that. Entry order is §5's; no source file's bytes or timestamps are changed.
+Failure to set the time is `MMD_PKG_WRITE_FAILED`, with no output replaced.
+
+The time is set through the platform's `utime`/`stat` pair. On Windows,
+OpenUSD reads it with `_wstat64`; `_wutime64` supplies the matching conversion
+when the process's `TZ` differs from the OS time zone. A direct filesystem
+clock assignment does not invert that conversion. The fixture test runs
+separate processes under `UTC0`, `JST-9` and `PST8PDT`, varies source mtimes,
+and checks both the entire archive and each entry's DOS date (PKG-O1).
 
 ## 14. Testing
 
@@ -408,6 +423,12 @@ run. The importer's own stage tests open them too.
   the `.usdz` opened without them have the same prim paths, types, applied
   schema tokens, metadata and property values. Texture asset values are
   compared through §7's renaming.
+- **Determinism and path robustness.** The fixture suite checks §13 and
+  leaves source bytes and modification times unchanged. `normalized-paths.pmx`
+  exercises backslashes, repeated separators, dot segments and internal
+  parents, with several source paths sharing one texture.
+  Unit tests cover file/directory collisions, distinct missing paths and
+  rejection of asset paths the importer would not author.
 - **Non-ASCII paths.** An input directory and an output path that no single
   ANSI code page can spell, as
   [the stage tests](../../tests/integration/test_unicode_paths.py) already use.
@@ -472,5 +493,5 @@ Each is added only when a user needs it, with its own section here first:
 
 | Id | Question | Proposed answer | Resolve by |
 | --- | --- | --- | --- |
-| PKG-O1 | How the archive becomes byte-deterministic | Copy every entry into the private directory and give each copy one fixed modification time before `SdfZipFileWriter` adds it. The time is built from a fixed *local* date, so the DOS time, which is converted from local time, is the same in every time zone. Entry order is §5's. | Phase 10 step 2 |
+| PKG-O1 | How the archive becomes byte-deterministic | Resolved: fixed local 2000-01-01 timestamps on private copies, through the stat-compatible time setter (§13); source files unchanged. | Phase 10 step 2, 2026-09-27 |
 | PKG-O2 | Non-ASCII archive names in ZIP tools that are not OpenUSD | Keep UTF-8 names (OpenUSD reads them). A consumer that needs ASCII uses `--portable-paths`. The flag is not patched into OpenUSD's writer. | Phase 10 step 3 |

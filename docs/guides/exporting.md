@@ -89,6 +89,12 @@ error, such as an output that is not `.usdz`
 
 ## What a consumer sees
 
+With the same input bytes, output stem and tool/OpenUSD build, repeated
+exports produce identical archive bytes even when source modification times
+or the process time zone differ. Only private copies receive the fixed
+archive timestamp; the original files are unchanged
+([§13](../design/PACKAGING_POLICY.md#13-determinism)).
+
 The package needs neither `usdMmdFileFormat` nor `mmdSchema`. Materials still
 carry `MmdMaterialAPI` in their `apiSchemas`, and its
 `inputs:mmd:material:*` values; an installation without `mmdSchema` shows
