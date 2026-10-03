@@ -109,7 +109,7 @@ if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
         --cxx-compiler "${CMAKE_CXX_COMPILER}")
 endif()
 set(_motion_dependency_prefixes)
-foreach(_motion_package_dir IN ITEMS "${motionCore_DIR}" "${motionRetarget_DIR}")
+foreach(_motion_package_dir IN ITEMS "${motionCore_DIR}" "${motionRetarget_DIR}" "${motionSource_DIR}")
     if(_motion_package_dir)
         get_filename_component(_motion_package_prefix
             "${_motion_package_dir}/../../.." ABSOLUTE)

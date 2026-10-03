@@ -7,7 +7,8 @@
 > says, with a synthetic rig behind each rule. §10 and §12 are **binding**
 > since `mmdMotionAdapter` and `mmdSkeletonAdapter` adopted the released
 > `usd-motion-plugins` v0.5.0 packages, with synthetic adapter tests and an
-> installed consumer. This document holds
+> installed consumer, and §12.6 since `mmdSkeletonAdapter` states it against
+> v0.5.2. This document holds
 > only what is specific to MMD motion — VMD's source facts, its text encoding,
 > where it meets a PMX model, how MMD's control rig is evaluated, and how the
 > result enters the shared motion core. Generic motion concepts (`MotionPose`,
@@ -39,7 +40,10 @@
 > Revised 2026-10-04: MOT-O10 is resolved by §12.6, now that
 > `usd-motion-plugins` v0.5.2 takes a target reference rest and publishes the
 > T-pose directions. Both sides state the arm chain's aimed rest; the stage
-> does not change. §12.6 is **proposed** until `mmdSkeletonAdapter` states it.
+> does not change. §12.6 became **binding** the same day, when
+> `mmdSkeletonAdapter` stated both rests, with synthetic tests and a rerun
+> over the local models that matches the measurement
+> ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)).
 
 ---
 
@@ -312,16 +316,18 @@ Resolved:
 | MOT-O6 | Which MMD bone names map to which `HumanJoint`, how English names and variants are matched, and how the table is versioned | table version 1, §12.2: exact source names, deforming (`D`) bones first; English names and spelling variants never match (§12.1); the version is recorded with every clip and bumped with any entry (§12.5) | Phase 9, 2026-09-19 |
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
 | MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
-| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection` | Phase 9, 2026-10-04 (proposed until implemented) |
+| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection`. As shipped, the adapter's rests give the same figures over the same 17 models ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)) | Phase 9, 2026-10-04 |
 
 ## 10. Normalizing into the shared motion core
 
 Binding: this section is Phase 9
 ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` evaluates
 as §11 says; `mmdMotionAdapter` and `mmdSkeletonAdapter` consume the two
-packages released by `usd-motion-plugins` v0.5.0: `motionCore` (`HumanJoint`,
-`MotionPose`, `RootMotion`, `MotionChannelSet`, `MotionClip`) and
-`motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`)
+packages released by `usd-motion-plugins`, at v0.5.2 since §12.6:
+`motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionChannelSet`,
+`MotionClip`), `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`,
+`SourceRestPose`, `TargetRestPose`) and, for the T-pose directions alone,
+`motionSource` (`TPoseDirection`, `ShortestRotation`)
 ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
 The type names are that repository's, and where its published contract
 differs from this section, the published contract wins and this section is
@@ -332,7 +338,7 @@ revised.
 | Component | Input | Output | Depends on |
 | --- | --- | --- | --- |
 | `mmdControl` | a `BoundMotion`, the `CanonicalDocument` it was bound to, a time | the local transform of every deformation joint at that time, in the USD basis and meters, plus the morph weights §10.7 leaves as channels (§11) | `mmdMotionBinding`, `mmdModel` |
-| `mmdSkeletonAdapter` | a `CanonicalDocument` | a `SkeletonDescriptor`, versioned humanoid `RetargetMap` and `SourceRestPose` (§10.4, §12) | `mmdModel`, `usd-motion-plugins` `motionRetarget` |
+| `mmdSkeletonAdapter` | a `CanonicalDocument` | a `SkeletonDescriptor`, versioned humanoid `RetargetMap`, `SourceRestPose` and `TargetRestPose` (§10.4, §12) | `mmdModel`, `usd-motion-plugins` `motionRetarget` and `motionSource` |
 | `mmdMotionAdapter` | `mmdControl` evaluated over a time range at an explicit rate; the source mapping/rest from `mmdSkeletonAdapter` | a `MotionClip` of evaluated humanoid motion and preserved generic channels | `mmdControl`, `mmdModel`, `mmdSkeletonAdapter`, `usd-motion-plugins` `motionCore` |
 
 None links more of OpenUSD than those packages' foundation types, and none

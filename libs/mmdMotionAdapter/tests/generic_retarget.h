@@ -13,5 +13,6 @@ RetargetGeneric(const openstrata::motion::MotionClip& clip,
                 const openstrata::motion::SkeletonDescriptor& skeleton,
                 const openstrata::motion::RetargetMap& map,
                 const openstrata::motion::SourceRestPose& sourceRest,
+                const openstrata::motion::TargetRestPose& targetRest,
                 const std::vector<openstrata::motion::HumanJoint>& required,
                 openstrata::motion::RetargetDiagnostics* diagnostics);

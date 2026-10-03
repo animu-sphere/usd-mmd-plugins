@@ -113,7 +113,7 @@ rule by `mmdControl_robustness`.
 ## Shared-motion adapters (`mmdSkeletonAdapter`, `mmdMotionAdapter`)
 
 Each claim is covered by synthetic adapter tests and by the installed-consumer
-lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
+lane against digest-pinned `usd-motion-plugins` v0.5.2 packages.
 
 | Capability | Current | Contract |
 | --- | :---: | --- |
@@ -127,7 +127,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.0 packages.
 | Evaluated model visibility under the reserved `mmd:model:visibility` channel | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
 | Non-finite evaluated shared values | rejected, never replaced | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
 | VMD-derived, IK-evaluated legs through a `motionUsd` round trip and `motionRetarget`, onto a PMX-derived stage skeleton and a non-MMD synthetic skeleton | supported | [Phase 9 acceptance report](../reports/2026-09-22-phase9-motion-acceptance.md) |
-| Rest-direction correction for an A-pose source (MOT-O10) | unverified | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
+| The arm chain's reference rest, aimed onto the shared T-pose directions, as `SourceRestPose` and as a PMX target's `TargetRestPose`; stage rests unchanged (MOT-O10) | supported | [MOTION §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest), [report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md) |
 
 ## PMX model import
 
