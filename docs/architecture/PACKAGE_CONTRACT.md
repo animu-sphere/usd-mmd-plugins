@@ -12,7 +12,7 @@ with the workspace since Phase 1, `mmdModel` since Phase 2, `motionVmd`,
 `mmdMotionBinding` and `vmd_inspect` since Phase 7, and `mmdControl`,
 `mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9, and the `mmdSchema`
 bundle since Phase 8 (2026-09-25), and `mmd_export` since Phase 10
-(2026-09-26). Identities and
+(2026-09-26), and the `mmdImaging` bundle since Phase 8 (2026-10-04). Identities and
 dependency edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not
 restate them.
 
@@ -178,20 +178,31 @@ A host makes the schema available by putting `plugin/resources/mmdSchema` on
 package, applies the API, and reads a fallback through the prefix's
 registration alone.
 
-## Planned Phase 8 plugin package
+## `mmdImaging`
 
-`mmdImaging` is admitted by the design but does not exist in the current
-install. Its exact library filename and resource layout become binding when
-its first installed-consumer fixture lands:
+A plugin bundle, found by OpenUSD's plug registry rather than by CMake. It
+exports no CMake package and no headers: a Hydra consumer spells the
+locators of
+[MATERIAL_POLICY.md §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging)
+itself and links nothing of this repository. Its `lib/` is always `lib`, for
+the importer's reason.
 
-| Bundle | Discovery | Public responsibility |
-| --- | --- | --- |
-| `mmdImaging` | OpenUSD plug registry | UsdImaging adapter from a composed `MmdMaterialAPI` to renderer-consumable Hydra data; no parser, importer or GPU implementation |
+| Installed path | Content |
+| --- | --- |
+| `lib/libMmdImaging.{dll,dylib,so}` | the adapter library; it links OpenUSD's `usdImaging` and `hd` and nothing of this repository |
+| `plugin/resources/mmdImaging/plugInfo.json` | registration of `UsdMmdImagingMaterialAPIAdapter`, a `UsdImagingAPISchemaAdapter` for `apiSchemaName` `MmdMaterialAPI`; `LibraryPath` is relative (`../../../lib/…`) |
+| `openstrata.plugin.yaml` | the bundle manifest: kind `usd-imaging`, `provides` `usd-imaging:MmdMaterialAPI`, `requires.bundles` `mmdSchema` |
 
-It is separately discoverable from `mmdSchema`: tools that only inspect the
-schema do not load an imaging adapter. `mmdImaging` requires `mmdSchema` and
-the matching OpenUSD UsdImaging runtime. Neither package requires
-`hydra-toon`; the renderer consumes the published imaging contract.
+A host makes the adapter available by putting
+`plugin/resources/mmdImaging` and `mmdSchema`'s `plugin/resources/mmdSchema`
+on `PXR_PLUGINPATH_NAME`, with OpenUSD 26.08's imaging libraries on the
+loader path, and by populating through UsdImaging's stage scene index with
+external UsdImaging plugins enabled. Without `mmdSchema` registered no
+prim's definition includes the API, so the adapter is never asked and there
+is no `mmd` contribution. It is separately discoverable from `mmdSchema`:
+tools that only inspect the schema load no imaging adapter. Neither package
+requires `hydra-toon`. The product smoke finds the installed adapter
+registered and loads its library from the installed layout.
 
 ## `usdMmdFileFormat`
 

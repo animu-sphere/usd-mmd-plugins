@@ -1,0 +1,50 @@
+# OpenStrata plugin bundle manifest.
+# A plugin is a self-describing bundle, not a bare shared library: this file is
+# the contract `ost plugin inspect|build|doctor|test` resolve against.
+#
+# mmdImaging is the UsdImaging adapter for MmdMaterialAPI
+# (docs/design/MATERIAL_POLICY.md §12.1): its own bundle, because tools that
+# only inspect the schema load no imaging adapter, and the importer never
+# depends on it (docs/architecture/WORKSPACE.md §1.2, §2.2).
+manifest:
+  schema: openstrata.plugin/v1alpha1
+plugin:
+  name: mmdImaging
+  # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
+  version: 0.1.0
+  # The kind arrived in `ost` 0.23.9 and became selectable from the `usd`
+  # profile in 0.23.10 (usd-vrm-plugins' ost reports 49-51).
+  kind: usd-imaging
+license: Apache-2.0
+runtime:
+  # The one OpenUSD release this bundle supports; cmake/UsdMmdOpenUsd.cmake
+  # enforces the same pin at configure time for builds that never see ost
+  # (docs/architecture/DEPENDENCIES.md §1).
+  openusd: "==26.08"
+  # Source bundles inherit the resolved runtime ABI, so one manifest serves
+  # Windows (msvc143), macOS (libcxx) and Linux (libstdcxx).
+  cxx_abi: inherit
+provides:
+  # One key per adapter in plugInfo.json. A session admits one owner per API
+  # schema, so this name is this bundle's.
+  - usd-imaging:MmdMaterialAPI
+requires:
+  # Not `hydra-preview`: nothing here opens a viewer. What the adapter needs
+  # of the runtime is its usdImaging SDK, which the kind makes `ost` check.
+  capabilities: [usd-stage-read]
+  # The schema the adapter is named for. Not linked: the adapter reads the
+  # field set from the registered definition, so what it needs is mmdSchema's
+  # plugInfo.json in the session. Without it there is no contribution at all
+  # (mmdImaging_material_without_schema).
+  bundles:
+    - id: mmdSchema
+      version: ">=0.1,<0.2"
+      contract: 1
+usd:
+  # Where this bundle's plugInfo.json lives, relative to the bundle root.
+  plug_info: plugin/resources/mmdImaging/plugInfo.json
+# A hand-authored stage that applies the API, with no importer in the
+# session: what reaches Hydra is the schema contract alone.
+tests:
+  smoke:
+    - tests/fixtures/materials.usda

@@ -79,6 +79,9 @@ add_subdirectory("libs/mmdMotionAdapter")
 # WORKSPACE.md §1 -- in that order.
 add_subdirectory("plugins/mmdSchema")
 add_subdirectory("plugins/usdMmdFileFormat")
+# The UsdImaging adapter: mmdSchema at run time, never the importer
+# (WORKSPACE.md §2.2).
+add_subdirectory("plugins/mmdImaging")
 
 # The exporter: OpenUSD only, and the importer at run time through Plug
 # (docs/design/PACKAGING_POLICY.md §2). After the bundles, so its tests can

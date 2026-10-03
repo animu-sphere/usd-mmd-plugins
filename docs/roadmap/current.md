@@ -3,8 +3,9 @@
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
 and expression interoperability wait on `usd-motion-plugins`; Phase 8
-has its `mmdSchema` bundle, and the importer authors stage-contract v2 with
-the fallback graphs connected; the UsdImaging adapter is next. Phase 10,
+has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
+fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
+to Hydra; the `hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -167,12 +168,16 @@ copying those values
   untextured material whose texture path was refused draws in Storm's
   translucent pass, which changes only its edges
   ([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
-- ⬜ Implement a UsdImaging adapter that exposes `MmdMaterialAPI` to Hydra
-  without making the importer depend on `hydra-toon`. Its Hydra view,
-  `mmd/material/<field>` and `mmd/drawOrder` on the material prim, is
-  proposed in
-  [MATERIAL_POLICY.md §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging)
-  (2026-10-04), in `vrmImaging`'s shape, and answers `hydra-toon`'s MAT-Q1.
+- ✅ **`mmdImaging`** (2026-10-04): the UsdImaging adapter exposes
+  `MmdMaterialAPI` to Hydra as `mmd/material/<field>` and `mmd/drawOrder` on
+  the material prim, in `vrmImaging`'s shape, which answers `hydra-toon`'s
+  MAT-Q1
+  ([MATERIAL_POLICY.md §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging)).
+  The importer does not depend on it, and it links nothing of this
+  repository. Its suites cover discovery, the Hydra view of a hand-authored
+  stage with and without the schema, invalidation and time samples, and
+  every importer fixture with materials. It is a release member, and the
+  product smoke loads it installed.
 - ⬜ Bring up the `hydra-toon` MMD path in this order: diffuse/alpha, toon
   ramp, sphere multiply/add, sub-texture, outline, shadow flags, material morph
   runtime, then advanced UV and vertex-color behavior.

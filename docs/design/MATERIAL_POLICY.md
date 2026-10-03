@@ -404,8 +404,8 @@ working concrete adapters, not designed ahead of them.
 
 ### 12.1 The Hydra view (`mmdImaging`)
 
-> Status: **proposed** 2026-10-04, before §14 step 5. It becomes binding
-> when `mmdImaging`'s suites pin it. It takes the shape `usd-vrm-plugins`
+> Status: **binding** since 2026-10-04, when `mmdImaging` (§14 step 5)
+> landed and its suites pinned every item below. It takes the shape `usd-vrm-plugins`
 > froze for `vrmImaging`
 > ([VRM imaging policy §28](https://github.com/animu-sphere/usd-vrm-plugins/blob/main/docs/design/VRM_IMAGING_POLICY.md#28-frozen-in-step-i1)),
 > so that `hydra-toon` reads both models by one path (its MAT-Q1).
@@ -445,8 +445,12 @@ What a consumer may rely on:
    morph baked by a runtime, follows time.
 5. **Invalidation is per leaf.** An edit or a time move of
    `inputs:mmd:material:<field>` dirties `mmd/material/<field>` and nothing
-   wider of the contribution. An edit of the prim's `customData` dirties
-   `mmd/drawOrder`.
+   wider of the contribution, and a texture slot becoming authored dirties
+   its own locator. `mmd/drawOrder` is read when the prim is populated: on
+   OpenUSD 26.08, UsdImaging drops a change to a built-in prim field such as
+   `customData`, so an edit of `mmd:sourceIndex` alone reaches no adapter
+   and dirties nothing until something resyncs the prim. Draw order is the
+   material-table index, which nothing edits after import.
 6. **`mmd/drawOrder` is the one value read by name.** Draw order is
    provenance, not a material semantic, so it stays outside the API (§4.2).
    It is exposed because `customData` never reaches Hydra, and alpha-blended
@@ -506,8 +510,10 @@ The policy is implemented in the following order:
    Their boundaries and their
    static appearance stay as they are; the golden baselines change by the
    property renames and the new connections, reviewed as such.
-5. **Hydra bridge.** Implement and test the UsdImaging adapter independently
-   of the renderer's GPU representation, to the Hydra view of §12.1.
+5. **Hydra bridge. Complete 2026-10-04.** `mmdImaging` implements the Hydra
+   view of §12.1 and is tested independently of the renderer's GPU
+   representation: over a hand-authored stage, with and without the schema
+   registered, and over every importer fixture with materials.
 6. **MMD renderer path.** Bring up diffuse/alpha, toon ramp, sphere
    multiply/add, sub-texture, outline, shadow flags, material morph runtime,
    then advanced UV and vertex-color behavior.

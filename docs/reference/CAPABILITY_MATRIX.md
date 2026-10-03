@@ -216,7 +216,7 @@ tool's unit and fixture tests, and the
 | A VMD as a `MotionClip`, and a PMX model as a retarget target (`SkeletonDescriptor`, humanoid `RetargetMap`) | supported — see [Shared-motion adapters](#shared-motion-adapters-mmdskeletonadapter-mmdmotionadapter) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core), [§12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table) |
 | Retargeting, recording, `UsdSkelAnimation` authoring of motion | unsupported by design | `usd-motion-plugins` ([MOTION §10.6](../design/MOTION_CONTRACT.md#106-what-this-repository-does-not-do-with-the-result)) |
 | Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
-| `MmdMaterialAPI` → Hydra data (`mmdImaging`) | — (planned for Phase 8) | [MATERIAL §12](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere) |
+| `MmdMaterialAPI` → Hydra data (`mmdImaging`) | supported: `mmd/material/<field>` and `mmd/drawOrder` on the Hydra material prim, per-field invalidation, time-sampled values followed; checked over a hand-authored stage and every importer fixture with materials | [MATERIAL §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging) |
 | Toon rendering | unsupported by design | `hydra-toon`; this repository supplies the schema and imaging adapter, not the renderer |
 | Opening a `.vmd` as a stage (`usdVmdFileFormat`) | — (waits for MOT-O2) | [MOTION §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries) |
 | VMD playback | unsupported by design | a runtime scheduling `mmdControl` (Phase 8) |

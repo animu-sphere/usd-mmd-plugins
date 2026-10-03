@@ -1,0 +1,21 @@
+{
+    "Plugins": [
+        {
+            "Type": "library",
+            "Name": "MmdImaging",
+            "Root": ".",
+            "LibraryPath": "../../../lib/@USDMMD_PLUGIN_LIBRARY_PREFIX@MmdImaging@CMAKE_SHARED_LIBRARY_SUFFIX@",
+            "ResourcePath": ".",
+            "Info": {
+                "Types": {
+                    "UsdMmdImagingMaterialAPIAdapter": {
+                        "bases": [
+                            "UsdImagingAPISchemaAdapter"
+                        ],
+                        "apiSchemaName": "MmdMaterialAPI"
+                    }
+                }
+            }
+        }
+    ]
+}

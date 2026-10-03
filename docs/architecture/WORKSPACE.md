@@ -7,14 +7,15 @@ and the invariants every change preserves. **A structural change that
 contradicts this document changes this document first, in its own pull
 request** — never through a README, a roadmap entry, or code.
 
-Status (2026-09-26): contract adopted. `mmdPmx` (the PMX structural parser:
+Status (2026-10-04): contract adopted. `mmdPmx` (the PMX structural parser:
 every table of 2.0 and 2.1), `mmdModel` (the canonical model), `mmd_inspect`
 (which reports on a PMX through the parser) and `usdMmdFileFormat` (which
 registers `.pmx` and authors the canonical stage) exist since Phases 0–2;
 `motionVmd` (the VMD reader), `mmdMotionBinding` (which binds a motion to a
 model) and `vmd_inspect` (which reports on a VMD) since Phase 7; `mmdControl`,
 `mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9; `mmdSchema` (which
-registers `MmdMaterialAPI`) since Phase 8; `mmd_export` (which writes the
+registers `MmdMaterialAPI`) and `mmdImaging` (which exposes it to Hydra) since
+Phase 8; `mmd_export` (which writes the
 imported stage out as a USDZ) since Phase 10. All are built by `ost` and by
 plain CMake. Every other identity below is *reserved*
 until the Phase that creates it lands (Phases are
@@ -73,6 +74,13 @@ And the schema bundle Phase 8 created
 | --- | --- | --- | --- | --- | --- | --- |
 | `mmdSchema` | plugin bundle (`usd-schema`) | `plugins/mmdSchema/` | `openstrata.plugin.yaml` | `MmdMaterialAPI` and its tokens, with generated C++ accessors, also installed as a CMake package; no catch-all PMX schema. Its own bundle because the UsdImaging adapter and `hydra-toon` read it without the importer. It passed the admission test on 2026-09-22 for the `hydra-toon` consumer ([DESIGN_POLICY.md §6](../design/DESIGN_POLICY.md#6-the-schema-admission-test)). | Phase 8 | exists |
 
+And the imaging bundle Phase 8 created
+([MATERIAL_POLICY.md §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging)):
+
+| Identity | Kind | Directory | Manifest | Role | Created in | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `mmdImaging` | plugin bundle (`usd-imaging`) | `plugins/mmdImaging/` | `openstrata.plugin.yaml` | The UsdImaging API-schema adapter for `MmdMaterialAPI`: the canonical values and the draw order as `mmd` data on the Hydra material prim. No PMX parsing, no importer, no renderer-private GPU representation, and no public header. Its own bundle, so a tool that only inspects the schema loads no imaging adapter. | Phase 8 | exists |
+
 And the tool Phase 10 created
 ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)):
 
@@ -89,7 +97,6 @@ created ahead of that.
 | Identity | Kind | Directory | Role | Created when |
 | --- | --- | --- | --- | --- |
 | `mmdMaterial` | plain static CMake library | `libs/mmdMaterial/` | Canonical material semantics, extracted from `mmdModel` | material translation outgrows `mmdModel`, or a second consumer needs it alone ([DESIGN_POLICY.md §5.3](../design/DESIGN_POLICY.md#53-mmdmaterial--deferred)) |
-| `mmdImaging` | plugin bundle (`usd-imaging`) | `plugins/mmdImaging/` | Exposes `MmdMaterialAPI` through UsdImaging data; no PMX parsing and no renderer-private GPU representation | Phase 8, after `MmdMaterialAPI` exists ([MATERIAL_POLICY.md §12](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere)) |
 | `usdVmdFileFormat` | plugin bundle (`usd-fileformat`) | `plugins/usdVmdFileFormat/` | `.vmd` `SdfFileFormat` over `motionVmd` | MOT-O2 is resolved against `usd-motion-plugins`' standalone motion stage (`/Animation`) ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)) |
 | `mmdPmd` | plain static CMake library | `libs/mmdPmd/` | PMD syntax with its own CP932 policy | PMD support is decided ([DESIGN_POLICY.md §16](../design/DESIGN_POLICY.md#16-decisions-deliberately-left-flexible)) |
 
@@ -112,13 +119,15 @@ mmdMotionBinding ────→ mmdModel, motionVmd             (no OpenUSD)
 vmd_inspect ─────────→ motionVmd                       (no OpenUSD)
 mmdControl ──────────→ mmdMotionBinding, mmdModel      (no OpenUSD)
 mmdSchema ───────────→ OpenUSD only
+mmdImaging ──────────→ OpenUSD only (arch, tf, vt, sdf, usd, hd,
+                       usdImaging); mmdSchema at run time, through the
+                       schema registry, never linked
 mmd_export ──────────→ OpenUSD only (tf, vt, ar, sdf, usd, usdUtils,
                        usdValidation, hio); usdMmdFileFormat at run time,
                        through Plug, never linked
 
                        (later)
 mmdMaterial ─────────→ nothing in this repository; mmdModel → mmdMaterial
-mmdImaging ──────────→ mmdSchema, OpenUSD UsdImaging only
 mmdSkeletonAdapter ──→ mmdModel,
                        usd-motion-plugins motionRetarget (OpenUSD foundation
                                                           types only, through it)
@@ -212,6 +221,12 @@ OpenUSD targets its CMake resolves are its whole link line, and plugin
 registration is still refused. It also refuses any `mmdPmx/`, `mmdModel/`,
 importer or `mmdSchema/` include, and any import of the importer's or the
 schema's library (`--forbid-import`): the importer is reached through Plug.
+`mmdImaging_boundaries` runs it over `plugins/mmdImaging` with `--plugin`:
+OpenUSD's imaging modules are its whole link line, its own manifest,
+`plugInfo.json` and type registration are admitted, and a file format or a
+resolver is still refused. It refuses any `mmdPmx/`, `mmdModel/`, importer,
+`mmdSchema/` or `hydraToon` include, and any import of the importer's or the
+schema's library: the schema is reached through the registry.
 The five OpenUSD-free libraries are added before OpenUSD is resolved; the
 adapters follow it because their shared packages expose OpenUSD foundation
 types and reuse the root's already-resolved targets. The binary-import part
@@ -271,6 +286,11 @@ usd-mmd-plugins/
 │  ├─ mmdSkeletonAdapter/      include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
 │  └─ mmdMotionAdapter/        include/ src/ tests/ cmake/ CMakeLists.txt openstrata.library.yaml
 ├─ plugins/
+│  ├─ mmdImaging/
+│  │  ├─ src/                  MmdMaterialAPIAdapter.cpp
+│  │  ├─ plugin/resources/mmdImaging/   plugInfo.json.in (the build writes plugInfo.json)
+│  │  ├─ tests/                the discovery, material and import suites; fixtures/materials.usda
+│  │  └─ CMakeLists.txt openstrata.plugin.yaml
 │  ├─ mmdSchema/
 │  │  ├─ schema/               schema.usda, the one source of MmdMaterialAPI
 │  │  ├─ src/mmdSchema/        usdGenSchema's C++ output, committed
@@ -391,7 +411,8 @@ The contract every `CMakeLists.txt` keeps:
 The root adds the five OpenUSD-free libraries and both inspection tools before
 OpenUSD is resolved, so nothing they configure can see pxr; then the two
 adapters, whose motion packages reuse the OpenUSD targets resolved there; then
-the bundles, `mmdSchema` before `usdMmdFileFormat`; then `mmd_export`, which
+the bundles, `mmdSchema` before `usdMmdFileFormat` and `mmdImaging`; then
+`mmd_export`, which
 links OpenUSD and whose tests put both bundles on the plugin path.
 
 The shared CMake lives in `cmake/`, one module per concern, and hides no
@@ -426,12 +447,12 @@ target, header root and required packages — is
 
 | Layer | Where | Proves | Exists |
 | --- | --- | --- | --- |
-| unit | `libs/*/tests/`, `plugins/*/tests/`, `tools/mmdExport/tests/` | each transition — bytes → document, document → canonical, canonical → USD, VMD bytes → document → motion, motion and model → bound motion, bound motion and model → pose — in isolation; the schema's registration, §4.1 inventory, connectability and generated accessors, with no importer in the session; each export step, over layers the suite writes | `mmdPmx_unit`, `mmdModel_unit`, `motionVmd_unit`, `mmdMotionBinding_unit`, `mmdControl_unit`, `mmdSchema_plugin`, `mmdSchema_material_api`, `mmdExport_unit` |
+| unit | `libs/*/tests/`, `plugins/*/tests/`, `tools/mmdExport/tests/` | each transition — bytes → document, document → canonical, canonical → USD, VMD bytes → document → motion, motion and model → bound motion, bound motion and model → pose — in isolation; the schema's registration, §4.1 inventory, connectability and generated accessors, with no importer in the session; each export step, over layers the suite writes; the imaging adapter's discovery, its Hydra view of a hand-authored stage and its invalidation, with and without the schema registered | `mmdPmx_unit`, `mmdModel_unit`, `motionVmd_unit`, `mmdMotionBinding_unit`, `mmdControl_unit`, `mmdSchema_plugin`, `mmdSchema_material_api`, `mmdExport_unit`, `mmdImaging_discovery`, `mmdImaging_material`, `mmdImaging_material_without_schema` |
 | robustness | `libs/*/tests/` | the parsers: every byte of the sample models and motions overwritten, and every prefix read — no crash, no fatal diagnostic reported as recoverable, no document (or motion) that breaks its invariants. The canonical model: thousands of generated documents within the parser's invariants, each canonicalized twice — no crash, the same bits both times, every promise of `CanonicalDocument.h` kept. The evaluator: thousands of generated rigs and motions, each evaluated twice — the same bits both times | `mmdPmx_robustness`, `mmdModel_robustness`, `motionVmd_robustness`, `mmdControl_robustness` |
-| boundary | `libs/*/tests/`, `tools/*/tests/` | §2.3's link-line and include gates | `mmdPmx_boundaries`, `mmdModel_boundaries`, `motionVmd_boundaries`, `mmdMotionBinding_boundaries`, `mmdControl_boundaries`, `mmd_inspect_boundaries`, `vmd_inspect_boundaries`, `mmd_export_boundaries` |
+| boundary | `libs/*/tests/`, `tools/*/tests/`, `plugins/mmdImaging/tests/` | §2.3's link-line and include gates | `mmdPmx_boundaries`, `mmdModel_boundaries`, `motionVmd_boundaries`, `mmdMotionBinding_boundaries`, `mmdControl_boundaries`, `mmd_inspect_boundaries`, `vmd_inspect_boundaries`, `mmd_export_boundaries`, `mmdImaging_boundaries` |
 | tool | `tools/*/tests/` | each tool against the generated fixtures, from an ASCII and a non-ASCII directory; `mmd_export`'s default and portable layouts opened by a process with no MMD plugin, Unicode filenames, normalized PMX path aliases, and byte equality across time zones and source mtimes | `mmd_inspect_fixtures`, `vmd_inspect_fixtures`, `mmd_export_fixtures` |
 | fixtures | `tests/fixtures/`, `libs/motionVmd/tools/`, `plugins/mmdSchema/tools/` | the committed fixtures and texture files are exactly what the generator writes, and so are the CP932 table and the schema's usdGenSchema output | `workspace_fixtures`, `motionVmd_cp932_table`, `mmdSchema_generated` (where the runtime has usdGenSchema and the interpreter jinja2) |
-| integration | `tests/integration/` | `Usd.Stage.Open("*.pmx")` through the registered plugin, against the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist) and the stage `fixtures.json` states for each fixture, and under a non-ASCII directory | `usdMmdFileFormat_stage_open`, `usdMmdFileFormat_unicode_paths`, `usdMmdFileFormat_notice_listeners` |
+| integration | `tests/integration/` | `Usd.Stage.Open("*.pmx")` through the registered plugin, against the [stage checklist](../design/STAGE_CONTRACT.md#14-validation-checklist) and the stage `fixtures.json` states for each fixture, and under a non-ASCII directory; what reaches Hydra from every fixture with materials, against the same states | `usdMmdFileFormat_stage_open`, `usdMmdFileFormat_unicode_paths`, `usdMmdFileFormat_notice_listeners`, `mmdImaging_import` |
 | pyramid | the bundle manifest's `tests:` | `ost plugin test` L0–L5, from the build tree and from the package | — (`ost`) |
 | baseline | each bundle's `tests/fixtures/` | compact goldens do not change silently | the L5 goldens of `minimal.pmx`, `recoverable/unsafe-texture-paths.pmx` and `mmdSchema`'s `basic.usda` |
 | installed consumer | `tests/installed_consumer/` | installed packages work from a clean prefix outside the repository | `workspace_installed_consumer` |

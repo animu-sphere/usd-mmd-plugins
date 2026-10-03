@@ -24,6 +24,12 @@ A component WORKSPACE.md §2.1 allows OpenUSD -- mmd_export -- passes
 are then its edges, while plugin registration stays forbidden, and
 `--forbid-import` names a library of this repository it must still not load.
 
+A plugin bundle WORKSPACE.md §2.3 gates -- mmdImaging -- passes `--plugin`,
+which implies `--allow-openusd` and admits the bundle's own registration: its
+manifest, its plugInfo.json and `TF_REGISTRY_FUNCTION`. A file format or an
+asset resolver is still refused: that bundle registers a UsdImaging adapter
+and nothing else.
+
 Usage:
   check_library_boundaries.py --name mmdPmx --source libs/mmdPmx
       --link-file <build>/mmdPmx_link.txt --binary <build>/mmdPmx_tests.exe
@@ -56,6 +62,11 @@ FORBIDDEN_SOURCE_WITH_OPENUSD = re.compile(
     re.IGNORECASE)
 FORBIDDEN_CMAKE_WITH_OPENUSD = re.compile(
     r"find_package\s*\(\s*(?:Bullet|PhysX|Jolt)\b", re.IGNORECASE)
+# With --plugin: still no physics SDK, file format or resolver.
+FORBIDDEN_SOURCE_PLUGIN = re.compile(
+    r"#\s*include\s*[<\"](?:btBulletDynamicsCommon|PxPhysicsAPI|Jolt/)"
+    r"|SDF_DEFINE_FILE_FORMAT|AR_DEFINE_(?:PACKAGE_)?RESOLVER",
+    re.IGNORECASE)
 FORBIDDEN_FILES = {"openstrata.plugin.yaml", "pluginfo.json", "pluginfo.json.in"}
 
 # OpenUSD's shared libraries: usd_tf.dll on Windows, libusd_tf.so on Linux,
@@ -142,12 +153,17 @@ def check(args: argparse.Namespace) -> list[str]:
     errors: list[str] = []
     source = args.source.resolve()
 
-    for path in source.rglob("*"):
-        if path.is_file() and path.name.lower() in FORBIDDEN_FILES:
-            errors.append(f"plugin registration file is forbidden: {path}")
+    if args.plugin:
+        args.allow_openusd = True
+    else:
+        for path in source.rglob("*"):
+            if path.is_file() and path.name.lower() in FORBIDDEN_FILES:
+                errors.append(f"plugin registration file is forbidden: {path}")
 
     sibling = _forbidden_include(args.forbid_include)
-    source_rule = FORBIDDEN_SOURCE_WITH_OPENUSD if args.allow_openusd else FORBIDDEN_SOURCE
+    source_rule = (FORBIDDEN_SOURCE_PLUGIN if args.plugin else
+                   FORBIDDEN_SOURCE_WITH_OPENUSD if args.allow_openusd else
+                   FORBIDDEN_SOURCE)
     cmake_rule = FORBIDDEN_CMAKE_WITH_OPENUSD if args.allow_openusd else FORBIDDEN_CMAKE
     for area in (source / "include", source / "src"):
         for path in area.rglob("*"):
@@ -225,6 +241,10 @@ def selftest() -> int:
            "--allow-openusd still rejects a pxr include")
     expect(bool(FORBIDDEN_SOURCE_WITH_OPENUSD.search("TF_REGISTRY_FUNCTION(TfType)")),
            "--allow-openusd admits plugin registration")
+    expect(not FORBIDDEN_SOURCE_PLUGIN.search("TF_REGISTRY_FUNCTION(TfType)"),
+           "--plugin still rejects the bundle's own type registration")
+    expect(bool(FORBIDDEN_SOURCE_PLUGIN.search("SDF_DEFINE_FILE_FORMAT(F, SdfFileFormat)")),
+           "--plugin admits a file format")
     expect(not FORBIDDEN_CMAKE_WITH_OPENUSD.search("find_package(pxr REQUIRED CONFIG)"),
            "--allow-openusd still rejects find_package(pxr)")
     for listing in ("    libUsdMmdFileFormat.dll\n", "\tlibUsdMmdFileFormat.so [NEEDED]\n",
@@ -285,6 +305,9 @@ def main() -> int:
                         help="allow only the arch/tf/gf/js/trace/work/plug/vt runtime leaves")
     parser.add_argument("--allow-openusd", action="store_true",
                         help="OpenUSD is an allowed edge (WORKSPACE.md §2.1: mmd_export)")
+    parser.add_argument("--plugin", action="store_true",
+                        help="a plugin bundle (WORKSPACE.md §2.3: mmdImaging): "
+                             "--allow-openusd plus its own registration")
     parser.add_argument("--forbid-import", action="append", default=[],
                         help="a shared library the binary must not import, e.g. UsdMmdFileFormat")
     args = parser.parse_args()
