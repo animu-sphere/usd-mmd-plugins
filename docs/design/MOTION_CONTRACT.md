@@ -36,6 +36,10 @@
 > Revised again the same day: MOT-O12 is resolved by table version 2 (§12.2,
 > §12.5). `上半身2` and `上半身3` bind as a target in the model's own chain
 > order, and a source never emits `upperChest`.
+> Revised 2026-10-04: MOT-O10 is resolved by §12.6, now that
+> `usd-motion-plugins` v0.5.2 takes a target reference rest and publishes the
+> T-pose directions. Both sides state the arm chain's aimed rest; the stage
+> does not change. §12.6 is **proposed** until `mmdSkeletonAdapter` states it.
 
 ---
 
@@ -295,7 +299,6 @@ as a whole.
 | MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motionUsd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
-| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, so §12.3's rotations are relative to the model's modelled pose, in which every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes. Measured 2026-09-25 ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton, today's identity rest leaves every arm segment off by that angle (median 40°); a rest aimed from the rest bone directions of the **arm chain alone** (shoulder, upper arm, lower arm, hand) onto the lateral axis removes it (≤ 0.04°), while the same construction on the whole body flips the chest where `上半身3` lies below `上半身2` and levels feet no humanoid rest levels. A source rest is correct only with the same rest stated for a PMX **target**: stated on the source alone, PMX to PMX goes from a median 2.5° to 40°, and a level-arm source already reaches a PMX target 40° low today. So the source half waits for the target half | `usd-motion-plugins`: a retarget target rest distinct from the bind rest `/Asset/skel/Skeleton` states, and the T-pose directions as public vocabulary rather than `motionSource`'s private table |
 | MOT-O11 | Whether a plane link starts from its keyed rotation. §11.7 starts an enabled chain's plane angles at zero, so a knee's keyed rotation never reaches the pose and the knee is solved from straight; three.js r168 starts from the keyed rotation. On a motion that keys its legs' rotations alongside their goals, that start alone leaves a median 0.05 mm where §11.7 leaves 2.4 mm, and moves the knees a median 4.6 mm and at most 66 mm; on an IK-authored motion it changes little ([report](../reports/2026-09-19-phase9-ik-reference.md)). Which MMD does | MMD's output on a motion that keys its IK links |
 
 Resolved:
@@ -309,6 +312,7 @@ Resolved:
 | MOT-O6 | Which MMD bone names map to which `HumanJoint`, how English names and variants are matched, and how the table is versioned | table version 1, §12.2: exact source names, deforming (`D`) bones first; English names and spelling variants never match (§12.1); the version is recorded with every clip and bumped with any entry (§12.5) | Phase 9, 2026-09-19 |
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
 | MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
+| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection` | Phase 9, 2026-10-04 (proposed until implemented) |
 
 ## 10. Normalizing into the shared motion core
 
@@ -423,7 +427,9 @@ adapter consumes those results rather than duplicating the mapping.
     stage's tokens are those; source names, Japanese kept, stay on the
     canonical model and the stage's display names
     ([TEXT_ENCODING_POLICY.md §5](TEXT_ENCODING_POLICY.md#5-identity-versus-display)),
-    which is where §12's table reads them. Every rest rotation is identity.
+    which is where §12's table reads them. Every rest rotation is identity,
+    as the stage's are; the arm chain's humanoid reference rest is stated
+    beside it as a `TargetRestPose`, never in it (§12.6).
   - The **`RetargetMap`** binds each `HumanJoint` the table resolves to that
     joint's index, with the table's required set as `requiredBones`
     (§12.4). It is a heuristic, never a humanoid claim about the model. An
@@ -439,7 +445,7 @@ adapter consumes those results rather than duplicating the mapping.
 | --- | --- |
 | time in seconds | `timestamp = frame / 30`; `nominalFrameRate = 30` is descriptive, the timestamps are authoritative |
 | Y-up, meters, right-handed | already true after binding (§7); nothing is converted again |
-| local joint rotations | each `HumanJoint`'s rotation relative to its nearest mapped humanoid ancestor, from the evaluated world rotations (§12.3), relative to identity rest rotations ([STAGE_CONTRACT.md §9.2](STAGE_CONTRACT.md#92-the-skeleton-prim)); what that rest looks like is MOT-O10 |
+| local joint rotations | each `HumanJoint`'s rotation relative to its nearest mapped humanoid ancestor, from the evaluated world rotations (§12.3). They are the model's own rotations, whose rest is identity ([STAGE_CONTRACT.md §9.2](STAGE_CONTRACT.md#92-the-skeleton-prim)), and are not changed by the rest the clip states: the `SourceRestPose` beside them states the arm chain's T-pose aim as what that identity rest means to a humanoid (§12.6) |
 | root motion separate from hips | `RootMotion` is the evaluated world position and orientation of the joint `hips` maps to (§12.3; MOT-O5, resolved) |
 | provenance | `SourceMetadata` and clip metadata name the format (`vmd`) and the VMD's model name; they never change behavior |
 
@@ -789,8 +795,9 @@ under `腰`, and between two table joints sit bones no role names —
   translation — up to 16 model units of travel and 3 of height — and
   `全ての親`, `グルーブ` and `腰` hold at most one key, at zero.
 - The `SourceRestPose` states the table joints' rests, with each bone's
-  semantic parent from the same nearest-mapped-ancestor rule. Every rest
-  rotation is identity; what that rest is, as a pose, is MOT-O10.
+  semantic parent from the same nearest-mapped-ancestor rule. Its rest
+  rotations are identity except the arm chain's, which §12.6 aims; the
+  rotations above are unchanged by it.
 
 **As a target**, the same table binds joints, but a retarget writes each
 bound joint's rotation relative to *its own* parent on the PMX side (the
@@ -831,3 +838,65 @@ is a constant of `mmdSkeletonAdapter`, reported with every map it builds and
 recorded in a clip's provenance where the shared core gives it a place. It
 is independent of the shared core's `HumanJointVocabularyVersion` (1), which
 the table is written against: a vocabulary bump is a table review.
+
+### 12.6 The arm chain's reference rest
+
+Every MMD bone rests at identity rotation, and in that rest a character's
+arms hang 37–42° below horizontal. A humanoid's reference rest, the one a
+VRM's identity rest describes, has them level. The shared retarget preserves
+each joint's rotation away from its rest
+(its RETARGETING_POLICY §5), so a rig must say what its rest means as a
+humanoid pose, or a level-arm rig and an A-pose rig read as the same pose and
+the arms land 40° off between them
+([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)).
+`mmdSkeletonAdapter` states that meaning for the **arm chain alone**, on
+both sides, and nowhere else:
+
+- **The aim.** The chain is `shoulder`, `upperArm`, `lowerArm` and `hand`, on
+  each side. Taken parent first, each role's world reference rest is the
+  shortest rotation that turns its bone onto the shared core's
+  `motionSource::TPoseDirection`, composed after the rest it inherits:
+  `ShortestRotation(inherited · d, TPoseDirection(role)) · inherited`, with
+  `ShortestRotation` the shared core's too. `inherited` is the world
+  reference rest of the role's nearest mapped humanoid ancestor, and identity
+  outside the chain. `d` is the unit direction from the role's joint to its
+  **follower**, in the model's rest positions: the role's only mapped child
+  in the vocabulary's hierarchy, or, among several, the one whose own
+  T-pose direction equals the role's. A role with no follower, or whose
+  follower sits on it, inherits without an aim. This is the shared core's
+  `t-pose` construction for recorded sources, restricted to the chain and
+  taking no roll from a frame: MMD's rest rotation is identity, so the roll
+  is the bone's own. A `hand` has several fingers as children and none is
+  its follower, so it inherits the lower arm's aim.
+- **As a source**, the aim is the `SourceRestPose`'s local rotation of each
+  chain role: its world reference rest, with its semantic parent's world
+  reference rest undone. Every other role keeps an identity local rotation,
+  so the fingers inherit the hand's aim, and the torso, neck, head and legs
+  are as they were.
+- **As a target**, the same aim, computed from the target model's own rest
+  positions and its target bindings, is a `TargetRestPose` in the skeleton's
+  joint order: each chain joint's slot is its world reference rest with the
+  world reference rest of its skeleton parent undone. That parent is a joint
+  of `/Asset/skel/Skeleton`, not a role: `肩P`, `肩C` and the twist bones
+  stay unset and pass the aim on, and so do the fingers. A consumer
+  retargeting onto a PMX passes it as `RetargetOptions::targetRest`.
+- **Both or neither.** A source rest is correct only against a target that
+  states its rest the same way. Stated on the source alone, PMX to PMX goes
+  from a median 2.5° off to 40°; stated on both, it is exact. A retarget onto
+  a PMX that leaves `targetRest` empty is therefore wrong by the model's own
+  arm angle for any source that states a level-arm rest — a VMD-derived
+  clip through this adapter as much as a VRMA.
+- **Not the stage.** `/Asset/skel/Skeleton` keeps identity rests, and the
+  `SkeletonDescriptor` still equals them (§10.4): an undriven joint is posed
+  at its stage rest, never at the aim. The clip's rotations (§12.3) are
+  unchanged. Only the rest stated beside them is.
+- **Not the whole body.** The same construction on the torso aims the chest
+  along `上半身2` → `上半身3`, which points down in both local models that
+  have `上半身3`, and turns the chest about 175°. On the feet it levels a
+  slope a level-arm humanoid's feet share. Neither is the A-pose difference.
+
+The rule is not a table entry, so it does not change the table version
+(§12.5); a change to it is recorded in the changelog with the contract
+revision that makes it. Each bone keeps its own rest roll, because the
+shortest rotation adds none; roll was not measured, because segment
+directions cannot see it.

@@ -2,7 +2,8 @@
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
-and expression interoperability wait on `usd-motion-plugins`; Phase 8
+is decided and its implementation is next, and expression interoperability
+waits on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
 to Hydra; the `hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
@@ -81,16 +82,20 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   ([report](../reports/2026-09-19-phase9-roles-and-root.md)). No MMD bone is chosen as the root: it is the world
   transform of the joint `hips` maps to. MOT-O10, the rest a clip from MMD
   states, is opened with them.
-- ⛔ **MOT-O10**: measured 2026-09-25
+- 🚧 **MOT-O10**: decided 2026-10-04
+  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)),
+  after measuring it on 2026-09-25
   ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)). Onto a
   level-arm skeleton, today's identity rest leaves every arm segment a median
-  40° low. A rest aimed from the arm chain's rest bone directions removes
-  that, and whole-body aiming is wrong for MMD. The source rest is correct
-  only if the same rest is stated for a PMX target: stated on the source
-  alone, PMX to PMX goes from 2.5° to 40°. So it waits for
-  `usd-motion-plugins` to take a target rest distinct from the stage's bind
-  rest, and to publish the T-pose directions. A level-arm clip already
-  reaches a PMX target 40° low today.
+  40° low, and a level-arm clip reaches a PMX target 40° low. The arm chain
+  alone is aimed onto the shared T-pose directions and stated on both sides:
+  the source's `SourceRestPose` and a PMX target's `TargetRestPose`, which
+  `usd-motion-plugins` v0.5.2 added for it with public `TPoseDirection`. The
+  stage keeps its identity rests. Next, in `mmdSkeletonAdapter`: move the
+  `usd-motion-plugins` pins to v0.5.2 and add `motionSource`; state both
+  rests; pass `targetRest` in the acceptance test; synthetic tests with a
+  known A-pose angle in each direction (A-pose to level arms, level arms to
+  A-pose, A-pose to A-pose); and a rerun over the local models.
 - ✅ **MOT-O12** (2026-09-25): role-table version 2. As a target, `上半身2`
   and `上半身3` bind in the model's chain order. As a source, `upperChest` is
   never emitted, because the shared retarget drops a joint a target lacks.
