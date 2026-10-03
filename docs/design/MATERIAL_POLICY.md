@@ -402,6 +402,79 @@ reconsidered only after both MMD and VRM paths have been implemented and stable
 common semantics are demonstrated. Shared abstractions are extracted from
 working concrete adapters, not designed ahead of them.
 
+### 12.1 The Hydra view (`mmdImaging`)
+
+> Status: **proposed** 2026-10-04, before §14 step 5. It becomes binding
+> when `mmdImaging`'s suites pin it. It takes the shape `usd-vrm-plugins`
+> froze for `vrmImaging`
+> ([VRM imaging policy §28](https://github.com/animu-sphere/usd-vrm-plugins/blob/main/docs/design/VRM_IMAGING_POLICY.md#28-frozen-in-step-i1)),
+> so that `hydra-toon` reads both models by one path (its MAT-Q1).
+
+`mmdImaging` is one UsdImaging API-schema adapter, for `MmdMaterialAPI`. It
+contributes a container named `mmd` to the Hydra prim of the material the API
+is applied to, beside UsdImaging's own `material` container and never inside
+it, so `/preview` and `/mtlx` reach Hydra unchanged.
+
+| Locator | Value | Source |
+| --- | --- | --- |
+| `mmd/material/<field>` | the field's value, typed as the attribute | `inputs:mmd:material:<field>` of `MmdMaterialAPI` (§4.1) |
+| `mmd/drawOrder` | `int` | the material's `customData` `mmd:sourceIndex` (§4.2, §10) |
+
+What a consumer may rely on:
+
+1. **Field names are the schema's.** Every property of the registered
+   definition named `inputs:mmd:material:<field>` is exposed at
+   `mmd/material/<field>`. The adapter lists no field. A field the schema
+   gains reaches Hydra with no change to the adapter, and a renamed property
+   is a renamed locator, so a rename is a schema-contract change. A property
+   authored under the prefix that the schema does not define is never
+   exposed.
+2. **Values are resolved.** A field's value is the authored one, else the
+   schema fallback (§4.3), so a consumer never restates the fallbacks.
+   `sharedToonIndex` is `-1` when unauthored, as the schema says.
+3. **An unauthored texture slot is absent.** `texture`, `sphereTexture` and
+   `toonTexture` are authored only when the source names a safe path (§4.1).
+   Their schema fallback, the empty asset path, is not exposed: the name is
+   missing from `mmd/material`, so "names no texture" never reads as an
+   empty file. An authored slot carries the authored and the resolved asset
+   path. Nothing in `mmdImaging` opens, decodes or uploads an image.
+4. **Leaves are typed and sampled.** Each leaf is castable to
+   `HdTypedSampledDataSource<T>` of the attribute's value type (`GfVec4f`,
+   `GfVec3f`, `float`, `bool`, `int`, `TfToken`, `SdfAssetPath`). It is read
+   at the scene index's time, so a time-sampled value, such as a material
+   morph baked by a runtime, follows time.
+5. **Invalidation is per leaf.** An edit or a time move of
+   `inputs:mmd:material:<field>` dirties `mmd/material/<field>` and nothing
+   wider of the contribution. An edit of the prim's `customData` dirties
+   `mmd/drawOrder`.
+6. **`mmd/drawOrder` is the one value read by name.** Draw order is
+   provenance, not a material semantic, so it stays outside the API (§4.2).
+   It is exposed because `customData` never reaches Hydra, and alpha-blended
+   MMD rendering needs it (§10). It is absent when the material has no
+   `mmd:sourceIndex`, which no importer-authored material lacks. No other
+   provenance is exposed.
+7. **There is no public header.** A consumer spells the tokens itself and
+   links nothing of this repository; the table above is the contract, and the
+   suites spell every locator literally.
+
+What it needs: `mmdSchema` registered in the session, without which no prim's
+definition includes the API and the adapter is never asked; UsdImaging's stage
+scene index, since the legacy `UsdImagingDelegate` consults no API-schema
+adapter; and external UsdImaging plugins enabled. It needs no importer: its
+suites open hand-authored stages, and an import-to-imaging test compares what
+reaches Hydra with the source PMX.
+
+One cost is expected and not fought, as `vrmImaging` measured on the same
+OpenUSD: every canonical value is a Material interface input (§4.3), and
+UsdImaging's material adapter dirties the whole `material` locator on an
+authored edit of any interface input. A time move does not. The suites pin
+both, so a runtime that narrows the edit case is noticed.
+
+A classic render delegate gets no `Sync` from a dirtied `mmd/...` locator
+alone, since only locators under `material` map to a material Sprim's dirty
+bits. Such a delegate reads the contribution from the terminal scene index,
+as `hydra-toon` does for `vrm`.
+
 ## 13. Open questions
 
 | Id | Question | Proposed answer | Resolve by |
@@ -434,7 +507,7 @@ The policy is implemented in the following order:
    static appearance stay as they are; the golden baselines change by the
    property renames and the new connections, reviewed as such.
 5. **Hydra bridge.** Implement and test the UsdImaging adapter independently
-   of the renderer's GPU representation.
+   of the renderer's GPU representation, to the Hydra view of §12.1.
 6. **MMD renderer path.** Bring up diffuse/alpha, toon ramp, sphere
    multiply/add, sub-texture, outline, shadow flags, material morph runtime,
    then advanced UV and vertex-color behavior.
