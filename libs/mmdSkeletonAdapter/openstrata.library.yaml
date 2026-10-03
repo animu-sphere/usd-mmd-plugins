@@ -1,5 +1,6 @@
-# OpenStrata plain-library descriptor. The only cross-repository edge is the
-# released, digest-pinned motionRetarget package (WORKSPACE.md §2.4).
+# OpenStrata plain-library descriptor. The only cross-repository edges are the
+# released, digest-pinned motionRetarget and motionSource packages
+# (WORKSPACE.md §2.4).
 schema: openstrata.library/v1alpha1
 library:
   id: mmdSkeletonAdapter
@@ -11,31 +12,46 @@ requires:
     # motionRetarget's installed package requires motionCore; pin the complete
     # external artifact closure so this library also builds standalone.
     - id: motionCore
-      version: ">=0.5,<0.6"
+      version: ">=0.5.2,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:2aa549d1d764ef99527f31b71533133ac1c98e48843c63feccf6c69cc551219d
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:32b6ba1bc4b155278fbc388e24a0e9130f19540be9a980cb48bf049637bfe9e7
+            digest: sha256:c91e824f83e9daaad903561f2acf5c2bfaf02773406a9be8b89ab75136bb03ac
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:e56dd0916ae5a34d346bb5152cbb49ef4b49374e3e612bff0b613b767afe8360
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:0a2c796e1929abcca6b4bba75509b8139a1fd757cb1c4fe6f9a165eee55e8d49
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:54f62ff034b02babe2470a78d78aa18c44b4c2245d09d53ec7d7af0ccc6888e0
+            digest: sha256:9ca3835e8eb4dabef80867f1bebe4a4583745411ecef992b446d5bc4717e391f
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:08b8b83b3139325b64f32bba96223c5f726c412e2d7b5a1b3f3e9aa6704f6571
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:f06fef790e19371c3d085c667e44805d738b63e8af77df2d8fafa6a41d5969a5
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:7e5c67b9ae5defa40887b7dbaccea0bb5258ae3e86b1e2d14e7c82ae13ce0564
+            digest: sha256:1d2ac0bce7211539c008a0a584088d9acdebdada39f020ab489e3d7796eb29cb
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:9f05cf3b1c5c4663ef5350b3d37a0a1512b7692a72b993b2c25e50ed4c38de08
     - id: motionRetarget
-      version: ">=0.5,<0.6"
+      version: ">=0.5.2,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:16f18e2808e44569b6251faf163bd6f91387058fe1e009608af7d631d776ee67
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:044aef49eb9f6a1b2b44a666e734e14d000978e144b66f1b7445eddb4f8d4459
+            digest: sha256:ace62453e70790ed27ea2588760bde5cee412173ad7cbb8be3f239333b58c06f
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:72ed1822c1528b3da1b0c97015a3f31fe43bdfbd880c2c53a0c6c7fa6e3468ce
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:adc79c4391c8abe9ebb3782fb1e73defdd037cf36957bd1ac17da1c56d525775
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:8dbe77cb246a6250275dc047edd6d31468c96be3c6bb5761b9d981013eb5ed98
+            digest: sha256:a9274c502a96e3283f5e991b7ccd53f168428f6c3faff3cfc17cc55b4ef40bca
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:e82f62b3d26ff5a8c61a4c7ed6ab00d9869b869f8eff33f774d01070221773b3
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:d6f835997a5a31fb26672fb05008e0bae2a936b90e36f7488ae5a8a0f1625c37
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ed3ead135894767aa04de2232c4e65206d7ad3bb5fd43ad8e60fbc44e4e79d1a
+            digest: sha256:cbb2734561916af636b6fa655646571c5fcd8f4041f7f7824f3ec7d5b55cb5e2
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:abda6106fa8e5c0c319e0bb364b52642b233ac7889d6c6731674e008fbdd67cd
+    # TPoseDirection and ShortestRotation for the arm chain's reference rest
+    # (MOTION_CONTRACT.md §12.6); motionSource requires only motionCore.
+    - id: motionSource
+      version: ">=0.5.2,<0.6"
+      artifact:
+        targets:
+          cy2026-linux-x86_64-py313-usd:
+            digest: sha256:8779ecd94e80782f70b6cb46fbd5080093539931a6a5c50616a3737fae17a146
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:751aec1223655498acc325d76c3a8a1b392788cf44044e9a4f60e0bbb283643c
+          cy2026-macos-arm64-py313-usd:
+            digest: sha256:cf88a6c39b04b651088b31d53a4d234422af142ceda8f600175bdb2179acce81
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:209997cd4feb2d6b9347b029b086d25d37ccf1a601ddb9beadc0d4ee5575af7f
+          cy2026-windows-x86_64-py313-usd:
+            digest: sha256:c508c65fb24d54374f4c1b4b02fff8440151f49bff508689500c6e42dd1d38b7
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:fc1337ec536c945eb6c9fcaf419ec4c7d075e5ba081d1bf4b83ed6be98de7bb5
 cmake:
   package: mmdSkeletonAdapter
   target: mmdSkeletonAdapter::mmdSkeletonAdapter

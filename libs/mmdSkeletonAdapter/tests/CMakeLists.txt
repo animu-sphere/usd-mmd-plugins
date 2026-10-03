@@ -8,10 +8,11 @@ target_link_libraries(mmdSkeletonAdapter_tests PRIVATE
 add_test(NAME mmdSkeletonAdapter_unit COMMAND mmdSkeletonAdapter_tests)
 usdmmd_openusd_test_environment(mmdSkeletonAdapter_unit)
 
-# WORKSPACE.md §2.1 allows mmdSkeletonAdapter mmdModel and motionRetarget,
-# and through it the OpenUSD foundation closure only.
+# WORKSPACE.md §2.1 allows mmdSkeletonAdapter mmdModel, motionRetarget and
+# motionSource, and through them the OpenUSD foundation closure only.
 usdmmd_add_boundary_test(mmdSkeletonAdapter
     TARGET mmdSkeletonAdapter BINARY mmdSkeletonAdapter_tests
     ARGS --allow mmdModel::mmdModel
          --allow motionRetarget::motionRetarget
+         --allow motionSource::motionSource
          --allow-openusd-foundation)

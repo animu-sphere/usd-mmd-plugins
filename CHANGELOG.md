@@ -18,6 +18,24 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Added
 
+- **The arm chain's reference rest (MOT-O10).** `mmdSkeletonAdapter` aims the
+  shoulder, upper arm, lower arm and hand onto `usd-motion-plugins`' public
+  T-pose directions and states the result on both sides: as rotations in
+  the source's `SourceRestPose`, and as `AdaptedSkeleton::targetRest`, a
+  `TargetRestPose` over the PMX skeleton's own joints that a retarget onto a
+  PMX passes as `RetargetOptions::targetRest`. The stage, the
+  `SkeletonDescriptor` and the clip's rotations are unchanged, and so is
+  role-table version 2. Without `targetRest`, a retarget onto a PMX from any
+  level-arm rest, this adapter's clips included, lands off by the model's
+  own arm angle. Synthetic tests retarget known A-pose angles in each
+  direction, and a rerun over 17 local characters gives the figures the
+  2026-09-25 measurement predicted. The adapters move to `usd-motion-plugins`
+  v0.5.2 (`>=0.5.2,<0.6`), and `mmdSkeletonAdapter` adds a private
+  `motionSource` edge, pinned by digest, for `TPoseDirection` and
+  `ShortestRotation`. Its installed package finds `motionSource`, and the
+  installed-consumer lane passes its prefix. (`MOTION_CONTRACT.md` §12.6;
+  report 2026-10-04.)
+
 - **`mmdImaging`, the Phase 8 UsdImaging adapter** (`plugins/mmdImaging/`).
   A UsdImaging API-schema adapter for `MmdMaterialAPI` contributes `mmd` to
   the Hydra material prim, beside UsdImaging's `material` and never inside

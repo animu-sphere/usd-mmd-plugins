@@ -37,7 +37,7 @@ in.** No other document states a version for a Phase.
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | ⬜ | unassigned; schema/adapter work is here, composition is owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the A-pose rest (MOT-O10) is decided as an arm-chain reference rest on both sides, implementation next; expression interoperability waits on `usd-motion-plugins`; role-table version 2 resolves MOT-O12 | unassigned |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the A-pose rest (MOT-O10) is stated as the arm chain's reference rest on both sides; expression interoperability waits on `usd-motion-plugins`; role-table version 2 resolves MOT-O12 | unassigned |
 | 10 | USDZ packaging (`mmd_export`) | 🚧 steps 1–3 done: validated plugin-free USDZ, robust paths, deterministic bytes and optional ASCII archive names ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)); the shared layer (step 4) waits for two working tools | unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
@@ -124,9 +124,11 @@ Where things stand, as of 2026-09-25:
   measured on 2026-09-25: an arm-chain rest is exact, but only once a PMX
   target can state it too
   ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)).
-  `usd-motion-plugins` v0.5.2 made that possible, and on 2026-10-04 it was
-  decided as the arm chain's reference rest on both sides
-  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)).
+  `usd-motion-plugins` v0.5.2 made that possible, and on 2026-10-04
+  `mmdSkeletonAdapter` stated it as the arm chain's reference rest on both
+  sides
+  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest),
+  [report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)).
   Expression interoperability still waits on that repository: it has
   promoted no common expression semantic. MOT-O12, found by the same run, is resolved by
   role-table version 2
@@ -172,7 +174,7 @@ schedules them.
 | MOT-O5 | Which MMD bones feed `RootMotion` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O6 | The humanoid role table and its version | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 |
 | MOT-O9 | MMD's own IK distance at a model's loop count | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 9 — §11.7 kept |
-| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved 2026-10-04 — the arm chain's reference rest on both sides ([§12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)); implementation in `mmdSkeletonAdapter` next |
+| MOT-O10 | The rest a clip from MMD states | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved 2026-10-04 — the arm chain's reference rest on both sides ([§12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)), stated by `mmdSkeletonAdapter` |
 | MOT-O2 | What a directly opened `.vmd` stage looks like | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | `usdVmdFileFormat` |
 | MOT-O3 | Which runtime owns MMD IK and append evaluation for baking | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) | resolved in Phase 7; superseded 2026-09-17 — `mmdControl`, here |
 | PMX-O2 | QDEF verification | [PMX §16](../design/PMX_CONTRACT.md#16-open-questions) | a consumer |

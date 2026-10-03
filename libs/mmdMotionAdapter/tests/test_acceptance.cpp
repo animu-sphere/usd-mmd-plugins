@@ -319,7 +319,7 @@ TestEndToEnd()
 
     openstrata::motion::RetargetDiagnostics pmxDiagnostics;
     const openstrata::motion::RetargetedAnimation pmxAnimation = RetargetGeneric(
-        clip, stageSkeleton, target.targetMap, source.sourceRest,
+        clip, stageSkeleton, target.targetMap, source.sourceRest, target.targetRest,
         target.requiredJoints, &pmxDiagnostics);
     assert(pmxDiagnostics.IsClean());
     assert(pmxAnimation.samples.size() == clip.samples.size());
@@ -339,7 +339,7 @@ TestEndToEnd()
     const GenericRig generic = MakeGenericRig();
     openstrata::motion::RetargetDiagnostics genericDiagnostics;
     const openstrata::motion::RetargetedAnimation genericAnimation = RetargetGeneric(
-        clip, generic.skeleton, generic.map, source.sourceRest,
+        clip, generic.skeleton, generic.map, source.sourceRest, {},
         generic.required, &genericDiagnostics);
     assert(genericDiagnostics.IsClean());
     assert(genericAnimation.samples.size() == clip.samples.size());

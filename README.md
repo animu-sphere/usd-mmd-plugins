@@ -123,7 +123,7 @@ packages, all found as installed packages on `CMAKE_PREFIX_PATH`
 ([WORKSPACE.md §5](docs/architecture/WORKSPACE.md#5-build-modes)):
 
 ```powershell
-$env:CMAKE_PREFIX_PATH = "<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionUsd>"
+$env:CMAKE_PREFIX_PATH = "<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionSource>;<motionUsd>"
 cmake --preset windows-msvc
 cmake --build --preset windows-release
 ctest --preset windows-release

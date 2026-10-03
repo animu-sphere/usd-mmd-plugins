@@ -19,10 +19,15 @@ inline constexpr int kRoleTableVersion = 2;
 
 /// Everything the shared motion core needs from one canonical PMX skeleton.
 /// Source joints build VMD-derived clips; the target map drives the PMX stage.
+/// `sourceRest` and `targetRest` state the arm chain's T-pose aim
+/// (MOTION_CONTRACT.md §12.6); a retarget onto this skeleton passes
+/// `targetRest` as `RetargetOptions::targetRest`, or its arms land off by the
+/// model's own rest angle.
 struct AdaptedSkeleton {
     openstrata::motion::SkeletonDescriptor skeleton;
     openstrata::motion::RetargetMap targetMap;
     openstrata::motion::SourceRestPose sourceRest;
+    openstrata::motion::TargetRestPose targetRest;
     std::array<int, openstrata::motion::HumanJointCount> sourceJoints{};
     std::bitset<openstrata::motion::HumanJointCount> sourcePresent;
     std::vector<openstrata::motion::HumanJoint> requiredJoints;
@@ -32,7 +37,8 @@ struct AdaptedSkeleton {
 };
 
 /// Applies role-table version 2 to `model`, and builds target data whose joint
-/// tokens and rest transforms exactly match /Asset/skel/Skeleton.
+/// tokens and rest transforms exactly match /Asset/skel/Skeleton; the arm
+/// chain's reference rest is stated beside them, never in them.
 AdaptedSkeleton Adapt(const CanonicalDocument& model);
 
 } // namespace mmd::skeleton

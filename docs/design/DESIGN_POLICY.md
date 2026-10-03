@@ -294,8 +294,9 @@ Two narrow components depend on `usd-motion-plugins`:
 - `mmdMotionAdapter` turns `mmdControl`'s fully evaluated output into a
   `MotionClip` of humanoid rotations, root motion and preserved channels.
 - `mmdSkeletonAdapter` exposes a canonical PMX model as a
-  `SkeletonDescriptor`, `SourceRestPose` and humanoid `RetargetMap`, and owns
-  the versioned MMD role table
+  `SkeletonDescriptor`, `SourceRestPose`, `TargetRestPose` and humanoid
+  `RetargetMap`, and owns the versioned MMD role table and the arm chain's
+  reference rest
   ([MOTION_CONTRACT.md §12](MOTION_CONTRACT.md#12-the-humanoid-role-table)).
 
 Neither owns a generic algorithm or target-avatar knowledge: sampling,
