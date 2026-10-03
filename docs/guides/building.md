@@ -19,7 +19,7 @@ Commands are PowerShell, run from the repository root.
   integration tests import OpenUSD's bindings, which refuse any other version
   (`Module use of python313.dll conflicts with this version of Python`).
 - CMake 3.22 or later and a C++20 compiler.
-- For the OpenStrata path: `ost` 0.23.4 and a `cy2026` / `usd` runtime.
+- For the OpenStrata path: `ost` 0.23.13 and a `cy2026` / `usd` runtime.
 
 ## Plain CMake
 
@@ -86,6 +86,11 @@ reads them too, which is why they are not in the build tree
 | `mmdExport_unit` | each export step over `.usda` layers and images the suite writes, with no MMD plugin: every row of the texture table, discovery's missing, unsupported, colliding and unexpected files, BMP (24- and 32-bit) and TGA converted to PNG pixel for pixel, materialization spec for spec with only the renamed paths changed, the archive's entry order and validation, and replacing the output whole or not at all |
 | `mmd_export_boundaries` | `mmd_export` includes no parser, model, importer or schema header, links only the OpenUSD libraries it declares, and imports neither the importer's nor the schema's library |
 | `mmd_export_fixtures` | `mmd_export` packages the generated fixtures; a process with no MMD plugin opens each package, finds every layer and texture inside it, and `usdchecker` passes it; each package holds the `.pmx`'s stage value for value, texture renames aside; converted textures decode to the generator's pixels; a missing, unsupported or colliding texture and an unreadable model write nothing; and again from and into non-ASCII directories |
+| `mmdImaging_discovery` | the plugin is registered and unloaded, declares exactly one adapter, for the registered `MmdMaterialAPI`, and UsdImaging constructs it from `plugInfo.json` alone |
+| `mmdImaging_material` | over a hand-authored stage, through UsdImaging's stage scene index: authored values and schema fallbacks under `mmd/material`, typed as their attributes; the field set the schema's, an unauthored texture slot absent; `mmd/drawOrder` from `mmd:sourceIndex`; an edit dirtying its one locator beside the whole `material`; a `customData` edit reaching no adapter; a time-sampled value following time |
+| `mmdImaging_material_without_schema` | the same stage in a session without `mmdSchema`: no `mmd` contribution |
+| `mmdImaging_boundaries` | `mmdImaging` includes no parser, model, importer, schema or renderer header, links only the OpenUSD imaging modules it declares, and imports neither the importer's nor the schema's library |
+| `mmdImaging_import` | every importer fixture with materials, through the scene index: the prims with an `mmd` contribution are the source's materials, with its draw order, `doubleSided` and texture slots as `fixtures.json` states them, and every listed value the importer's |
 | `workspace_fixtures` | the committed fixtures and texture files are exactly what the generator writes |
 | `workspace_docs`, `workspace_docs_selftest` | links and anchors resolve; every version and pin mirror agrees; the diagnostic catalog matches the declared codes |
 | `usdMmdFileFormat_stage_open` | every fixture opens, or fails with its fatal code, as `fixtures.json` says; each stage that opens holds what `fixtures.json` says it must — identifiers, joint paths, bind translations, material subsets, texture asset paths and whether they resolve, a vertex through the conversion, every morph prim and, for each blend shape, the points UsdSkel moves when it is driven to weight 1 — passes the stage checklist, and passes every validator OpenUSD registers |

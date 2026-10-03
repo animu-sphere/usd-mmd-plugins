@@ -15,9 +15,9 @@ component links it yet. §7 records the proposed optional runtime edge to
 | | |
 | --- | --- |
 | Pin | OpenUSD **26.08**, exactly (`PXR_VERSION` 2608), enforced by [cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake) for `ost` and plain-CMake builds alike and declared as `runtime.openusd: "==26.08"` in the bundle manifest; the release the rest of the ecosystem pins (`usd-vrm-plugins` too), because `usd-avatar-runtime` composes every plugin into one OpenUSD process |
-| Used by | `usdMmdFileFormat`; `mmdMotionAdapter` and `mmdSkeletonAdapter` use only the foundation types (`gf`, `tf`, `vt`) exposed through the shared motion packages, and no stage (§6) |
-| Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `usdPhysics`, `usdShade`, `usdSkel`, `kind` (`usdShade` and `usdSkel` since Phase 2, `usdPhysics` since Phase 6) |
-| Not used | OpenExec, Hydra, `usdImaging` — nothing is evaluated or rendered here, so unlike `usd-vrm-plugins`' pin module this one probes for no OpenExec |
+| Used by | `usdMmdFileFormat`; `mmdSchema`; `mmd_export`; `mmdImaging`, the only user of imaging; `mmdMotionAdapter` and `mmdSkeletonAdapter` use only the foundation types (`gf`, `tf`, `vt`) exposed through the shared motion packages, and no stage (§6) |
+| Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `usdPhysics`, `usdShade`, `usdSkel`, `kind` (`usdShade` and `usdSkel` since Phase 2, `usdPhysics` since Phase 6); `hd` and `usdImaging` by `mmdImaging` alone, since Phase 8 |
+| Not used | OpenExec, Hydra render delegates — nothing is evaluated or rendered here, so unlike `usd-vrm-plugins`' pin module this one probes for no OpenExec. `mmdImaging` uses UsdImaging's scene-index API to describe materials, and draws nothing |
 | CI runtimes | the OpenUSD 26.08 leaves of OpenStrata's runtime matrix, the same digests `usd-vrm-plugins` pins ([openstrata.ci.yaml](../../openstrata.ci.yaml)) |
 
 The pin is exact rather than a range for the same reason as in
@@ -38,7 +38,7 @@ calls the MaterialX library. The MaterialX document version it declares
 | Compilers | MSVC on Windows, Clang on macOS (arm64), GCC on Linux — the three hosted lanes `usd-vrm-plugins` runs |
 | Windows flags | `/utf-8`, `NOMINMAX`, applied by `usdmmd_target_defaults()` in [cmake/UsdMmdTargets.cmake](../../cmake/UsdMmdTargets.cmake) ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
 | Python | the Python OpenUSD was built against — 3.13 for the 26.08 runtimes — for stage tests and tooling. The root project finds the interpreter *after* OpenUSD, so it inherits the one `pxrConfig.cmake` names |
-| OpenStrata | `ost` **0.23.4**, pinned in `openstrata.ci.yaml`; required for digest-pinned external-library artifacts in root builds |
+| OpenStrata | `ost` **0.23.13**, pinned in `openstrata.ci.yaml`; 0.23.2 or later for digest-pinned external-library artifacts in root builds, and 0.23.10 or later for the `usd-imaging` bundle kind `mmdImaging` declares |
 | Unit-test framework | **none**, as in `usd-vrm-plugins`: each suite is a plain executable that checks with `assert()`, compiled with `NDEBUG` undefined so Release builds still check, and registered with CTest |
 | Sanitizers and fuzzing | Clang 18's AddressSanitizer, UndefinedBehaviorSanitizer and libFuzzer, from Ubuntu 24.04's packages, in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) only; the `USDMMD_SANITIZERS` and `USDMMD_BUILD_FUZZERS` options of [cmake/UsdMmdSanitizers.cmake](../../cmake/UsdMmdSanitizers.cmake) switch them on, and nothing shipped is built with them. Toolchain runtimes, not dependencies: no code is vendored and nothing links them outside that lane |
 

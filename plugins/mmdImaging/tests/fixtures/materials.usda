@@ -1,0 +1,95 @@
+#usda 1.0
+(
+    """mmdImaging fixture: hand-authored canonical MMD material semantics on
+    UsdShadeMaterials, with no PMX importer involved, so what reaches Hydra is
+    the schema contract and nothing else (MATERIAL_POLICY.md section 12.1).
+
+    Authored values differ from the schema fallbacks on purpose: a test that
+    read a fallback could not tell it from the attribute. Paths follow the
+    importer's /Asset/mtl/<materialId>."""
+    startTimeCode = 0
+    endTimeCode = 10
+)
+
+def Xform "Asset"
+{
+    def Scope "mtl"
+    {
+        # Every value type the schema uses authored, one texture slot authored
+        # and the other two not, and a portable realization beside it that
+        # reads no canonical input.
+        def Material "face" (
+            prepend apiSchemas = ["MmdMaterialAPI"]
+            customData = {
+                dictionary mmd = {
+                    int sourceIndex = 3
+                    string sourceName = "face"
+                }
+            }
+        )
+        {
+            color4f inputs:mmd:material:diffuseColor = (0.8, 0.7, 0.6, 0.9)
+            color3f inputs:mmd:material:specularColor = (0.1, 0.2, 0.3)
+            float inputs:mmd:material:specularPower = 12.5
+            uniform bool inputs:mmd:material:drawEdge = true
+            color4f inputs:mmd:material:edgeColor = (0.2, 0.1, 0.1, 1)
+            float inputs:mmd:material:edgeSize = 0.75
+            asset inputs:mmd:material:texture = @textures/base.png@
+            uniform token inputs:mmd:material:sphereMode = "multiply"
+            uniform token inputs:mmd:material:toonSource = "shared"
+            uniform int inputs:mmd:material:sharedToonIndex = 4
+            # Not a field of the schema: authored under its prefix, never
+            # exposed.
+            float inputs:mmd:material:notASchemaField = 1
+            token outputs:surface.connect = </Asset/mtl/face/preview.outputs:surface>
+
+            def NodeGraph "preview"
+            {
+                token outputs:surface.connect = </Asset/mtl/face/preview/Surface.outputs:surface>
+
+                def Shader "Surface"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor = (0.8, 0.7, 0.6)
+                    token outputs:surface
+                }
+            }
+        }
+
+        # A time-sampled canonical value, as a runtime's baked material morph
+        # would author it.
+        def Material "skin" (
+            prepend apiSchemas = ["MmdMaterialAPI"]
+            customData = {
+                dictionary mmd = {
+                    int sourceIndex = 0
+                }
+            }
+        )
+        {
+            color4f inputs:mmd:material:diffuseColor.timeSamples = {
+                0: (1, 1, 1, 1),
+                10: (0.5, 0.25, 0, 0.5),
+            }
+        }
+
+        # The API without provenance: no draw order.
+        def Material "noProvenance" (
+            prepend apiSchemas = ["MmdMaterialAPI"]
+        )
+        {
+        }
+
+        # No MMD semantics: nothing under `mmd`.
+        def Material "plain"
+        {
+            token outputs:surface.connect = </Asset/mtl/plain/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                token outputs:surface
+            }
+        }
+    }
+}

@@ -18,6 +18,24 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Added
 
+- **`mmdImaging`, the Phase 8 UsdImaging adapter** (`plugins/mmdImaging/`).
+  A UsdImaging API-schema adapter for `MmdMaterialAPI` contributes `mmd` to
+  the Hydra material prim, beside UsdImaging's `material` and never inside
+  it: `mmd/material/<field>` for every `inputs:mmd:material:<field>` of the
+  registered definition, resolved to the schema fallback and typed as the
+  attribute, and `mmd/drawOrder` from `customData` `mmd:sourceIndex`. An
+  unauthored texture slot is absent rather than an empty asset path. An edit
+  dirties its one locator, and a time-sampled value follows the scene
+  index's time. It names no field, links nothing of this repository, and
+  installs no header: the Hydra view in `MATERIAL_POLICY.md` §12.1 is the
+  contract, in `vrmImaging`'s shape, which answers `hydra-toon`'s MAT-Q1. It
+  is an `ost` `usd-imaging` bundle, a release member and a CI cell on each
+  platform, and the product smoke loads it installed. Discovery, material,
+  without-schema, boundary and import tests; the import test reads every
+  importer fixture with materials through the scene index against
+  `fixtures.json`. `check_library_boundaries.py` gains `--plugin` for a
+  plugin bundle's own registration.
+
 - **`mmd_export`, Phase 10 step 1** (`tools/mmdExport/`). It writes the stage
   the importer authors for a `.pmx` as a standard USDZ: the stage
   materialized spec for spec as `<name>.usdc`, first, then every texture it
@@ -47,6 +65,10 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Changed
 
+- **The `ost` pin is 0.23.13**, `usd-vrm-plugins`' pin, in
+  `openstrata.ci.yaml`, the generated workflow and `release.yml`. 0.23.10 is
+  the first that lets the `usd` profile select the `usd-imaging` bundle kind
+  `mmdImaging` declares.
 - **`mmd_export`, Phase 10 step 2 (PKG-O1).** Private staged files receive
   a fixed local timestamp, so repeated runs with the same input bytes,
   output stem and tool/OpenUSD build produce identical USDZ bytes across

@@ -88,8 +88,12 @@ contract is [docs/design/PHYSICS_INTEGRATION.md](docs/design/PHYSICS_INTEGRATION
 2026-09-22 for the `hydra-toon` consumer. `mmdSchema` holds it, and since
 stage-contract v2 the importer applies it to every material, with the values
 as Material interface inputs `inputs:mmd:material:*` that the fallback graphs
-connect to (v1 authored schema-less `mmd:material:*` attributes). Phase 8
-also adds the independent `mmdImaging` bridge. Identities and dependency
+connect to (v1 authored schema-less `mmd:material:*` attributes). The
+independent `mmdImaging` bundle exposes those values to Hydra, as
+`mmd/material/<field>` and `mmd/drawOrder` on the material prim, for a
+renderer such as `hydra-toon`
+([MATERIAL_POLICY.md §12.1](docs/design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging)).
+Identities and dependency
 directions are fixed in
 [docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md).
 

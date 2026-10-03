@@ -87,6 +87,17 @@ set_tests_properties(usdMmdFileFormat_notice_listeners PROPERTIES
     ENVIRONMENT_MODIFICATION "${_plugin_env}"
     TIMEOUT 120)
 
+# mmdImaging over every importer fixture with materials: what reaches Hydra
+# is what the manifest says the source holds (MATERIAL_POLICY.md §12.1). The
+# executable is mmdImaging's; the importer, the schema and the adapter are
+# all on the plugin path, as a runtime composes them.
+set(_imaging_bundle "${PROJECT_SOURCE_DIR}/plugins/mmdImaging")
+add_test(NAME mmdImaging_import
+    COMMAND mmdImaging_import_tests "${_fixtures}")
+set_tests_properties(mmdImaging_import PROPERTIES
+    ENVIRONMENT_MODIFICATION
+        "${_plugin_env};PXR_PLUGINPATH_NAME=path_list_prepend:${_imaging_bundle}/plugin/resources/mmdImaging")
+
 # The installed-consumer lane: install this build tree into a clean prefix and
 # consume it from outside the repository (scripts/check_installed_consumer.py).
 # It configures and builds a second CMake project, so it is labelled and can be

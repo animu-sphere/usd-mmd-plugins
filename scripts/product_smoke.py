@@ -11,14 +11,18 @@ aggregate, into a fresh prefix outside the repository:
   <prefix>/tools/mmd_inspect/bin/mmd_inspect --json <a PMX fixture>
   <prefix>/tools/vmd_inspect/bin/vmd_inspect --json <a generated VMD>
   ost plugin run plugins/usdMmdFileFormat --no-inject \\
-      --plugin-path <prefix>/bundles/usdMmdFileFormat -- python <stage check>
+      --plugin-path <prefix>/bundles/usdMmdFileFormat \\
+      --plugin-path <prefix>/bundles/mmdImaging -- python <stage check>
   ost plugin run ... -- <prefix>/tools/mmd_export/bin/mmd_export <fixture> <out.usdz>
 
 `--no-inject` leaves only the runtime and the installed bundle on the
 discovery path, and the stage check opens the fixture at `/Asset`, asserts
 that the plugin which opened it is the installed one, that its materials
 apply `MmdMaterialAPI` from the installed `mmdSchema`, and that the installed
-`buildInfo.json` names this VERSION. The fixtures are copied under a
+`buildInfo.json` names this VERSION. It also finds the installed
+`mmdImaging` registered, declaring its adapter for `MmdMaterialAPI`, and loads
+it: no Python binding reaches UsdImaging's registry, so loading the library
+from the installed layout is what this lane can prove. The fixtures are copied under a
 non-ASCII directory first (TEXT_ENCODING_POLICY.md).
 
   product_smoke.py --product dist/products/usd-mmd-plugins/<version>/<target>
@@ -63,10 +67,21 @@ assert schema and prefix in pathlib.Path(schema.path).resolve().parents, \
 hair = stage.GetPrimAtPath("/Asset/mtl/hair")
 assert hair.HasAPI("MmdMaterialAPI"), hair.GetAppliedSchemas()
 
+# The UsdImaging adapter: registered from the installed product, and its
+# library loads there (MATERIAL_POLICY.md §12.1).
+imaging = Plug.Registry().GetPluginWithName("MmdImaging")
+assert imaging and prefix in pathlib.Path(imaging.path).resolve().parents, \
+    f"mmdImaging is not registered from the installed product: {imaging and imaging.path}"
+adapter = imaging.metadata["Types"]["UsdMmdImagingMaterialAPIAdapter"]
+assert adapter["apiSchemaName"] == "MmdMaterialAPI", adapter
+imaging.Load()
+assert imaging.isLoaded, "mmdImaging did not load from the installed product"
+
 stamp = json.loads((bundle / "plugin" / "resources" / "usdMmdFileFormat" / "buildInfo.json")
                    .read_text(encoding="utf-8"))
 assert stamp["projectVersion"] == sys.argv[3], stamp
 print(f"stage: /Asset opened through {where}; buildInfo names {stamp['projectVersion']}")
+print(f"imaging: MmdImaging loaded from {imaging.path}")
 '''
 
 
@@ -138,6 +153,7 @@ def main() -> int:
         check.write_text(STAGE_CHECK, encoding="utf-8")
         session = [args.ost, "plugin", "run", str(REPO / "plugins" / "usdMmdFileFormat"),
                    "--no-inject", "--plugin-path", str(prefix / "bundles" / "usdMmdFileFormat"),
+                   "--plugin-path", str(prefix / "bundles" / "mmdImaging"),
                    "--"]
         result = run(session + [args.python, str(check), str(prefix), str(pmx), version])
         if result.returncode != 0:
