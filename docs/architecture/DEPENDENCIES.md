@@ -114,6 +114,17 @@ retarget and one USD mapping; a private MMD copy would be the permanent
 duplication that policy forbids (its §37). What stays here is what needs MMD
 to be understood ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
 
+**v0.5.2, for MOT-O10.** v0.5.2 (2026-09-30) adds what
+[MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)
+needs: `TargetRestPose` and `RetargetOptions::targetRest` in `motionRetarget`,
+and the T-pose directions as public vocabulary, `TPoseDirection` and
+`ShortestRotation`, in `motionSource`. When `mmdSkeletonAdapter` implements
+§12.6 it moves every pin to v0.5.2, raises its floor to `>=0.5.2,<0.6`, and
+adds `motionSource` (which needs only `motionCore` and OpenUSD) to its
+artifact closure, so the directions are read from the shared core and never
+copied ([WORKSPACE.md §7](WORKSPACE.md#7-invariants), invariant 9). Until
+then the table above is what is pinned.
+
 `motionUsd` is test-only today. Its pin lives on `mmdMotionAdapter`'s manifest
 so a standalone or workspace test has the same artifact CI uses; the exported
 `mmdMotionAdapter::mmdMotionAdapter` target and installed package do not link
