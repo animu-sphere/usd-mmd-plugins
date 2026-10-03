@@ -168,7 +168,11 @@ copying those values
   translucent pass, which changes only its edges
   ([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
 - ⬜ Implement a UsdImaging adapter that exposes `MmdMaterialAPI` to Hydra
-  without making the importer depend on `hydra-toon`.
+  without making the importer depend on `hydra-toon`. Its Hydra view,
+  `mmd/material/<field>` and `mmd/drawOrder` on the material prim, is
+  proposed in
+  [MATERIAL_POLICY.md §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging)
+  (2026-10-04), in `vrmImaging`'s shape, and answers `hydra-toon`'s MAT-Q1.
 - ⬜ Bring up the `hydra-toon` MMD path in this order: diffuse/alpha, toon
   ramp, sphere multiply/add, sub-texture, outline, shadow flags, material morph
   runtime, then advanced UV and vertex-color behavior.
