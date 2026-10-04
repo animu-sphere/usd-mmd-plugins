@@ -11,7 +11,7 @@ schema: openstrata.tool/v1alpha1
 tool:
   id: mmd_export
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.1.0
+  version: 0.2.0
   license: Apache-2.0
 executables: [mmd_export]
 directories: [bin]

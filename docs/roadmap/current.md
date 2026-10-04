@@ -35,7 +35,7 @@ can run alongside either
   plugins ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)).
 
 What is listed here is only the part this repository owes, or waits for; what
-the runtime consumes from here today is [v0.1.0](../releases/v0.1.0.md).
+the runtime consumes from here today is [v0.2.0](../releases/v0.2.0.md).
 
 As of 2026-10-04 `usd-motion-plugins` v0.5.3 is consumed, with installable
 `motionCore`, `motionRetarget`, `motionSource` and `motionUsd`

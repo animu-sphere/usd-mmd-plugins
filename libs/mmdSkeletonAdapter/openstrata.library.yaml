@@ -4,11 +4,11 @@
 schema: openstrata.library/v1alpha1
 library:
   id: mmdSkeletonAdapter
-  version: 0.1.0
+  version: 0.2.0
 requires:
   libraries:
     - id: mmdModel
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
     # motionRetarget's installed package requires motionCore; pin the complete
     # external artifact closure so this library also builds standalone.
     - id: motionCore

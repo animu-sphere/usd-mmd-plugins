@@ -6,7 +6,7 @@ manifest:
 plugin:
   name: usdMmdFileFormat
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.1.0
+  version: 0.2.0
   kind: usd-fileformat
 license: Apache-2.0
 runtime:
@@ -28,9 +28,9 @@ requires:
   # (WORKSPACE.md §2.1, §2.3).
   libraries:
     - id: mmdPmx
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
     - id: mmdModel
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
   # MmdMaterialAPI, which every material applies from stage-contract v2
   # (MATERIAL_POLICY.md §4.3). ost builds the bundle before configuring this
   # one and composes it into every session and package of this one, so the
@@ -39,7 +39,7 @@ requires:
   # implementation version.
   bundles:
     - id: mmdSchema
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
       contract: 1
 usd:
   # Where this bundle's plugInfo.json lives, relative to the bundle root.

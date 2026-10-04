@@ -3,15 +3,15 @@
 schema: openstrata.library/v1alpha1
 library:
   id: mmdMotionAdapter
-  version: 0.1.0
+  version: 0.2.0
 requires:
   libraries:
     - id: mmdControl
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
     - id: mmdModel
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
     - id: mmdSkeletonAdapter
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
     - id: motionCore
       version: ">=0.5.3,<0.6"
       artifact:

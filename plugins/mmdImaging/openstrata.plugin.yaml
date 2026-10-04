@@ -11,7 +11,7 @@ manifest:
 plugin:
   name: mmdImaging
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.1.0
+  version: 0.2.0
   # The kind arrived in `ost` 0.23.9 and became selectable from the `usd`
   # profile in 0.23.10 (usd-vrm-plugins' ost reports 49-51).
   kind: usd-imaging
@@ -38,7 +38,7 @@ requires:
   # (mmdImaging_material_without_schema).
   bundles:
     - id: mmdSchema
-      version: ">=0.1,<0.2"
+      version: ">=0.2,<0.3"
       contract: 1
 usd:
   # Where this bundle's plugInfo.json lives, relative to the bundle root.
