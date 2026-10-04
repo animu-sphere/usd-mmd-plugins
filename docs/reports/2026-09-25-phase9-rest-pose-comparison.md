@@ -1,6 +1,7 @@
 # Phase 9 A-pose rest against a level-arm rest (2026-09-25)
 
 > Later: MOT-O12 was resolved the same day by role-table version 2 ([report](2026-09-25-phase9-upper-chest.md)).
+> Later: the shoulder was left out of the aim on 2026-10-04, because its rest slope is the model's shape and aiming it raised a PMX's shoulders, MOT-O14 ([report](2026-10-04-phase9-shoulder-rest.md)).
 
 Dated evidence from real runs; append-only
 ([contributing/documentation.md](../contributing/documentation.md)).

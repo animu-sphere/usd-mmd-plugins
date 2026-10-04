@@ -2,7 +2,7 @@
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
 skeletal end-to-end acceptance, MOT-O5, MOT-O6, MOT-O9 and MOT-O10 are
-done; expression interoperability waits on `usd-motion-plugins`; Phase 8
+done; MOT-O14 leaves the shoulder unaimed, and the adapter follows next; expression interoperability waits on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
 to Hydra; generic VRMA- and BVH-derived clips reach a PMX, and MOT-O13 is
@@ -96,6 +96,15 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   now from the shipped adapter
   ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)). A
   consumer retargeting onto a PMX passes `targetRest`.
+- ⬜ **MOT-O14, the shoulder left unaimed**: §12.6 now aims only the upper
+  arm, the lower arm and the hand. The shoulder rests as the model does, on
+  both sides
+  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)).
+  Aimed, it put a standing source's PMX shoulder a median 17° above the
+  model's own slope
+  ([report](../reports/2026-10-04-phase9-shoulder-rest.md)).
+  `mmdSkeletonAdapter` still aims it. Change both rests and the tests that
+  pin the shoulder, then rerun the local figures.
 - ✅ **MOT-O12** (2026-09-25): role-table version 2. As a target, `上半身2`
   and `上半身3` bind in the model's chain order. As a source, `upperChest` is
   never emitted, because the shared retarget drops a joint a target lacks.
