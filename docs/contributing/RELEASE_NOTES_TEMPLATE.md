@@ -1,11 +1,13 @@
 # usd-mmd-plugins {tag}
 
 OpenUSD plugins for MikuMikuDance assets. `usdMmdFileFormat` opens `.pmx`
-models as USD stages; `mmd_inspect` and `vmd_inspect` report what a PMX or VMD
-file contains, without USD. The plain libraries — `mmdPmx`, `mmdModel`,
-`motionVmd`, `mmdMotionBinding`, `mmdControl` — ship inside the bundle and
-tools that link them, and build from the source archive as installable CMake
-packages.
+models as USD stages, `mmdSchema` registers `MmdMaterialAPI`, and `mmdImaging`
+shows it to Hydra; `mmd_inspect` and `vmd_inspect` report what a PMX or VMD
+file contains, without USD, and `mmd_export` packages a `.pmx` as a USDZ. The
+plain libraries — `mmdPmx`, `mmdModel`, `motionVmd`, `mmdMotionBinding`,
+`mmdControl`, `mmdMotionAdapter`, `mmdSkeletonAdapter` — build from the
+source archive as installable CMake packages, and the bundles and tools link
+the ones they use statically.
 
 - **Stage-contract version:** {stage_contract}
   ([STAGE_CONTRACT.md](https://github.com/animu-sphere/usd-mmd-plugins/blob/{tag}/docs/design/STAGE_CONTRACT.md))
@@ -23,16 +25,16 @@ or `cy2026-linux-x86_64-py313-usd`.
 
 | Artifact | Contents |
 | --- | --- |
-| `usd-mmd-plugins-{version}-<target>-plugin-product.tar.zst` | the product: the bundle and both tools, with their manifests and checksums — the one to install |
-| `usdMmdFileFormat-{version}-<target>.tar.zst` | the `.pmx` file-format bundle alone |
-| `mmd_inspect-{version}-<target>.tar.zst` · `vmd_inspect-{version}-<target>.tar.zst` | each tool alone |
+| `usd-mmd-plugins-{version}-<target>-plugin-product.tar.zst` | the product: the bundles and tools, with their manifests and checksums — the one to install |
+| `usdMmdFileFormat-{version}-<target>.tar.zst` · `mmdSchema-{version}-<target>.tar.zst` · `mmdImaging-{version}-<target>.tar.zst` | each bundle alone; `usdMmdFileFormat` needs `mmdSchema` |
+| `mmd_inspect-{version}-<target>.tar.zst` · `vmd_inspect-{version}-<target>.tar.zst` · `mmd_export-{version}-<target>.tar.zst` | each tool alone |
 | `<name>-{version}-<target>.manifest.json` | the OpenStrata manifest of each archive above |
 | `usd-mmd-plugins-{version}-src.tar.gz` | the source at this tag |
 | `SHA256SUMS` | the SHA-256 of every file above |
 
 Install the product with `ost plugin product install --prefix <new directory>
 <product archive>`, then source the prefix's `activate.sh` or `activate.ps1`.
-On each target, before this draft was assembled, the bundle's verification
+On each target, before this draft was assembled, each bundle's verification
 pyramid passed against its package, the product was installed into a fresh
 prefix and used from it alone, and packaging was repeated to the same digests.
 

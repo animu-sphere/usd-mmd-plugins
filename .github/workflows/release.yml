@@ -188,7 +188,6 @@ jobs:
           ost artifact verify "${{ matrix.runtime_artifact }}" --minimum-trust local --require-sbom --require-provenance \
             --require-openusd "${{ matrix.require_openusd }}" --require-openusd-version 26.08
           ost runtime pull cy2026 --profile usd --from-artifact "${{ matrix.runtime_artifact }}" --force
-          ost runtime validate cy2026 --profile usd --json > /dev/null
       - name: Pull digest-pinned external library artifacts
         shell: bash
         run: ost library pull --target cy2026 --profile usd --json
@@ -196,6 +195,20 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
+      # After the host Python, as the PR lanes order it, not straight after the
+      # pull. Since the 0.23.x pins, `runtime validate` includes
+      # `consumer-link`, which RUNS a consumer executable, and the runtime's
+      # USD libraries import the host interpreter's library (python313.dll on
+      # Windows). Run before setup-python, it failed on Windows and Linux in the
+      # first dry run under 0.23.13, with its output sent to /dev/null, as it
+      # did for usd-vrm-plugins under 0.23.10 (its ost report 52 section 2).
+      # The output is kept now.
+      - name: Validate the materialized runtime (runnable tools)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .ost-ci
+          ost runtime validate cy2026 --profile usd --json | tee .ost-ci/runtime-validate.json
       # ORDER MATTERS. The root tree builds the plain libraries and the tools,
       # which no `ost plugin build` reaches -- `plugin package --workspace`
       # needs their binaries -- and it also rewrites the bundle's lib/ without

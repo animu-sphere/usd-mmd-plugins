@@ -16,6 +16,21 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-05
+
+The second release: the PMX stage carries `MmdMaterialAPI` and reaches
+Hydra through `mmdImaging` (stage-contract version 2); MMD motion is
+evaluated by `mmdControl` and handed to `usd-motion-plugins` through
+`mmdMotionAdapter` and `mmdSkeletonAdapter`, and generic clips and
+connector captures retarget onto a PMX; and `mmd_export` writes a validated
+USDZ that opens without these plugins — the parts of Phases 8, 9 and 10 this
+repository owes, each Phase's remainder waiting outside it.
+
+**Stage-contract version 2 is incompatible with version 1:** a material's
+canonical values move from `mmd:material:<name>` to
+`inputs:mmd:material:<name>`, and `usdMmdFileFormat` requires the `mmdSchema`
+bundle at run time.
+
 ### Changed
 
 - **The shoulder is no longer aimed (MOT-O14).** `mmdSkeletonAdapter`'s
@@ -29,6 +44,120 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
   and the hand's line to its middle finger by 0.09°, because only the upper
   arm's roll changed. A consumer passes `targetRest` as before.
   (`MOTION_CONTRACT.md` §12.6; reports 2026-10-04 and 2026-10-05.)
+
+- **The `ost` pin is 0.23.13**, `usd-vrm-plugins`' pin, in
+  `openstrata.ci.yaml`, the generated workflow and `release.yml`. 0.23.10 is
+  the first that lets the `usd` profile select the `usd-imaging` bundle kind
+  `mmdImaging` declares.
+- **`mmd_export`, Phase 10 step 2 (PKG-O1).** Private staged files receive
+  a fixed local timestamp, so repeated runs with the same input bytes,
+  output stem and tool/OpenUSD build produce identical USDZ bytes across
+  time zones and source modification times. Source files stay untouched.
+  Discovery also detects file/directory conflicts with converted textures
+  and the root layer. Tests cover normalized PMX path aliases, unique
+  missing-path diagnostics, timestamp failures and archive reproducibility.
+- **Stage-contract version 2 (Phase 8).** Every material applies
+  `MmdMaterialAPI`, and its canonical values are Material interface inputs,
+  `inputs:mmd:material:<name>`. They replace contract v1's schema-less
+  `mmd:material:<name>` with the same types and meanings. Morph-modulated
+  values and texture slots are varying. A safe texture slot carries
+  `colorSpace = "srgb_rec709_scene"`. `/mtlx` connects to diffuse and the
+  texture, and a textured `/preview` connects to them too, through each
+  graph's own interface inputs. An untextured `/preview` keeps a static copy
+  (MAT-O6). Both contexts draw 15 local models as v1 did in Storm, and a
+  runtime diffuse override now reaches them. `usdMmdFileFormat` now requires
+  the `mmdSchema` bundle at run time. Its `plugInfo.json` names
+  `UsdMmdMaterialAPI` as a plugin dependency, so a host registers both
+  bundles and needs no loader path for the schema's library. The goldens
+  change by these renames and connections only.
+- **Role-table version 2 (MOT-O12).** `mmdSkeletonAdapter` now reports
+  `roleTableVersion` 2. As a target, `上半身2` and `上半身3` bind `chest` and
+  `upperChest` in the model's own chain order, and `上半身3` binds nothing
+  where it is off the neck's chain. As a source, `upperChest` is never
+  emitted: `chest` is the bone the neck hangs from. On the local corpus, arms
+  from models that place `上半身3` below `上半身2` were up to 25° off on
+  targets without it. They are now within 2.5°, as every other pair is.
+
+- **One CMake dependency contract for plain CMake, a single component and
+  `ost`.** Inside the repository an edge is the in-tree target when it
+  exists and the installed package otherwise; outside it, always an
+  installed package found by the component that links it — the adapters now
+  find `motionRetarget` and `motionCore` themselves, and the root lists no
+  external package but OpenUSD. `CMakePresets.json` no longer reads
+  `USD_INSTALL_ROOT`: the caller passes the dependency prefix as
+  `CMAKE_PREFIX_PATH`. The shared CMake is one module per concern
+  (`UsdMmdProject`, `UsdMmdTargets`, `UsdMmdSanitizers`, `UsdMmdPackage`,
+  `UsdMmdTesting`, `UsdMmdOpenUsd`): every library installs through
+  `usdmmd_install_library()`, OpenUSD resolves through
+  `usdmmd_find_openusd()` only where its targets are not yet visible, and
+  build settings are per target. The per-component sanitizer options became
+  `USDMMD_SANITIZERS` and `USDMMD_BUILD_FUZZERS`. The adapters' tests put
+  OpenUSD on `PATH` themselves, so they pass outside an `ost` session.
+  Staging the plugin and tools out of the source tree waits on OpenStrata
+  (`WORKSPACE.md` §5; ost report 01).
+
+- **The `ost` pin is 0.23.4.** 0.23.4 applies the runtime check to
+  `ost library build` and `ost plugin build` as well. It also adds pins for a
+  published bundle and a published test tool (`usd-vrm-plugins`' ost report
+  45), which nothing here uses yet. Re-pinned with the ecosystem.
+
+- **The `ost` pin was 0.23.3.** 0.23.3 adds a tool's own library edges to
+  `ost library pull`, the root build and the graph check, and discards a
+  build tree whose cache was configured against another runtime
+  (`usd-vrm-plugins`' ost report 44). Re-pinned with the ecosystem.
+
+- **MMD IK is compared against an independent implementation (MOT-O9).**
+  Over 12 local characters and two distributed motions, with the inputs
+  matched to 0.02 mm, three.js r168's `CCDIKSolver` at the same stored loop
+  count leaves no less distance than `MOTION_CONTRACT.md` §11.7 overall — a
+  median 10.5 mm against 0.55 mm on an IK-authored motion, at most 29 mm in
+  both — so §11.7 is kept and MOT-O9 is resolved. Where the reference leaves
+  less, on a motion that keys its legs alongside their goals, the difference
+  is that it starts a knee from its keyed rotation where §11.7 starts it
+  from zero: MOT-O11, opened, for MMD's output to decide. Documentation
+  only; report 2026-09-19. (`MOTION_CONTRACT.md` §9, §11.7;
+  `CAPABILITY_MATRIX.md`.)
+
+- **The humanoid role table and root motion are decided (MOT-O5, MOT-O6).**
+  `MOTION_CONTRACT.md` §12, new: table version 1 maps MMD's conventional bone
+  names — exact source names, deforming `D` bones first, never English names
+  or folded spellings — to the shared core's `HumanJoint`s, with a required
+  set of fifteen joints. A clip's rotations are derived from evaluated world
+  rotations, relative to each joint's nearest mapped ancestor, and its root
+  motion is the world transform of the joint `hips` maps to — no MMD bone is
+  chosen as the root. As a target, `hips` binds the nearest common ancestor
+  of the spine and legs. §10 follows what `usd-motion-plugins` has merged:
+  `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` are
+  `motionRetarget`'s, a descriptor carries the stage's joint tokens, and the
+  packages are named `motionCore` and `motionRetarget`. MOT-O10, the rest a
+  clip from MMD states, is opened: every local character's arms rest about
+  40° below horizontal. Documentation only; measured in a dated report
+  (2026-09-19) against 13 local characters and two distributed motions.
+  (`MOTION_CONTRACT.md` §9, §10, §12; `DESIGN_POLICY.md` §5.7, §14, §20.1;
+  `WORKSPACE.md` §1.2, §2, §2.4; `DEPENDENCIES.md` §6.)
+
+- **The shared-motion edge is split by responsibility.** The
+  `mmdMotionAdapter` emits only fully evaluated `MotionPose`/`MotionClip`
+  data. A separate `mmdSkeletonAdapter` exposes
+  `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` and owns the
+  versioned MMD humanoid mapping. Both remain narrow consumers of
+  `usd-motion-plugins`; neither implements generic retargeting. This boundary
+  was decided in documentation first and implemented by the adapter change above.
+  (`MOTION_CONTRACT.md` §10, §12;
+  `DESIGN_POLICY.md` §5.7; `WORKSPACE.md` §1.2, §2.4.)
+
+- **The design documents follow the `usd-motion-plugins` design policy.**
+  VMD stays in this repository and `motionVmd` is no longer described as
+  extraction-ready; MMD IK and append evaluation moves from the avatar
+  runtime to a planned plain library here, `mmdControl`, superseding MOT-O3;
+  planned `mmdMotionAdapter` and `mmdSkeletonAdapter` components are the only
+  dependencies on `usd-motion-plugins`, separately building evaluated motion
+  and the PMX skeleton/role description. Phase 9, shared motion core
+  adoption, is added and runs before Phase 8; MOT-O5 to MOT-O8 are opened.
+  Documentation
+  only: no component, manifest or authored stage changes
+  (`DESIGN_POLICY.md` §5.6, §5.7, §9, §14, §20; `MOTION_CONTRACT.md` §8.2,
+  §10; `WORKSPACE.md` §1.2, §2.4, §7; `DEPENDENCIES.md` §6).
 
 ### Added
 
@@ -129,6 +258,7 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
   smoke runs it installed. `packaging/` fixtures, unit, boundary and fixture
   tests, and a run over the 41 local models: all package, open without the
   plugins, pass `usdchecker`, and match their `.pmx` stages.
+
 - **`mmdSchema`, the Phase 8 schema bundle.** It registers the single-apply
   `MmdMaterialAPI`, which is Material-only and declares the canonical
   material values as Material interface inputs, `inputs:mmd:material:*`.
@@ -139,43 +269,6 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
   as the `mmdSchema` CMake package; Python reads the schema through the
   registry. The importer applies it from stage contract 2. The bundle is a
   release member.
-
-### Changed
-
-- **The `ost` pin is 0.23.13**, `usd-vrm-plugins`' pin, in
-  `openstrata.ci.yaml`, the generated workflow and `release.yml`. 0.23.10 is
-  the first that lets the `usd` profile select the `usd-imaging` bundle kind
-  `mmdImaging` declares.
-- **`mmd_export`, Phase 10 step 2 (PKG-O1).** Private staged files receive
-  a fixed local timestamp, so repeated runs with the same input bytes,
-  output stem and tool/OpenUSD build produce identical USDZ bytes across
-  time zones and source modification times. Source files stay untouched.
-  Discovery also detects file/directory conflicts with converted textures
-  and the root layer. Tests cover normalized PMX path aliases, unique
-  missing-path diagnostics, timestamp failures and archive reproducibility.
-- **Stage-contract version 2 (Phase 8).** Every material applies
-  `MmdMaterialAPI`, and its canonical values are Material interface inputs,
-  `inputs:mmd:material:<name>`. They replace contract v1's schema-less
-  `mmd:material:<name>` with the same types and meanings. Morph-modulated
-  values and texture slots are varying. A safe texture slot carries
-  `colorSpace = "srgb_rec709_scene"`. `/mtlx` connects to diffuse and the
-  texture, and a textured `/preview` connects to them too, through each
-  graph's own interface inputs. An untextured `/preview` keeps a static copy
-  (MAT-O6). Both contexts draw 15 local models as v1 did in Storm, and a
-  runtime diffuse override now reaches them. `usdMmdFileFormat` now requires
-  the `mmdSchema` bundle at run time. Its `plugInfo.json` names
-  `UsdMmdMaterialAPI` as a plugin dependency, so a host registers both
-  bundles and needs no loader path for the schema's library. The goldens
-  change by these renames and connections only.
-- **Role-table version 2 (MOT-O12).** `mmdSkeletonAdapter` now reports
-  `roleTableVersion` 2. As a target, `上半身2` and `上半身3` bind `chest` and
-  `upperChest` in the model's own chain order, and `上半身3` binds nothing
-  where it is off the neck's chain. As a source, `upperChest` is never
-  emitted: `chest` is the bone the neck hangs from. On the local corpus, arms
-  from models that place `上半身3` below `上半身2` were up to 25° off on
-  targets without it. They are now within 2.5°, as every other pair is.
-
-### Added
 
 - **Phase 9 shared-motion adapters.** `mmdSkeletonAdapter` implements role-table
   version 1 and builds the PMX stage's `SkeletonDescriptor`, source rest and
@@ -225,89 +318,6 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
   resolved, and MOT-O9 — whether MMD's own IK leaves less distance at a
   model's loop count — is opened (`MOTION_CONTRACT.md` §9, §11; report
   2026-09-19).
-
-### Changed
-
-- **One CMake dependency contract for plain CMake, a single component and
-  `ost`.** Inside the repository an edge is the in-tree target when it
-  exists and the installed package otherwise; outside it, always an
-  installed package found by the component that links it — the adapters now
-  find `motionRetarget` and `motionCore` themselves, and the root lists no
-  external package but OpenUSD. `CMakePresets.json` no longer reads
-  `USD_INSTALL_ROOT`: the caller passes the dependency prefix as
-  `CMAKE_PREFIX_PATH`. The shared CMake is one module per concern
-  (`UsdMmdProject`, `UsdMmdTargets`, `UsdMmdSanitizers`, `UsdMmdPackage`,
-  `UsdMmdTesting`, `UsdMmdOpenUsd`): every library installs through
-  `usdmmd_install_library()`, OpenUSD resolves through
-  `usdmmd_find_openusd()` only where its targets are not yet visible, and
-  build settings are per target. The per-component sanitizer options became
-  `USDMMD_SANITIZERS` and `USDMMD_BUILD_FUZZERS`. The adapters' tests put
-  OpenUSD on `PATH` themselves, so they pass outside an `ost` session.
-  Staging the plugin and tools out of the source tree waits on OpenStrata
-  (`WORKSPACE.md` §5; ost report 01).
-
-- **The `ost` pin is 0.23.4.** 0.23.4 applies the runtime check to
-  `ost library build` and `ost plugin build` as well. It also adds pins for a
-  published bundle and a published test tool (`usd-vrm-plugins`' ost report
-  45), which nothing here uses yet. Re-pinned with the ecosystem.
-
-- **The `ost` pin was 0.23.3.** 0.23.3 adds a tool's own library edges to
-  `ost library pull`, the root build and the graph check, and discards a
-  build tree whose cache was configured against another runtime
-  (`usd-vrm-plugins`' ost report 44). Re-pinned with the ecosystem.
-
-- **MMD IK is compared against an independent implementation (MOT-O9).**
-  Over 12 local characters and two distributed motions, with the inputs
-  matched to 0.02 mm, three.js r168's `CCDIKSolver` at the same stored loop
-  count leaves no less distance than `MOTION_CONTRACT.md` §11.7 overall — a
-  median 10.5 mm against 0.55 mm on an IK-authored motion, at most 29 mm in
-  both — so §11.7 is kept and MOT-O9 is resolved. Where the reference leaves
-  less, on a motion that keys its legs alongside their goals, the difference
-  is that it starts a knee from its keyed rotation where §11.7 starts it
-  from zero: MOT-O11, opened, for MMD's output to decide. Documentation
-  only; report 2026-09-19. (`MOTION_CONTRACT.md` §9, §11.7;
-  `CAPABILITY_MATRIX.md`.)
-
-- **The humanoid role table and root motion are decided (MOT-O5, MOT-O6).**
-  `MOTION_CONTRACT.md` §12, new: table version 1 maps MMD's conventional bone
-  names — exact source names, deforming `D` bones first, never English names
-  or folded spellings — to the shared core's `HumanJoint`s, with a required
-  set of fifteen joints. A clip's rotations are derived from evaluated world
-  rotations, relative to each joint's nearest mapped ancestor, and its root
-  motion is the world transform of the joint `hips` maps to — no MMD bone is
-  chosen as the root. As a target, `hips` binds the nearest common ancestor
-  of the spine and legs. §10 follows what `usd-motion-plugins` has merged:
-  `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` are
-  `motionRetarget`'s, a descriptor carries the stage's joint tokens, and the
-  packages are named `motionCore` and `motionRetarget`. MOT-O10, the rest a
-  clip from MMD states, is opened: every local character's arms rest about
-  40° below horizontal. Documentation only; measured in a dated report
-  (2026-09-19) against 13 local characters and two distributed motions.
-  (`MOTION_CONTRACT.md` §9, §10, §12; `DESIGN_POLICY.md` §5.7, §14, §20.1;
-  `WORKSPACE.md` §1.2, §2, §2.4; `DEPENDENCIES.md` §6.)
-
-- **The shared-motion edge is split by responsibility.** The
-  `mmdMotionAdapter` emits only fully evaluated `MotionPose`/`MotionClip`
-  data. A separate `mmdSkeletonAdapter` exposes
-  `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose` and owns the
-  versioned MMD humanoid mapping. Both remain narrow consumers of
-  `usd-motion-plugins`; neither implements generic retargeting. This boundary
-  was decided in documentation first and implemented by the adapter change above.
-  (`MOTION_CONTRACT.md` §10, §12;
-  `DESIGN_POLICY.md` §5.7; `WORKSPACE.md` §1.2, §2.4.)
-
-- **The design documents follow the `usd-motion-plugins` design policy.**
-  VMD stays in this repository and `motionVmd` is no longer described as
-  extraction-ready; MMD IK and append evaluation moves from the avatar
-  runtime to a planned plain library here, `mmdControl`, superseding MOT-O3;
-  planned `mmdMotionAdapter` and `mmdSkeletonAdapter` components are the only
-  dependencies on `usd-motion-plugins`, separately building evaluated motion
-  and the PMX skeleton/role description. Phase 9, shared motion core
-  adoption, is added and runs before Phase 8; MOT-O5 to MOT-O8 are opened.
-  Documentation
-  only: no component, manifest or authored stage changes
-  (`DESIGN_POLICY.md` §5.6, §5.7, §9, §14, §20; `MOTION_CONTRACT.md` §8.2,
-  §10; `WORKSPACE.md` §1.2, §2.4, §7; `DEPENDENCIES.md` §6).
 
 ## [0.1.0] - 2026-09-17
 

@@ -20,7 +20,7 @@ restate them.
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(mmdPmx 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(mmdPmx 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdPmx::mmdPmx` (static library) |
 | Headers | `include/mmdPmx/` — `Reader.h`, `Document.h`, `Diagnostic.h`, `DiagnosticList.h`, `Result.h`, `Codes.h` |
 | Required packages | none: the package's config names no `find_dependency` |
@@ -38,7 +38,7 @@ alone.
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(mmdModel 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(mmdModel 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdModel::mmdModel` (static library), which links `mmdPmx::mmdPmx` publicly |
 | Headers | `include/mmdModel/` — `Canonicalize.h`, `CanonicalDocument.h`, `Basis.h`, `Codes.h` |
 | Required packages | `mmdPmx`, found by the package's config (`find_dependency(mmdPmx CONFIG)`) unless the consumer already has the target |
@@ -58,7 +58,7 @@ through it.
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(motionVmd 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(motionVmd 0.2 CONFIG REQUIRED)` |
 | Imported target | `motionVmd::motionVmd` (static library) |
 | Headers | `include/motionVmd/` — `Reader.h`, `Document.h`, `Motion.h`, `Cp932.h`, `Diagnostic.h`, `Result.h`, `Codes.h` |
 | Required packages | none: the package's config names no `find_dependency` |
@@ -76,7 +76,7 @@ installed prefix alone.
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(mmdMotionBinding 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(mmdMotionBinding 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdMotionBinding::mmdMotionBinding` (static library), which links `mmdModel::mmdModel` and `motionVmd::motionVmd` publicly |
 | Headers | `include/mmdMotionBinding/` — `Bind.h`, `Codes.h` |
 | Required packages | `mmdModel` and `motionVmd`, found by the package's config (`find_dependency`) unless the consumer already has the targets; `mmdModel`'s finds `mmdPmx` |
@@ -96,7 +96,7 @@ and binds one to a PMX fixture.
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(mmdControl 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(mmdControl 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdControl::mmdControl` (static library), which links `mmdMotionBinding::mmdMotionBinding` and `mmdModel::mmdModel` publicly |
 | Headers | `include/mmdControl/` — `Evaluator.h`, `Sample.h`, `Codes.h` |
 | Required packages | `mmdMotionBinding` and `mmdModel`, found by the package's config (`find_dependency`) unless the consumer already has the targets; they find `motionVmd` and `mmdPmx` |
@@ -116,7 +116,7 @@ five packages alone. The installed-consumer lane's `control_probe` finds
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(mmdSkeletonAdapter 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(mmdSkeletonAdapter 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdSkeletonAdapter::mmdSkeletonAdapter` (static library), which links `mmdModel::mmdModel` and `motionRetarget::motionRetarget` publicly, and `motionSource::motionSource` privately |
 | Headers | `include/mmdSkeletonAdapter/` — `Adapter.h` |
 | Required packages | `mmdModel` and released `motionRetarget` `>=0.5.3,<0.6` and `motionSource` `>=0.5.2,<0.6`; the external packages find `motionCore` and the same OpenUSD foundation runtime. `motionSource` is found although it is a private link, because a static library's private link reaches its consumer's link line |
@@ -133,7 +133,7 @@ outside the source tree against those external packages.
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(mmdMotionAdapter 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(mmdMotionAdapter 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdMotionAdapter::mmdMotionAdapter` (static library), which links `mmdControl`, `mmdModel`, `mmdSkeletonAdapter` and `motionCore` publicly |
 | Headers | `include/mmdMotionAdapter/` — `Adapter.h`, `Codes.h` |
 | Required packages | the three repository packages above and released `motionCore >=0.5.3,<0.6` |
@@ -157,7 +157,7 @@ the library relative to itself.
 
 | | |
 | --- | --- |
-| `find_package` | `find_package(mmdSchema 0.1 CONFIG REQUIRED)` |
+| `find_package` | `find_package(mmdSchema 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdSchema::mmdSchema` (shared library), which links OpenUSD's `usd` publicly (or the `usd_ms` monolith) |
 | Headers | `include/mmdSchema/` — `mmdMaterialAPI.h` (`UsdMmdMaterialAPI`), `tokens.h` (`UsdMmdTokens`), `api.h` |
 | Required packages | `pxr` (OpenUSD 26.08), found by the package config unless the consumer has already resolved it |

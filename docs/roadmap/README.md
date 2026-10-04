@@ -36,9 +36,9 @@ in.** No other document states a version for a Phase.
 | 5 | control semantics | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 6 | physics preservation | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
 | 7 | VMD | ✅ done | [v0.1.0](../releases/v0.1.0.md) |
-| 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | ⬜ | unassigned; schema/adapter work is here, composition is owned mostly outside this repository |
-| 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the A-pose rest (MOT-O10) is stated as the arm chain's reference rest on both sides; expression interoperability waits on `usd-motion-plugins`; role-table version 2 resolves MOT-O12 | unassigned |
-| 10 | USDZ packaging (`mmd_export`) | 🚧 steps 1–3 done: validated plugin-free USDZ, robust paths, deterministic bytes and optional ASCII archive names ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)); the shared layer (step 4) waits for two working tools | unassigned |
+| 8 | `MmdMaterialAPI`, renderer bridge and avatar runtime composition, including optional physics coupling | 🚧 this repository's part done: `mmdSchema`, the importer on stage-contract v2, `mmdImaging`, generic clips and connector captures onto a PMX, and the pose finish (MOT-O13, MOT-O15); `hydra-toon`'s MMD path, the avatar runtime and physics are owned outside this repository | [v0.2.0](../releases/v0.2.0.md) in part; the rest unassigned |
+| 9 | shared motion core adoption — runs before Phase 8 | 🚧 skeletal evaluator, adapters and end-to-end acceptance done; the arm chain's reference rest (MOT-O10, MOT-O14) and role-table version 2 (MOT-O12) are stated; expression interoperability waits on `usd-motion-plugins`, and MOT-O11 on MMD's own output | [v0.2.0](../releases/v0.2.0.md) in part; the rest unassigned |
+| 10 | USDZ packaging (`mmd_export`) | 🚧 steps 1–3 done: validated plugin-free USDZ, robust paths, deterministic bytes and optional ASCII archive names ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)); the shared layer (step 4) waits for two working tools | [v0.2.0](../releases/v0.2.0.md), steps 1–3; step 4 unassigned |
 
 Phases 0–7 ship together in v0.1.0, the first release, decided on
 2026-09-17: it is the one that meets
@@ -47,6 +47,11 @@ Phases 0–7 ship together in v0.1.0, the first release, decided on
 Phase 7 too. It is a 0.x release because no consumer has used the packages
 yet: Phase 8's consumer may still show a contract wrong
 ([current.md](current.md)). No earlier Phase had a release of its own.
+
+Phases 8, 9 and 10 ship in part in v0.2.0, decided on 2026-10-05: everything
+this repository owes in them that does not wait on another repository. What
+remains of each stays in [current.md](current.md), and a later release carries
+it when it lands. It is still 0.x: no consumer has used the packages yet.
 
 Where things stand, as of 2026-09-25:
 

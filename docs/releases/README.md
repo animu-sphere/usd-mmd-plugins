@@ -11,6 +11,7 @@ stated only in its
 | Version | Record | Theme |
 | --- | --- | --- |
 | v0.1.0 | [v0.1.0.md](v0.1.0.md) | The first release: PMX import as the canonical stage, with morphs, rig and physics preserved, and VMD motion read and bound — Phases 0–7 |
+| v0.2.0 | [v0.2.0.md](v0.2.0.md) | `MmdMaterialAPI` and its Hydra view (stage-contract 2), MMD motion evaluated and handed to the shared motion core, and USDZ export — this repository's part of Phases 8, 9 and 10 |
 
 ## How a release is cut
 
@@ -30,8 +31,8 @@ stated only in its
    publishes automatically.
 
 On each of Windows x86_64, macOS arm64 and Linux x86_64, the workflow builds
-the root tree and then the bundle, runs the bundle's verification pyramid
-against the build tree and against its package, packages the bundle, both
+the root tree and then the bundles, runs each bundle's verification pyramid
+against the build tree and against its package, packages the bundles, the
 tools and the aggregate product twice and requires the same digests, installs
 the product into a fresh prefix and uses it from there alone
 (`scripts/product_smoke.py`), and checks the release set against the tree's

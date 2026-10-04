@@ -64,7 +64,7 @@ consumer can ignore.
 | Version | Change |
 | --- | --- |
 | 1 | Phases 0–7, v0.1.0. |
-| 2 | Phase 8 (2026-09-25). `MmdMaterialAPI` is applied, and the canonical material values are renamed from `mmd:material:<name>` to `inputs:mmd:material:<name>`, with the same types and meanings. The values a material morph modulates, and the texture slots, are varying. `/preview` and `/mtlx` connect to them ([MATERIAL_POLICY.md §4.1](MATERIAL_POLICY.md#41-attributes), [§14](MATERIAL_POLICY.md#14-migration-and-implementation-order)). |
+| 2 | Phase 8 (2026-09-25), v0.2.0. `MmdMaterialAPI` is applied, and the canonical material values are renamed from `mmd:material:<name>` to `inputs:mmd:material:<name>`, with the same types and meanings. The values a material morph modulates, and the texture slots, are varying. `/preview` and `/mtlx` connect to them ([MATERIAL_POLICY.md §4.1](MATERIAL_POLICY.md#41-attributes), [§14](MATERIAL_POLICY.md#14-migration-and-implementation-order)). |
 
 ## 3. Authoring conventions
 
