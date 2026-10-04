@@ -215,6 +215,8 @@ copying those values
   from a VRMA and 9.8° from a mocopi BVH. A fold that respects the rests
   makes them exact. It is a generic rule, so it waits on
   `usd-motion-plugins`' retarget contract, and this repository keeps no copy.
+  The fold is proposed there as
+  [usd-motion-plugins#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35).
 - ⬜ Verify `motion-connectors → MotionPose → shared retarget → PMX` first from
   deterministic recorded captures. Live devices and network access are demo
   concerns, not CI requirements, and no protocol dependency enters this
