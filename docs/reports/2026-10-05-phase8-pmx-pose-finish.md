@@ -97,8 +97,11 @@ one (the legs), would undo that. So the held joints take neither, and the
 chains that would touch them stay off.
 
 **The roll belongs to the twist bones.** That is where MMD motions put it,
-and where the models weight it. Moving it is exact for every joint below,
-because the twist is composed back on the next joint down.
+and where the models weight it. Moving it is exact for every joint below
+when the twist bone sits on the arm's bone line, because the twist is
+composed back on the next joint down. Where it sits off the line, as it does
+on some models, its offset has to turn with the roll, or the joints below it
+shift by that offset's turn. §10.10 states that.
 
 These are recorded as
 [MOTION_CONTRACT.md §10.10](../design/MOTION_CONTRACT.md#1010-finishing-a-retargeted-pose-on-a-pmx)

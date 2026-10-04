@@ -598,10 +598,12 @@ therefore finishes each retargeted pose in three steps:
    twist bone below: `upperArm`'s onto `腕捩`, and `lowerArm`'s onto `手捩`.
    The rotation is split into a swing and a twist about the joint's bone
    direction at rest, toward its follower (§12.6). The swing stays on the
-   joint, and the twist is composed onto the twist bone. Every joint below
-   is posed exactly as before. Only the skin between them differs: MMD rolls
-   an arm through its twist bone, and rolling `腕` turns the shoulder's skin
-   with it. A twist bone is used only where its exact source name is a joint
+   joint. The twist is composed onto the twist bone, and the twist bone's
+   offset is turned by it too, about the joint, so the twist bone keeps its
+   world transform even where it sits off the bone line. Every joint below
+   is then posed exactly as before. Only the skin between them differs: MMD
+   rolls an arm through its twist bone, and rolling `腕` turns the shoulder's
+   skin with it. A twist bone is used only where its exact source name is a joint
    below the arm joint and above that joint's follower. Over the local takes
    and characters, up to 54° of upper-arm roll moved.
 2. **Held joints.** `mmdSkeletonAdapter` states the joints the retarget
