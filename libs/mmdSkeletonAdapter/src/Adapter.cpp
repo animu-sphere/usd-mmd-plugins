@@ -2,8 +2,11 @@
 
 #include "mmdSkeletonAdapter/Adapter.h"
 
+#include <motionSource/CanonicalConversion.h>
+
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <initializer_list>
 #include <limits>
 #include <string>
@@ -201,6 +204,118 @@ TargetHips(const CanonicalDocument& model, const std::array<int, HumanJointCount
     return kUnmapped;
 }
 
+// The arm chain, each role after its semantic parent (MOTION_CONTRACT.md §12.6).
+constexpr std::array<HumanJoint, 8> kArmChain{{
+    HumanJoint::LeftShoulder, HumanJoint::LeftUpperArm, HumanJoint::LeftLowerArm, HumanJoint::LeftHand,
+    HumanJoint::RightShoulder, HumanJoint::RightUpperArm, HumanJoint::RightLowerArm, HumanJoint::RightHand,
+}};
+
+pxr::GfVec3f
+RestPosition(const CanonicalDocument& model, int joint)
+{
+    const Double3& position = model.skeleton.bones[static_cast<std::size_t>(joint)].position;
+    return pxr::GfVec3f(static_cast<float>(position[0]), static_cast<float>(position[1]),
+                        static_cast<float>(position[2]));
+}
+
+// Each role's world reference rest over one binding of roles to joints:
+// identity outside the arm chain, and the shared core's T-pose aim within it.
+// The follower is the role's only mapped child, or the one sharing its T-pose
+// direction; a role without one inherits its parent's rest unaimed.
+std::array<pxr::GfQuatf, HumanJointCount>
+ArmChainAims(const CanonicalDocument& model, const std::array<int, HumanJointCount>& joints)
+{
+    const pxr::GfQuatf identity(1.0f, pxr::GfVec3f(0.0f));
+    std::bitset<HumanJointCount> present;
+    for (std::size_t role = 0; role < HumanJointCount; ++role) {
+        present.set(role, joints[role] != kUnmapped);
+    }
+
+    std::array<pxr::GfQuatf, HumanJointCount> world;
+    world.fill(identity);
+    for (const HumanJoint role : kArmChain) {
+        const std::size_t index = static_cast<std::size_t>(role);
+        if (!present.test(index)) {
+            continue;
+        }
+        const auto parent = openstrata::motion::NearestPresentAncestor(role, present);
+        const pxr::GfQuatf inherited = parent ? world[static_cast<std::size_t>(*parent)] : identity;
+        world[index] = inherited;
+
+        const pxr::GfVec3f wanted = openstrata::motion::TPoseDirection(role);
+        std::vector<HumanJoint> children;
+        for (std::size_t child = 0; child < HumanJointCount; ++child) {
+            const HumanJoint candidate = static_cast<HumanJoint>(child);
+            if (present.test(child) &&
+                openstrata::motion::NearestPresentAncestor(candidate, present) == role) {
+                children.push_back(candidate);
+            }
+        }
+        auto follower = children.end();
+        if (children.size() == 1) {
+            follower = children.begin();
+        } else {
+            follower = std::find_if(children.begin(), children.end(), [&](HumanJoint child) {
+                return openstrata::motion::TPoseDirection(child) == wanted;
+            });
+        }
+        if (follower == children.end()) {
+            continue;
+        }
+        pxr::GfVec3f along = RestPosition(model, joints[static_cast<std::size_t>(*follower)]) -
+                             RestPosition(model, joints[index]);
+        if (along.GetLength() < 1.0e-9f) {
+            continue;
+        }
+        along.Normalize();
+        world[index] =
+            openstrata::motion::ShortestRotation(inherited.Transform(along), wanted) * inherited;
+    }
+    return world;
+}
+
+// The aim as local rotations over the PMX skeleton's own joints: each bound
+// chain joint relative to its skeleton parent's reference rest, every other
+// slot unset, so 肩P, 肩C, the twist bones and the fingers pass the aim on.
+openstrata::motion::TargetRestPose
+TargetArmChainRest(const openstrata::motion::SkeletonDescriptor& skeleton,
+                   const openstrata::motion::RetargetMap& map,
+                   const std::array<pxr::GfQuatf, HumanJointCount>& aims)
+{
+    openstrata::motion::TargetRestPose rest;
+    rest.localRotations.resize(skeleton.GetSize());
+    const std::vector<openstrata::motion::SkeletonJoint>& joints = skeleton.GetJoints();
+    const auto depth = [&](int joint) {
+        int levels = 0;
+        for (int at = joints[static_cast<std::size_t>(joint)].parent; at >= 0;
+             at = joints[static_cast<std::size_t>(at)].parent) {
+            ++levels;
+        }
+        return levels;
+    };
+
+    // Ancestors first, so each slot is stated against the rests above it.
+    std::vector<std::pair<int, HumanJoint>> bound;
+    for (const HumanJoint role : kArmChain) {
+        const int joint = map.GetJointIndex(role);
+        if (joint >= 0 && static_cast<std::size_t>(joint) < joints.size()) {
+            bound.emplace_back(joint, role);
+        }
+    }
+    std::stable_sort(bound.begin(), bound.end(), [&](const auto& a, const auto& b) {
+        return depth(a.first) < depth(b.first);
+    });
+    for (const auto& [joint, role] : bound) {
+        const int parent = joints[static_cast<std::size_t>(joint)].parent;
+        const pxr::GfQuatf parentRest = parent >= 0
+                                            ? rest.GetWorldRestRotation(skeleton, parent)
+                                            : pxr::GfQuatf(1.0f, pxr::GfVec3f(0.0f));
+        rest.localRotations[static_cast<std::size_t>(joint)] =
+            parentRest.GetInverse() * aims[static_cast<std::size_t>(role)];
+    }
+    return rest;
+}
+
 } // namespace
 
 int
@@ -280,6 +395,28 @@ Adapt(const CanonicalDocument& model)
                                         static_cast<float>(parentPosition[2]));
         }
         adapted.sourceRest.localTranslations[i] = translation;
+    }
+
+    // MOTION_CONTRACT.md §12.6: the arm chain's T-pose aim, on both sides.
+    const auto sourceAims = ArmChainAims(model, adapted.sourceJoints);
+    for (const HumanJoint role : kArmChain) {
+        const std::size_t index = static_cast<std::size_t>(role);
+        if (!adapted.sourcePresent.test(index)) {
+            continue;
+        }
+        const std::size_t parent = adapted.sourceRest.parents[index];
+        const pxr::GfQuatf parentRest = parent < HumanJointCount
+                                            ? sourceAims[parent]
+                                            : pxr::GfQuatf(1.0f, pxr::GfVec3f(0.0f));
+        adapted.sourceRest.localRotations[index] = parentRest.GetInverse() * sourceAims[index];
+    }
+    if (built.skeleton) {
+        std::array<int, HumanJointCount> boundJoints{};
+        for (std::size_t role = 0; role < HumanJointCount; ++role) {
+            boundJoints[role] = adapted.targetMap.GetJointIndex(static_cast<HumanJoint>(role));
+        }
+        adapted.targetRest = TargetArmChainRest(adapted.skeleton, adapted.targetMap,
+                                                ArmChainAims(model, boundJoints));
     }
 
     return adapted;

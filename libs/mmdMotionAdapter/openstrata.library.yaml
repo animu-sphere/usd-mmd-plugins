@@ -13,33 +13,33 @@ requires:
     - id: mmdSkeletonAdapter
       version: ">=0.1,<0.2"
     - id: motionCore
-      version: ">=0.5,<0.6"
+      version: ">=0.5.2,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:2aa549d1d764ef99527f31b71533133ac1c98e48843c63feccf6c69cc551219d
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:32b6ba1bc4b155278fbc388e24a0e9130f19540be9a980cb48bf049637bfe9e7
+            digest: sha256:c91e824f83e9daaad903561f2acf5c2bfaf02773406a9be8b89ab75136bb03ac
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:e56dd0916ae5a34d346bb5152cbb49ef4b49374e3e612bff0b613b767afe8360
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:0a2c796e1929abcca6b4bba75509b8139a1fd757cb1c4fe6f9a165eee55e8d49
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:54f62ff034b02babe2470a78d78aa18c44b4c2245d09d53ec7d7af0ccc6888e0
+            digest: sha256:9ca3835e8eb4dabef80867f1bebe4a4583745411ecef992b446d5bc4717e391f
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:08b8b83b3139325b64f32bba96223c5f726c412e2d7b5a1b3f3e9aa6704f6571
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:f06fef790e19371c3d085c667e44805d738b63e8af77df2d8fafa6a41d5969a5
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:7e5c67b9ae5defa40887b7dbaccea0bb5258ae3e86b1e2d14e7c82ae13ce0564
+            digest: sha256:1d2ac0bce7211539c008a0a584088d9acdebdada39f020ab489e3d7796eb29cb
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:9f05cf3b1c5c4663ef5350b3d37a0a1512b7692a72b993b2c25e50ed4c38de08
     # Test-only: the exported adapter target still links motionCore alone.
     # Phase 9's acceptance test round-trips its MotionClip through motionUsd.
     - id: motionUsd
-      version: ">=0.5,<0.6"
+      version: ">=0.5.2,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:9cfc2a8985a5d30a20d61603f6fd773fdb767ba328079778b7890d32827445ed
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:0b5d8c4a7bbfbc159a4b48fdece7c1549686ab03ab57a7ef5f5a7b6ece9562e4
+            digest: sha256:e5ef038e604072a69a0c2a10ffd6f62aba692ca918374aafa4ac424ada09748d
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:426f96648b1722395910b34a2b7de12b498e69e945c636a0ad8d8b61ef0e2530
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:2261c7187e0f8c3dae2be077889a7b45d247d6f94df5ac665c214312d65dc0fd
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:333a32c1b0adc67264cef18f4154eed4eb23cd409898f244c80e081ddd236ff5
+            digest: sha256:c9f840a16ee25cf92248a401f725ac90a79a9bfe2d5e89cf16b597c3d0359bc5
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ee176bdded7bc7c097e51e1aaf04f5311b88d5a518e580b3d500c5bd10b5870d
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:f11545538fa3a72d9efa6dd108f155123af66b7ee1f52d227f0b345b2ceac5bc
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:5a7c9982828aacc3b00435f1dd2c2dee9710bc12961ad8b59f64dadfd77d45ee
+            digest: sha256:e57fa819a0249138c23f32501b4acbc3f363e08516b6ded45f050e5276f5c298
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ea5cc8b0e19cee38573c3178ba03e1a0cc22ba72795bc82e343a9b0102f65709
 cmake:
   package: mmdMotionAdapter
   target: mmdMotionAdapter::mmdMotionAdapter

@@ -25,14 +25,14 @@ Commands are PowerShell, run from the repository root.
 
 Plain CMake is given one thing: the **dependency prefix**, as
 `CMAKE_PREFIX_PATH` — OpenUSD 26.08, and `usd-motion-plugins`' `motionCore`,
-`motionRetarget` and `motionUsd` 0.5 packages, installed
+`motionRetarget`, `motionSource` and `motionUsd` 0.5.2 packages, installed
 ([WORKSPACE.md §5](../architecture/WORKSPACE.md#5-build-modes)). Nothing looks
 for a sibling checkout. The presets in `CMakePresets.json` set the generator,
 the architecture and the tests, and leave the prefix to the caller, either on
 the command line or in CMake's own environment variable:
 
 ```powershell
-$env:CMAKE_PREFIX_PATH = "<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionUsd>"
+$env:CMAKE_PREFIX_PATH = "<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionSource>;<motionUsd>"
 cmake --preset windows-msvc
 cmake --build --preset windows-release
 ctest --preset windows-release
@@ -111,12 +111,12 @@ Every component under `libs/`, `tools/` and `plugins/` configures on its own,
 against the installed packages of its edges. Install a repository build, then
 point a component at that install and the dependency prefix — for example the
 motion adapter, which finds `mmdControl`, `mmdModel`, `mmdSkeletonAdapter` and
-`motionCore` there, and `motionRetarget` and `motionUsd` for its acceptance
-test:
+`motionCore` there, `motionRetarget` and `motionSource` through the skeleton
+adapter, and `motionUsd` for its acceptance test:
 
 ```powershell
 cmake --install build/windows-msvc --prefix build/usdmmd-install --config Release
-$env:CMAKE_PREFIX_PATH = "<repo>/build/usdmmd-install;<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionUsd>"
+$env:CMAKE_PREFIX_PATH = "<repo>/build/usdmmd-install;<OpenUSD 26.08>;<motionCore>;<motionRetarget>;<motionSource>;<motionUsd>"
 cmake -S libs/mmdMotionAdapter -B build/mmdMotionAdapter -A x64
 cmake --build build/mmdMotionAdapter --config Release
 ctest --test-dir build/mmdMotionAdapter -C Release

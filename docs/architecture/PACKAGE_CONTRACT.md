@@ -117,16 +117,16 @@ five packages alone. The installed-consumer lane's `control_probe` finds
 | | |
 | --- | --- |
 | `find_package` | `find_package(mmdSkeletonAdapter 0.1 CONFIG REQUIRED)` |
-| Imported target | `mmdSkeletonAdapter::mmdSkeletonAdapter` (static library), which links `mmdModel::mmdModel` and `motionRetarget::motionRetarget` publicly |
+| Imported target | `mmdSkeletonAdapter::mmdSkeletonAdapter` (static library), which links `mmdModel::mmdModel` and `motionRetarget::motionRetarget` publicly, and `motionSource::motionSource` privately |
 | Headers | `include/mmdSkeletonAdapter/` — `Adapter.h` |
-| Required packages | `mmdModel` and released `motionRetarget >=0.5,<0.6`; the external package finds `motionCore` and the same OpenUSD foundation runtime |
+| Required packages | `mmdModel` and released `motionRetarget` and `motionSource` `>=0.5.2,<0.6`; the external packages find `motionCore` and the same OpenUSD foundation runtime. `motionSource` is found although it is a private link, because a static library's private link reaches its consumer's link line |
 | Language | C++20 (`cxx_std_20` is a usage requirement) |
 | Version compatibility | `SameMinorVersion`, as `mmdPmx` |
 | Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdSkeletonAdapter/`, and `include/mmdSkeletonAdapter/` |
 
-Its manifest pins `motionRetarget` and that package's `motionCore` dependency
-by archive and OCI digest for each supported target, so its isolated artifact
-closure is complete. The installed-consumer lane verifies the package from
+Its manifest pins `motionRetarget`, `motionSource` and their `motionCore`
+dependency by archive and OCI digest for each supported target, so its
+isolated artifact closure is complete. The installed-consumer lane verifies the package from
 outside the source tree against those external packages.
 
 ## `mmdMotionAdapter`
@@ -136,7 +136,7 @@ outside the source tree against those external packages.
 | `find_package` | `find_package(mmdMotionAdapter 0.1 CONFIG REQUIRED)` |
 | Imported target | `mmdMotionAdapter::mmdMotionAdapter` (static library), which links `mmdControl`, `mmdModel`, `mmdSkeletonAdapter` and `motionCore` publicly |
 | Headers | `include/mmdMotionAdapter/` — `Adapter.h`, `Codes.h` |
-| Required packages | the three repository packages above and released `motionCore >=0.5,<0.6` |
+| Required packages | the three repository packages above and released `motionCore >=0.5.2,<0.6` |
 | Language | C++20 (`cxx_std_20` is a usage requirement) |
 | Version compatibility | `SameMinorVersion`, as `mmdPmx` |
 | Installed files | `${CMAKE_INSTALL_LIBDIR}/` (the archive), `${CMAKE_INSTALL_LIBDIR}/cmake/mmdMotionAdapter/`, and `include/mmdMotionAdapter/` |

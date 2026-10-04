@@ -64,7 +64,7 @@ And the evaluator Phase 9 created
 | Identity | Kind | Directory | Manifest | Role | Created in | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `mmdControl` | plain static CMake library | `libs/mmdControl/` | `openstrata.library.yaml` | MMD control evaluation: samples a bound motion's Bézier curves at an explicit time, and evaluates bone morphs, append transforms and IK chains over `mmdModel`'s control semantics into deformation-joint local transforms. No OpenUSD, no `usd-motion-plugins`. | Phase 9 | exists |
-| `mmdSkeletonAdapter` | plain static CMake library | `libs/mmdSkeletonAdapter/` | `openstrata.library.yaml` | Exposes a canonical PMX skeleton as `SkeletonDescriptor`, `RetargetMap` and `SourceRestPose`; owns role-table version 2 and no retarget algorithm. | Phase 9 | exists |
+| `mmdSkeletonAdapter` | plain static CMake library | `libs/mmdSkeletonAdapter/` | `openstrata.library.yaml` | Exposes a canonical PMX skeleton as `SkeletonDescriptor`, `RetargetMap`, `SourceRestPose` and `TargetRestPose`; owns role-table version 2 and the arm chain's reference rest, and no retarget algorithm. | Phase 9 | exists |
 | `mmdMotionAdapter` | plain static CMake library | `libs/mmdMotionAdapter/` | `openstrata.library.yaml` | Converts fully evaluated `mmdControl` output into `MotionClip`, using `mmdSkeletonAdapter` for roles and source rest; owns no target-avatar knowledge. | Phase 9 | exists |
 
 And the schema bundle Phase 8 created
@@ -129,8 +129,9 @@ mmd_export ──────────→ OpenUSD only (tf, vt, ar, sdf, usd,
                        (later)
 mmdMaterial ─────────→ nothing in this repository; mmdModel → mmdMaterial
 mmdSkeletonAdapter ──→ mmdModel,
-                       usd-motion-plugins motionRetarget (OpenUSD foundation
-                                                          types only, through it)
+                       usd-motion-plugins motionRetarget, motionSource
+                                                         (OpenUSD foundation
+                                                          types only, through them)
 mmdMotionAdapter ────→ mmdControl, mmdModel, mmdSkeletonAdapter,
                        usd-motion-plugins motionCore     (OpenUSD foundation
                                                           types only, through it)
@@ -210,7 +211,7 @@ both also refusing any `mmdPmx/` or `mmdModel/` include (`--forbid-include`);
 over `libs/mmdControl` with `mmdMotionBinding::mmdMotionBinding` and
 `mmdModel::mmdModel`, also refusing any `motionCore/` include.
 `mmdSkeletonAdapter_boundaries` runs with that library, allowing
-`motionRetarget`; `mmdMotionAdapter_boundaries` allows `motionCore` and the
+`motionRetarget` and `motionSource`; `mmdMotionAdapter_boundaries` allows `motionCore` and the
 skeleton adapter. Those are the two narrow external adapter edges (§2.4).
 The separate `mmdMotionAdapter_acceptance` executable intentionally links
 `motionRetarget` and stage-level `motionUsd`; it is not the library target the
@@ -256,10 +257,11 @@ usd-stage-runner ────→ usd-physics-plugins
 | Never the reverse | `usd-motion-plugins` never depends on any component here, and nothing here is designed to be moved there: VMD is MMD's format (the motion policy's §26). |
 | Same OpenUSD | `motionCore`, `motionRetarget` and test-only `motionUsd` are built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
 
-The two adapter edges are active since `usd-motion-plugins` v0.5.0: their
-manifests pin `motionCore` and `motionRetarget` artifacts by target and digest;
-the skeleton adapter states `motionRetarget`'s `motionCore` artifact closure
-explicitly so it can build in isolation.
+The two adapter edges are active since `usd-motion-plugins` v0.5.0, and pinned
+to v0.5.2 since MOT-O10: their manifests pin `motionCore`, `motionRetarget`
+and `motionSource` artifacts by target and digest; the skeleton adapter
+states the `motionCore` artifact closure of the other two explicitly so it
+can build in isolation.
 The `mmdMotionAdapter` manifest additionally pins `motionUsd` for its test-only
 acceptance edge; the adapter's link interface remains unchanged.
 A future MMD-specific physics adapter may similarly consume

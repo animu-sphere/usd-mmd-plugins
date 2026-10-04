@@ -1,9 +1,8 @@
 # Phase 9, then Phase 8, and Phase 10 — shared motion, material and avatar composition, and USDZ packaging
 
 Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
-skeletal end-to-end acceptance, MOT-O5, MOT-O6 and MOT-O9 are done; MOT-O10
-is decided and its implementation is next, and expression interoperability
-waits on `usd-motion-plugins`; Phase 8
+skeletal end-to-end acceptance, MOT-O5, MOT-O6, MOT-O9 and MOT-O10 are
+done; expression interoperability waits on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
 to Hydra; the `hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
@@ -35,12 +34,12 @@ can run alongside either
 What is listed here is only the part this repository owes, or waits for; what
 the runtime consumes from here today is [v0.1.0](../releases/v0.1.0.md).
 
-As of 2026-09-21 `usd-motion-plugins` v0.5.0 is published with installable
-`motionCore`, `motionRetarget` and `motionUsd`
+As of 2026-10-04 `usd-motion-plugins` v0.5.2 is consumed, with installable
+`motionCore`, `motionRetarget`, `motionSource` and `motionUsd`
 ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
-All three are consumed by digest-pinned artifacts: `motionCore` and
-`motionRetarget` by the adapters, and `motionUsd` by the skeletal acceptance
-test. `mmdMotionAdapter` and `mmdSkeletonAdapter` are implemented.
+All four are consumed by digest-pinned artifacts: `motionCore` and
+`motionRetarget` by the adapters, `motionSource` by the skeleton adapter for
+the T-pose directions, and `motionUsd` by the skeletal acceptance test. `mmdMotionAdapter` and `mmdSkeletonAdapter` are implemented.
 
 ## Outcome
 
@@ -82,20 +81,18 @@ usd-avatar-runtime:  composes the above per frame and coordinates rendering
   ([report](../reports/2026-09-19-phase9-roles-and-root.md)). No MMD bone is chosen as the root: it is the world
   transform of the joint `hips` maps to. MOT-O10, the rest a clip from MMD
   states, is opened with them.
-- 🚧 **MOT-O10**: decided 2026-10-04
-  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)),
-  after measuring it on 2026-09-25
-  ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)). Onto a
-  level-arm skeleton, today's identity rest leaves every arm segment a median
-  40° low, and a level-arm clip reaches a PMX target 40° low. The arm chain
-  alone is aimed onto the shared T-pose directions and stated on both sides:
-  the source's `SourceRestPose` and a PMX target's `TargetRestPose`, which
-  `usd-motion-plugins` v0.5.2 added for it with public `TPoseDirection`. The
-  stage keeps its identity rests. Next, in `mmdSkeletonAdapter`: move the
-  `usd-motion-plugins` pins to v0.5.2 and add `motionSource`; state both
-  rests; pass `targetRest` in the acceptance test; synthetic tests with a
-  known A-pose angle in each direction (A-pose to level arms, level arms to
-  A-pose, A-pose to A-pose); and a rerun over the local models.
+- ✅ **MOT-O10** (2026-10-04): the arm chain's reference rest
+  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)).
+  `mmdSkeletonAdapter` aims the shoulder, upper arm, lower arm and hand onto
+  `usd-motion-plugins` v0.5.2's public T-pose directions, and states it as
+  the source's `SourceRestPose` and as a PMX target's `TargetRestPose`; the
+  stage keeps its identity rests. Over the 17 local characters, an A-pose
+  clip onto level arms goes from a median 40° off to at most 0.04°, PMX to PMX
+  is exact for the shoulder and arms, and a level-arm clip reaches a PMX
+  target exactly instead of 40° low — the figures measured on 2026-09-25,
+  now from the shipped adapter
+  ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)). A
+  consumer retargeting onto a PMX passes `targetRest`.
 - ✅ **MOT-O12** (2026-09-25): role-table version 2. As a target, `上半身2`
   and `上半身3` bind in the model's chain order. As a source, `upperChest` is
   never emitted, because the shared retarget drops a joint a target lacks.
