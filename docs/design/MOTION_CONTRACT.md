@@ -62,6 +62,12 @@
 > shoulder, with synthetic tests and a rerun over the local models that
 > matches the measurement
 > ([report](../reports/2026-10-05-phase9-shoulder-rest-shipped.md)).
+> Revised again on 2026-10-05: MOT-O15 is resolved. §10.10 is new: a pose
+> retargeted onto a PMX is finished with the model's own twist bones,
+> appends and IK. §11.9 is new: `mmdControl` evaluates from a given pose. A
+> consumer of §10.9 now links `mmdControl`, and still evaluates no VMD
+> ([report](../reports/2026-10-05-phase8-pmx-pose-finish.md)). Until both
+> libraries implement them, the two sections are accepted, not binding.
 
 ---
 
@@ -335,6 +341,7 @@ Resolved:
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
 | MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
 | MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection`. As shipped, the adapter's rests give the same figures over the same 17 models ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)). The shoulder was later left out of the chain (MOT-O14) | Phase 9, 2026-10-04 |
+| MOT-O15 | What a pose retargeted onto a PMX needs from the model's own rig. The shared retarget drives the bound joints only. A model's appends and IK helpers, such as `手捩1`–`3` and `腕W` toward `腕WIK`, stay in the A-pose, and on three of the 17 local characters the sleeves and arm skin stayed there with them | §10.10: the adapter moves arm roll onto `腕捩` and `手捩` and states the held joints, and `mmdControl` evaluates the model's appends and the IK chains clear of them (§11.9). Held joints are unchanged bit for bit. Every arm IK chain reached its goal to within 1.3 mm, from 10–580 mm, and up to 54° of upper-arm roll moved onto `腕捩` ([report](../reports/2026-10-05-phase8-pmx-pose-finish.md)) | Phase 8, 2026-10-05 |
 | MOT-O14 | Whether §12.6's aim includes the shoulder. As shipped it did, and a mocopi capture retargeted onto a PMX showed visibly raised shoulders while the arms were right | no: the shoulder rests as the model does, on both sides, and the chain is the upper arm, the lower arm and the hand (§12.6). Every local character's `肩` slopes 5–30° down at rest, and the aim put a standing source's PMX shoulder a median 17° and at most 30° above that slope. Unaimed, it sits within 2° of it, with the arms' directions unchanged ([report](../reports/2026-10-04-phase9-shoulder-rest.md)). As shipped, the adapter gives the same shoulder; the arms moved by at most 0.006° and the hand by 0.09° ([report](../reports/2026-10-05-phase9-shoulder-rest-shipped.md)) | Phase 9, 2026-10-04; shipped 2026-10-05 |
 | MOT-O13 | How a generic clip's `upperChest` reaches a PMX without `上半身3`, as 15 of the 17 local characters are. Both producers measured, `usdVrmaFileFormat` and `motion_convert`, drive it, and by default the shared retarget drops a joint the target does not bind (its RETARGETING_POLICY §4.1, case 6): everything above the chest missed up to 4.2° on a VRMA's arms and 9.8° on a mocopi BVH's, where a model with `上半身3` is exact ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)) | §10.9: a consumer retargeting onto a PMX also sets `RetargetOptions::foldUnboundIntermediateRotations`, `usd-motion-plugins` v0.5.3's opt-in fold (its RETARGETING_POLICY §4.2, from [#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)). It carries the upper chest's rotation into `chest` as `Qc · Quc · S⁻¹`, the rule this repository measured: every arm and neck spread went to at most 0.04°, while the naive `Qc · Quc` is wrong wherever `S` is not identity. The rule is the shared core's, so this repository keeps no copy of it. As shipped, the option gives the hand-written fold's figures to within 0.005° over the same clips and characters, and changes nothing on the two with `上半身3` ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)) | Phase 8, 2026-10-04 |
 
@@ -528,8 +535,8 @@ the adapter never hides it by substituting identity or zero.
 A clip this repository did not evaluate reaches a PMX through
 `mmdSkeletonAdapter` alone. Such a clip is a `.vrma` read by `usd-vrm-plugins`,
 a BVH converted by `usd-motion-plugins`' `motion_convert`, or any semantic
-motion stage. Nothing on that path evaluates a VMD or links `mmdControl`.
-The consumer, not this repository, runs it:
+motion stage. Nothing on that path evaluates a VMD. The consumer, not this
+repository, runs it, and finishes each retargeted pose as §10.10 says:
 
 1. `motionUsd::ReadMotionStage` reads the stage into a `MotionClip`, with
    its skeleton's joint tokens and rest transforms.
@@ -579,6 +586,61 @@ models, with identity and with rotated source rests, onto a PMX with and
 without `上半身3`, with and without the fold
 ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md),
 [fold report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
+
+### 10.10 Finishing a retargeted pose on a PMX
+
+A PMX moves more joints than the humanoid roles. MMD's evaluator moves them
+from the ones a motion keys. Some joints take a share of another joint's
+rotation, an append (`付与`), such as `手捩1`–`3` from `手捩`, `肩C` from `肩P`,
+and `足D` from `足`. Others are links of an IK chain whose goal follows the
+arm, such as `腕W` reaching `腕WIK` under `ひじ`. Sleeves and arm skin are
+weighted to these helpers. The shared retarget drives the bound joints only,
+so on a model that relies on them the helpers stay in the A-pose and drag the
+mesh with them. Three of the 17 local characters do, and their arm IK
+effectors sat 10–580 mm from their goals
+([report](../reports/2026-10-05-phase8-pmx-pose-finish.md)). A consumer onto a PMX
+therefore finishes each retargeted pose in three steps:
+
+1. **Arm roll onto the twist bones.** `mmdSkeletonAdapter` takes each arm
+   joint's rotation about its own bone off the joint and puts it on the
+   twist bone below: `upperArm`'s onto `腕捩`, and `lowerArm`'s onto `手捩`.
+   The rotation is split into a swing and a twist about the joint's bone
+   direction at rest, toward its follower (§12.6). The swing stays on the
+   joint. The twist is composed onto the twist bone, and the twist bone's
+   offset is turned by it too, about the joint, so the twist bone keeps its
+   world transform even where it sits off the bone line. Every joint below
+   is then posed exactly as before. Only the skin between them differs: MMD
+   rolls an arm through its twist bone, and rolling `腕` turns the shoulder's
+   skin with it. A twist bone is used only where its exact source name is a joint
+   below the arm joint and above that joint's follower. Over the local takes
+   and characters, up to 54° of upper-arm roll moved.
+2. **Held joints.** `mmdSkeletonAdapter` states the joints the retarget
+   solved: the bound joints, the twist bones of step 1, and every ancestor of
+   either. Their transforms are the retarget's answer, and nothing may
+   change them.
+3. **The model's own rig.** `mmdControl` evaluates the model's appends and IK
+   over the pose, holding those joints (§11.9). A held joint keeps its
+   transform and takes no append and no IK. An IK chain is solved only when
+   none of its links is held and none feeds a held joint's append, directly
+   or through another append. So the legs' IK, whose links are held or feed
+   `足D`, is never solved over a retargeted leg. `腰キャンセル`, an ancestor
+   of the legs, never takes back the hips' turn that the retarget already
+   gave them. Everything else follows §11.5–§11.7, with the given pose as
+   the motion.
+
+Every held joint leaves step 3 as it entered, bit for bit, so §10.9's
+figures still hold. On the local characters, every arm IK chain then reached
+its goal to within 1.3 mm. On the 14 characters without such chains, the
+finish moves only the twist bones and the joints whose append reads a moved
+joint.
+
+The consumer links `mmdControl` for step 3. It still evaluates no VMD and
+binds none: step 3 takes the pose as given. Steps 1 and 2 are the adapter's,
+because they name PMX bones and read the retarget's map. Step 3 is
+`mmdControl`'s, because appends and IK are its rules, and it keeps no copy
+of the shared core's types (§10.1). The consumer converts the pose between the
+two index for index: the target skeleton's joints are the canonical joints
+(§10.4).
 
 ## 11. Evaluating the control rig
 
@@ -764,6 +826,30 @@ Raised by `Prepare`, once per element, never by `Evaluate`:
 | a joint with an external parent: with one model there is nothing to resolve, so the relation is ignored (§10.3) | `MMD_MOTION_EXTERNAL_PARENT_IGNORED` | info |
 | a local append, evaluated as a global one (§11.6) | `MMD_MOTION_LOCAL_APPEND_APPROXIMATED` | info |
 | a chain's loop count outside `[0, 256]`, clamped (§11.7) | `MMD_MOTION_IK_LOOP_CLAMPED` | warning |
+
+### 11.9 Evaluating from a given pose
+
+`Complete` evaluates over a pose another solver produced, such as a
+retarget onto the model (§10.10). It takes a pose of the evaluator's shape:
+each joint's local translation, rest included, and local rotation. It also
+takes the set of **held** joints. It returns a pose of the same shape:
+
+- **The motion is the pose.** Each joint's motion translation is its given
+  translation less its rest translation, and its motion rotation is its
+  given rotation (§11.4). There are no keys, morphs or channels, and the
+  model is visible.
+- **A held joint is the given joint.** It takes no append and no IK
+  rotation, so it leaves exactly as it came. Its state is what an append or
+  an IK chain reads from it.
+- **An IK chain runs only clear of held joints.** It is solved, as §11.7
+  says and as if enabled, only when no link is held. No link may be the
+  source of a held joint's append either, directly or through a chain of
+  appends. Otherwise it is off for that evaluation.
+- **Everything else is §11.5–§11.7.** Appends and IK run in MMD's order, from
+  the rest of the state, and are stateless as `Evaluate` is (§11.1).
+
+With no joint held, `Complete` is `Evaluate` of a motion whose every bone key
+is the given pose, with every chain enabled.
 
 ## 12. The humanoid role table
 

@@ -235,6 +235,16 @@ copying those values
   every arm and neck spread goes to at most 0.04°, within 0.005° of the
   hand-written fold
   ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
+- ⬜ **MOT-O15, finishing a retargeted pose on a PMX**: a consumer moves arm
+  roll onto `腕捩`/`手捩` and evaluates the model's appends and IK clear of
+  the retarget's joints
+  ([MOTION_CONTRACT.md §10.10](../design/MOTION_CONTRACT.md#1010-finishing-a-retargeted-pose-on-a-pmx)).
+  Without it, three of the 17 local characters keep their sleeve and arm
+  helpers in the A-pose
+  ([report](../reports/2026-10-05-phase8-pmx-pose-finish.md)). To do:
+  `mmdSkeletonAdapter`'s roll carry and held joints,
+  `mmdControl::Evaluator::Complete` (§11.9), tests for both, and the local
+  rerun.
 - ✅ **Recorded connector captures onto a PMX** (2026-10-04): mocopi
   captures replayed through `motion-connectors` v0.1.0's `MocopiConnector`
   deliver a `MotionPose` stream that §10.9's recipe retargets onto a PMX,
