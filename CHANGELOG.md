@@ -16,6 +16,20 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
+### Changed
+
+- **The shoulder is no longer aimed (MOT-O14).** `mmdSkeletonAdapter`'s
+  `sourceRest` and `targetRest` aim only the upper arm, the lower arm and the
+  hand onto the T-pose directions. The shoulder rests as the model does, on
+  both sides, and its `targetRest` slot is unset. Every local character's
+  `肩` slopes 5–30° down at rest, which is the model's shape. Aimed, it put
+  a standing source's PMX shoulder a median 17° and at most 30° above that
+  slope, and the viewer showed raised shoulders. Now the shoulder sits within
+  the source clavicle's 2° of the slope. The arms moved by at most 0.006°,
+  and the hand's line to its middle finger by 0.09°, because only the upper
+  arm's roll changed. A consumer passes `targetRest` as before.
+  (`MOTION_CONTRACT.md` §12.6; reports 2026-10-04 and 2026-10-05.)
+
 ### Added
 
 - **The upper-chest fold onto a PMX (MOT-O13).** A consumer retargeting a

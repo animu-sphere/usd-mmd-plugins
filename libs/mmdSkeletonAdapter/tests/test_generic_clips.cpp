@@ -258,7 +258,8 @@ Hang(const mmd::Double3& from, double side, double degrees, double length)
 }
 
 // A PMX humanoid whose arms hang 40° below level and whose shoulders 10°, so
-// only the target rest makes it level-armed. With `upperChest3`, `上半身3`
+// only the target rest makes it level-armed. Its shoulders keep their 10°: the
+// target rest does not aim them (MOT-O14). With `upperChest3`, `上半身3`
 // sits above `上半身2`, and `upperChest` binds; without it, as 15 of the 17
 // local characters are, it does not.
 mmd::CanonicalDocument
@@ -308,23 +309,28 @@ struct Segment {
     HumanJoint to;
     const char* fromLeaf;
     const char* toLeaf;
+    // The angle the two rests leave between the PMX's segment and the
+    // source's, which every sample keeps when the PMX turns as the source does.
+    double restAngle;
 };
 
-// Each segment downstream of the upper chest, and the legs, which are not.
+// Each segment downstream of the upper chest, and the legs, which are not. The
+// source's shoulders are level and the PMX's slope 10°.
 const Segment kSegments[] = {
-    {HumanJoint::Neck, HumanJoint::Head, "neck", "head"},
-    {HumanJoint::LeftShoulder, HumanJoint::LeftUpperArm, "leftShoulder", "leftUpperArm"},
-    {HumanJoint::LeftUpperArm, HumanJoint::LeftLowerArm, "leftUpperArm", "leftLowerArm"},
-    {HumanJoint::LeftLowerArm, HumanJoint::LeftHand, "leftLowerArm", "leftHand"},
-    {HumanJoint::RightShoulder, HumanJoint::RightUpperArm, "rightShoulder", "rightUpperArm"},
-    {HumanJoint::RightUpperArm, HumanJoint::RightLowerArm, "rightUpperArm", "rightLowerArm"},
-    {HumanJoint::RightLowerArm, HumanJoint::RightHand, "rightLowerArm", "rightHand"},
-    {HumanJoint::LeftUpperLeg, HumanJoint::LeftLowerLeg, "leftUpperLeg", "leftLowerLeg"},
-    {HumanJoint::LeftLowerLeg, HumanJoint::LeftFoot, "leftLowerLeg", "leftFoot"},
+    {HumanJoint::Neck, HumanJoint::Head, "neck", "head", 0.0},
+    {HumanJoint::LeftShoulder, HumanJoint::LeftUpperArm, "leftShoulder", "leftUpperArm", 10.0},
+    {HumanJoint::LeftUpperArm, HumanJoint::LeftLowerArm, "leftUpperArm", "leftLowerArm", 0.0},
+    {HumanJoint::LeftLowerArm, HumanJoint::LeftHand, "leftLowerArm", "leftHand", 0.0},
+    {HumanJoint::RightShoulder, HumanJoint::RightUpperArm, "rightShoulder", "rightUpperArm", 10.0},
+    {HumanJoint::RightUpperArm, HumanJoint::RightLowerArm, "rightUpperArm", "rightLowerArm", 0.0},
+    {HumanJoint::RightLowerArm, HumanJoint::RightHand, "rightLowerArm", "rightHand", 0.0},
+    {HumanJoint::LeftUpperLeg, HumanJoint::LeftLowerLeg, "leftUpperLeg", "leftLowerLeg", 0.0},
+    {HumanJoint::LeftLowerLeg, HumanJoint::LeftFoot, "leftLowerLeg", "leftFoot", 0.0},
 };
 
 struct Result {
-    // The worst segment angle against UsdSkel's evaluation, per sample.
+    // The worst segment angle against UsdSkel's evaluation, per sample, less
+    // the angle the two rests leave.
     std::vector<double> worst;
     openstrata::motion::RetargetDiagnostics diagnostics;
 };
@@ -375,8 +381,9 @@ RetargetOnto(const pxr::UsdStageRefPtr& stage, const mmd::CanonicalDocument& mod
                 target.skeleton, animation.samples[sample],
                 target.targetMap.GetJointIndex(segment.to), &qb, &pb);
             assert(a && b);
-            worst = std::max(worst, AngleDegrees(pb - pa, truth.at(segment.toLeaf) -
-                                                              truth.at(segment.fromLeaf)));
+            const double angle =
+                AngleDegrees(pb - pa, truth.at(segment.toLeaf) - truth.at(segment.fromLeaf));
+            worst = std::max(worst, std::fabs(angle - segment.restAngle));
         }
         result.worst.push_back(worst);
     }

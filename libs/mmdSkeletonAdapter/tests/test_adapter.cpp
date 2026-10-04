@@ -236,12 +236,16 @@ struct Segment {
     float side;
 };
 const Segment kSegments[] = {
-    {HumanJoint::LeftShoulder, HumanJoint::LeftUpperArm, 1.0f},
     {HumanJoint::LeftUpperArm, HumanJoint::LeftLowerArm, 1.0f},
     {HumanJoint::LeftLowerArm, HumanJoint::LeftHand, 1.0f},
-    {HumanJoint::RightShoulder, HumanJoint::RightUpperArm, -1.0f},
     {HumanJoint::RightUpperArm, HumanJoint::RightLowerArm, -1.0f},
     {HumanJoint::RightLowerArm, HumanJoint::RightHand, -1.0f},
+};
+
+// The segments it does not aim (MOT-O14): each shoulder rests as its model does.
+const Segment kShoulders[] = {
+    {HumanJoint::LeftShoulder, HumanJoint::LeftUpperArm, 1.0f},
+    {HumanJoint::RightShoulder, HumanJoint::RightUpperArm, -1.0f},
 };
 
 void
@@ -261,6 +265,7 @@ TestArmChainReferenceRest()
     assert(SameRotation(adapted.sourceRest.GetWorldRestRotation(HumanJoint::LeftHand),
                         adapted.sourceRest.GetWorldRestRotation(HumanJoint::LeftLowerArm)));
     for (const HumanJoint role : {HumanJoint::Spine, HumanJoint::Chest, HumanJoint::Neck,
+                                  HumanJoint::LeftShoulder, HumanJoint::RightShoulder,
                                   HumanJoint::LeftHand, HumanJoint::LeftIndexProximal,
                                   HumanJoint::RightMiddleProximal}) {
         assert(SameRotation(adapted.sourceRest.localRotations[static_cast<std::size_t>(role)],
@@ -269,9 +274,15 @@ TestArmChainReferenceRest()
     assert(!SameRotation(
         adapted.sourceRest.localRotations[static_cast<std::size_t>(HumanJoint::LeftUpperArm)],
         pxr::GfQuatf(1.0f)));
+    // The shoulder is not aimed: its world rest is the model's, so its bone
+    // keeps the model's 10° slope.
+    for (const Segment& segment : kShoulders) {
+        assert(SameRotation(adapted.sourceRest.GetWorldRestRotation(segment.from), pxr::GfQuatf(1.0f)));
+    }
 
-    // As a target: the same world rests over the stage's own joints. 肩C, the
-    // twist bone and the fingers stay unset and pass the aim on.
+    // As a target: the same world rests over the stage's own joints. 肩 and
+    // 肩C stay unset and keep the model's rest; the twist bone and the
+    // fingers stay unset and pass the aim on.
     const openstrata::motion::TargetRestPose& rest = adapted.targetRest;
     assert(rest.localRotations.size() == adapted.skeleton.GetSize());
     for (const Segment& segment : kSegments) {
@@ -279,6 +290,11 @@ TestArmChainReferenceRest()
         assert(rest.localRotations[static_cast<std::size_t>(joint)].has_value());
         assert(SameRotation(rest.GetWorldRestRotation(adapted.skeleton, joint),
                             adapted.sourceRest.GetWorldRestRotation(segment.from)));
+    }
+    for (const Segment& segment : kShoulders) {
+        const int joint = adapted.targetMap.GetJointIndex(segment.from);
+        assert(!rest.localRotations[static_cast<std::size_t>(joint)].has_value());
+        assert(SameRotation(rest.GetWorldRestRotation(adapted.skeleton, joint), pxr::GfQuatf(1.0f)));
     }
     for (int s = 0; s < 2; ++s) {
         assert(!rest.localRotations[static_cast<std::size_t>(arms.shoulderC[s])].has_value());
@@ -365,8 +381,9 @@ TwoSamples(const std::bitset<openstrata::motion::HumanJointCount>& roles)
     return clip;
 }
 
-// Where a source segment points in a sample: its rest direction, turned in the
-// second sample for the left upper and lower arm.
+// Where a segment points in a sample: its rest direction, turned in the
+// second sample for the left upper and lower arm. For an aimed segment that is
+// the source's rest direction; for a shoulder, the target's own.
 pxr::GfVec3f
 Expected(const pxr::GfVec3f& restDirection, const Segment& segment, std::size_t sample)
 {
@@ -379,30 +396,36 @@ double
 WorstSegment(const openstrata::motion::SkeletonDescriptor& skeleton,
              const openstrata::motion::RetargetMap& map,
              const openstrata::motion::RetargetedAnimation& animation,
-             const std::vector<pxr::GfVec3f>& restDirections)
+             const std::vector<pxr::GfVec3f>& restDirections,
+             const std::vector<pxr::GfVec3f>& shoulderDirections)
 {
+    std::vector<Segment> segments(std::begin(kSegments), std::end(kSegments));
+    segments.insert(segments.end(), std::begin(kShoulders), std::end(kShoulders));
+    std::vector<pxr::GfVec3f> directions = restDirections;
+    directions.insert(directions.end(), shoulderDirections.begin(), shoulderDirections.end());
     double worst = 0.0;
     for (std::size_t sample = 0; sample < animation.samples.size(); ++sample) {
-        for (std::size_t k = 0; k < std::size(kSegments); ++k) {
+        for (std::size_t k = 0; k < segments.size(); ++k) {
             pxr::GfQuatf qa, qb;
             pxr::GfVec3f pa, pb;
             const bool a = openstrata::motion::GetJointWorldTransform(
-                skeleton, animation.samples[sample], map.GetJointIndex(kSegments[k].from), &qa, &pa);
+                skeleton, animation.samples[sample], map.GetJointIndex(segments[k].from), &qa, &pa);
             const bool b = openstrata::motion::GetJointWorldTransform(
-                skeleton, animation.samples[sample], map.GetJointIndex(kSegments[k].to), &qb, &pb);
+                skeleton, animation.samples[sample], map.GetJointIndex(segments[k].to), &qb, &pb);
             assert(a && b);
-            worst = std::max(worst,
-                             AngleDegrees(pb - pa, Expected(restDirections[k], kSegments[k], sample)));
+            worst = std::max(worst, AngleDegrees(pb - pa, Expected(directions[k], segments[k], sample)));
         }
     }
     return worst;
 }
 
+template <std::size_t N>
 std::vector<pxr::GfVec3f>
-RestDirections(const mmd::CanonicalDocument& model, const mmd::skeleton::AdaptedSkeleton& adapted)
+Directions(const mmd::CanonicalDocument& model, const mmd::skeleton::AdaptedSkeleton& adapted,
+           const Segment (&segments)[N])
 {
     std::vector<pxr::GfVec3f> out;
-    for (const Segment& segment : kSegments) {
+    for (const Segment& segment : segments) {
         out.push_back(Position(model, adapted.SourceJoint(segment.to)) -
                       Position(model, adapted.SourceJoint(segment.from)));
     }
@@ -418,7 +441,12 @@ TestRetargetBothWays()
     const mmd::skeleton::AdaptedSkeleton target = mmd::skeleton::Adapt(b.model);
     const LevelRig level = MakeLevelRig();
     const openstrata::motion::MotionClip mmdClip = TwoSamples(source.sourcePresent);
-    const std::vector<pxr::GfVec3f> mmdDirections = RestDirections(a.model, source);
+    const std::vector<pxr::GfVec3f> mmdDirections = Directions(a.model, source, kSegments);
+    // Each target's shoulders keep its own rest: level on the level rig, 5°
+    // down on the second PMX, where the source's slope 10°.
+    const std::vector<pxr::GfVec3f> levelShoulders = {pxr::GfVec3f(1.0f, 0.0f, 0.0f),
+                                                      pxr::GfVec3f(-1.0f, 0.0f, 0.0f)};
+    const std::vector<pxr::GfVec3f> pmxShoulders = Directions(b.model, target, kShoulders);
 
     openstrata::motion::RetargetOptions stated;
     stated.targetRest = target.targetRest;
@@ -426,21 +454,22 @@ TestRetargetBothWays()
     // An A-pose source onto level arms: the target hangs its arms as MMD does.
     const auto ontoLevel =
         openstrata::motion::PoseRetargeter(level.skeleton, level.map, source.sourceRest).Retarget(mmdClip);
-    assert(WorstSegment(level.skeleton, level.map, ontoLevel, mmdDirections) < 0.01);
+    assert(WorstSegment(level.skeleton, level.map, ontoLevel, mmdDirections, levelShoulders) < 0.01);
 
     // A-pose onto A-pose, both rests stated: exact although the angles differ.
     const auto ontoPmx =
         openstrata::motion::PoseRetargeter(target.skeleton, target.targetMap, source.sourceRest, stated)
             .Retarget(mmdClip);
-    assert(WorstSegment(target.skeleton, target.targetMap, ontoPmx, mmdDirections) < 0.01);
+    assert(WorstSegment(target.skeleton, target.targetMap, ontoPmx, mmdDirections, pmxShoulders) < 0.01);
 
     // Both or neither: without the target's rest, the arms are off by its own
     // 30° arm angle.
     const auto unstated =
         openstrata::motion::PoseRetargeter(target.skeleton, target.targetMap, source.sourceRest)
             .Retarget(mmdClip);
-    assert(std::fabs(WorstSegment(target.skeleton, target.targetMap, unstated, mmdDirections) - 30.0) <
-           0.5);
+    assert(std::fabs(WorstSegment(target.skeleton, target.targetMap, unstated, mmdDirections,
+                                  pmxShoulders) -
+                     30.0) < 0.5);
 
     // A level-arm source, its rest identity, onto the A-pose PMX: level arms.
     std::bitset<openstrata::motion::HumanJointCount> levelRoles;
@@ -451,11 +480,14 @@ TestRetargetBothWays()
         levelRoles.set(static_cast<std::size_t>(segment.to));
         lateral.emplace_back(segment.side, 0.0f, 0.0f);
     }
+    for (const Segment& segment : kShoulders) {
+        levelRoles.set(static_cast<std::size_t>(segment.from));
+    }
     const auto fromLevel =
         openstrata::motion::PoseRetargeter(target.skeleton, target.targetMap,
                                            openstrata::motion::SourceRestPose(), stated)
             .Retarget(TwoSamples(levelRoles));
-    assert(WorstSegment(target.skeleton, target.targetMap, fromLevel, lateral) < 0.01);
+    assert(WorstSegment(target.skeleton, target.targetMap, fromLevel, lateral, pmxShoulders) < 0.01);
 }
 
 } // namespace
