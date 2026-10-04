@@ -16,6 +16,14 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
+### Added
+
+- The release workflow pushes every bundle and tool package, on every target,
+  to `ghcr.io/animu-sphere/usd-mmd-plugins` as `<name>-<version>-<target>`,
+  and the release carries their pin table (`package-pins.json`, and in the
+  notes). v0.2.0's packages were pushed from its release assets after the
+  fact ([docs/releases/README.md](docs/releases/README.md)).
+
 ## [0.2.0] - 2026-10-05
 
 The second release: the PMX stage carries `MmdMaterialAPI` and reaches

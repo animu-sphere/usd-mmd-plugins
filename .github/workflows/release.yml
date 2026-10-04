@@ -8,10 +8,12 @@
 # mmd_inspect, vmd_inspect and mmd_export tools and the aggregate product,
 # each with its manifest; a source archive; SHA256SUMS; and notes rendered from the changelog through
 # docs/contributing/RELEASE_NOTES_TEMPLATE.md. Publishing the draft is a
-# human decision (docs/releases/README.md).
+# human decision (docs/releases/README.md). Before the draft, the `publish`
+# job pushes the bundle and tool packages to GHCR and writes their pin table,
+# which the draft carries.
 #
 # `workflow_dispatch` is the dry run: the same lanes, everything uploaded as
-# workflow artifacts, no release object created.
+# workflow artifacts, no registry write and no release object created.
 #
 # The pins below MIRROR openstrata.ci.yaml -- the ost version, the three
 # runtime digests and their remotes, the OpenUSD requirement, the X11 host
@@ -20,7 +22,8 @@
 # request says nothing about it; re-pin both together.
 #
 # Fork safety: runs only on a tag push or a manual dispatch, never on
-# pull_request; only the release job's token can write.
+# pull_request; only the publish job's token can write packages and only the
+# release job's can write contents.
 name: release
 
 on:
@@ -273,17 +276,131 @@ jobs:
           python scripts/product_smoke.py --product "$product"
       - name: Stage the release artifacts
         shell: bash
-        run: python scripts/stage_release.py --package-json .ost-ci/package.json --out release-stage
+        run: python scripts/stage_release.py --package-json .ost-ci/package.json --out release-stage --oci-out oci-stage
       - name: Upload the staged artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-${{ matrix.name }}
           path: release-stage/
           if-no-files-found: error
+      # The import directories go to the publish job alone; the flat files
+      # above are what the GitHub release carries.
+      - name: Upload the packages to publish
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: oci-${{ matrix.name }}
+          path: oci-stage/
+          if-no-files-found: error
+
+  # Pushes every bundle and tool package, on every target, to ONE GHCR
+  # repository, tagged `<name>-<version>-<target>` -- the shape
+  # usd-motion-plugins publishes. The product stays a release asset: nothing
+  # pins it from a registry. The output is a pin table built from what was
+  # actually pushed: the archive digest a consumer names as `artifact`, and
+  # the OCI manifest digest to pull it from, which changes on every
+  # republish. It ships as a release asset and in the notes.
+  #
+  # The repository has existed since v0.2.0, whose packages were pushed from
+  # the published release assets after the fact, and it is public. A
+  # repository created by a first push is private, and making it public is a
+  # manual step in the package settings. `ost` does not read the docker
+  # credential store; a push needs user + password.
+  #
+  # A dry run imports every package, pushes nothing, and writes the table
+  # with no source.
+  publish:
+    name: publish the packages
+    needs: [preflight, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    env:
+      OST_HOME: ${{ format('{0}/.ost-ci-home', github.workspace) }}
+      OCI_REPOSITORY: "ghcr.io/animu-sphere/usd-mmd-plugins"
+      OST_REGISTRY_USER: ${{ github.actor }}
+      OST_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Download the packages to publish
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: oci-*
+          path: oci-staged
+      - name: Bootstrap ost 0.23.13 (pinned release asset, checksum-verified)
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="ost-cli-x86_64-unknown-linux-musl.tar.xz"
+          base="https://github.com/animu-sphere/open-strata/releases/download/v0.23.13"
+          curl -fsSLo "$asset" "$base/$asset"
+          curl -fsSLo "$asset.sha256" "$base/$asset.sha256"
+          actual="$(sha256sum "$asset" | cut -d' ' -f1)"
+          published="$(cut -d' ' -f1 "$asset.sha256")"
+          if [ "$actual" != "$published" ]; then
+            echo "::error title=ost bootstrap::$asset hashes to $actual but the release publishes $published" ; exit 1
+          fi
+          mkdir -p .ost-ci/bootstrap-bin
+          tar -xf "$asset" -C .ost-ci/bootstrap-bin
+          bin="$(find .ost-ci/bootstrap-bin -type f -name ost | head -n 1)"
+          chmod +x "$bin"
+          echo "$(cd "$(dirname "$bin")" && pwd)" >> "$GITHUB_PATH"
+      - name: Import every package into the local registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .ost-ci
+          for dir in oci-staged/*/packages/*/; do
+            [ -f "$dir/manifest.json" ] || { echo "::error title=publish::$dir has no manifest.json" ; exit 1 ; }
+            ost artifact import "$dir" --json > /dev/null
+          done
+          cat oci-staged/*/package-digests.tsv > .ost-ci/artifacts.tsv
+          cat .ost-ci/artifacts.tsv
+      - name: Push each package to the OCI repository
+        if: ${{ needs.preflight.outputs.is_release == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > .ost-ci/pushed.tsv
+          while IFS=$'\t' read -r kind name ver target digest; do
+            tag="${name}-${ver}-${target}"
+            out=".ost-ci/push-${tag}.json"
+            ost artifact push "$digest" "oci://${OCI_REPOSITORY}:${tag}" --json > "$out" < /dev/null
+            oci="$(jq -er '.data.oci_digest' "$out")"
+            art="$(jq -er '.data.artifact_digest' "$out")"
+            if [ "$art" != "$digest" ]; then
+              echo "::error title=publish::pushing $tag reported artifact digest $art, expected $digest" ; exit 1
+            fi
+            printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$kind" "$name" "$ver" "$target" "$digest" "$oci" >> .ost-ci/pushed.tsv
+            echo "pushed $tag -> $oci"
+          done < .ost-ci/artifacts.tsv
+      - name: Build the pin table
+        shell: bash
+        run: |
+          set -euo pipefail
+          published=""
+          rows=.ost-ci/artifacts.tsv
+          if [ "${{ needs.preflight.outputs.is_release }}" = "true" ]; then
+            published="--published"
+            rows=.ost-ci/pushed.tsv
+          fi
+          # One target per build cell that uploaded, counted from what arrived.
+          targets="$(ls -d oci-staged/*/ | wc -l | tr -d ' ')"
+          python3 scripts/make_package_pins.py --rows "$rows" \
+            --version "${{ needs.preflight.outputs.version }}" \
+            --repository "${OCI_REPOSITORY}" --targets "$targets" --out pins $published
+          cat pins/package-pins.md
+      - name: Upload the pin table
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-pins
+          path: pins/
+          if-no-files-found: error
 
   release:
     name: assemble release (draft)
-    needs: [preflight, build]
+    needs: [preflight, build, publish]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -318,6 +435,9 @@ jobs:
           if [ "${{ needs.preflight.outputs.is_release }}" != "true" ]; then extra="--allow-unreleased"; fi
           python3 scripts/make_release_notes.py --version "${{ needs.preflight.outputs.version }}" \
             --checksums dist-release/SHA256SUMS --out release-notes.md $extra
+          # The pin table, from the publish job (`release-pins`).
+          printf '\n' >> release-notes.md
+          cat dist-release/package-pins.md >> release-notes.md
           cat release-notes.md
       - name: Create the draft GitHub release
         if: ${{ needs.preflight.outputs.is_release == 'true' }}
