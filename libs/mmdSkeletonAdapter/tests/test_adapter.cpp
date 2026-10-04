@@ -490,6 +490,133 @@ TestRetargetBothWays()
     assert(WorstSegment(target.skeleton, target.targetMap, fromLevel, lateral, pmxShoulders) < 0.01);
 }
 
+
+// MOT-O15, MOTION_CONTRACT.md §10.10: the upper arm's roll goes to 腕捩, and
+// the retarget's joints are held.
+void
+TestArmRollAndHeldJoints()
+{
+    const ArmModel arms = MakeArmModel(40.0f, 10.0f, 1.0f);
+    const mmd::skeleton::AdaptedSkeleton adapted = mmd::skeleton::Adapt(arms.model);
+
+    // 腕捩 sits between 腕 and ひじ; the model has no 手捩.
+    assert(adapted.armTwists.size() == 2);
+    for (const mmd::skeleton::ArmTwist& twist : adapted.armTwists) {
+        const int s = twist.twist == arms.twist[0] ? 0 : 1;
+        assert(twist.twist == arms.twist[s]);
+        const HumanJoint role = s == 0 ? HumanJoint::LeftUpperArm : HumanJoint::RightUpperArm;
+        const HumanJoint next = s == 0 ? HumanJoint::LeftLowerArm : HumanJoint::RightLowerArm;
+        assert(twist.joint == adapted.targetMap.GetJointIndex(role));
+        const pxr::GfVec3f bone = Position(arms.model, adapted.targetMap.GetJointIndex(next)) -
+                                  Position(arms.model, twist.joint);
+        assert(AngleDegrees(twist.axis, bone) < 1.0e-4 && std::fabs(twist.axis.GetLength() - 1.0f) < 1.0e-6f);
+    }
+
+    // Held: the bound joints, 腕捩, and their ancestors -- 肩C and the chest.
+    assert(adapted.heldJoints.size() == adapted.skeleton.GetSize());
+    for (int s = 0; s < 2; ++s) {
+        assert(adapted.heldJoints[static_cast<std::size_t>(arms.twist[s])]);
+        assert(adapted.heldJoints[static_cast<std::size_t>(arms.shoulderC[s])]);
+    }
+    assert(adapted.heldJoints[static_cast<std::size_t>(arms.chest)]);
+    assert(adapted.heldJoints[static_cast<std::size_t>(
+        adapted.targetMap.GetJointIndex(HumanJoint::LeftHand))]);
+
+    // A pose: the left upper arm swung 20° about +Z and rolled 30° about its
+    // bone. The roll moves to 腕捩; everything below stays where it was.
+    openstrata::motion::RetargetedPose pose;
+    for (const openstrata::motion::SkeletonJoint& joint : adapted.skeleton.GetJoints()) {
+        pose.rotations.push_back(joint.restRotation);
+        pose.translations.push_back(joint.restTranslation);
+    }
+    const mmd::skeleton::ArmTwist& left =
+        adapted.armTwists[0].twist == arms.twist[0] ? adapted.armTwists[0] : adapted.armTwists[1];
+    const pxr::GfRotation swing(pxr::GfVec3d(0.0, 0.0, 1.0), 20.0);
+    const pxr::GfRotation roll(pxr::GfVec3d(left.axis), 30.0);
+    const pxr::GfQuatd q = swing.GetQuat() * roll.GetQuat(); // roll first, then swing
+    pose.rotations[static_cast<std::size_t>(left.joint)] =
+        pxr::GfQuatf(static_cast<float>(q.GetReal()), pxr::GfVec3f(q.GetImaginary()));
+
+    const int elbow = adapted.targetMap.GetJointIndex(HumanJoint::LeftLowerArm);
+    const int wrist = adapted.targetMap.GetJointIndex(HumanJoint::LeftHand);
+    pxr::GfQuatf elbowBefore, wristBefore, unused;
+    pxr::GfVec3f elbowAt, wristAt;
+    assert(openstrata::motion::GetJointWorldTransform(adapted.skeleton, pose, elbow, &elbowBefore, &elbowAt));
+    assert(openstrata::motion::GetJointWorldTransform(adapted.skeleton, pose, wrist, &wristBefore, &wristAt));
+
+    mmd::skeleton::CarryArmRoll(adapted, pose);
+
+    const pxr::GfQuatd swingQ = swing.GetQuat();
+    const pxr::GfQuatd rollQ = roll.GetQuat();
+    assert(SameRotation(pose.rotations[static_cast<std::size_t>(left.joint)],
+                        pxr::GfQuatf(static_cast<float>(swingQ.GetReal()), pxr::GfVec3f(swingQ.GetImaginary()))));
+    assert(SameRotation(pose.rotations[static_cast<std::size_t>(left.twist)],
+                        pxr::GfQuatf(static_cast<float>(rollQ.GetReal()), pxr::GfVec3f(rollQ.GetImaginary()))));
+    pxr::GfQuatf elbowAfter, wristAfter;
+    pxr::GfVec3f elbowNow, wristNow;
+    assert(openstrata::motion::GetJointWorldTransform(adapted.skeleton, pose, elbow, &elbowAfter, &elbowNow));
+    assert(openstrata::motion::GetJointWorldTransform(adapted.skeleton, pose, wrist, &wristAfter, &wristNow));
+    assert((elbowNow - elbowAt).GetLength() < 1.0e-5f && (wristNow - wristAt).GetLength() < 1.0e-5f);
+    assert(SameRotation(elbowAfter, elbowBefore) && SameRotation(wristAfter, wristBefore));
+    (void)unused;
+}
+
+
+// The twist bone off the bone line, as some models place it: the roll still
+// leaves 腕捩 and everything below it where they were.
+void
+TestArmRollOffTheLine()
+{
+    ArmModel arms = MakeArmModel(40.0f, 10.0f, 1.0f);
+    std::vector<mmd::Bone>& bones = arms.model.skeleton.bones;
+    const std::size_t twist = static_cast<std::size_t>(arms.twist[0]);
+    const mmd::Double3 off{0.0, 0.0, 0.02};
+    for (int k = 0; k < 3; ++k) {
+        bones[twist].position[k] += off[k];
+        bones[twist].localTranslation[k] += off[k];
+    }
+    for (mmd::Bone& bone : bones) {
+        if (bone.parent == arms.twist[0]) {
+            for (int k = 0; k < 3; ++k) {
+                bone.localTranslation[k] -= off[k];
+            }
+        }
+    }
+    const mmd::skeleton::AdaptedSkeleton adapted = mmd::skeleton::Adapt(arms.model);
+    const auto found = std::find_if(adapted.armTwists.begin(), adapted.armTwists.end(),
+                                    [&](const mmd::skeleton::ArmTwist& t) { return t.twist == arms.twist[0]; });
+    assert(found != adapted.armTwists.end());
+
+    openstrata::motion::RetargetedPose pose;
+    for (const openstrata::motion::SkeletonJoint& joint : adapted.skeleton.GetJoints()) {
+        pose.rotations.push_back(joint.restRotation);
+        pose.translations.push_back(joint.restTranslation);
+    }
+    const pxr::GfQuatd q =
+        pxr::GfRotation(pxr::GfVec3d(0.0, 0.0, 1.0), 20.0).GetQuat() *
+        pxr::GfRotation(pxr::GfVec3d(found->axis), 50.0).GetQuat();
+    pose.rotations[static_cast<std::size_t>(found->joint)] =
+        pxr::GfQuatf(static_cast<float>(q.GetReal()), pxr::GfVec3f(q.GetImaginary()));
+
+    const int elbow = adapted.targetMap.GetJointIndex(HumanJoint::LeftLowerArm);
+    const int wrist = adapted.targetMap.GetJointIndex(HumanJoint::LeftHand);
+    std::vector<pxr::GfQuatf> rotations(3);
+    std::vector<pxr::GfVec3f> positions(3);
+    const int watched[3] = {found->twist, elbow, wrist};
+    for (int k = 0; k < 3; ++k) {
+        assert(openstrata::motion::GetJointWorldTransform(adapted.skeleton, pose, watched[k], &rotations[k],
+                                                          &positions[k]));
+    }
+    mmd::skeleton::CarryArmRoll(adapted, pose);
+    for (int k = 0; k < 3; ++k) {
+        pxr::GfQuatf rotation;
+        pxr::GfVec3f position;
+        assert(openstrata::motion::GetJointWorldTransform(adapted.skeleton, pose, watched[k], &rotation, &position));
+        assert((position - positions[k]).GetLength() < 1.0e-5f);
+        assert(SameRotation(rotation, rotations[k]));
+    }
+}
+
 } // namespace
 
 int
@@ -500,5 +627,7 @@ main()
     TestUpperBodyFollowsTheChain();
     TestArmChainReferenceRest();
     TestRetargetBothWays();
+    TestArmRollAndHeldJoints();
+    TestArmRollOffTheLine();
     return 0;
 }

@@ -109,6 +109,7 @@ rule by `mmdControl_robustness`.
 | External parents | unsupported (ignored, reported) | [MOTION §11.8](../design/MOTION_CONTRACT.md#118-diagnostics) |
 | Physics before after-physics bones | unsupported by design (nothing is simulated) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
 | The same inputs give the same bits, whatever was evaluated before | supported | [MOTION §11.1](../design/MOTION_CONTRACT.md#111-the-evaluator) |
+| Appends and IK over a given pose, such as a retarget's, with held joints returned unchanged and chains over them or feeding them off (`Complete`) | supported | [MOTION §11.9](../design/MOTION_CONTRACT.md#119-evaluating-from-a-given-pose) |
 
 ## Shared-motion adapters (`mmdSkeletonAdapter`, `mmdMotionAdapter`)
 
@@ -129,6 +130,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.3 packages.
 | VMD-derived, IK-evaluated legs through a `motionUsd` round trip and `motionRetarget`, onto a PMX-derived stage skeleton and a non-MMD synthetic skeleton | supported | [Phase 9 acceptance report](../reports/2026-09-22-phase9-motion-acceptance.md) |
 | The arm chain's reference rest, aimed onto the shared T-pose directions, as `SourceRestPose` and as a PMX target's `TargetRestPose`; stage rests unchanged (MOT-O10) | supported | [MOTION §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest), [report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md) |
 | A generic clip (a `.vrma` stage, a `motion_convert` BVH clip, any semantic motion stage) read by `motionUsd` and retargeted onto a PMX with no VMD evaluated, the source rest taken from its stage, identity or not | supported; on a PMX without `上半身3`, the clip's `upperChest` motion reaches `上半身2` when the consumer sets `foldUnboundIntermediateRotations` (MOT-O13), and is dropped otherwise | [MOTION §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx), [report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md), [fold report](../reports/2026-10-04-phase8-upper-chest-fold.md) |
+| Finishing a pose retargeted onto a PMX: arm roll carried onto `腕捩`/`手捩` with the twist bone's offset (`CarryArmRoll`), and the held joints (`heldJoints`) for `mmdControl`'s `Complete` | supported; twist bones found by exact name | [MOTION §10.10](../design/MOTION_CONTRACT.md#1010-finishing-a-retargeted-pose-on-a-pmx), [report](../reports/2026-10-05-phase8-pmx-pose-finish-shipped.md) |
 
 ## PMX model import
 

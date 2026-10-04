@@ -485,6 +485,124 @@ TestThroughBind()
     std::puts("ok  a VMD through Bind: IK on, then off");
 }
 
+
+// -- Evaluating from a given pose (§11.9) --------------------------------------
+
+/// A pose of `model`'s shape at rest, to be edited joint by joint.
+Pose
+RestPose(const CanonicalDocument& model)
+{
+    Pose pose;
+    for (const Bone& bone : model.skeleton.bones) {
+        pose.joints.push_back(JointTransform{bone.localTranslation, kIdentity});
+    }
+    return pose;
+}
+
+void
+TestCompleteAppendsAndHeld()
+{
+    using pmx::BoneFlag;
+    pmx::Document doc;
+    doc.bones = {
+        MakeBone("A", {0, 0, 0}, pmx::kNoIndex),
+        Appending(MakeBone("B", {12.5f, 0, 0}, pmx::kNoIndex), 0, 0.5f, BoneFlag::AppendRotation),
+        Appending(MakeBone("C", {25.0f, 0, 0}, pmx::kNoIndex), 0, -1.0f, BoneFlag::AppendRotation),
+    };
+    const CanonicalDocument model = Canonical(doc);
+    const Evaluator evaluator = Prepared(model);
+    const auto at = [&](std::size_t source) { return static_cast<std::size_t>(J(model, source)); };
+    const double degree = kPi / 180.0;
+
+    Pose given = RestPose(model);
+    given.joints[at(0)].rotation = AboutZ(90 * degree);
+    given.joints[at(2)].rotation = AboutZ(10 * degree);
+    given.joints[at(2)].translation[1] += 0.25;
+    std::vector<bool> held(model.skeleton.bones.size(), false);
+    held[at(2)] = true;
+
+    const Pose pose = evaluator.Complete(given, held);
+    assert(pose.joints.size() == given.joints.size() && pose.channels.empty() && pose.visible);
+    // B: its given rotation, here none, then half of A's 90.
+    assert(SameRotation(pose.joints[at(1)].rotation, AboutZ(45 * degree), 1e-9));
+    // A: no append, so its given rotation.
+    assert(SameRotation(pose.joints[at(0)].rotation, given.joints[at(0)].rotation, 1e-12));
+    // C: held, so exactly as it came; unheld, it would have taken A back.
+    assert(pose.joints[at(2)] == given.joints[at(2)]);
+    const Pose free = evaluator.Complete(given, {});
+    assert(SameRotation(free.joints[at(2)].rotation, AboutZ(-80 * degree), 1e-9));
+    std::puts("ok  complete: appends over a given pose, a held joint takes none");
+}
+
+void
+TestCompleteIk()
+{
+    // Clear of held joints, a chain is solved as Evaluate solves it.
+    {
+        const CanonicalDocument model = Canonical(OneLinkArm(static_cast<float>(kPi), 10));
+        const Evaluator evaluator = Prepared(model);
+        const auto base = static_cast<std::size_t>(J(model, 0));
+        const Pose pose = evaluator.Complete(RestPose(model), {});
+        assert(SameRotation(pose.joints[base].rotation, AboutZ(kPi / 2), 1e-12));
+        // A held link turns the chain off: the link keeps its given rotation.
+        Pose given = RestPose(model);
+        given.joints[base].rotation = AboutX(0.3);
+        std::vector<bool> held(model.skeleton.bones.size(), false);
+        held[base] = true;
+        assert(evaluator.Complete(given, held).joints[base] == given.joints[base]);
+    }
+    // A chain whose link feeds a held joint's append is off too: 足D held
+    // keeps the retarget's thigh, and 足 is not solved under it.
+    {
+        const CanonicalDocument model = Canonical(Leg());
+        const Evaluator evaluator = Prepared(model);
+        const auto at = [&](std::size_t source) { return static_cast<std::size_t>(J(model, source)); };
+        Pose given = RestPose(model);
+        given.joints[at(4)].translation = {0.0, 0.2, 0.05}; // the IK goal raised
+        given.joints[at(5)].rotation = AboutX(-0.4);        // 足D, as a retarget left it
+        std::vector<bool> held(model.skeleton.bones.size(), false);
+        held[at(5)] = true;
+        const Pose pose = evaluator.Complete(given, held);
+        assert(pose.joints[at(1)].rotation == kIdentity && pose.joints[at(2)].rotation == kIdentity);
+        assert(pose.joints[at(5)] == given.joints[at(5)]);
+        // Nothing held: the leg reaches the goal and 足D follows the thigh.
+        const Pose free = evaluator.Complete(given, {});
+        const auto world = evaluator.World(free);
+        assert(Near(world[at(3)].translation, world[at(4)].translation, 1e-3));
+        assert(SameRotation(free.joints[at(5)].rotation,
+                            test::Multiply(given.joints[at(5)].rotation, free.joints[at(1)].rotation),
+                            1e-9));
+    }
+    std::puts("ok  complete: IK clear of held joints, off over them and what feeds them");
+}
+
+void
+TestCompleteMatchesEvaluate()
+{
+    // With nothing held, Complete is Evaluate of a motion keyed at the pose.
+    const CanonicalDocument model = Canonical(Leg());
+    const Evaluator evaluator = Prepared(model);
+    Pose given = RestPose(model);
+    binding::BoundMotion motion;
+    for (std::size_t j = 0; j < given.joints.size(); ++j) {
+        const Quat rotation = AboutX(0.05 * static_cast<double>(j + 1));
+        const Double3 offset{0.0, 0.01 * static_cast<double>(j), 0.0};
+        given.joints[j].rotation = test::Normalized(test::ToQuat(test::ToFloat4(rotation)));
+        given.joints[j].translation = {given.joints[j].translation[0] + offset[0],
+                                       given.joints[j].translation[1] + static_cast<double>(static_cast<float>(offset[1])),
+                                       given.joints[j].translation[2] + offset[2]};
+        motion.bones.push_back(Hold(static_cast<std::int32_t>(j),
+                                    {0.0f, static_cast<float>(offset[1]), 0.0f}, rotation));
+    }
+    const Pose a = evaluator.Complete(given, {});
+    const Pose b = evaluator.Evaluate(motion, 0.0);
+    for (std::size_t j = 0; j < a.joints.size(); ++j) {
+        assert(Near(a.joints[j].translation, b.joints[j].translation, 1e-6));
+        assert(SameRotation(a.joints[j].rotation, b.joints[j].rotation, 1e-6));
+    }
+    std::puts("ok  complete: with nothing held, Evaluate of the pose as keys");
+}
+
 } // namespace
 
 void
@@ -499,4 +617,7 @@ RunEvaluateTests()
     TestStatelessAndDeterministic();
     TestDiagnostics();
     TestThroughBind();
+    TestCompleteAppendsAndHeld();
+    TestCompleteIk();
+    TestCompleteMatchesEvaluate();
 }

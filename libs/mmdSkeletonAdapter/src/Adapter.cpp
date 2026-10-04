@@ -413,6 +413,50 @@ Adapt(const CanonicalDocument& model)
                                             : pxr::GfQuatf(1.0f, pxr::GfVec3f(0.0f));
         adapted.sourceRest.localRotations[index] = parentRest.GetInverse() * sourceAims[index];
     }
+    // MOTION_CONTRACT.md §10.10: the twist bones and the held joints.
+    if (built.skeleton) {
+        const std::vector<Bone>& bones = model.skeleton.bones;
+        struct TwistSpec {
+            HumanJoint role;
+            HumanJoint follower;
+            std::string_view twist;
+        };
+        constexpr TwistSpec kTwists[] = {
+            {HumanJoint::LeftUpperArm, HumanJoint::LeftLowerArm, "左腕捩"},
+            {HumanJoint::LeftLowerArm, HumanJoint::LeftHand, "左手捩"},
+            {HumanJoint::RightUpperArm, HumanJoint::RightLowerArm, "右腕捩"},
+            {HumanJoint::RightLowerArm, HumanJoint::RightHand, "右手捩"},
+        };
+        for (const TwistSpec& spec : kTwists) {
+            const int joint = adapted.targetMap.GetJointIndex(spec.role);
+            const int follower = adapted.targetMap.GetJointIndex(spec.follower);
+            const int twist = FindBone(model, {spec.twist});
+            if (joint < 0 || follower < 0 || twist == kUnmapped || twist == joint || twist == follower ||
+                !IsAncestor(bones, joint, twist) || !IsAncestor(bones, twist, follower)) {
+                continue;
+            }
+            pxr::GfVec3f axis = RestPosition(model, follower) - RestPosition(model, joint);
+            if (axis.GetLength() < 1.0e-9f) {
+                continue;
+            }
+            axis.Normalize();
+            adapted.armTwists.push_back(ArmTwist{joint, twist, axis});
+        }
+        adapted.heldJoints.assign(bones.size(), false);
+        const auto hold = [&](int joint) {
+            for (; joint >= 0 && static_cast<std::size_t>(joint) < bones.size() &&
+                   !adapted.heldJoints[static_cast<std::size_t>(joint)];
+                 joint = bones[static_cast<std::size_t>(joint)].parent) {
+                adapted.heldJoints[static_cast<std::size_t>(joint)] = true;
+            }
+        };
+        for (std::size_t role = 0; role < HumanJointCount; ++role) {
+            hold(adapted.targetMap.GetJointIndex(static_cast<HumanJoint>(role)));
+        }
+        for (const ArmTwist& twist : adapted.armTwists) {
+            hold(twist.twist);
+        }
+    }
     if (built.skeleton) {
         std::array<int, HumanJointCount> boundJoints{};
         for (std::size_t role = 0; role < HumanJointCount; ++role) {
@@ -423,6 +467,41 @@ Adapt(const CanonicalDocument& model)
     }
 
     return adapted;
+}
+
+void
+CarryArmRoll(const AdaptedSkeleton& adapted, openstrata::motion::RetargetedPose& pose)
+{
+    for (const ArmTwist& twist : adapted.armTwists) {
+        const auto joint = static_cast<std::size_t>(twist.joint);
+        const auto below = static_cast<std::size_t>(twist.twist);
+        if (joint >= pose.rotations.size() || below >= pose.rotations.size()) {
+            continue;
+        }
+        // Swing and twist about the bone: q = swing · twist.
+        const pxr::GfQuatf q = pose.rotations[joint];
+        pxr::GfQuatf roll(q.GetReal(), twist.axis * pxr::GfDot(q.GetImaginary(), twist.axis));
+        if (roll.GetLength() < 1.0e-6f) {
+            continue; // a half turn across the bone: no roll to speak of
+        }
+        roll.Normalize();
+        pose.rotations[joint] = q * roll.GetInverse();
+        // The twist bone takes the roll about the joint's own axis: its offset
+        // turns with it, so it and every joint below keep their world
+        // transforms even where it sits off the bone line.
+        pose.rotations[below] = roll * pose.rotations[below];
+        if (below < pose.translations.size()) {
+            pose.translations[below] = roll.Transform(pose.translations[below]);
+        }
+    }
+}
+
+void
+CarryArmRoll(const AdaptedSkeleton& adapted, openstrata::motion::RetargetedAnimation& animation)
+{
+    for (openstrata::motion::RetargetedPose& pose : animation.samples) {
+        CarryArmRoll(adapted, pose);
+    }
 }
 
 } // namespace mmd::skeleton

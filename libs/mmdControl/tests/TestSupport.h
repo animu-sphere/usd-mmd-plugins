@@ -48,4 +48,28 @@ ToFloat4(const Quat& q)
             static_cast<float>(q[3])};
 }
 
+/// `a · b`: `b` applied first.
+inline Quat
+Multiply(const Quat& a, const Quat& b)
+{
+    return {a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+            a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+            a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+            a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]};
+}
+
+inline Quat
+Normalized(const Quat& q)
+{
+    const double length = std::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    return {q[0] / length, q[1] / length, q[2] / length, q[3] / length};
+}
+
+/// A key's float rotation, as sampling reads it.
+inline Quat
+ToQuat(const Float4& q)
+{
+    return {q[0], q[1], q[2], q[3]};
+}
+
 } // namespace mmd::control::test
