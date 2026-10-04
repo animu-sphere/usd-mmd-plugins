@@ -48,6 +48,10 @@
 > from a `.vrma` or a BVH, reaches a PMX. MOT-O13 is opened: such a clip's
 > upper-chest motion is dropped on a PMX without `上半身3`
 > ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
+> Revised again the same day: MOT-O13 is resolved by `usd-motion-plugins`
+> v0.5.3's opt-in fold of an unbound intermediate, which §10.9 has a consumer
+> retargeting onto a PMX set. That step is **proposed** until
+> `mmdSkeletonAdapter`'s generic-clip test holds it against v0.5.3.
 
 ---
 
@@ -307,7 +311,6 @@ as a whole.
 | MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motionUsd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
-| MOT-O13 | How a generic clip's `upperChest` reaches a PMX without `上半身3`, as 15 of the 17 local characters are. Both producers measured, `usdVrmaFileFormat` and `motion_convert`, drive it. The shared retarget drops a joint the target does not bind (its RETARGETING_POLICY §4.1, case 6), so everything above the chest misses its motion: up to 4.2° on a VRMA's arms and 9.8° on a mocopi BVH's, where a model with `上半身3` is exact. Folding it into `chest` as `Qc · Quc · S⁻¹`, with `S` the upper chest's local rest, made those pairs exact too; the naive `Qc · Quc` is wrong wherever that rest is not identity ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)). The fold is a generic retarget rule, so it is not added here (§10.9). Proposed upstream as [usd-motion-plugins#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35) | `usd-motion-plugins`' retarget contract |
 | MOT-O11 | Whether a plane link starts from its keyed rotation. §11.7 starts an enabled chain's plane angles at zero, so a knee's keyed rotation never reaches the pose and the knee is solved from straight; three.js r168 starts from the keyed rotation. On a motion that keys its legs' rotations alongside their goals, that start alone leaves a median 0.05 mm where §11.7 leaves 2.4 mm, and moves the knees a median 4.6 mm and at most 66 mm; on an IK-authored motion it changes little ([report](../reports/2026-09-19-phase9-ik-reference.md)). Which MMD does | MMD's output on a motion that keys its IK links |
 
 Resolved:
@@ -322,6 +325,7 @@ Resolved:
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
 | MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
 | MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection`. As shipped, the adapter's rests give the same figures over the same 17 models ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)) | Phase 9, 2026-10-04 |
+| MOT-O13 | How a generic clip's `upperChest` reaches a PMX without `上半身3`, as 15 of the 17 local characters are. Both producers measured, `usdVrmaFileFormat` and `motion_convert`, drive it, and by default the shared retarget drops a joint the target does not bind (its RETARGETING_POLICY §4.1, case 6): everything above the chest missed up to 4.2° on a VRMA's arms and 9.8° on a mocopi BVH's, where a model with `上半身3` is exact ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)) | §10.9: a consumer retargeting onto a PMX also sets `RetargetOptions::foldUnboundIntermediateRotations`, `usd-motion-plugins` v0.5.3's opt-in fold (its RETARGETING_POLICY §4.2, from [#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)). It carries the upper chest's rotation into `chest` as `Qc · Quc · S⁻¹`, the rule this repository measured: every arm and neck spread went to at most 0.04°, while the naive `Qc · Quc` is wrong wherever `S` is not identity. The rule is the shared core's, so this repository keeps no copy of it | Phase 8, 2026-10-04 |
 
 ## 10. Normalizing into the shared motion core
 
@@ -524,21 +528,36 @@ The consumer, not this repository, runs it:
 3. `mmd::skeleton::Adapt` gives the target's descriptor, `targetMap`,
    `requiredJoints` and `targetRest`. `PoseRetargeter` takes the map and the
    source rest, with `requiredJoints` as `RetargetOptions::requiredBones` and
-   `targetRest` as `RetargetOptions::targetRest`.
+   `targetRest` as `RetargetOptions::targetRest`, and with
+   `RetargetOptions::foldUnboundIntermediateRotations` set.
 
 Both producers' rests are level-armed, so step 3's target rest is not
 optional. Without it, the arms land the model's own arm angle low (§12.6).
-With it, wherever the PMX binds every joint the clip drives, each segment
-turns exactly as the source's does. What remains is the difference between
-the two skeletons' rests. One case is open, MOT-O13 (§9): a PMX without
-`上半身3` binds no `upperChest`, and the shared retarget drops that joint's
-motion. Folding it into `chest` is a generic retarget rule, and this
-repository adds no private copy of one
+
+Nor is the fold. A PMX without `上半身3`, as 15 of the 17 local characters
+are, binds no `upperChest`, and both producers drive it. By default the
+shared retarget drops a joint the target does not bind, so everything above
+the chest misses that joint's motion (its RETARGETING_POLICY §4.1, case 6).
+The fold, opt-in since `usd-motion-plugins` v0.5.3 (its §4.2), carries the
+joint's rotation away from its own rest into its nearest bound ancestor, the
+PMX's `上半身2`, as `Qc · Quc · S⁻¹`. The neck and both arm chains then turn
+as the source's do. A consumer sets it for every PMX target, with or without
+`上半身3`: where every joint the clip drives is bound, it changes nothing.
+`MOTION_RETARGET_UNBOUND_DRIVEN_BONE` still names `upperChest`, with the
+receiver in its detail, because the PMX does not have that joint. The rule
+is the shared core's, and this repository keeps no private copy of it
 ([WORKSPACE.md §7](../architecture/WORKSPACE.md#7-invariants), invariant 9).
 
+With both, wherever the PMX binds every joint the clip drives or the fold
+carries one, each segment turns exactly as the source's does. What remains is
+the difference between the two skeletons' rests. As a source, the adapter's
+`SourceRestPose` names each role's nearest mapped ancestor as its parent, so
+a consumer may fold an MMD-derived clip too. Nothing here requires it: such a clip never drives
+`upperChest` (§12.2).
+
 `mmdSkeletonAdapter_generic_clips` holds this path on generated stages and
-models, with identity and with rotated source rests. It also holds MOT-O13's
-present behaviour
+models, with identity and with rotated source rests, onto a PMX with and
+without `上半身3`, with and without the fold
 ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
 
 ## 11. Evaluating the control rig
