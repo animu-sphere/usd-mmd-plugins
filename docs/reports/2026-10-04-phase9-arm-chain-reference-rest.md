@@ -1,5 +1,7 @@
 # Phase 9 arm chain's reference rest, as shipped (2026-10-04)
 
+> Later: the shoulder was left out of the aim on 2026-10-04, because its rest slope is the model's shape and aiming it raised a PMX's shoulders, MOT-O14 ([report](2026-10-04-phase9-shoulder-rest.md)).
+
 Dated evidence from real runs; append-only
 ([contributing/documentation.md](../contributing/documentation.md)).
 

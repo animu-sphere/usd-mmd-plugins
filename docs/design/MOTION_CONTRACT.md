@@ -54,6 +54,11 @@
 > when `mmdSkeletonAdapter`'s generic-clip test held it against v0.5.3 and a
 > rerun over the local clips and characters matched the measured fold
 > ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
+> Revised again the same day: MOT-O14 is resolved, and §12.6's aim leaves the
+> shoulder out. The chain it aims is the upper arm, the lower arm and the
+> hand; the shoulder rests as the model does, on both sides
+> ([report](../reports/2026-10-04-phase9-shoulder-rest.md)). Until
+> `mmdSkeletonAdapter` implements it, the adapter still aims the shoulder.
 
 ---
 
@@ -326,7 +331,8 @@ Resolved:
 | MOT-O6 | Which MMD bone names map to which `HumanJoint`, how English names and variants are matched, and how the table is versioned | table version 1, §12.2: exact source names, deforming (`D`) bones first; English names and spelling variants never match (§12.1); the version is recorded with every clip and bumped with any entry (§12.5) | Phase 9, 2026-09-19 |
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
 | MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
-| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection`. As shipped, the adapter's rests give the same figures over the same 17 models ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)) | Phase 9, 2026-10-04 |
+| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection`. As shipped, the adapter's rests give the same figures over the same 17 models ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)). The shoulder was later left out of the chain (MOT-O14) | Phase 9, 2026-10-04 |
+| MOT-O14 | Whether §12.6's aim includes the shoulder. As shipped it did, and a mocopi capture retargeted onto a PMX showed visibly raised shoulders while the arms were right | no: the shoulder rests as the model does, on both sides, and the chain is the upper arm, the lower arm and the hand (§12.6). Every local character's `肩` slopes 5–30° down at rest, and the aim put a standing source's PMX shoulder a median 17° and at most 30° above that slope. Unaimed, it sits within 2° of it, with the arms' directions unchanged ([report](../reports/2026-10-04-phase9-shoulder-rest.md)) | Phase 9, 2026-10-04 |
 | MOT-O13 | How a generic clip's `upperChest` reaches a PMX without `上半身3`, as 15 of the 17 local characters are. Both producers measured, `usdVrmaFileFormat` and `motion_convert`, drive it, and by default the shared retarget drops a joint the target does not bind (its RETARGETING_POLICY §4.1, case 6): everything above the chest missed up to 4.2° on a VRMA's arms and 9.8° on a mocopi BVH's, where a model with `上半身3` is exact ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)) | §10.9: a consumer retargeting onto a PMX also sets `RetargetOptions::foldUnboundIntermediateRotations`, `usd-motion-plugins` v0.5.3's opt-in fold (its RETARGETING_POLICY §4.2, from [#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)). It carries the upper chest's rotation into `chest` as `Qc · Quc · S⁻¹`, the rule this repository measured: every arm and neck spread went to at most 0.04°, while the naive `Qc · Quc` is wrong wherever `S` is not identity. The rule is the shared core's, so this repository keeps no copy of it. As shipped, the option gives the hand-written fold's figures to within 0.005° over the same clips and characters, and changes nothing on the two with `上半身3` ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)) | Phase 8, 2026-10-04 |
 
 ## 10. Normalizing into the shared motion core
@@ -918,8 +924,8 @@ the arms land 40° off between them
 `mmdSkeletonAdapter` states that meaning for the **arm chain alone**, on
 both sides, and nowhere else:
 
-- **The aim.** The chain is `shoulder`, `upperArm`, `lowerArm` and `hand`, on
-  each side. Taken parent first, each role's world reference rest is the
+- **The aim.** The chain is `upperArm`, `lowerArm` and `hand`, on each side.
+  The shoulder is not in it (see below). Taken parent first, each role's world reference rest is the
   shortest rotation that turns its bone onto the shared core's
   `motionSource::TPoseDirection`, composed after the rest it inherits:
   `ShortestRotation(inherited · d, TPoseDirection(role)) · inherited`, with
@@ -943,8 +949,9 @@ both sides, and nowhere else:
   positions and its target bindings, is a `TargetRestPose` in the skeleton's
   joint order: each chain joint's slot is its world reference rest with the
   world reference rest of its skeleton parent undone. That parent is a joint
-  of `/Asset/skel/Skeleton`, not a role: `肩P`, `肩C` and the twist bones
-  stay unset and pass the aim on, and so do the fingers. A consumer
+  of `/Asset/skel/Skeleton`, not a role: `肩`, `肩P`, `肩C` and the twist
+  bones stay unset, and so do the fingers. The first three keep the model's
+  rest, and the rest pass the aim on. A consumer
   retargeting onto a PMX passes it as `RetargetOptions::targetRest`.
 - **Both or neither.** A source rest is correct only against a target that
   states its rest the same way. Stated on the source alone, PMX to PMX goes
@@ -960,6 +967,17 @@ both sides, and nowhere else:
   along `上半身2` → `上半身3`, which points down in both local models that
   have `上半身3`, and turns the chest about 175°. On the feet it levels a
   slope a level-arm humanoid's feet share. Neither is the A-pose difference.
+- **Not the shoulder.** Every local character's `肩` slopes 5–30° down at
+  rest. A mocopi rig's clavicle rises 13.7° at its rest. Each rig is neutral
+  in its own rest, and MMD's neutral shoulder is its identity rotation. That
+  is a difference of shape, not of pose, unlike the arms' 37–42°. Aimed onto
+  the level T-pose direction, a source clavicle near its rest put a PMX
+  shoulder a median 17° and at most 30° above the model's slope, which is a
+  visibly raised shoulder. Left unaimed, it sits within the source clavicle's
+  own 2° of the slope, and the arms' directions are unchanged
+  ([report](../reports/2026-10-04-phase9-shoulder-rest.md)). So the shoulder
+  role's reference rest is identity on both sides, as outside the chain, and
+  the upper arm's aim inherits nothing from it.
 
 The rule is not a table entry, so it does not change the table version
 (§12.5); a change to it is recorded in the changelog with the contract
