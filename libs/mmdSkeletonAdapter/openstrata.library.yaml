@@ -12,61 +12,61 @@ requires:
     # motionRetarget's installed package requires motionCore; pin the complete
     # external artifact closure so this library also builds standalone.
     - id: motionCore
-      version: ">=0.5.2,<0.6"
+      version: ">=0.5.3,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:c91e824f83e9daaad903561f2acf5c2bfaf02773406a9be8b89ab75136bb03ac
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:e56dd0916ae5a34d346bb5152cbb49ef4b49374e3e612bff0b613b767afe8360
+            digest: sha256:1b130d9d630ce2c68665cd10d27d181d604fc07fbec7f0aebe88b4506e3c2005
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:6921fff3ef840e93498f51fde1370bef3e7e59358689ad9d70bca31c824d8075
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:9ca3835e8eb4dabef80867f1bebe4a4583745411ecef992b446d5bc4717e391f
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:08b8b83b3139325b64f32bba96223c5f726c412e2d7b5a1b3f3e9aa6704f6571
+            digest: sha256:37b367bd8d4e201545c61550035cb5610044df9486c516a1358260a3d048645d
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:5ea6f5b12c3596ec4d67e128255043d6de2a5314b2b5516544c06d11ea290487
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:1d2ac0bce7211539c008a0a584088d9acdebdada39f020ab489e3d7796eb29cb
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:9f05cf3b1c5c4663ef5350b3d37a0a1512b7692a72b993b2c25e50ed4c38de08
+            digest: sha256:913c1efd3ac88a924048d1bc702e7a921f3e32813be8246ef48cd2f301f17788
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:f469c7c57cc63b49ea5d89c48cff099ed0e926ed267562993a846a08106696be
     - id: motionRetarget
-      version: ">=0.5.2,<0.6"
+      version: ">=0.5.3,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:ace62453e70790ed27ea2588760bde5cee412173ad7cbb8be3f239333b58c06f
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:72ed1822c1528b3da1b0c97015a3f31fe43bdfbd880c2c53a0c6c7fa6e3468ce
+            digest: sha256:b55cd4f3388df9ae9e645103932df9206786f36d23701dd21f5b7f6184db82ae
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:061b76bab4907969bb71fda19dce407c23515432c1c3bf5aaa300d5d6b993d39
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:a9274c502a96e3283f5e991b7ccd53f168428f6c3faff3cfc17cc55b4ef40bca
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:e82f62b3d26ff5a8c61a4c7ed6ab00d9869b869f8eff33f774d01070221773b3
+            digest: sha256:7686d1aca1838d7b567731aa53a0c1ee9c869802e194011a02ee2412ff6b7c8c
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:d08af1755a1d7922bd1759d434192221bd56f13760a86846cf3e77f1e3be377a
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:cbb2734561916af636b6fa655646571c5fcd8f4041f7f7824f3ec7d5b55cb5e2
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:abda6106fa8e5c0c319e0bb364b52642b233ac7889d6c6731674e008fbdd67cd
+            digest: sha256:3615a5488847158b9b212e537c3d0f742ef94ca4b53872c27c2dc9ffb4e9e19d
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ad4957cb95119efe3323e9a4a63a9cd4c875611ad387a67b70d72811a19015d8
     # TPoseDirection and ShortestRotation for the arm chain's reference rest
     # (MOTION_CONTRACT.md §12.6); motionSource requires only motionCore.
     - id: motionSource
-      version: ">=0.5.2,<0.6"
+      version: ">=0.5.3,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:8779ecd94e80782f70b6cb46fbd5080093539931a6a5c50616a3737fae17a146
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:751aec1223655498acc325d76c3a8a1b392788cf44044e9a4f60e0bbb283643c
+            digest: sha256:46ab38365fc05ddcd896ffcccd51c329c01b716ebfaa16545534ab560151c6de
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:3837c5cd31a56291dba7fb804a6fdf8f45c84e5d2fb94ec7de522cf8aa96a2f9
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:cf88a6c39b04b651088b31d53a4d234422af142ceda8f600175bdb2179acce81
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:209997cd4feb2d6b9347b029b086d25d37ccf1a601ddb9beadc0d4ee5575af7f
+            digest: sha256:dd38ce7dc35ceddb78254453508dec3b014fe1dd07efe46faa1d743481110a2f
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:3e11d6f73458099d9fceaff569946deb16e95c9cdcfe3783b51773821366be33
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:c508c65fb24d54374f4c1b4b02fff8440151f49bff508689500c6e42dd1d38b7
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:fc1337ec536c945eb6c9fcaf419ec4c7d075e5ba081d1bf4b83ed6be98de7bb5
+            digest: sha256:dc9638022c2f124554fc58a0504e084fc009e67d3445922cabaac285f905e0ae
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:5321ce5fa69d87176eb9590c9c5803e91cdc20bc1665f61de21d2dd1cf8508bc
     # Test-only: the exported adapter target does not link it. Phase 8's
     # generic-clip test reads a semantic motion stage through motionUsd.
     - id: motionUsd
-      version: ">=0.5.2,<0.6"
+      version: ">=0.5.3,<0.6"
       artifact:
         targets:
           cy2026-linux-x86_64-py313-usd:
-            digest: sha256:e5ef038e604072a69a0c2a10ffd6f62aba692ca918374aafa4ac424ada09748d
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:426f96648b1722395910b34a2b7de12b498e69e945c636a0ad8d8b61ef0e2530
+            digest: sha256:feed0204b32a96ff5d896e19c9658d468955f01527bf0f1df830134e82729300
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:d948b2179b33de0a98d5d8fe846b613b543774cc4a83c2b40f9303b70b8be608
           cy2026-macos-arm64-py313-usd:
-            digest: sha256:c9f840a16ee25cf92248a401f725ac90a79a9bfe2d5e89cf16b597c3d0359bc5
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ee176bdded7bc7c097e51e1aaf04f5311b88d5a518e580b3d500c5bd10b5870d
+            digest: sha256:f8e2c425bc5fc87773483641dda6cae26d95396d3bb6354dd9953e015586bf6e
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:6da982a41035c94bde764bc7ec9e51422527f70afc2a207c7083893daa2e1a0c
           cy2026-windows-x86_64-py313-usd:
-            digest: sha256:e57fa819a0249138c23f32501b4acbc3f363e08516b6ded45f050e5276f5c298
-            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ea5cc8b0e19cee38573c3178ba03e1a0cc22ba72795bc82e343a9b0102f65709
+            digest: sha256:e4825bc622b61d0291091a74670c5dd7c7d82989920e6b1b8f89d40f36f57025
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ff2458629d80090644543bfe4551dd135bc283e126686ca47409623c85c6b7f3
 cmake:
   package: mmdSkeletonAdapter
   target: mmdSkeletonAdapter::mmdSkeletonAdapter

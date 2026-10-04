@@ -28,12 +28,14 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/UsdMmdPackage.cmake")
 # The declared edges (WORKSPACE.md §2.1). mmdModel is this repository's: the
 # composed build already has the target. motionRetarget and motionSource are
 # always installed packages, never a sibling checkout (WORKSPACE.md §2.4);
-# 0.5.2 is the first with TargetRestPose and the public T-pose directions.
+# 0.5.2 is the first with TargetRestPose and the public T-pose directions, and
+# 0.5.3 the first that folds an unbound intermediate, which a retarget onto a
+# PMX opts into (MOTION_CONTRACT.md §10.9).
 if(NOT TARGET mmdModel::mmdModel)
     find_package(mmdModel CONFIG REQUIRED)
 endif()
 if(NOT TARGET motionRetarget::motionRetarget)
-    find_package(motionRetarget 0.5.2 CONFIG REQUIRED)
+    find_package(motionRetarget 0.5.3 CONFIG REQUIRED)
 endif()
 if(NOT TARGET motionSource::motionSource)
     find_package(motionSource 0.5.2 CONFIG REQUIRED)

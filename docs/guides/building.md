@@ -25,7 +25,7 @@ Commands are PowerShell, run from the repository root.
 
 Plain CMake is given one thing: the **dependency prefix**, as
 `CMAKE_PREFIX_PATH` — OpenUSD 26.08, and `usd-motion-plugins`' `motionCore`,
-`motionRetarget`, `motionSource` and `motionUsd` 0.5.2 packages, installed
+`motionRetarget`, `motionSource` and `motionUsd` 0.5.3 packages, installed
 ([WORKSPACE.md §5](../architecture/WORKSPACE.md#5-build-modes)). Nothing looks
 for a sibling checkout. The presets in `CMakePresets.json` set the generator,
 the architecture and the tests, and leave the prefix to the caller, either on

@@ -259,7 +259,7 @@ usd-stage-runner ────→ usd-physics-plugins
 | Same OpenUSD | `motionCore`, `motionRetarget` and test-only `motionUsd` are built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
 
 The two adapter edges are active since `usd-motion-plugins` v0.5.0, and pinned
-to v0.5.2 since MOT-O10: their manifests pin `motionCore`, `motionRetarget`
+to v0.5.3 since MOT-O13: their manifests pin `motionCore`, `motionRetarget`
 and `motionSource` artifacts by target and digest; the skeleton adapter
 states the `motionCore` artifact closure of the other two explicitly so it
 can build in isolation.

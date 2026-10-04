@@ -97,15 +97,16 @@ The shared motion core: vendor- and avatar-format-neutral poses and clips,
 humanoid joint semantics, sampling, retargeting, recording and the
 `UsdSkelAnimation` bridge. v0.5.0 was published on 2026-09-20 with installable
 `motionCore`, `motionRetarget` and `motionUsd`, and v0.5.2 on 2026-09-30 added
-what MOT-O10 waited for; the adapters and their skeletal acceptance test
-consume per-target, digest-pinned OpenStrata artifacts of v0.5.2.
+what MOT-O10 waited for, and v0.5.3 on 2026-10-04 what MOT-O13 did; the
+adapters and their tests consume per-target, digest-pinned OpenStrata
+artifacts of v0.5.3.
 
 | | |
 | --- | --- |
 | Packages | `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionClip`), `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`, `TargetRestPose`), `motionSource` (`TPoseDirection` and `ShortestRotation` only) and `motionUsd` (the standalone motion-stage writer/reader), each by `find_package(<name> CONFIG)` and linked as `<name>::<name>` |
 | Used by | `mmdMotionAdapter` (`motionCore`), `mmdSkeletonAdapter` (`motionRetarget`, and privately `motionSource`, plus their required `motionCore` artifact closure) the Phase 9 acceptance test (`motionRetarget`, `motionUsd`) and the Phase 8 generic-clip test (`motionUsd`); later perhaps `usdVmdFileFormat` (MOT-O2) |
 | Consumed as | an installed package, by `find_package` with a version range admitting the release it was verified against, the way siblings are ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
-| Version | `>=0.5.2,<0.6`, verified against v0.5.2: the first with `TargetRestPose` and the public T-pose directions |
+| Version | `>=0.5.3,<0.6`, verified against v0.5.3: the first that folds an unbound intermediate. v0.5.2 was the first with `TargetRestPose` and the public T-pose directions, and is still the floor `mmdSkeletonAdapter`'s package asks of `motionSource` |
 | OpenUSD | the same exact pin as §1 |
 | Direction | one way: `usd-motion-plugins` never depends on this repository |
 
@@ -130,11 +131,10 @@ consumer's link line.
 unbound intermediate's rotation into its nearest bound ancestor, proposed from
 here as [usd-motion-plugins#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35).
 A consumer retargeting a generic clip onto a PMX sets it
-([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)),
-so when `mmdSkeletonAdapter`'s generic-clip test holds that, both adapters
-move every pin to v0.5.3 and the skeleton adapter raises its `motionRetarget`
-floor to 0.5.3. No edge is added. Until then the table above is what is
-pinned.
+([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
+Both adapters pin every package to v0.5.3, and `mmdSkeletonAdapter`'s
+package asks for `motionRetarget` 0.5.3, so its consumer has the option. No
+edge is added.
 
 `motionUsd` is test-only today. Its pin lives on `mmdMotionAdapter`'s manifest
 for the Phase 9 acceptance test, and on `mmdSkeletonAdapter`'s for the Phase 8

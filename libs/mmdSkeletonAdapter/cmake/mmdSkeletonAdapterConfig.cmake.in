@@ -5,7 +5,7 @@ if(NOT TARGET mmdModel::mmdModel)
     find_dependency(mmdModel CONFIG)
 endif()
 if(NOT TARGET motionRetarget::motionRetarget)
-    find_dependency(motionRetarget 0.5.2 CONFIG)
+    find_dependency(motionRetarget 0.5.3 CONFIG)
 endif()
 # A static library's private link still reaches its consumers' link line.
 if(NOT TARGET motionSource::motionSource)

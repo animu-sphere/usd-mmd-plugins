@@ -19,7 +19,7 @@
         {
             "name": "windows-msvc",
             "displayName": "Windows / Visual Studio (plain CMake)",
-            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget, motionSource and motionUsd 0.5.2 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable. No generator is named, so CMake picks the newest Visual Studio installed.",
+            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget, motionSource and motionUsd 0.5.3 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable. No generator is named, so CMake picks the newest Visual Studio installed.",
             "inherits": "base",
             "architecture": {
                 "value": "x64",
@@ -34,7 +34,7 @@
         {
             "name": "macos-ninja",
             "displayName": "macOS / Ninja (plain CMake)",
-            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget, motionSource and motionUsd 0.5.2 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable.",
+            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget, motionSource and motionUsd 0.5.3 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable.",
             "inherits": "base",
             "generator": "Ninja Multi-Config",
             "condition": {
@@ -46,7 +46,7 @@
         {
             "name": "linux-ninja",
             "displayName": "Linux / Ninja (plain CMake)",
-            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget, motionSource and motionUsd 0.5.2 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable.",
+            "description": "Pass the dependency prefix -- OpenUSD 26.08, and usd-motion-plugins' motionCore, motionRetarget, motionSource and motionUsd 0.5.3 -- with -DCMAKE_PREFIX_PATH or the CMAKE_PREFIX_PATH environment variable.",
             "inherits": "base",
             "generator": "Ninja Multi-Config",
             "condition": {
