@@ -125,6 +125,17 @@ never copied ([WORKSPACE.md §7](WORKSPACE.md#7-invariants), invariant 9).
 the static library, so the installed package config still finds it for a
 consumer's link line.
 
+**v0.5.3, for MOT-O13.** v0.5.3 (2026-10-04) adds
+`RetargetOptions::foldUnboundIntermediateRotations`, the opt-in fold of an
+unbound intermediate's rotation into its nearest bound ancestor, proposed from
+here as [usd-motion-plugins#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35).
+A consumer retargeting a generic clip onto a PMX sets it
+([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)),
+so when `mmdSkeletonAdapter`'s generic-clip test holds that, both adapters
+move every pin to v0.5.3 and the skeleton adapter raises its `motionRetarget`
+floor to 0.5.3. No edge is added. Until then the table above is what is
+pinned.
+
 `motionUsd` is test-only today. Its pin lives on `mmdMotionAdapter`'s manifest
 for the Phase 9 acceptance test, and on `mmdSkeletonAdapter`'s for the Phase 8
 generic-clip test, with the same range and digests, so a standalone or

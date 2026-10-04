@@ -5,8 +5,9 @@ skeletal end-to-end acceptance, MOT-O5, MOT-O6, MOT-O9 and MOT-O10 are
 done; expression interoperability waits on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
-to Hydra; generic VRMA- and BVH-derived clips reach a PMX, with MOT-O13 open
-upstream; the `hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
+to Hydra; generic VRMA- and BVH-derived clips reach a PMX, and MOT-O13 is
+decided as `usd-motion-plugins` v0.5.3's opt-in fold, its adoption next; the
+`hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -210,13 +211,17 @@ copying those values
   characters, every limb segment turns exactly with its source wherever the
   PMX binds every joint the clip drives
   ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
-- ⬜ **MOT-O13**: on a PMX without `上半身3`, 15 of the 17, the shared retarget
-  drops a generic clip's `upperChest` motion, and the arms miss up to 4.2°
-  from a VRMA and 9.8° from a mocopi BVH. A fold that respects the rests
-  makes them exact. It is a generic rule, so it waits on
-  `usd-motion-plugins`' retarget contract, and this repository keeps no copy.
-  The fold is proposed there as
-  [usd-motion-plugins#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35).
+- 🚧 **MOT-O13**: decided 2026-10-04
+  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
+  On a PMX without `上半身3`, 15 of the 17, the shared retarget drops a
+  generic clip's `upperChest` motion by default, and the arms miss up to 4.2°
+  from a VRMA and 9.8° from a mocopi BVH. `usd-motion-plugins` v0.5.3 added
+  the fold this repository measured as an opt-in,
+  `RetargetOptions::foldUnboundIntermediateRotations`
+  ([#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)), and
+  a consumer onto a PMX sets it. Next, in `mmdSkeletonAdapter`: move the
+  pins to v0.5.3; have the generic-clip test hold the fold exact without
+  `上半身3` and inert with it; and rerun the local clips and characters.
 - ⬜ Verify `motion-connectors → MotionPose → shared retarget → PMX` first from
   deterministic recorded captures. Live devices and network access are demo
   concerns, not CI requirements, and no protocol dependency enters this
