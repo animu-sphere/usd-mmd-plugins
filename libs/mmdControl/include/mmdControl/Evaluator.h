@@ -84,6 +84,19 @@ public:
     /// frame to frame.
     void Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose) const;
 
+    /// The model's appends and IK over a pose another solver produced, such as
+    /// a retarget onto the model (MOTION_CONTRACT.md §11.9). `given` holds one
+    /// local transform per joint, rest translation included; a joint it does
+    /// not reach is at rest. A joint `held` names keeps its given transform
+    /// exactly and takes no append and no IK. A chain is solved only when no
+    /// link is held and no link feeds a held joint's append, directly or
+    /// through other appends; otherwise it is off. No morphs, no channels,
+    /// visible. Deterministic and stateless, as Evaluate is.
+    Pose Complete(const Pose& given, const std::vector<bool>& held) const;
+
+    /// The same, refilling `pose`.
+    void Complete(const Pose& given, const std::vector<bool>& held, Pose& pose) const;
+
     /// Each joint's transform in model space, from a pose this evaluator
     /// produced: the parent's world transform composed with the joint's
     /// local one.
@@ -139,6 +152,8 @@ private:
     Evaluator() = default;
 
     void _Solve(const Chain& chain, State& state) const;
+    /// Appends then IK, in MMD's order (§11.5); `held` joints take neither.
+    void _Pass(State& state, const std::vector<bool>& enabled, const std::vector<bool>* held) const;
 
     std::vector<Joint> _joints;
     std::vector<std::int32_t> _order;

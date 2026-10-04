@@ -389,11 +389,91 @@ Evaluator::Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose
         }
     }
 
+    _Pass(state, enabled, nullptr);
+
+    pose.joints.resize(count);
+    for (std::size_t j = 0; j < count; ++j) {
+        const detail::Transform local = state.Local(static_cast<std::int32_t>(j));
+        pose.joints[j] = JointTransform{local.translation, local.rotation};
+    }
+    pose.visible = SampleVisibility(motion.visibility, frame);
+}
+
+Pose
+Evaluator::Complete(const Pose& given, const std::vector<bool>& held) const
+{
+    Pose pose;
+    Complete(given, held, pose);
+    return pose;
+}
+
+void
+Evaluator::Complete(const Pose& given, const std::vector<bool>& held, Pose& pose) const
+{
+    const std::size_t count = _joints.size();
+    const auto isHeld = [&](std::size_t j) { return j < held.size() && held[j]; };
+
+    // The motion is the given pose (§11.9): its translation less the rest,
+    // and its rotation; a joint it does not reach is at rest.
+    State state;
+    state.joints = &_joints;
+    state.motionTranslation.assign(count, Vec3{});
+    state.motionRotation.assign(count, kIdentity);
+    state.ik.assign(count, kIdentity);
+    state.appendTranslation.assign(count, Vec3{});
+    state.appendRotation.assign(count, kIdentity);
+    const std::size_t reached = std::min(count, given.joints.size());
+    for (std::size_t j = 0; j < reached; ++j) {
+        state.motionTranslation[j] = detail::Sub(given.joints[j].translation, _joints[j].rest);
+        state.motionRotation[j] = given.joints[j].rotation;
+    }
+
+    // What feeds a held joint's append, directly or through other appends.
+    std::vector<bool> feedsHeld(count, false);
+    for (std::size_t j = 0; j < count; ++j) {
+        if (!isHeld(j)) {
+            continue;
+        }
+        for (std::int32_t s = _joints[j].appendSource;
+             s != kNone && !feedsHeld[static_cast<std::size_t>(s)];
+             s = _joints[static_cast<std::size_t>(s)].appendSource) {
+            feedsHeld[static_cast<std::size_t>(s)] = true;
+        }
+    }
+    // A chain runs only clear of held joints and of what feeds them.
+    std::vector<bool> enabled(_chains.size(), true);
+    for (std::size_t c = 0; c < _chains.size(); ++c) {
+        for (const Link& link : _chains[c].links) {
+            const auto l = static_cast<std::size_t>(link.joint);
+            if (isHeld(l) || feedsHeld[l]) {
+                enabled[c] = false;
+            }
+        }
+    }
+
+    _Pass(state, enabled, &held);
+
+    pose.joints.resize(count);
+    for (std::size_t j = 0; j < count; ++j) {
+        if (isHeld(j) && j < reached) {
+            pose.joints[j] = given.joints[j]; // exactly as it came
+            continue;
+        }
+        const detail::Transform local = state.Local(static_cast<std::int32_t>(j));
+        pose.joints[j] = JointTransform{local.translation, local.rotation};
+    }
+    pose.channels.clear();
+    pose.visible = true;
+}
+
+void
+Evaluator::_Pass(State& state, const std::vector<bool>& enabled, const std::vector<bool>* held) const
+{
     // The pass (§11.5): appends (§11.6), then IK (§11.7), in MMD's order.
     for (const std::int32_t j : _order) {
-        const Joint& joint = _joints[static_cast<std::size_t>(j)];
-        if (joint.appendSource != kNone) {
-            const auto i = static_cast<std::size_t>(j);
+        const auto i = static_cast<std::size_t>(j);
+        const Joint& joint = _joints[i];
+        if (joint.appendSource != kNone && !(held && i < held->size() && (*held)[i])) {
             const auto s = static_cast<std::size_t>(joint.appendSource);
             if (joint.appendRotation) {
                 const Quat whole = detail::Multiply(
@@ -409,13 +489,6 @@ Evaluator::Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose
             _Solve(_chains[static_cast<std::size_t>(joint.chain)], state);
         }
     }
-
-    pose.joints.resize(count);
-    for (std::size_t j = 0; j < count; ++j) {
-        const detail::Transform local = state.Local(static_cast<std::int32_t>(j));
-        pose.joints[j] = JointTransform{local.translation, local.rotation};
-    }
-    pose.visible = SampleVisibility(motion.visibility, frame);
 }
 
 void

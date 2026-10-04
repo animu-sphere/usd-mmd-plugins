@@ -32,6 +32,24 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Added
 
+- **Finishing a pose retargeted onto a PMX (MOT-O15).** On models with arm
+  helpers, the sleeves and arm skin stayed in the A-pose after a retarget.
+  Those helpers are IK chains such as `腕W` toward `腕WIK`, and appends such
+  as `手捩1`–`3`, and the shared retarget drives only the bound joints.
+  - `mmdSkeletonAdapter`: `CarryArmRoll` moves each arm joint's roll about
+    its bone onto `腕捩` / `手捩`, turning the twist bone's offset with it.
+    `AdaptedSkeleton` gains `armTwists` and `heldJoints`: the bound joints,
+    the twist bones and their ancestors.
+  - `mmdControl`: `Evaluator::Complete` evaluates the model's appends and IK
+    over a given pose. Held joints come back unchanged, and chains over them,
+    or feeding their appends, stay off.
+  - A consumer of §10.9 now links `mmdControl` for the finish, and still
+    evaluates no VMD. Over 17 local characters, arm IK helpers reach their
+    goals to within 1.3 mm, from up to 580 mm. The carry is exact below the
+    twist bones, and held joints are unchanged bit for bit.
+  - No new dependency edge. (`MOTION_CONTRACT.md` §10.10, §11.9; reports
+    2026-10-05.)
+
 - **The upper-chest fold onto a PMX (MOT-O13).** A consumer retargeting a
   generic clip onto a PMX now also sets `usd-motion-plugins` v0.5.3's
   `RetargetOptions::foldUnboundIntermediateRotations`, beside `targetRest`.
