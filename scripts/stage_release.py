@@ -18,7 +18,15 @@ For each member it stages the archive and its manifest as
 manifest the same way. Libraries are not members: they ship inside the bundle
 and tools that link them (PACKAGE_CONTRACT.md).
 
-  stage_release.py --package-json .ost-ci/package.json --out release-stage
+With `--oci-out`, each member's whole dist directory (archive, manifest.json
+and what sits beside them) is also copied to `<oci-out>/packages/<name>/`,
+which is what `ost artifact import` takes, and one row
+`kind name version target archive_digest` per member is appended to
+`<oci-out>/package-digests.tsv`. The release workflow's `publish` job pushes
+those to GHCR. The product is not among them: nothing pins it from a registry.
+
+  stage_release.py --package-json .ost-ci/package.json --out release-stage \\
+      [--oci-out oci-stage]
 """
 
 from __future__ import annotations
@@ -51,11 +59,21 @@ def stage(archive: pathlib.Path, name: str, version: str, target: str,
     print(f"staged {archive.name}")
 
 
+def stage_for_publish(package: dict, version: str, out: pathlib.Path) -> None:
+    archive = pathlib.Path(package["archive"])
+    shutil.copytree(archive.parent, out / "packages" / package["name"])
+    row = [package["member"], package["name"], version, package["target"],
+           package["archive_digest"]]
+    with (out / "package-digests.tsv").open("a", encoding="utf-8", newline="\n") as rows:
+        rows.write("\t".join(row) + "\n")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--package-json", type=pathlib.Path, required=True)
     parser.add_argument("--out", type=pathlib.Path, required=True)
+    parser.add_argument("--oci-out", type=pathlib.Path)
     args = parser.parse_args()
 
     data = json.loads(args.package_json.read_text(encoding="utf-8"))["data"]
@@ -94,6 +112,14 @@ def main() -> int:
               package["target"], args.out)
     stage(pathlib.Path(product["archive"]), product["name"], version,
           product["target"], args.out)
+    if args.oci_out:
+        args.oci_out.mkdir(parents=True, exist_ok=True)
+        for package in release:
+            if package.get("version") != version:
+                raise fail(f"{package['name']} is version {package.get('version')}, "
+                           f"VERSION is {version}")
+            stage_for_publish(package, version, args.oci_out)
+        print(f"staged {len(release)} package(s) to publish in {args.oci_out}")
     return 0
 
 

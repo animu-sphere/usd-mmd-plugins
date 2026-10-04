@@ -26,9 +26,11 @@ stated only in its
    everything a tag would, and uploads it as workflow artifacts.
 3. Tag the merge commit `vX.Y.Z` and push the tag. The workflow checks the tag
    against `VERSION` and the changelog heading, repeats the dry run's lanes,
-   and creates a **draft** release.
-4. Read the draft and publish it. Publishing is a human decision; nothing
-   publishes automatically.
+   pushes the bundle and tool packages to GHCR, and creates a **draft**
+   release carrying their pin table.
+4. Read the draft and publish it. Publishing the release is a human decision;
+   the packages are already in the registry, pinned by digest, when it is
+   made.
 
 On each of Windows x86_64, macOS arm64 and Linux x86_64, the workflow builds
 the root tree and then the bundles, runs each bundle's verification pyramid
@@ -38,3 +40,13 @@ the product into a fresh prefix and uses it from there alone
 (`scripts/product_smoke.py`), and checks the release set against the tree's
 descriptors (`scripts/stage_release.py`). Its runtime and `ost` pins mirror
 [openstrata.ci.yaml](../../openstrata.ci.yaml) and are re-pinned with it.
+
+Every bundle and tool package, on every target, is pushed to the one public
+GHCR repository `ghcr.io/animu-sphere/usd-mmd-plugins`, tagged
+`<name>-<version>-<target>`, as usd-motion-plugins publishes its own. The
+release carries `package-pins.json`, and its notes the same table: per
+package and target, the archive digest a consumer names as `artifact` and the
+OCI digest to pull it from (`scripts/make_package_pins.py`). The aggregate
+product is a release asset only. v0.2.0's packages were pushed after its
+release, from its published assets unchanged, and its pin table was added to
+the release then.
