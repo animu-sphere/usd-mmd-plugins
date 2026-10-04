@@ -18,6 +18,20 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Added
 
+- **Generic clips onto a PMX (Phase 8).** `mmdSkeletonAdapter_generic_clips`
+  reads a semantic motion stage, written as `usdVrmaFileFormat` and
+  `motion_convert` write theirs, through `motionUsd`. It retargets the stage
+  onto generated PMX humanoids with the adapter's map and target rest, and
+  checks the result against the stage's own animation, with identity and
+  with rotated source rests. No VMD evaluation is linked. Over seven VRMA
+  clips, a mocopi BVH and 17 local characters, every limb segment turns
+  exactly with its source where the PMX binds every joint the clip drives. A
+  PMX without `上半身3` loses the clip's `upperChest` motion, which the shared
+  retarget drops; this is MOT-O13, owned by `usd-motion-plugins`. The test
+  adds a test-only `motionUsd` pin to `mmdSkeletonAdapter`'s manifest; the
+  exported target is unchanged. (`MOTION_CONTRACT.md` §10.9; report
+  2026-10-04.)
+
 - **The arm chain's reference rest (MOT-O10).** `mmdSkeletonAdapter` aims the
   shoulder, upper arm, lower arm and hand onto `usd-motion-plugins`' public
   T-pose directions and states the result on both sides: as rotations in

@@ -5,7 +5,8 @@ skeletal end-to-end acceptance, MOT-O5, MOT-O6, MOT-O9 and MOT-O10 are
 done; expression interoperability waits on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
-to Hydra; the `hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
+to Hydra; generic VRMA- and BVH-derived clips reach a PMX, with MOT-O13 open
+upstream; the `hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -199,9 +200,21 @@ copying those values
   open ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)).
   When it is answered, the basis functions a model-free `.vmd` stage needs are
   extracted from `mmdModel` with it (MOT-O1).
-- ⬜ Verify generic motion targeting PMX with synthetic, BVH-derived and
-  VRMA-derived clips through `mmdSkeletonAdapter`; no target path evaluates a
-  VMD again.
+- ✅ **Generic clips onto a PMX** (2026-10-04): a semantic motion stage,
+  read by `motionUsd`, retargets onto a PMX through `mmdSkeletonAdapter`'s
+  map and target rest, with no VMD evaluated
+  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
+  `mmdSkeletonAdapter_generic_clips` holds it on generated stages, with
+  identity and with rotated source rests. Over seven VRMA clips through
+  `usdVrmaFileFormat`, a mocopi BVH through `motion_convert`, and 17 local
+  characters, every limb segment turns exactly with its source wherever the
+  PMX binds every joint the clip drives
+  ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
+- ⬜ **MOT-O13**: on a PMX without `上半身3`, 15 of the 17, the shared retarget
+  drops a generic clip's `upperChest` motion, and the arms miss up to 4.2°
+  from a VRMA and 9.8° from a mocopi BVH. A fold that respects the rests
+  makes them exact. It is a generic rule, so it waits on
+  `usd-motion-plugins`' retarget contract, and this repository keeps no copy.
 - ⬜ Verify `motion-connectors → MotionPose → shared retarget → PMX` first from
   deterministic recorded captures. Live devices and network access are demo
   concerns, not CI requirements, and no protocol dependency enters this

@@ -52,6 +52,21 @@ requires:
           cy2026-windows-x86_64-py313-usd:
             digest: sha256:c508c65fb24d54374f4c1b4b02fff8440151f49bff508689500c6e42dd1d38b7
             source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:fc1337ec536c945eb6c9fcaf419ec4c7d075e5ba081d1bf4b83ed6be98de7bb5
+    # Test-only: the exported adapter target does not link it. Phase 8's
+    # generic-clip test reads a semantic motion stage through motionUsd.
+    - id: motionUsd
+      version: ">=0.5.2,<0.6"
+      artifact:
+        targets:
+          cy2026-linux-x86_64-py313-usd:
+            digest: sha256:e5ef038e604072a69a0c2a10ffd6f62aba692ca918374aafa4ac424ada09748d
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:426f96648b1722395910b34a2b7de12b498e69e945c636a0ad8d8b61ef0e2530
+          cy2026-macos-arm64-py313-usd:
+            digest: sha256:c9f840a16ee25cf92248a401f725ac90a79a9bfe2d5e89cf16b597c3d0359bc5
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ee176bdded7bc7c097e51e1aaf04f5311b88d5a518e580b3d500c5bd10b5870d
+          cy2026-windows-x86_64-py313-usd:
+            digest: sha256:e57fa819a0249138c23f32501b4acbc3f363e08516b6ded45f050e5276f5c298
+            source: oci://ghcr.io/animu-sphere/usd-motion-plugins@sha256:ea5cc8b0e19cee38573c3178ba03e1a0cc22ba72795bc82e343a9b0102f65709
 cmake:
   package: mmdSkeletonAdapter
   target: mmdSkeletonAdapter::mmdSkeletonAdapter
