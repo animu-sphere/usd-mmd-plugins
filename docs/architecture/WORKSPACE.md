@@ -213,9 +213,10 @@ over `libs/mmdControl` with `mmdMotionBinding::mmdMotionBinding` and
 `mmdSkeletonAdapter_boundaries` runs with that library, allowing
 `motionRetarget` and `motionSource`; `mmdMotionAdapter_boundaries` allows `motionCore` and the
 skeleton adapter. Those are the two narrow external adapter edges (§2.4).
-The separate `mmdMotionAdapter_acceptance` executable intentionally links
-`motionRetarget` and stage-level `motionUsd`; it is not the library target the
-boundary test inspects.
+The separate `mmdMotionAdapter_acceptance` and
+`mmdSkeletonAdapter_generic_clips` executables intentionally link
+`motionRetarget` and stage-level `motionUsd`; neither is the library target
+the boundary test inspects.
 `mmd_export_boundaries` runs it over `tools/mmdExport` with
 `--allow-openusd`: OpenUSD includes and imports are that tool's edges, the
 OpenUSD targets its CMake resolves are its whole link line, and plugin
@@ -252,7 +253,7 @@ usd-stage-runner ────→ usd-physics-plugins
 
 | Rule | Detail |
 | --- | --- |
-| Narrow crossings | `mmdMotionAdapter` depends on `motionCore`; `mmdSkeletonAdapter` depends on `motionRetarget`, which owns `SkeletonDescriptor`, `RetargetMap`, `SourceRestPose` and `TargetRestPose` ([MOTION_CONTRACT.md §10.4](../design/MOTION_CONTRACT.md#104-skeleton-and-humanoid-map)), and, for the arm chain's reference rest, on `motionSource`'s T-pose directions ([§12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)). The Phase 9 acceptance executable, not either exported target, uses `motionRetarget` and `motionUsd`. `usdVmdFileFormat` may add `motionUsd` if MOT-O2 says so. No parser, canonical model, evaluator or importer crosses. |
+| Narrow crossings | `mmdMotionAdapter` depends on `motionCore`; `mmdSkeletonAdapter` depends on `motionRetarget`, which owns `SkeletonDescriptor`, `RetargetMap`, `SourceRestPose` and `TargetRestPose` ([MOTION_CONTRACT.md §10.4](../design/MOTION_CONTRACT.md#104-skeleton-and-humanoid-map)), and, for the arm chain's reference rest, on `motionSource`'s T-pose directions ([§12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)). The Phase 9 acceptance executable and the Phase 8 generic-clip executable, not either exported target, use `motionRetarget` and `motionUsd`. `usdVmdFileFormat` may add `motionUsd` if MOT-O2 says so. No parser, canonical model, evaluator or importer crosses. |
 | Installed packages only | The edge is a `find_package` on an installed package with a declared version range, never a sibling checkout, a submodule or a vendored copy (§5, [DEPENDENCIES.md §6](DEPENDENCIES.md#6-usd-motion-plugins)). |
 | Never the reverse | `usd-motion-plugins` never depends on any component here, and nothing here is designed to be moved there: VMD is MMD's format (the motion policy's §26). |
 | Same OpenUSD | `motionCore`, `motionRetarget` and test-only `motionUsd` are built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
@@ -262,8 +263,9 @@ to v0.5.2 since MOT-O10: their manifests pin `motionCore`, `motionRetarget`
 and `motionSource` artifacts by target and digest; the skeleton adapter
 states the `motionCore` artifact closure of the other two explicitly so it
 can build in isolation.
-The `mmdMotionAdapter` manifest additionally pins `motionUsd` for its test-only
-acceptance edge; the adapter's link interface remains unchanged.
+The `mmdMotionAdapter` and `mmdSkeletonAdapter` manifests additionally pin
+`motionUsd` for their test-only edges, the Phase 9 acceptance test and the
+Phase 8 generic-clip test; neither adapter's link interface changes.
 A future MMD-specific physics adapter may similarly consume
 `usd-physics-plugins`; its identity and edge are added here only when the first
 runtime consumer makes them concrete
@@ -458,7 +460,7 @@ target, header root and required packages — is
 | pyramid | the bundle manifest's `tests:` | `ost plugin test` L0–L5, from the build tree and from the package | — (`ost`) |
 | baseline | each bundle's `tests/fixtures/` | compact goldens do not change silently | the L5 goldens of `minimal.pmx`, `recoverable/unsafe-texture-paths.pmx` and `mmdSchema`'s `basic.usda` |
 | installed consumer | `tests/installed_consumer/` | installed packages work from a clean prefix outside the repository | `workspace_installed_consumer` |
-| shared-motion acceptance | `libs/mmdMotionAdapter/tests/` | VMD-derived IK motion survives `motionUsd`, poses a PMX-derived stage skeleton, and retargets through an MMD-free translation unit to a non-MMD skeleton | `mmdMotionAdapter_acceptance` |
+| shared-motion acceptance | `libs/mmdMotionAdapter/tests/`, `libs/mmdSkeletonAdapter/tests/` | VMD-derived IK motion survives `motionUsd`, poses a PMX-derived stage skeleton, and retargets through an MMD-free translation unit to a non-MMD skeleton; a generic semantic motion stage, read by `motionUsd`, poses a PMX skeleton as the stage's own animation does, with no VMD evaluated | `mmdMotionAdapter_acceptance`, `mmdSkeletonAdapter_generic_clips` |
 | fuzz | `libs/mmdPmx/fuzz/`, `libs/motionVmd/fuzz/` | malformed input never crashes or over-reads, under ASan and UBSan | `mmdPmx_fuzz` and `motionVmd_fuzz` in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml), which also runs every plain library's unit and robustness tests instrumented |
 
 Fixtures are generated by committed code, never copied from distributed

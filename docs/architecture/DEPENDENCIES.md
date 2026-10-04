@@ -103,7 +103,7 @@ consume per-target, digest-pinned OpenStrata artifacts of v0.5.2.
 | | |
 | --- | --- |
 | Packages | `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionClip`), `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`, `TargetRestPose`), `motionSource` (`TPoseDirection` and `ShortestRotation` only) and `motionUsd` (the standalone motion-stage writer/reader), each by `find_package(<name> CONFIG)` and linked as `<name>::<name>` |
-| Used by | `mmdMotionAdapter` (`motionCore`), `mmdSkeletonAdapter` (`motionRetarget`, and privately `motionSource`, plus their required `motionCore` artifact closure) and the Phase 9 acceptance test (`motionRetarget`, `motionUsd`); later perhaps `usdVmdFileFormat` (MOT-O2) |
+| Used by | `mmdMotionAdapter` (`motionCore`), `mmdSkeletonAdapter` (`motionRetarget`, and privately `motionSource`, plus their required `motionCore` artifact closure) the Phase 9 acceptance test (`motionRetarget`, `motionUsd`) and the Phase 8 generic-clip test (`motionUsd`); later perhaps `usdVmdFileFormat` (MOT-O2) |
 | Consumed as | an installed package, by `find_package` with a version range admitting the release it was verified against, the way siblings are ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
 | Version | `>=0.5.2,<0.6`, verified against v0.5.2: the first with `TargetRestPose` and the public T-pose directions |
 | OpenUSD | the same exact pin as §1 |
@@ -126,9 +126,10 @@ the static library, so the installed package config still finds it for a
 consumer's link line.
 
 `motionUsd` is test-only today. Its pin lives on `mmdMotionAdapter`'s manifest
-so a standalone or workspace test has the same artifact CI uses; the exported
-`mmdMotionAdapter::mmdMotionAdapter` target and installed package do not link
-or require it.
+for the Phase 9 acceptance test, and on `mmdSkeletonAdapter`'s for the Phase 8
+generic-clip test, with the same range and digests, so a standalone or
+workspace test has the same artifact CI uses. Neither exported target nor
+installed package links or requires it.
 
 ## 7. usd-physics-plugins
 
