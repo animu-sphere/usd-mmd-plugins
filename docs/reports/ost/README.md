@@ -19,4 +19,5 @@ The newest report carries the current asks.
 
 | Report | `ost` | Subject |
 | --- | --- | --- |
+| [02](02-2026-10-04-v0.23.14-a-moved-library-pin-keeps-its-old-package.md) | 0.23.14 | After a digest-pinned library moves, `ost build` reuses the root tree, and CMake keeps a cached package whose old version still satisfies the request: stale v0.5.0 `motionCore` linked against v0.5.2 `motionSource`, with stale `motionUsd` going unreported. Unlike the runtime, no library digest is recorded in the tree. Also, "conflicting artifact pins" names neither side. **One P1 + one P3** |
 | [01](01-2026-09-24-v0.23.3-a-bundle-is-staged-in-its-source-tree.md) | 0.23.3 | The CMake dependency contract needs nothing from `ost`; a bundle's library and registration, and a tool's directories, can only be staged in the source tree |
