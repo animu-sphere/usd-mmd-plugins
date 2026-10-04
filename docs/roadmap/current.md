@@ -6,7 +6,8 @@ done; MOT-O14 leaves the shoulder unaimed, as the adapter now does; expression i
 has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
 to Hydra; generic VRMA- and BVH-derived clips reach a PMX, and MOT-O13 is
-resolved by `usd-motion-plugins` v0.5.3's opt-in fold; the `hydra-toon` MMD
+resolved by `usd-motion-plugins` v0.5.3's opt-in fold; recorded mocopi
+captures reach a PMX through `motion-connectors` v0.1.0; the `hydra-toon` MMD
 path is next, in `hydra-toon`. Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
@@ -244,10 +245,20 @@ copying those values
   `mmdSkeletonAdapter`'s roll carry and held joints,
   `mmdControl::Evaluator::Complete` (§11.9), tests for both, and the local
   rerun.
-- ⬜ Verify `motion-connectors → MotionPose → shared retarget → PMX` first from
-  deterministic recorded captures. Live devices and network access are demo
-  concerns, not CI requirements, and no protocol dependency enters this
-  repository.
+- ✅ **Recorded connector captures onto a PMX** (2026-10-04): mocopi
+  captures replayed through `motion-connectors` v0.1.0's `MocopiConnector`
+  deliver a `MotionPose` stream that §10.9's recipe retargets onto a PMX,
+  with the source rest the device states
+  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
+  Over five recorded device sessions, 7,690 frames, the generated corpus and
+  17 local characters, every segment's spread is 0.00°. The residuals are
+  those of the mocopi BVH to within 0.01°
+  ([report](../reports/2026-10-04-phase8-connector-captures-onto-pmx.md)).
+  Nothing here links a connector, and no protocol dependency entered this
+  repository. VMC has no recorded sender, and VRChat OSC's trackers need an
+  operator's assignment before they are a pose. Each is `motion-connectors`'
+  operator evidence first. Live devices and network access stay demo
+  concerns, not CI requirements.
 
 ### Physics runtime integration
 
