@@ -205,9 +205,11 @@ TargetHips(const CanonicalDocument& model, const std::array<int, HumanJointCount
 }
 
 // The arm chain, each role after its semantic parent (MOTION_CONTRACT.md §12.6).
-constexpr std::array<HumanJoint, 8> kArmChain{{
-    HumanJoint::LeftShoulder, HumanJoint::LeftUpperArm, HumanJoint::LeftLowerArm, HumanJoint::LeftHand,
-    HumanJoint::RightShoulder, HumanJoint::RightUpperArm, HumanJoint::RightLowerArm, HumanJoint::RightHand,
+// Not the shoulder: its rest slope is the model's shape, not a pose (MOT-O14),
+// so it rests as the model does and the upper arm inherits nothing from it.
+constexpr std::array<HumanJoint, 6> kArmChain{{
+    HumanJoint::LeftUpperArm, HumanJoint::LeftLowerArm, HumanJoint::LeftHand,
+    HumanJoint::RightUpperArm, HumanJoint::RightLowerArm, HumanJoint::RightHand,
 }};
 
 pxr::GfVec3f
@@ -276,7 +278,8 @@ ArmChainAims(const CanonicalDocument& model, const std::array<int, HumanJointCou
 
 // The aim as local rotations over the PMX skeleton's own joints: each bound
 // chain joint relative to its skeleton parent's reference rest, every other
-// slot unset, so 肩P, 肩C, the twist bones and the fingers pass the aim on.
+// slot unset: 肩, 肩P and 肩C keep the model's rest, and the twist bones and
+// the fingers pass the aim on.
 openstrata::motion::TargetRestPose
 TargetArmChainRest(const openstrata::motion::SkeletonDescriptor& skeleton,
                    const openstrata::motion::RetargetMap& map,
