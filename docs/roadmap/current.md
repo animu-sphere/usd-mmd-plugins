@@ -6,8 +6,8 @@ done; expression interoperability waits on `usd-motion-plugins`; Phase 8
 has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
 to Hydra; generic VRMA- and BVH-derived clips reach a PMX, and MOT-O13 is
-decided as `usd-motion-plugins` v0.5.3's opt-in fold, its adoption next; the
-`hydra-toon` MMD path is next, in `hydra-toon`. Phase 10,
+resolved by `usd-motion-plugins` v0.5.3's opt-in fold; the `hydra-toon` MMD
+path is next, in `hydra-toon`. Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -36,7 +36,7 @@ can run alongside either
 What is listed here is only the part this repository owes, or waits for; what
 the runtime consumes from here today is [v0.1.0](../releases/v0.1.0.md).
 
-As of 2026-10-04 `usd-motion-plugins` v0.5.2 is consumed, with installable
+As of 2026-10-04 `usd-motion-plugins` v0.5.3 is consumed, with installable
 `motionCore`, `motionRetarget`, `motionSource` and `motionUsd`
 ([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
 All four are consumed by digest-pinned artifacts: `motionCore` and
@@ -211,17 +211,19 @@ copying those values
   characters, every limb segment turns exactly with its source wherever the
   PMX binds every joint the clip drives
   ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
-- 🚧 **MOT-O13**: decided 2026-10-04
-  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
-  On a PMX without `上半身3`, 15 of the 17, the shared retarget drops a
-  generic clip's `upperChest` motion by default, and the arms miss up to 4.2°
-  from a VRMA and 9.8° from a mocopi BVH. `usd-motion-plugins` v0.5.3 added
-  the fold this repository measured as an opt-in,
-  `RetargetOptions::foldUnboundIntermediateRotations`
+- ✅ **MOT-O13** (2026-10-04): on a PMX without `上半身3`, 15 of the 17,
+  the shared retarget drops a generic clip's `upperChest` motion by default,
+  and the arms miss up to 4.2° from a VRMA and 9.8° from a mocopi BVH.
+  `usd-motion-plugins` v0.5.3 added the fold this repository measured as an
+  opt-in, `RetargetOptions::foldUnboundIntermediateRotations`
   ([#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)), and
-  a consumer onto a PMX sets it. Next, in `mmdSkeletonAdapter`: move the
-  pins to v0.5.3; have the generic-clip test hold the fold exact without
-  `上半身3` and inert with it; and rerun the local clips and characters.
+  a consumer onto a PMX sets it
+  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
+  The adapters pin v0.5.3, and the generic-clip test holds the fold exact
+  without `上半身3` and inert with it. Over the local clips and characters,
+  every arm and neck spread goes to at most 0.04°, within 0.005° of the
+  hand-written fold
+  ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
 - ⬜ Verify `motion-connectors → MotionPose → shared retarget → PMX` first from
   deterministic recorded captures. Live devices and network access are demo
   concerns, not CI requirements, and no protocol dependency enters this

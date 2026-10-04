@@ -113,7 +113,7 @@ rule by `mmdControl_robustness`.
 ## Shared-motion adapters (`mmdSkeletonAdapter`, `mmdMotionAdapter`)
 
 Each claim is covered by synthetic adapter tests and by the installed-consumer
-lane against digest-pinned `usd-motion-plugins` v0.5.2 packages.
+lane against digest-pinned `usd-motion-plugins` v0.5.3 packages.
 
 | Capability | Current | Contract |
 | --- | :---: | --- |
@@ -128,7 +128,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.2 packages.
 | Non-finite evaluated shared values | rejected, never replaced | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
 | VMD-derived, IK-evaluated legs through a `motionUsd` round trip and `motionRetarget`, onto a PMX-derived stage skeleton and a non-MMD synthetic skeleton | supported | [Phase 9 acceptance report](../reports/2026-09-22-phase9-motion-acceptance.md) |
 | The arm chain's reference rest, aimed onto the shared T-pose directions, as `SourceRestPose` and as a PMX target's `TargetRestPose`; stage rests unchanged (MOT-O10) | supported | [MOTION §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest), [report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md) |
-| A generic clip (a `.vrma` stage, a `motion_convert` BVH clip, any semantic motion stage) read by `motionUsd` and retargeted onto a PMX with no VMD evaluated, the source rest taken from its stage, identity or not | supported; a PMX without `上半身3` loses the clip's `upperChest` motion (MOT-O13) | [MOTION §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx), [report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md) |
+| A generic clip (a `.vrma` stage, a `motion_convert` BVH clip, any semantic motion stage) read by `motionUsd` and retargeted onto a PMX with no VMD evaluated, the source rest taken from its stage, identity or not | supported; on a PMX without `上半身3`, the clip's `upperChest` motion reaches `上半身2` when the consumer sets `foldUnboundIntermediateRotations` (MOT-O13), and is dropped otherwise | [MOTION §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx), [report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md), [fold report](../reports/2026-10-04-phase8-upper-chest-fold.md) |
 
 ## PMX model import
 

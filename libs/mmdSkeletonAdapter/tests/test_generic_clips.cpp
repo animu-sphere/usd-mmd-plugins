@@ -330,9 +330,11 @@ struct Result {
 };
 
 // What a consumer does with a generic clip and a PMX: read the stage, take the
-// rest its skeleton states, and retarget with the adapter's map and target rest.
+// rest its skeleton states, and retarget with the adapter's map and target rest,
+// folding an unbound intermediate's rotation into its bound ancestor when
+// `fold` (MOTION_CONTRACT.md §10.9).
 Result
-RetargetOnto(const pxr::UsdStageRefPtr& stage, const mmd::CanonicalDocument& model)
+RetargetOnto(const pxr::UsdStageRefPtr& stage, const mmd::CanonicalDocument& model, bool fold)
 {
     openstrata::motion::MotionStageRead read;
     std::string error;
@@ -353,6 +355,7 @@ RetargetOnto(const pxr::UsdStageRefPtr& stage, const mmd::CanonicalDocument& mod
     openstrata::motion::RetargetOptions options;
     options.requiredBones = target.requiredJoints;
     options.targetRest = target.targetRest;
+    options.foldUnboundIntermediateRotations = fold;
     Result result;
     const openstrata::motion::RetargetedAnimation animation =
         openstrata::motion::PoseRetargeter(target.skeleton, target.targetMap, *sourceRest.rest, options)
@@ -390,34 +393,51 @@ OnlyUpperChestUnbound(const openstrata::motion::RetargetDiagnostics& diagnostics
 
 // Onto a PMX with `上半身3`, every segment points where UsdSkel puts the
 // source's, at rest and in motion, whatever rotations the source's rests state.
+// Every joint the clip drives is bound, so folding changes nothing.
 void
 TestOntoPmxWithUpperChest()
 {
     const mmd::CanonicalDocument model = Pmx(true);
     for (const bool tilted : {false, true}) {
-        const Result result = RetargetOnto(SourceStage(SourceJoints(tilted)), model);
-        assert(result.diagnostics.IsClean());
-        assert(result.worst[0] < 0.01);
-        assert(result.worst[1] < 0.01);
+        for (const bool fold : {false, true}) {
+            const Result result = RetargetOnto(SourceStage(SourceJoints(tilted)), model, fold);
+            assert(result.diagnostics.IsClean());
+            assert(result.worst[0] < 0.01);
+            assert(result.worst[1] < 0.01);
+        }
     }
 }
 
-// MOT-O13: onto a PMX without `上半身3`, the shared retarget drops the
-// upper chest's motion (RETARGETING_POLICY.md §4.1, case 6) and says so. At
-// rest nothing is lost; in motion, everything above the chest misses the
+// MOT-O13: onto a PMX without `上半身3`, the shared retarget's default drops
+// the upper chest's motion (RETARGETING_POLICY.md §4.1, case 6) and says so.
+// At rest nothing is lost; in motion, everything above the chest misses the
 // upper chest's 15° -- all of it with identity rests, and less where a
-// tilted rest turns that rotation's axis toward a segment. This pins today's behaviour: when the shared core folds
-// an unbound intermediate into its bound neighbour, the second sample becomes
-// exact and this test changes with the contract.
+// tilted rest turns that rotation's axis toward a segment. This is why §10.9
+// has a consumer opt in to the fold.
 void
-TestOntoPmxWithoutUpperChest()
+TestOntoPmxWithoutUpperChestByDefault()
 {
     const mmd::CanonicalDocument model = Pmx(false);
     for (const bool tilted : {false, true}) {
-        const Result result = RetargetOnto(SourceStage(SourceJoints(tilted)), model);
+        const Result result = RetargetOnto(SourceStage(SourceJoints(tilted)), model, false);
         assert(OnlyUpperChestUnbound(result.diagnostics));
         assert(result.worst[0] < 0.01);
         assert(result.worst[1] > 5.0 && result.worst[1] < 15.01);
+    }
+}
+
+// With the fold, the upper chest's rotation, its rolled rest removed, reaches
+// `上半身2`, and every segment above it turns exactly as the source's does.
+// The dropped joint is still reported: the PMX does not have it.
+void
+TestOntoPmxWithoutUpperChestFolded()
+{
+    const mmd::CanonicalDocument model = Pmx(false);
+    for (const bool tilted : {false, true}) {
+        const Result result = RetargetOnto(SourceStage(SourceJoints(tilted)), model, true);
+        assert(OnlyUpperChestUnbound(result.diagnostics));
+        assert(result.worst[0] < 0.01);
+        assert(result.worst[1] < 0.01);
     }
 }
 
@@ -427,6 +447,7 @@ int
 main()
 {
     TestOntoPmxWithUpperChest();
-    TestOntoPmxWithoutUpperChest();
+    TestOntoPmxWithoutUpperChestByDefault();
+    TestOntoPmxWithoutUpperChestFolded();
     return 0;
 }

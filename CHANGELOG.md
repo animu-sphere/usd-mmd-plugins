@@ -18,6 +18,19 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Added
 
+- **The upper-chest fold onto a PMX (MOT-O13).** A consumer retargeting a
+  generic clip onto a PMX now also sets `usd-motion-plugins` v0.5.3's
+  `RetargetOptions::foldUnboundIntermediateRotations`, beside `targetRest`.
+  On a PMX without `上半身3`, the clip's `upperChest` rotation then reaches
+  `上半身2` instead of being dropped, and the neck and arms turn as the
+  source's do. `mmdSkeletonAdapter_generic_clips` holds the fold exact
+  without `上半身3` and inert with it, and keeps the default's loss pinned.
+  Over seven VRMA clips, a mocopi BVH and 17 local characters, every arm and
+  neck spread goes to at most 0.04°. Both adapters move to `usd-motion-plugins`
+  v0.5.3 (`>=0.5.3,<0.6`), and `mmdSkeletonAdapter`'s package asks for
+  `motionRetarget` 0.5.3. No edge is added. (`MOTION_CONTRACT.md` §10.9;
+  report 2026-10-04.)
+
 - **Generic clips onto a PMX (Phase 8).** `mmdSkeletonAdapter_generic_clips`
   reads a semantic motion stage, written as `usdVrmaFileFormat` and
   `motion_convert` write theirs, through `motionUsd`. It retargets the stage

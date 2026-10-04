@@ -7,8 +7,8 @@
 > says, with a synthetic rig behind each rule. §10 and §12 are **binding**
 > since `mmdMotionAdapter` and `mmdSkeletonAdapter` adopted the released
 > `usd-motion-plugins` v0.5.0 packages, with synthetic adapter tests and an
-> installed consumer, and §12.6 since `mmdSkeletonAdapter` states it against
-> v0.5.2. This document holds
+> installed consumer, §12.6 since `mmdSkeletonAdapter` states it against
+> v0.5.2, and §10.9's fold since v0.5.3. This document holds
 > only what is specific to MMD motion — VMD's source facts, its text encoding,
 > where it meets a PMX model, how MMD's control rig is evaluated, and how the
 > result enters the shared motion core. Generic motion concepts (`MotionPose`,
@@ -50,8 +50,10 @@
 > ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
 > Revised again the same day: MOT-O13 is resolved by `usd-motion-plugins`
 > v0.5.3's opt-in fold of an unbound intermediate, which §10.9 has a consumer
-> retargeting onto a PMX set. That step is **proposed** until
-> `mmdSkeletonAdapter`'s generic-clip test holds it against v0.5.3.
+> retargeting onto a PMX set. That step became **binding** the same day,
+> when `mmdSkeletonAdapter`'s generic-clip test held it against v0.5.3 and a
+> rerun over the local clips and characters matched the measured fold
+> ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
 
 ---
 
@@ -325,14 +327,14 @@ Resolved:
 | MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
 | MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
 | MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection`. As shipped, the adapter's rests give the same figures over the same 17 models ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)) | Phase 9, 2026-10-04 |
-| MOT-O13 | How a generic clip's `upperChest` reaches a PMX without `上半身3`, as 15 of the 17 local characters are. Both producers measured, `usdVrmaFileFormat` and `motion_convert`, drive it, and by default the shared retarget drops a joint the target does not bind (its RETARGETING_POLICY §4.1, case 6): everything above the chest missed up to 4.2° on a VRMA's arms and 9.8° on a mocopi BVH's, where a model with `上半身3` is exact ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)) | §10.9: a consumer retargeting onto a PMX also sets `RetargetOptions::foldUnboundIntermediateRotations`, `usd-motion-plugins` v0.5.3's opt-in fold (its RETARGETING_POLICY §4.2, from [#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)). It carries the upper chest's rotation into `chest` as `Qc · Quc · S⁻¹`, the rule this repository measured: every arm and neck spread went to at most 0.04°, while the naive `Qc · Quc` is wrong wherever `S` is not identity. The rule is the shared core's, so this repository keeps no copy of it | Phase 8, 2026-10-04 |
+| MOT-O13 | How a generic clip's `upperChest` reaches a PMX without `上半身3`, as 15 of the 17 local characters are. Both producers measured, `usdVrmaFileFormat` and `motion_convert`, drive it, and by default the shared retarget drops a joint the target does not bind (its RETARGETING_POLICY §4.1, case 6): everything above the chest missed up to 4.2° on a VRMA's arms and 9.8° on a mocopi BVH's, where a model with `上半身3` is exact ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)) | §10.9: a consumer retargeting onto a PMX also sets `RetargetOptions::foldUnboundIntermediateRotations`, `usd-motion-plugins` v0.5.3's opt-in fold (its RETARGETING_POLICY §4.2, from [#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)). It carries the upper chest's rotation into `chest` as `Qc · Quc · S⁻¹`, the rule this repository measured: every arm and neck spread went to at most 0.04°, while the naive `Qc · Quc` is wrong wherever `S` is not identity. The rule is the shared core's, so this repository keeps no copy of it. As shipped, the option gives the hand-written fold's figures to within 0.005° over the same clips and characters, and changes nothing on the two with `上半身3` ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)) | Phase 8, 2026-10-04 |
 
 ## 10. Normalizing into the shared motion core
 
 Binding: this section is Phase 9
 ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` evaluates
 as §11 says; `mmdMotionAdapter` and `mmdSkeletonAdapter` consume the two
-packages released by `usd-motion-plugins`, at v0.5.2 since §12.6:
+packages released by `usd-motion-plugins`, at v0.5.3 since MOT-O13:
 `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionChannelSet`,
 `MotionClip`), `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`,
 `SourceRestPose`, `TargetRestPose`) and, for the T-pose directions alone,
@@ -558,7 +560,8 @@ a consumer may fold an MMD-derived clip too. Nothing here requires it: such a cl
 `mmdSkeletonAdapter_generic_clips` holds this path on generated stages and
 models, with identity and with rotated source rests, onto a PMX with and
 without `上半身3`, with and without the fold
-([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
+([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md),
+[fold report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
 
 ## 11. Evaluating the control rig
 
