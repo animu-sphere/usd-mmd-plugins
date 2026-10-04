@@ -576,6 +576,14 @@ the difference between the two skeletons' rests. As a source, the adapter's
 a consumer may fold an MMD-derived clip too. Nothing here requires it: such a clip never drives
 `upperChest` (§12.2).
 
+A live stream takes the same steps 2 and 3. A `motion-connectors`
+connector's poses are the clip's samples, and step 1's skeleton comes from
+the rest the producer states, for mocopi the device's skeleton packet. This
+repository links no connector
+([WORKSPACE.md §2.2](../architecture/WORKSPACE.md#22-forbidden-edges)):
+the consumer composes the two
+([connector report](../reports/2026-10-04-phase8-connector-captures-onto-pmx.md)).
+
 `mmdSkeletonAdapter_generic_clips` holds this path on generated stages and
 models, with identity and with rotated source rests, onto a PMX with and
 without `上半身3`, with and without the fold
