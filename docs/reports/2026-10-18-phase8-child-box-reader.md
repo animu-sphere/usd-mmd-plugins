@@ -1,5 +1,7 @@
 # Phase 8 child Box reader follow-up (2026-10-18)
 
+Follow-up: [collider-local pose consumer evidence](2026-10-18-phase8-collider-local-pose.md).
+
 Dated local Windows evidence; append-only. This follows the
 [first consumer probe](2026-10-17-phase8-physics-consumer.md). It validates a
 bounded generic reader increment, not PMX simulation acceptance.
