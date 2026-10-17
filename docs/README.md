@@ -22,9 +22,9 @@ retarget and animation authoring acceptance is covered; expression
 interoperability and rest-direction evidence remain. Future
 physics execution is intended to consume the existing static stage through
 `usd-physics-plugins`; a local primitive reader increment accepts
-Cube/Sphere/Capsule controls with collider-local poses and composed body
-transforms, but still rejects complete
-PMX physics scenes ([consumer follow-up](reports/2026-10-18-phase8-primitive-reader.md)).
+dynamic and kinematic Cube/Sphere/Capsule controls with collider-local poses
+and composed body transforms, but still rejects complete
+PMX physics scenes ([consumer follow-up](reports/2026-10-18-phase8-kinematic-reader.md)).
 MMD coupling stays here and simulation stays outside the
 importer. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
@@ -42,7 +42,7 @@ place that says what is implemented.
 | [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) · [ost/](reports/ost/README.md), the OpenStrata dogfooding reports |
 
 Latest physics consumer evidence:
-[2026-10-18 Sphere/Capsule follow-up](reports/2026-10-18-phase8-primitive-reader.md).
+[2026-10-18 kinematic follow-up](reports/2026-10-18-phase8-kinematic-reader.md).
 
 ## Canonical documents
 

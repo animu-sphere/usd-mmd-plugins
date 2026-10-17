@@ -125,6 +125,20 @@ CheckControl()
         }
         std::cout << (capsule ? "control-capsule" : "control-sphere") << "\taccepted\t1\n";
     }
+    pxr::UsdPhysicsRigidBodyAPI(body.GetPrim()).CreateKinematicEnabledAttr().Set(true);
+    body.GetPrim().RemoveAPI<pxr::UsdPhysicsMassAPI>();
+    body.GetPrim().RemoveProperty(pxr::TfToken("physics:mass"));
+    for (const auto* type : {"Cube", "Sphere", "Capsule"}) {
+        collider.GetPrim().SetTypeName(pxr::TfToken(type));
+        const auto snapshot = usd_physics::usd::readPrimitiveScene(childStage);
+        if (snapshot.size() != 1 || snapshot[0].path != children[0].path ||
+            snapshot[0].motionType != usd_physics::core::MotionType::kinematicBody ||
+            snapshot[0].transform != children[0].transform ||
+            snapshot[0].shape.localTransform.translation != usd_physics::core::Vector3{1, 2, 3}) {
+            throw std::runtime_error("installed reader failed kinematic child control");
+        }
+        std::cout << "control-kinematic-" << type << "\taccepted\t1\n";
+    }
 }
 } // namespace
 

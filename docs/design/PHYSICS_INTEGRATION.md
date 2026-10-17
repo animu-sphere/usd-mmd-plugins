@@ -254,6 +254,16 @@ reject at joint declaration validation. Kinematic operations and joints
 remain required, and steps 1–2 remain open
 ([report](../reports/2026-10-18-phase8-primitive-reader.md)).
 
+**Kinematic follow-up (2026-10-18).** A local installed shared increment adds
+neutral kinematic body descriptors and an optional pose-target movement
+capability implemented by Jolt. The reader admits standard time-independent
+kinematic flags without requiring dynamic mass. The probe accepts three
+mass-free child Cube/Sphere/Capsule controls alongside the previous five
+controls. All 22 full physics-bearing fixtures still reject at joint
+declaration validation; steps 1–2 remain open. Joint frames/limits are next,
+and MMD bone synchronization remains deferred
+([report](../reports/2026-10-18-phase8-kinematic-reader.md)).
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and

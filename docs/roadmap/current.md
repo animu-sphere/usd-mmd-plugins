@@ -10,9 +10,9 @@ resolved by `usd-motion-plugins` v0.5.3's opt-in fold; recorded mocopi
 captures reach a PMX through `motion-connectors` v0.1.0. The operator reports
 the `hdToon` look approximation complete (2026-10-17); the next gate is
 the shared physics reader: a local increment accepts Cube/Sphere/Capsule
-controls with collider-local poses and composed body transforms, but complete
-PMX physics scenes still reject
-([follow-up report](../reports/2026-10-18-phase8-primitive-reader.md)). Phase 10,
+controls including kinematic bodies, with collider-local poses and composed
+body transforms, but complete PMX physics scenes still reject
+([follow-up report](../reports/2026-10-18-phase8-kinematic-reader.md)). Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -274,11 +274,11 @@ runtime composition described by
 
 - ⛔ Generic scene consumption waits on `usd-physics-plugins`: a local
   installed reader increment accepts direct/child Cube and child Sphere/Capsule
-  controls, including collider-local poses and composed body transforms. All 22
+  controls, including mass-free kinematic child bodies. All 22
   physics-bearing importer fixtures still reject; six physics-free fixtures
   return empty snapshots
-  ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-primitive-reader.md)).
-  Add kinematic operations and joint frames/limits before claiming the existing stage is
+  ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-kinematic-reader.md)).
+  Add joint frames/limits before claiming the existing stage is
   consumed. The first rejection is now a joint because declarations are
   validated before body conversion; this is not full-body acceptance or a
   stage-contract defect. Public compatible package publication also remains.

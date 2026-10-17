@@ -1,5 +1,7 @@
 # Phase 8 Sphere/Capsule reader follow-up (2026-10-18)
 
+Follow-up: [kinematic reader evidence](2026-10-18-phase8-kinematic-reader.md).
+
 Dated local Windows evidence following the
 [collider-local pose probe](2026-10-18-phase8-collider-local-pose.md).
 This validates a bounded shared-reader increment, not PMX simulation.
