@@ -218,6 +218,16 @@ Static preservation was completed in Phase 6. These runtime steps belong to
 Phase 8 composition and its external collaborators; they do not reopen Phase
 6 unless the authored contract itself is wrong.
 
+**First consumer evidence (2026-10-17).** An isolated probe linked only to
+installed `physicsUsd` 0.1 accepts its positive Box control but rejects all 22
+physics-bearing importer fixtures: its current reader requires collision on
+the body Cube, while §3's stage has a body Xform and a child collider. The
+[report](../reports/2026-10-17-phase8-physics-consumer.md) separates that
+observed failure from further gaps identified in the reader's source.
+Steps 1–2 are not complete. Expand the generic reader using these conventional
+USD declarations before fixing the MMD adapter's API; do not flatten the
+importer's hierarchy or add backend metadata to accommodate the Box subset.
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and
