@@ -1,5 +1,7 @@
 # Phase 8 collider-local pose consumer follow-up (2026-10-18)
 
+Follow-up: [Sphere/Capsule reader evidence](2026-10-18-phase8-primitive-reader.md).
+
 Dated local Windows evidence, following the
 [centered child Box probe](2026-10-18-phase8-child-box-reader.md).
 This verifies a bounded reader increment, not PMX simulation.
