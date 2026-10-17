@@ -238,6 +238,14 @@ establish body support. Collider-local offsets/rotations, sphere/capsule
 shapes, kinematic bodies and joints remain required; steps 1–2 remain open
 ([follow-up report](../reports/2026-10-18-phase8-child-box-reader.md)).
 
+**Collider-local pose follow-up (2026-10-18).** A further local installed
+increment carries the child Cube's composed translation/rotation in a neutral
+shape-local transform, preserving the separate body frame. The isolated
+consumer checks this with a third positive control; all 22 full physics-bearing
+PMX fixtures still reject at joint validation. Sphere/capsule geometry,
+kinematic operations and joints remain required, and steps 1–2 remain open
+([report](../reports/2026-10-18-phase8-collider-local-pose.md)).
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and

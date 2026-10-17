@@ -82,6 +82,22 @@ CheckControl()
         throw std::runtime_error("installed reader failed the child Box control");
     }
     std::cout << "control-child-box\taccepted\t1\n";
+
+    collider.ClearXformOpOrder();
+    collider.AddTranslateOp().Set(pxr::GfVec3d(1, 2, 3));
+    collider.AddRotateZOp().Set(90.0f);
+    collider.AddScaleOp().Set(pxr::GfVec3f(0.5f, 1, 2));
+    const auto offset = usd_physics::usd::readBoxScene(childStage);
+    if (offset.size() != 1 || offset[0].path != children[0].path ||
+        offset[0].transform != children[0].transform ||
+        std::abs(offset[0].shape.halfExtents.x - children[0].shape.halfExtents.x) > 1e-9 ||
+        std::abs(offset[0].shape.halfExtents.y - children[0].shape.halfExtents.y) > 1e-9 ||
+        std::abs(offset[0].shape.halfExtents.z - children[0].shape.halfExtents.z) > 1e-9 ||
+        offset[0].shape.localTransform.translation != usd_physics::core::Vector3{1, 2, 3} ||
+        std::abs(offset[0].shape.localTransform.rotation.z - std::sqrt(0.5)) > 1e-9) {
+        throw std::runtime_error("installed reader failed the local collider pose control");
+    }
+    std::cout << "control-offset-box\taccepted\t1\n";
 }
 } // namespace
 
