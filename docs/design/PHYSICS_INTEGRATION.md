@@ -228,6 +228,16 @@ Steps 1–2 are not complete. Expand the generic reader using these conventional
 USD declarations before fixing the MMD adapter's API; do not flatten the
 importer's hierarchy or add backend metadata to accommodate the Box subset.
 
+**Bounded reader follow-up (2026-10-18).** A local installed shared-reader
+increment accepts a centered, axis-aligned child Cube below a rigid body
+Xform, with composed body orientation/translation and child scale. The
+probe now checks this beside its original direct Cube control. All 22 full
+physics-bearing PMX fixtures still reject, at the joint declaration during
+the reader's initial validation pass. The changed rejection path does not
+establish body support. Collider-local offsets/rotations, sphere/capsule
+shapes, kinematic bodies and joints remain required; steps 1–2 remain open
+([follow-up report](../reports/2026-10-18-phase8-child-box-reader.md)).
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and
