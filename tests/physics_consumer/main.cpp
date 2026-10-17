@@ -7,6 +7,8 @@
 #include <pxr/base/gf/vec3f.h>
 #include <pxr/usd/usd/primRange.h>
 #include <pxr/usd/usdGeom/cube.h>
+#include <pxr/usd/usdGeom/sphere.h>
+#include <pxr/usd/usdGeom/capsule.h>
 #include <pxr/usd/usdGeom/metrics.h>
 #include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdPhysics/collisionAPI.h>
@@ -98,6 +100,31 @@ CheckControl()
         throw std::runtime_error("installed reader failed the local collider pose control");
     }
     std::cout << "control-offset-box\taccepted\t1\n";
+
+    for (const bool capsule : {false, true}) {
+        const auto prim = collider.GetPrim();
+        prim.SetTypeName(pxr::TfToken(capsule ? "Capsule" : "Sphere"));
+        prim.GetAttribute(pxr::TfToken("xformOp:scale")).Set(pxr::GfVec3f(2));
+        if (capsule) {
+            const pxr::UsdGeomCapsule geometry(prim);
+            geometry.CreateRadiusAttr().Set(0.25);
+            geometry.CreateHeightAttr().Set(1.5);
+            geometry.CreateAxisAttr().Set(pxr::UsdGeomTokens->x);
+        } else {
+            pxr::UsdGeomSphere(prim).CreateRadiusAttr().Set(0.25);
+        }
+        const auto rounded = usd_physics::usd::readPrimitiveScene(childStage);
+        if (rounded.size() != 1 || rounded[0].path != children[0].path ||
+            rounded[0].transform != children[0].transform || rounded[0].mass != 3 ||
+            rounded[0].shape.type != (capsule ? usd_physics::core::ShapeType::capsule
+                                              : usd_physics::core::ShapeType::sphere) ||
+            std::abs(rounded[0].shape.radius - 0.5) > 1e-9 ||
+            (capsule && std::abs(rounded[0].shape.halfHeight - 1.5) > 1e-9) ||
+            rounded[0].shape.localTransform.translation != usd_physics::core::Vector3{1, 2, 3}) {
+            throw std::runtime_error("installed reader failed rounded geometry control");
+        }
+        std::cout << (capsule ? "control-capsule" : "control-sphere") << "\taccepted\t1\n";
+    }
 }
 } // namespace
 
@@ -121,7 +148,7 @@ main(int argc, char** argv)
             }
             std::cout << argv[i] << "\trigidBodies=" << rigidBodies << '\t';
             try {
-                const auto snapshot = usd_physics::usd::readBoxScene(stage);
+                const auto snapshot = usd_physics::usd::readPrimitiveScene(stage);
                 std::cout << "accepted\t" << snapshot.size() << '\n';
             } catch (const usd_physics::usd::ImportError& error) {
                 std::cout << "rejected\t" << CodeName(error.code()) << '\t' << error.path() << '\t'

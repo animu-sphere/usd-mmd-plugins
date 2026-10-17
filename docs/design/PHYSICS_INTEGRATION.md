@@ -246,6 +246,14 @@ PMX fixtures still reject at joint validation. Sphere/capsule geometry,
 kinematic operations and joints remain required, and steps 1–2 remain open
 ([report](../reports/2026-10-18-phase8-collider-local-pose.md)).
 
+**Primitive reader follow-up (2026-10-18).** A local installed increment adds
+Sphere/Capsule geometry and a `readPrimitiveScene()` snapshot API while
+retaining the Cube-only API. The probe accepts its three Box controls plus
+child Sphere/Capsule controls; all 22 full physics-bearing PMX fixtures still
+reject at joint declaration validation. Kinematic operations and joints
+remain required, and steps 1–2 remain open
+([report](../reports/2026-10-18-phase8-primitive-reader.md)).
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and
