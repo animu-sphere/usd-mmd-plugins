@@ -180,6 +180,12 @@ def check_ranges(root: pathlib.Path, manifest: pathlib.Path, version: str,
 PROJECT_VERSION = re.compile(r"^project\(\w+\s+VERSION\s+(\S+)", re.MULTILINE)
 
 
+def component_files(root: pathlib.Path, pattern: str) -> list[pathlib.Path]:
+    """Source components only, not old installs under build/ or .strata/."""
+    return sorted(path for category in ("libs", "plugins", "tools")
+                  for path in (root / category).glob(f"*/{pattern}"))
+
+
 def check_mirrors(root: pathlib.Path) -> list[str]:
     errors: list[str] = []
     version = (root / "VERSION").read_text(encoding="utf-8").strip()
@@ -194,12 +200,12 @@ def check_mirrors(root: pathlib.Path) -> list[str]:
 
     expect(root / "openstrata.toml", r'^version\s*=\s*"([^"]+)"', version,
            "project version")
-    manifests = sorted(root.glob("*/*/openstrata.*.yaml"))
+    manifests = component_files(root, "openstrata.*.yaml")
     sibling_ids = {manifest.parent.name for manifest in manifests}
     for manifest in manifests:
         expect(manifest, r"^\s+version:\s*([0-9][^\s#]*)", version, "version")
         errors.extend(check_ranges(root, manifest, version, sibling_ids))
-    for cmake in [root / "CMakeLists.txt", *sorted(root.glob("*/*/CMakeLists.txt"))]:
+    for cmake in [root / "CMakeLists.txt", *component_files(root, "CMakeLists.txt")]:
         project = PROJECT_VERSION.search(cmake.read_text(encoding="utf-8"))
         if project and project.group(1) != "${USDMMD_VERSION}":
             errors.append(f"{cmake.relative_to(root).as_posix()}: project() "
@@ -343,6 +349,32 @@ def selftest() -> int:
                 for word in ("missing.md does not exist", "#nowhere",
                              "machine-local")):
             failures.append(f"check_file reported {found}")
+
+        # A previous install must not become a source component or invalidate
+        # today's version mirrors. A stale source manifest must still fail.
+        (root / "VERSION").write_text("0.2.0\n", encoding="utf-8")
+        (root / "openstrata.toml").write_text('version = "0.2.0"\n', encoding="utf-8")
+        (root / "CMakeLists.txt").write_text("project(Test LANGUAGES CXX)\n", encoding="utf-8")
+        for directory in ("cmake", "tests/installed_consumer", "libs/example",
+                          "build/old-install", ".strata/old-install"):
+            (root / directory).mkdir(parents=True)
+        (root / "cmake/UsdMmdOpenUsd.cmake").write_text(
+            'set(USDMMD_OPENUSD_REQUIRED_RELEASE "26.08")\n', encoding="utf-8")
+        (root / "tests/installed_consumer/CMakeLists.txt").write_text(
+            "find_package(mmdModel 0.2 CONFIG REQUIRED)\n", encoding="utf-8")
+        source_manifest = root / "libs/example/openstrata.library.yaml"
+        source_manifest.write_text("library:\n  version: 0.2.0\n", encoding="utf-8")
+        for directory in ("build/old-install", ".strata/old-install"):
+            (root / directory / "openstrata.plugin.yaml").write_text(
+                "plugin:\n  version: 0.1.0\n", encoding="utf-8")
+            (root / directory / "CMakeLists.txt").write_text(
+                "project(Old VERSION 0.1.0)\n", encoding="utf-8")
+        if check_mirrors(root):
+            failures.append("old installed manifests/CMake projects affect source mirrors")
+        source_manifest.write_text("library:\n  version: 0.1.0\n", encoding="utf-8")
+        found = check_mirrors(root)
+        if len(found) != 1 or "libs/example/openstrata.library.yaml: version" not in found[0]:
+            failures.append(f"stale source manifest was not diagnosed: {found}")
 
     if failures:
         print("\n".join(failures), file=sys.stderr)

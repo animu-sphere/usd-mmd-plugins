@@ -20,8 +20,10 @@ a bound motion (`mmdControl`) and hands the result to `usd-motion-plugins`
 through `mmdMotionAdapter` and `mmdSkeletonAdapter`. Skeletal end-to-end
 retarget and animation authoring acceptance is covered; expression
 interoperability and rest-direction evidence remain. Future
-physics execution consumes the existing static stage through
-`usd-physics-plugins`, with MMD coupling kept here and simulation outside the
+physics execution is intended to consume the existing static stage through
+`usd-physics-plugins`; its current Box reader rejects the body/collider
+hierarchy ([consumer probe](reports/2026-10-17-phase8-physics-consumer.md)).
+MMD coupling stays here and simulation stays outside the
 importer. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
 place that says what is implemented.

@@ -5,7 +5,7 @@
 /.strata/
 **/.strata/
 CMakeUserPresets.json
-strata.lock
+*.lock
 # What a generated CI job creates in its checkout: the bootstrapped `ost` and
 # its OST_HOME (the materialized runtime).
 /.ost-ci/

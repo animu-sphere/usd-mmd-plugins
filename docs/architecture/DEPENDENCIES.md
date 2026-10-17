@@ -162,3 +162,9 @@ The authored hand-off and staged integration are
 [PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md). Static PMX import,
 inspection and stage authoring remain fully functional when this dependency is
 absent.
+
+An isolated, opt-in [consumer probe](../../tests/physics_consumer/CMakeLists.txt)
+uses a local installed `physicsUsd` 0.1 package for contract evidence only
+([2026-10-17 report](../reports/2026-10-17-phase8-physics-consumer.md)). It is
+not a workspace/release member or a runtime dependency; no published artifact
+pin or coupling-adapter API has been selected.

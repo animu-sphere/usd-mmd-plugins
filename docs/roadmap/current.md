@@ -7,8 +7,10 @@ has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
 fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
 to Hydra; generic VRMA- and BVH-derived clips reach a PMX, and MOT-O13 is
 resolved by `usd-motion-plugins` v0.5.3's opt-in fold; recorded mocopi
-captures reach a PMX through `motion-connectors` v0.1.0; the `hydra-toon` MMD
-path is next, in `hydra-toon`. Phase 10,
+captures reach a PMX through `motion-connectors` v0.1.0. The operator reports
+the `hdToon` look approximation complete (2026-10-17); the next gate is
+the shared physics reader, whose current Box subset rejects the existing
+body/collider hierarchy ([probe report](../reports/2026-10-17-phase8-physics-consumer.md)). Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -193,9 +195,10 @@ copying those values
   stage with and without the schema, invalidation and time samples, and
   every importer fixture with materials. It is a release member, and the
   product smoke loads it installed.
-- ⬜ Bring up the `hydra-toon` MMD path in this order: diffuse/alpha, toon
-  ramp, sphere multiply/add, sub-texture, outline, shadow flags, material morph
-  runtime, then advanced UV and vertex-color behavior.
+- The operator reports **`hdToon` look approximation complete** (2026-10-17).
+  Renderer implementation and visual evidence belong to `hydra-toon`; this
+  status does not establish runtime material-morph or advanced UV/vertex-color
+  acceptance. Validate those behaviors with the runtime consumer when composed.
 - ⬜ After both `VrmMToonAPI` and `MmdMaterialAPI` paths work, evaluate
   renderer-private common code. Do not introduce a USD-level `ToonMaterialAPI`
   until the two concrete implementations demonstrate stable common semantics.
@@ -267,8 +270,15 @@ Static physics preservation is complete in Phase 6. Phase 8 owns only the
 runtime composition described by
 [PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md):
 
-- ⬜ verify that `usd-physics-plugins` can consume the existing
-  `/Asset/physics` stage contract without backend-specific metadata;
+- ⛔ Generic scene consumption waits on `usd-physics-plugins`: the installed
+  `physicsUsd` Box reader rejects all 22 physics-bearing importer fixtures at
+  the parent body, before reaching the child collider. The positive Box control
+  passes; six physics-free fixtures return empty snapshots
+  ([2026-10-17 report and reproducible probe](../reports/2026-10-17-phase8-physics-consumer.md)).
+  Extend the shared reader through parent-body/child-collider transforms,
+  sphere/capsule geometry, kinematic bodies and joint frames/limits before
+  claiming the existing stage is consumed. This run demonstrates a reader
+  limitation, not a stage-contract defect.
 - ⬜ establish the optional MMD coupling-adapter component and installed
   dependency only when that first consumer fixes the required API;
 - ⬜ synchronize `followBone` bodies from the evaluated/retargeted pose;
