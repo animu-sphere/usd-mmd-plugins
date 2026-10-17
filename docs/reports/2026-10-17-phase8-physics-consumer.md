@@ -1,5 +1,9 @@
 # Phase 8 first generic physics consumer (2026-10-17)
 
+Forward note: the [2026-10-18 follow-up](2026-10-18-phase8-child-box-reader.md)
+tests a bounded child Box reader increment; the current probe adds a second
+positive control. Use source `d3c6da7` to reproduce this report's original probe.
+
 Dated local Windows evidence; append-only. This is a contract probe, not
 simulation acceptance.
 
