@@ -18,6 +18,11 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ### Added
 
+- The opt-in physics consumer audits preserved joint spring vectors and
+  explicitly reports approximation when springs or format-only joints are
+  omitted. Reader and CLI regression controls cover malformed metadata and
+  per-input rejection; spring forces remain unimplemented
+  ([evidence](docs/reports/2026-10-18-phase8-joint-spring-audit.md)).
 - The release workflow pushes every bundle and tool package, on every target,
   to `ghcr.io/animu-sphere/usd-mmd-plugins` as `<name>-<version>-<target>`,
   and the release carries their pin table (`package-pins.json`, and in the

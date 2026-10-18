@@ -236,6 +236,23 @@ integration. Linear/angular response controls at 60/240 Hz measure that
 approximation; force ordering, large rates/steps and full PMX trajectories
 remain fidelity gaps. The importer and generic USD reader do not change.
 
+### 7.3 Joint spring metadata audit
+
+The isolated consumer reads the preserved `translationSpring` and
+`rotationSpring` pair as constant `vector3f` values. Partial pairs, wrong
+types, missing/blocked values, time samples and non-finite components reject.
+Finite signed values remain verbatim: no stiffness conversion or force is
+implemented. The audit includes format-only joint prims outside the shared
+snapshot, without interpreting source-type activation rules.
+
+Nonzero pairs are reported with the input, prim path and both vectors.
+Snapshot rows count affected prims and components and mark joint fidelity
+`approximate` when nonzero coefficients or format-only joints are present;
+otherwise it remains `unverified`. Snapshot acceptance and finite stepping
+do not establish spring fidelity. Unit conversion and a neutral execution
+contract still require independent response evidence
+([audit report](../reports/2026-10-18-phase8-joint-spring-audit.md)).
+
 ## 8. Dependency policy
 
 The static path remains lightweight:

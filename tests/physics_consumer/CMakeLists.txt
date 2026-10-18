@@ -43,4 +43,12 @@ if(BUILD_TESTING)
     target_compile_definitions(mmd_physics_damping_test PRIVATE MMD_PHYSICS_EXECUTION)
   endif()
   add_test(NAME mmd_physics_body_damping COMMAND mmd_physics_damping_test)
+  add_executable(mmd_physics_springs_test joint_springs_test.cpp)
+  target_compile_features(mmd_physics_springs_test PRIVATE cxx_std_17)
+  target_link_libraries(mmd_physics_springs_test PRIVATE physicsUsd::physicsUsd)
+  add_test(NAME mmd_physics_joint_springs COMMAND mmd_physics_springs_test)
+  add_test(NAME mmd_physics_joint_springs_probe COMMAND "${CMAKE_COMMAND}"
+    "-DPROBE=$<TARGET_FILE:mmd_physics_consumer_probe>"
+    "-DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/joint-springs-probe"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/joint_springs_probe_test.cmake")
 endif()
