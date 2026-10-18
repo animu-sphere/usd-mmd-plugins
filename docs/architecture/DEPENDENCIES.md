@@ -175,3 +175,9 @@ workspace dependency. The [execution report](../reports/2026-10-18-phase8-six-do
 records the candidate SDK and the baseline SDK's failed axis gate; the shared
 repository traced that failure to MSVC `/fp:fast` and selected deterministic
 Jolt ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)).
+
+The probe also translates MMD collision metadata into the existing neutral
+`CollisionFilter` before creating bodies. This helper and its independent
+CTest controls are test-only; no coupling-adapter package or shared-reader
+dependency on MMD is introduced
+([filtering report](../reports/2026-10-18-phase8-collision-filter.md)).

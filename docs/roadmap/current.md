@@ -289,9 +289,13 @@ runtime composition described by
   `usd-jolt-six-dof` cells pass the six-axis tests on hosted Windows/Linux
   ([usd-physics-plugins #20](https://github.com/animu-sphere/usd-physics-plugins/pull/20)); the option stays OFF by default
   ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-six-dof-execution.md)).
-  Resolve coefficients, filtering and source-only semantics before claiming
-  complete physics consumption. Public compatible package publication also
-  remains.
+  The isolated consumer now maps the source group/mask to neutral collision
+  filters; six local contact controls pass, including distinct masks for
+  same-group bodies in one world, and all 22 fixtures still step 120 times
+  ([filtering evidence](../reports/2026-10-18-phase8-collision-filter.md)).
+  Resolve coefficients, springs and source-only semantics before claiming
+  complete physics consumption. Hosted MMD-filter acceptance and public
+  compatible package publication also remain.
 - ⬜ establish the optional MMD coupling-adapter component and installed
   dependency only when that first consumer fixes the required API;
 - ⬜ synchronize `followBone` bodies from the evaluated/retargeted pose;

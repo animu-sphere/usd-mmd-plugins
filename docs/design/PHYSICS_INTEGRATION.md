@@ -169,6 +169,18 @@ them into the shared physics filter contract; the selected backend then maps
 that contract to object layers or its equivalent. The USD file never freezes
 a Jolt, PhysX or Bullet filtering strategy.
 
+For the existing stage contract's constant integer metadata, the neutral
+filter uses `categories = 1 << collisionGroup` and
+`collidesWith = collisionMask`, limited to the 16 MMD groups. A set mask bit
+admits that group; there is no complement or sign extension. A pair is
+admitted only if both bodies accept the other's category. Bodies in the
+same group retain their individual masks. An incomplete, out-of-range,
+wrongly typed or time-sampled MMD filter declaration must reject instead
+of silently using backend defaults. A body with neither MMD attribute may
+retain the shared default. This mapping does not reserve categories for
+non-MMD participants in a composed runtime; that allocation remains a
+runtime contract.
+
 Joint translation follows the same rule:
 
 1. consume the closest conventional `UsdPhysics` representation;
@@ -318,6 +330,19 @@ stays OFF by default and no six-DOF package is published, so this
 repository's probe still builds the shared packages locally. Coefficients/
 filtering, springs, source-only semantics and runtime synchronization still
 precede MMD bone coupling.
+
+**MMD collision-filter follow-up (2026-10-18).** The isolated consumer now
+validates the preserved group/mask and passes the neutral filter at body
+creation, outside `physicsUsd`. Reader-only controls cover all 16 groups,
+zero/all/high-bit masks, asymmetric rejection and malformed metadata. Six
+execution controls check actual contacts, including same-group bodies with
+different masks in one world. All 22 physics-bearing fixtures still create
+three filtered bodies/two constraints and step 120 times with finite state;
+six physics-free fixtures remain empty. This closes the probe's source-filter
+gap locally, without establishing a runtime adapter or mixed-format category
+allocation. Coefficients, springs, source-only joints, PMX angular/zero-mass
+equivalence, hosted MMD-filter acceptance and synchronization remain open
+([report](../reports/2026-10-18-phase8-collision-filter.md)).
 
 ## 10. Testing
 
