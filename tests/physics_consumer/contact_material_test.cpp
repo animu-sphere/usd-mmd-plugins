@@ -40,28 +40,39 @@ void Reject(const pxr::UsdPrim& body)
 }
 
 #ifdef MMD_PHYSICS_EXECUTION
-// This includes the MMD conversion before backend creation. Quantitative
-// mixing and precision coverage belongs to the shared backend's own tests.
-double Response(const pxr::UsdPrim& bodyPrim, float friction, float restitution, bool sliding)
+// Decode each source body's coefficients before creating backend resources.
+double
+Response(const pxr::UsdPrim& bodyPrim, float friction, float restitution, bool sliding,
+         float floorCoefficient = -1, int hz = 240, double speed = 5)
 {
-    auto world = usd_physics::jolt::createWorld();
+    auto world = usd_physics::jolt::createWorld(mmd_physics_probe::ContactMixing());
     const auto material = Material(bodyPrim, friction, restitution);
-    const auto floor = world->createShape({core::ShapeType::box, {20, .5, 5}});
+    const auto floorPrim = bodyPrim.GetStage()->DefinePrim(pxr::SdfPath("/Floor"));
+    const auto floorMaterial =
+        floorCoefficient < 0
+            ? Material(floorPrim, friction, restitution)
+            : Material(floorPrim, sliding ? floorCoefficient : 0, sliding ? 0 : floorCoefficient);
+    const auto floor = world->createShape({core::ShapeType::box, {100, .5, 5}});
     core::ShapeDescriptor geometry;
     if (!sliding) geometry.type = core::ShapeType::sphere;
     const auto shape = world->createShape(geometry);
-    world->createBody({floor, core::MotionType::staticBody, {{0, -.5, 0}, {}},
-                       0, {}, material});
-    const auto body = world->createBody(
-        {shape, core::MotionType::dynamicBody, {{0, sliding ? .51 : 3, 0}, {}},
-         1, {}, material});
+    world->createBody(
+        {floor, core::MotionType::staticBody, {{0, -.5, 0}, {}}, 0, {}, floorMaterial, {0, 0}});
+    const auto body = world->createBody({shape,
+                                         core::MotionType::dynamicBody,
+                                         {{0, sliding ? .51 : 3, 0}, {}},
+                                         1,
+                                         {},
+                                         material,
+                                         {0, 0}});
     if (sliding) {
-        for (int i = 0; i != 24; ++i) world->step(core::PhysicsWorld::Duration{1.0/240});
-        Check(world->setLinearVelocity(body, {5, 0, 0}), "could not start sliding control");
+        for (int i = 0; i != hz / 10; ++i)
+            world->step(core::PhysicsWorld::Duration{1.0 / hz});
+        Check(world->setLinearVelocity(body, {speed, 0, 0}), "could not start sliding control");
     }
     double upward = 0;
-    for (int i = 0; i != (sliding ? 120 : 360); ++i) {
-        world->step(core::PhysicsWorld::Duration{1.0/240});
+    for (int i = 0; i != (sliding ? hz / 2 : hz * 3 / 2); ++i) {
+        world->step(core::PhysicsWorld::Duration{1.0 / hz});
         const auto state = world->bodyState(body);
         Check(std::isfinite(state.linearVelocity.x) && std::isfinite(state.linearVelocity.y),
               "contact response must remain finite");
@@ -79,6 +90,12 @@ int main()
         const auto stage = pxr::UsdStage::CreateInMemory();
         auto body = stage->DefinePrim(pxr::SdfPath("/Body"));
         const auto generic = ReadContactMaterial(body);
+        const auto mixing = mmd_physics_probe::ContactMixing();
+        core::validateContactMixing(mixing);
+        Check(mixing.friction == core::ContactCombineRule::product &&
+                  mixing.restitution == core::ContactCombineRule::product && mixing.maxFriction &&
+                  *mixing.maxFriction == 10,
+              "MMD pair policy requires products and friction ceiling 10");
         Check(generic.friction == .2 && generic.restitution == 0,
               "conventional body retains neutral defaults");
         for (const float friction : {0.f, .75f, 4.f}) {
@@ -132,6 +149,28 @@ int main()
               "MMD coefficients must change sliding and bounce response");
         std::cout << "contact responses: free=" << free << " rough=" << rough
                   << " dead=" << dead << " live=" << live << '\n';
+        for (const int hz : {60, 240}) {
+            const auto product = Response(body, .25f, 0, true, 1, hz);
+            const auto swapped = Response(body, 1, 0, true, .25f, hz);
+            const auto equal = Response(body, .5f, 0, true, .5f, hz);
+            Check(std::abs(product - (5 - .25 * 9.81 * .5)) < .08 &&
+                      std::abs(product - swapped) < .02 && std::abs(product - equal) < .02,
+                  "source friction pairs must multiply symmetrically");
+            const auto capped = Response(body, 4, 0, true, 4, hz, 100);
+            const auto atCeiling = Response(body, 5, 0, true, 2, hz, 100);
+            Check(std::abs(capped - atCeiling) < .02 && capped > 1,
+                  "source friction product must cap at 10");
+            const auto reference = Response(body, 0, 1, false, 1, hz);
+            const auto bounce = Response(body, 0, .8f, false, .25f, hz);
+            const auto reverse = Response(body, 0, .25f, false, .8f, hz);
+            Check(std::abs(bounce / reference - .2) < .025 && std::abs(bounce - reverse) < .02,
+                  "source restitution pairs must multiply symmetrically");
+            Check(Response(body, 0, .8f, false, 0, hz) < .1 &&
+                      Response(body, 0, 0, false, .8f, hz) < .1,
+                  "zero source restitution must absorb on either endpoint");
+            std::cout << hz << " Hz MMD pairs: slide=" << product << " capped=" << capped
+                      << " bounce=" << bounce << " unit bounce=" << reference << '\n';
+        }
 #endif
         std::cout << "MMD contact material controls passed\n";
     } catch (const std::exception& error) {

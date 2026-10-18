@@ -32,10 +32,12 @@ The isolated consumer now maps MMD collision groups/masks to neutral filters,
 with six contact controls and the same fixture stepping gate. Friction and
 restitution now reach locally rebuilt shared packages, with four response
 controls and the same fixture gate. Converted linear/angular damping rates now
-pass independent translation/free-spin controls at 60/240 Hz. Instantaneous
-source damping, timestep fidelity, pair-mixing fidelity, springs and full
+pass independent translation/free-spin controls at 60/240 Hz. The consumer
+also selects product pair coefficients with a friction ceiling of 10;
+asymmetric, zero and ceiling controls pass at both rates. Instantaneous
+source damping, timestep fidelity, source trajectories, springs and full
 physics fidelity remain open
-([consumer follow-up](reports/2026-10-18-phase8-body-damping.md)).
+([consumer follow-up](reports/2026-10-18-phase8-contact-mixing.md)).
 MMD coupling stays here and simulation stays outside the
 importer. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
@@ -53,7 +55,7 @@ place that says what is implemented.
 | [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) · [ost/](reports/ost/README.md), the OpenStrata dogfooding reports |
 
 Latest physics consumer evidence:
-[2026-10-18 MMD body damping follow-up](reports/2026-10-18-phase8-body-damping.md).
+[2026-10-18 MMD contact pair mixing](reports/2026-10-18-phase8-contact-mixing.md).
 
 ## Canonical documents
 
