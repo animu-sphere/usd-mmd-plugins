@@ -41,7 +41,46 @@ if(MMD_PHYSICS_EXECUTION)
 endif()
 
 include(CTest)
+set(MMD_PHYSICS_MMD_PREFIX "" CACHE PATH "Installed MMD importer/schema prefix for PMX regression tests")
+option(MMD_PHYSICS_FULL_CORPUS "Run every opening generated PMX instead of the bounded representative set" OFF)
+if(MMD_PHYSICS_FULL_CORPUS AND NOT MMD_PHYSICS_MMD_PREFIX)
+  message(FATAL_ERROR "Full corpus requires MMD_PHYSICS_MMD_PREFIX")
+endif()
 if(BUILD_TESTING)
+  if(MMD_PHYSICS_MMD_PREFIX)
+    foreach(bundle mmdSchema usdMmdFileFormat)
+      if(NOT EXISTS "${MMD_PHYSICS_MMD_PREFIX}/plugin/resources/${bundle}/plugInfo.json")
+        message(FATAL_ERROR "MMD fixture tests require installed ${bundle} in MMD_PHYSICS_MMD_PREFIX")
+      endif()
+    endforeach()
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    set(fixture_args)
+    if(MMD_PHYSICS_FULL_CORPUS)
+      list(APPEND fixture_args --all)
+    endif()
+    if(MMD_PHYSICS_EXECUTION)
+      list(APPEND fixture_args --execution)
+    endif()
+    if(MMD_PHYSICS_TRANSLATION_SPRINGS)
+      list(APPEND fixture_args --translation-springs)
+    endif()
+    if(MMD_PHYSICS_ROTATION_SPRINGS)
+      list(APPEND fixture_args --rotation-springs)
+    endif()
+    add_test(NAME mmd_physics_pmx_fixtures COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/check_fixtures.py"
+      --probe "$<TARGET_FILE:mmd_physics_consumer_probe>"
+      --fixtures "${CMAKE_CURRENT_SOURCE_DIR}/../../plugins/usdMmdFileFormat/tests/fixtures"
+      ${fixture_args})
+    set_tests_properties(mmd_physics_pmx_fixtures PROPERTIES TIMEOUT 150 LABELS "integration")
+    set_property(TEST mmd_physics_pmx_fixtures PROPERTY ENVIRONMENT_MODIFICATION
+      "PXR_PLUGINPATH_NAME=set:"
+      "PXR_PLUGINPATH_NAME=path_list_append:${MMD_PHYSICS_MMD_PREFIX}/plugin/resources/mmdSchema"
+      "PXR_PLUGINPATH_NAME=path_list_append:${MMD_PHYSICS_MMD_PREFIX}/plugin/resources/usdMmdFileFormat"
+      "PATH=path_list_prepend:${MMD_PHYSICS_MMD_PREFIX}/lib")
+    add_test(NAME mmd_physics_fixture_checker COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/test_check_fixtures.py")
+  endif()
   if(MMD_PHYSICS_ROTATION_SPRINGS)
     add_executable(mmd_physics_rotation_springs_test rotation_springs_test.cpp)
     target_compile_features(mmd_physics_rotation_springs_test PRIVATE cxx_std_17)

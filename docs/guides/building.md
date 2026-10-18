@@ -118,6 +118,10 @@ Set `PHYSICS_PREFIX` to a clean installation of rebuilt `physicsCore`,
 to the validated deterministic Jolt SDK. Execution requires the backend built
 with `PHYSICSJOLT_ENABLE_SIX_DOF=ON`. Keep SDK and compiler/runtime settings
 consistent with those used to build the packages. No sibling source is read.
+Set `MMD_PREFIX` to an installation of the current MMD workspace (for example,
+`cmake --install <workspace-build> --config Release --prefix <mmd-prefix>`).
+This enables the representative PMX regression through installed importer and
+schema bundles; without it, only the isolated reader/metadata tests run.
 
 ```powershell
 $env:PATH = "$env:USD_ROOT/bin;$env:USD_ROOT/lib;$env:PATH"
@@ -130,6 +134,7 @@ foreach ($case in $cases) {
     -G 'Visual Studio 18 2026' -A x64 `
     "-DCMAKE_PREFIX_PATH=$env:PHYSICS_PREFIX;$env:USD_ROOT" `
     "-DJolt_DIR=$env:JOLT_ROOT/lib/cmake/Jolt" `
+    "-DMMD_PHYSICS_MMD_PREFIX=$env:MMD_PREFIX" `
     "-DMMD_PHYSICS_EXECUTION=$($case[1])" `
     "-DMMD_PHYSICS_TRANSLATION_SPRINGS=$($case[2])" `
     "-DMMD_PHYSICS_ROTATION_SPRINGS=$($case[3])"
@@ -143,7 +148,18 @@ foreach ($case in $cases) {
 
 The reader configuration needs no Jolt SDK and may omit `Jolt_DIR` (CMake
 otherwise reports an unused-variable warning). Spring flags remain independent
-and default OFF. These tests establish the isolated reader/execution boundary;
+and default OFF. `mmd_physics_pmx_fixtures` checks a bounded generated PMX set
+against `fixtures.json`: body/joint counts, source-only joints, spring-fidelity
+counters and enabled approximation axes. Execution checks every exposed body
+transform and linear velocity over 120 fixed steps against a fresh world with
+the same inputs; `replay=identical` refers only to that build and configuration.
+The checker also has negative controls for missing or inconsistent evidence.
+CTest sets the fixture test's plugin path to the installed bundles alone.
+
+For the opt-in corpus run, add `-DMMD_PHYSICS_FULL_CORPUS=ON` to each configure
+command and run CTest again; reset it to `OFF` for the representative lane.
+The [regression report](../reports/2026-10-18-phase8-fixture-replay.md) records
+the runs. These tests establish the isolated reader/execution boundary;
 avatar synchronization and L3 acceptance follow the
 [physics contract](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy).
 

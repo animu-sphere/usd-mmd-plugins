@@ -378,6 +378,12 @@ This table defines policy, not a claim that all lanes already run.
 The current isolated probe wiring is in
 [tests/physics_consumer/CMakeLists.txt](../../tests/physics_consumer/CMakeLists.txt);
 CI adoption and avatar acceptance are tracked in [current.md](../roadmap/current.md).
+With an installed MMD prefix, the probe registers representative PMX assertions;
+execution replays a fresh world and compares every exposed transform and linear
+velocity at every fixed step. This is same-build numerical repeatability, not
+cross-platform or source-solver equivalence. The
+[build guide](../guides/building.md#optional-physics-consumer) owns enablement
+and the opt-in full-corpus command.
 
 Preserve the generated corpus as regression evidence; do not require every
 fixture × platform × timestep combination on every PR. Keep spring-OFF
