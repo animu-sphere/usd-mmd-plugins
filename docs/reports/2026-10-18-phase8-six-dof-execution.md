@@ -1,5 +1,7 @@
 # Phase 8 optional six-DOF execution follow-up (2026-10-18)
 
+Later evidence: [MMD collision filtering](2026-10-18-phase8-collision-filter.md) is now exercised by the isolated consumer.
+
 Dated Windows evidence after the [mass reader probe](2026-10-18-phase8-mass-reader.md).
 This is bounded standard-USD execution, not MMD simulation equivalence.
 
