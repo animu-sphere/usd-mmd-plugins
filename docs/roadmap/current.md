@@ -14,8 +14,8 @@ controls including kinematic bodies, with collider-local poses and composed
 body transforms. Joint frame/limit snapshots and primitive mass inference now
 accept all 22 physics-bearing PMX fixtures, each with three bodies/two standard
 joints. Experimental opt-in execution creates both constraints and steps each
-fixture 120 times with finite state on a candidate SDK; the baseline SDK fails
-an axis gate. Full physics fidelity remains open
+fixture 120 times with finite state on the deterministic SDK; the baseline
+SDK's failed axis gate is MSVC `/fp:fast`. Full physics fidelity remains open
 ([follow-up report](../reports/2026-10-18-phase8-six-dof-execution.md)). Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
@@ -282,10 +282,12 @@ runtime composition described by
   joints each, with one format-only joint outside the snapshot in one fixture.
   Six physics-free fixtures return empty snapshots
   Experimental six-DOF execution now steps those fixtures with finite state on
-  a candidate SDK; resolve the baseline SDK's failed Z-axis gate and hosted
-  acceptance before enabling it by default
+  the deterministic SDK. The baseline SDK's failed Z-axis gate is MSVC
+  `/fp:fast` in non-deterministic Jolt, and the shared CI now builds
+  deterministic Jolt ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)); hosted acceptance
+  remains before enabling it by default
   ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-six-dof-execution.md)).
-  Resolve SDK acceptance, coefficients,
+  Resolve hosted SDK acceptance, coefficients,
   filtering and source-only semantics before claiming complete physics
   consumption. Public compatible package publication also remains.
 - ⬜ establish the optional MMD coupling-adapter component and installed

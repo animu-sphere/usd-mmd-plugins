@@ -172,4 +172,6 @@ Its independent `MMD_PHYSICS_EXECUTION=ON` option additionally links installed
 `physicsJolt` to exercise the experimental six-DOF capability; the shared
 backend must explicitly enable it. This does not add a normal importer or
 workspace dependency. The [execution report](../reports/2026-10-18-phase8-six-dof-execution.md)
-records the candidate SDK and the baseline SDK's failed axis gate.
+records the candidate SDK and the baseline SDK's failed axis gate; the shared
+repository traced that failure to MSVC `/fp:fast` and selected deterministic
+Jolt ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)).
