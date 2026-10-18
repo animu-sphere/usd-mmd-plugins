@@ -188,3 +188,10 @@ existing MMD friction/restitution metadata outside the generic reader.
 Rebuild core, backend, bridge and all consumers together: the body descriptor
 layout is incompatible with earlier static libraries. This remains test-only
 with no published pin ([contact report](../reports/2026-10-18-phase8-contact-material.md)).
+
+The damping follow-up additionally requires `BodyDescriptor::damping` and
+`validateBodyDamping()`. Source coefficients convert to neutral inverse-second
+rates in the test-only consumer. Rebuild shared packages and both probe modes
+together into a separate prefix; the descriptor layout changes again. No
+normal dependency or published pin changes
+([damping report](../reports/2026-10-18-phase8-body-damping.md)).

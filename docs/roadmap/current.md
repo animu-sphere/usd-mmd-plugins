@@ -296,7 +296,10 @@ runtime composition described by
   The consumer also passes preserved friction/restitution to locally rebuilt
   shared packages; four contact-response controls and all fixtures pass
   ([contact evidence](../reports/2026-10-18-phase8-contact-material.md)).
-  Resolve damping, pair-mixing fidelity, springs and source-only semantics before claiming
+  Linear/angular damping now reaches the backend as converted neutral rates;
+  local 60/240 Hz translation and free-spin controls pass
+  ([damping evidence](../reports/2026-10-18-phase8-body-damping.md)).
+  Resolve instantaneous damping (`d=1`), timestep fidelity, pair-mixing fidelity, springs and source-only semantics before claiming
   complete physics consumption. Hosted MMD-filter acceptance and public
   compatible package publication also remain.
 - ⬜ establish the optional MMD coupling-adapter component and installed
