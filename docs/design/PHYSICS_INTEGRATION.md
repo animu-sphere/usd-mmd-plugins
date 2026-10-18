@@ -253,6 +253,34 @@ do not establish spring fidelity. Unit conversion and a neutral execution
 contract still require independent response evidence
 ([audit report](../reports/2026-10-18-phase8-joint-spring-audit.md)).
 
+### 7.4 Experimental translation spring approximation
+
+The isolated execution probe may additionally enable
+`MMD_PHYSICS_TRANSLATION_SPRINGS=ON` (default OFF, requires execution mode).
+Only a constant `token` type `spring6Dof` activates positive translation
+coefficients on free or limited axes of a standard joint. Missing/other types,
+negative coefficients, locked axes, rotations and format-only joints do not
+gain spring execution. Malformed type metadata rejects. The source audit
+continues to report every nonzero source coefficient as a source-fidelity gap.
+
+The adapter copies translation stiffness into the neutral SI spring, with
+zero equilibrium and zero viscous damping. With mass/time unchanged and
+length scaled by `s`, force scales by `s`, so `s*k*x = k*(s*x)`: translation
+stiffness retains its numeric value. This is dimensional inference, supported
+by independent source-to-SI oscillator controls, not native MMD evidence.
+The three.js r168 adapter passes source coefficients directly to Bullet's
+6-DOF spring motor. Bullet's dimensionless default spring damping and iterative
+motor algorithm do not define an equivalent viscous coefficient; none is
+invented here. Body damping remains independent.
+
+Success output names `translationSpringModel=experimentalHookean` and counts
+`approximateTranslationSpringAxes`; per-prim diagnostics state the approximation.
+`unsupportedSpringJoints`/`unsupportedSpringAxes` retain their source-fidelity
+meaning even for approximated axes, and `jointFidelity` stays `approximate`.
+The neutral backend's numerical damping is measured at 60/240 Hz. Source
+response, angular springs and runtime coupling remain open
+([evidence and sources](../reports/2026-10-18-phase8-translation-springs.md)).
+
 ## 8. Dependency policy
 
 The static path remains lightweight:

@@ -306,7 +306,12 @@ runtime composition described by
   physics-bearing fixture results approximate; source coefficients are
   reported but no spring force is executed
   ([spring audit](../reports/2026-10-18-phase8-joint-spring-audit.md)).
-  Resolve instantaneous damping (`d=1`), timestep and source-trajectory fidelity, springs and source-only semantics before claiming
+  An independent opt-in approximates positive translation springs as Hookean
+  springs. All 22 fixtures execute two translation axes each and the
+  60/240 Hz oscillator controls pass; numerical damping and source-response
+  equivalence remain explicit gaps
+  ([translation evidence](../reports/2026-10-18-phase8-translation-springs.md)).
+  Resolve instantaneous damping (`d=1`), timestep and source-trajectory fidelity, angular springs and source-only semantics before claiming
   complete physics consumption. Hosted MMD-filter acceptance and public
   compatible package publication also remain.
 - ⬜ establish the optional MMD coupling-adapter component and installed
