@@ -6,6 +6,9 @@
 #include "contact_material.h"
 #include "body_damping.h"
 #include "joint_springs.h"
+#ifdef MMD_PHYSICS_ROTATION_SPRINGS
+#include "rotation_springs.h"
+#endif
 #ifdef MMD_PHYSICS_TRANSLATION_SPRINGS
 #include "translation_springs.h"
 #endif
@@ -37,7 +40,7 @@
 namespace {
 #ifdef MMD_PHYSICS_EXECUTION
 struct ExecutionResult {
-    std::size_t constraints{0}, translationSpringAxes{0};
+    std::size_t constraints{0}, translationSpringAxes{0}, rotationSpringAxes{0};
 };
 ExecutionResult
 Execute(const usd_physics::usd::PhysicsScene& scene,
@@ -68,6 +71,16 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
         auto descriptor = usd_physics::usd::toSixDofConstraint(
             joint, endpoint(joint.body0), endpoint(joint.body1));
         if (descriptor) {
+#ifdef MMD_PHYSICS_ROTATION_SPRINGS
+            const auto rotationAxes = mmd_physics_probe::ApplyRotationSprings(
+                stage->GetPrimAtPath(pxr::SdfPath(joint.path)), *descriptor);
+            result.rotationSpringAxes += rotationAxes;
+            if (rotationAxes)
+                std::cerr << stage->GetRootLayer()->GetIdentifier() << '\t' << joint.path
+                          << "\tapproximateRotationSprings\taxes=" << rotationAxes
+                          << "\tstiffness scaled by 0.08^2; small-angle motor; source response "
+                             "unverified\n";
+#endif
 #ifdef MMD_PHYSICS_TRANSLATION_SPRINGS
             const auto applied = mmd_physics_probe::ApplyTranslationSprings(
                 stage->GetPrimAtPath(pxr::SdfPath(joint.path)), *descriptor);
@@ -333,9 +346,10 @@ main(int argc, char** argv)
                         ++springJoints;
                         springAxes += springs.NonzeroAxes();
                         std::cerr << argv[i] << '\t' << prim.GetPath()
-                                  << "\tunsupportedJointSprings\ttranslation=" << springs.translation
-                                  << "\trotation=" << springs.rotation
-                                  << "\tsource fidelity unsupported; experimental translation execution, if enabled, is approximate\n";
+                                  << "\tunsupportedJointSprings\ttranslation="
+                                  << springs.translation << "\trotation=" << springs.rotation
+                                  << "\tsource fidelity unsupported; experimental spring "
+                                     "execution, if enabled, is approximate\n";
                     }
                 }
                 std::vector<usd_physics::core::CollisionFilter> filters;
@@ -367,6 +381,10 @@ main(int argc, char** argv)
 #ifdef MMD_PHYSICS_TRANSLATION_SPRINGS
                 std::cout << "\ttranslationSpringModel=experimentalHookean"
                           << "\tapproximateTranslationSpringAxes=" << constraints.translationSpringAxes;
+#endif
+#ifdef MMD_PHYSICS_ROTATION_SPRINGS
+                std::cout << "\trotationSpringModel=experimentalSmallAngle"
+                          << "\tapproximateRotationSpringAxes=" << constraints.rotationSpringAxes;
 #endif
                 std::cout << '\n';
             } catch (const usd_physics::usd::ImportError& error) {

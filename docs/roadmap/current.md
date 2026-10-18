@@ -311,7 +311,12 @@ runtime composition described by
   60/240 Hz oscillator controls pass; numerical damping and source-response
   equivalence remain explicit gaps
   ([translation evidence](../reports/2026-10-18-phase8-translation-springs.md)).
-  Resolve instantaneous damping (`d=1`), timestep and source-trajectory fidelity, angular springs and source-only semantics before claiming
+  A separate opt-in now approximates positive rotation springs with SI
+  stiffness scaled by `0.08^2` and small-angle motors. All 22 fixtures execute
+  three rotation axes each; source-inertia oscillator controls pass at 60/240 Hz
+  ([rotation evidence](../reports/2026-10-18-phase8-rotation-springs.md)).
+  Resolve instantaneous damping (`d=1`), timestep and source-trajectory fidelity,
+  finite-angle spring response and source-only semantics before claiming
   complete physics consumption. Hosted MMD-filter acceptance and public
   compatible package publication also remain.
 - ⬜ establish the optional MMD coupling-adapter component and installed

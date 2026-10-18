@@ -278,8 +278,37 @@ Success output names `translationSpringModel=experimentalHookean` and counts
 `unsupportedSpringJoints`/`unsupportedSpringAxes` retain their source-fidelity
 meaning even for approximated axes, and `jointFidelity` stays `approximate`.
 The neutral backend's numerical damping is measured at 60/240 Hz. Source
-response, angular springs and runtime coupling remain open
+response, angular spring fidelity and runtime coupling remain open
 ([evidence and sources](../reports/2026-10-18-phase8-translation-springs.md)).
+
+### 7.5 Experimental rotation spring approximation
+
+`MMD_PHYSICS_ROTATION_SPRINGS=ON` is a separate default-OFF execution option.
+It applies positive rotation coefficients only to free/limited axes of standard
+`spring6Dof` joints. Type validation follows section 7.4. Negative, locked and
+format-only coefficients remain unexecuted. The source audit retains all
+nonzero coefficients as fidelity gaps.
+
+Under the fixed source length conversion `s=0.08`, with mass/time unchanged,
+rotational inertia and torque scale by `s^2`, while radians do not change.
+Thus the small-angle SI stiffness is inferred as `k_source * 0.0064` N*m/rad.
+Zero viscous damping and identity equilibrium are selected. A sign change of
+an angular coordinate under reflection changes both torque and angle, so it
+does not negate diagonal stiffness. Neither conversion proves native MMD units
+or solver equivalence.
+
+The consumer fills neutral `rotationSprings`; shared code knows no MMD names.
+The backend's second-frame quaternion position motors are a small-angle
+approximation, distinct from Bullet's Euler spring motors and dimensionless
+damping. Body damping remains independent. Source-to-SI sphere controls compare
+every sample with an independent source-inertia oscillator at 60/240 Hz.
+
+Output names `rotationSpringModel=experimentalSmallAngle` and counts
+`approximateRotationSpringAxes`, with per-prim approximation diagnostics.
+`unsupportedSpringJoints`/`unsupportedSpringAxes` and `jointFidelity` keep their
+source-fidelity meanings. Finite-angle/multi-axis response, source trajectories
+and runtime coupling remain open
+([evidence and sources](../reports/2026-10-18-phase8-rotation-springs.md)).
 
 ## 8. Dependency policy
 
