@@ -207,8 +207,29 @@ This is bounded coefficient consumption, not source-solver equivalence. Jolt
 uses geometric-mean friction and maximum restitution for a contact pair;
 those mixing rules remain a fidelity gap for PMX. The probe does not translate
 these values into a USD material binding or change the importer stage.
-Linear/angular damping remains preserved metadata and execution retains the
-backend's defaults until its source semantics and shared contract are defined.
+
+### 7.2 Body damping
+
+The isolated consumer reads constant `float` attributes
+`mmd:physics:linearDamping` and `mmd:physics:angularDamping`. A partial pair,
+wrong type, missing/blocked value, time sample or non-finite coefficient
+rejects. Conventional bodies with neither attribute keep shared defaults.
+
+The source reference is three.js r168's
+[MMD adapter](https://github.com/mrdoob/three.js/blob/r168/examples/jsm/animation/MMDPhysics.js),
+which passes both coefficients to Bullet's `setDamping()`.
+[Bullet 3.25's default damping](https://github.com/bulletphysics/bullet3/blob/3.25/src/BulletDynamics/Dynamics/btRigidBody.cpp)
+multiplies velocity by `(1-d)^dt`. The consumer accepts `0 <= d < 1` and
+converts each independently to the neutral inverse-second rate `-log1p(-d)`.
+It rejects out-of-domain values without clamping. The valid source endpoint
+`d=1` requires instantaneous stopping and rejects explicitly as unsupported
+by finite rates. This bounded conversion does not claim native MMD equivalence.
+
+[Jolt 5.5.0](https://github.com/jrouwe/JoltPhysics/blob/v5.5.0/Jolt/Physics/Body/MotionProperties.inl)
+approximates exponential decay by `max(0, 1-rate*dt)` per substep, after force
+integration. Linear/angular response controls at 60/240 Hz measure that
+approximation; force ordering, large rates/steps and full PMX trajectories
+remain fidelity gaps. The importer and generic USD reader do not change.
 
 ## 8. Dependency policy
 
@@ -370,6 +391,15 @@ still pass, with three materials/bodies, two constraints and 120 finite steps
 each. Damping, pair-mixing fidelity, springs, source-only semantics and runtime
 synchronization remain open. No runtime adapter or new normal dependency is
 introduced ([report](../reports/2026-10-18-phase8-contact-material.md)).
+
+**Body-damping follow-up (2026-10-18).** Locally rebuilt installed packages
+accept neutral linear/angular decay rates. The consumer validates and converts
+the two MMD coefficients in reader-only mode, then supplies them at body
+creation. Independent translation and free-spin controls pass at 60/240 Hz;
+all 22 physics-bearing fixtures still create three bodies/two constraints and
+step 120 times with finite state. Instantaneous damping (`d=1`), finite-step
+fidelity, springs, source-only joints and runtime synchronization remain open
+([report](../reports/2026-10-18-phase8-body-damping.md)).
 
 ## 10. Testing
 

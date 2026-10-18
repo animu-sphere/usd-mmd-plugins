@@ -4,6 +4,7 @@
 #include <usd_physics/usd/box_scene.h>
 #include "collision_filter.h"
 #include "contact_material.h"
+#include "body_damping.h"
 #ifdef MMD_PHYSICS_EXECUTION
 #include <usd_physics/usd/joint_conversion.h>
 #include <usd_physics/jolt/availability.h>
@@ -34,7 +35,8 @@ namespace {
 std::size_t
 Execute(const usd_physics::usd::PhysicsScene& scene,
         const std::vector<usd_physics::core::CollisionFilter>& filters,
-        const std::vector<usd_physics::core::ContactMaterial>& materials)
+        const std::vector<usd_physics::core::ContactMaterial>& materials,
+        const std::vector<usd_physics::core::BodyDamping>& damping)
 {
     namespace core = usd_physics::core;
     auto world = usd_physics::jolt::createWorld();
@@ -48,7 +50,7 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
         bodies.emplace(
             body.path,
             world->createBody({shape, body.motionType, body.transform, body.mass,
-                               filters.at(i), materials.at(i)}));
+                               filters.at(i), materials.at(i), damping.at(i)}));
     }
     std::size_t count = 0;
     for (const auto& joint : scene.joints) {
@@ -309,19 +311,23 @@ main(int argc, char** argv)
                 CheckPmxJointFrames(snapshot);
                 std::vector<usd_physics::core::CollisionFilter> filters;
                 std::vector<usd_physics::core::ContactMaterial> materials;
+                std::vector<usd_physics::core::BodyDamping> damping;
                 for (const auto& body : snapshot.bodies) {
                     filters.push_back(mmd_physics_probe::ReadCollisionFilter(
                         stage->GetPrimAtPath(pxr::SdfPath(body.path))));
                     materials.push_back(mmd_physics_probe::ReadContactMaterial(
                         stage->GetPrimAtPath(pxr::SdfPath(body.path))));
+                    damping.push_back(mmd_physics_probe::ReadBodyDamping(
+                        stage->GetPrimAtPath(pxr::SdfPath(body.path))));
                 }
 #ifdef MMD_PHYSICS_EXECUTION
-                const auto constraints = Execute(snapshot, filters, materials);
+                const auto constraints = Execute(snapshot, filters, materials, damping);
 #endif
                 std::cout << "accepted\tbodies=" << snapshot.bodies.size()
                           << "\tjoints=" << snapshot.joints.size()
                           << "\tfilters=" << filters.size()
-                          << "\tmaterials=" << materials.size();
+                          << "\tmaterials=" << materials.size()
+                          << "\tdamping=" << damping.size();
 #ifdef MMD_PHYSICS_EXECUTION
                 std::cout << "\tconstraints=" << constraints << "\tsteps=120";
 #endif

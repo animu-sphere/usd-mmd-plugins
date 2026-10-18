@@ -1,5 +1,7 @@
 # Phase 8 MMD contact-coefficient follow-up (2026-10-18)
 
+Later evidence: [body damping](2026-10-18-phase8-body-damping.md) now reaches locally rebuilt installed packages through explicit source-to-rate conversion.
+
 Local Windows evidence after the [collision-filter consumer](2026-10-18-phase8-collision-filter.md).
 This is bounded consumption of preserved friction/restitution, not full MMD
 simulation fidelity.
