@@ -195,3 +195,8 @@ rates in the test-only consumer. Rebuild shared packages and both probe modes
 together into a separate prefix; the descriptor layout changes again. No
 normal dependency or published pin changes
 ([damping report](../reports/2026-10-18-phase8-body-damping.md)).
+
+The joint spring audit uses these same installed packages. Its test-only
+reader and CLI regression report source coefficients absent from the shared
+snapshot/execution, without adding a dependency or changing shared APIs
+([spring audit](../reports/2026-10-18-phase8-joint-spring-audit.md)).

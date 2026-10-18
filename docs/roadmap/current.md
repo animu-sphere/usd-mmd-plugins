@@ -302,6 +302,10 @@ runtime composition described by
   Product pair coefficients with friction capped at 10 now pass asymmetric,
   zero and ceiling controls at 60/240 Hz
   ([mixing evidence](../reports/2026-10-18-phase8-contact-mixing.md)).
+  The consumer now audits preserved spring vectors and marks all 22
+  physics-bearing fixture results approximate; source coefficients are
+  reported but no spring force is executed
+  ([spring audit](../reports/2026-10-18-phase8-joint-spring-audit.md)).
   Resolve instantaneous damping (`d=1`), timestep and source-trajectory fidelity, springs and source-only semantics before claiming
   complete physics consumption. Hosted MMD-filter acceptance and public
   compatible package publication also remain.

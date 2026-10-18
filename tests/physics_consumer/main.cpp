@@ -5,6 +5,7 @@
 #include "collision_filter.h"
 #include "contact_material.h"
 #include "body_damping.h"
+#include "joint_springs.h"
 #ifdef MMD_PHYSICS_EXECUTION
 #include <usd_physics/usd/joint_conversion.h>
 #include <usd_physics/jolt/availability.h>
@@ -293,6 +294,7 @@ main(int argc, char** argv)
                 throw std::runtime_error("could not open input stage");
             std::size_t rigidBodies = 0;
             std::size_t joints = 0, preservedOnlyJoints = 0;
+            std::size_t springJoints = 0, springAxes = 0;
             for (const auto& prim : stage->Traverse()) {
                 if (prim.HasAPI<pxr::UsdPhysicsRigidBodyAPI>())
                     ++rigidBodies;
@@ -309,6 +311,17 @@ main(int argc, char** argv)
                     throw std::runtime_error(
                         "PMX standard declaration counts differ from snapshot");
                 CheckPmxJointFrames(snapshot);
+                for (const auto& prim : stage->Traverse()) {
+                    const auto springs = mmd_physics_probe::ReadJointSprings(prim);
+                    if (springs.NonzeroAxes() != 0) {
+                        ++springJoints;
+                        springAxes += springs.NonzeroAxes();
+                        std::cerr << argv[i] << '\t' << prim.GetPath()
+                                  << "\tunsupportedJointSprings\ttranslation=" << springs.translation
+                                  << "\trotation=" << springs.rotation
+                                  << "\tnot represented in the neutral snapshot or executed\n";
+                    }
+                }
                 std::vector<usd_physics::core::CollisionFilter> filters;
                 std::vector<usd_physics::core::ContactMaterial> materials;
                 std::vector<usd_physics::core::BodyDamping> damping;
@@ -327,7 +340,11 @@ main(int argc, char** argv)
                           << "\tjoints=" << snapshot.joints.size()
                           << "\tfilters=" << filters.size()
                           << "\tmaterials=" << materials.size()
-                          << "\tdamping=" << damping.size();
+                          << "\tdamping=" << damping.size()
+                          << "\tunsupportedSpringJoints=" << springJoints
+                          << "\tunsupportedSpringAxes=" << springAxes
+                          << "\tjointFidelity="
+                          << ((springJoints || preservedOnlyJoints) ? "approximate" : "unverified");
 #ifdef MMD_PHYSICS_EXECUTION
                 std::cout << "\tconstraints=" << constraints << "\tsteps=120";
 #endif
@@ -336,6 +353,9 @@ main(int argc, char** argv)
                 ++rejectedStages;
                 std::cout << "rejected\t" << CodeName(error.code()) << '\t' << error.path() << '\t'
                           << error.what() << '\n';
+            } catch (const std::runtime_error& error) {
+                ++rejectedStages;
+                std::cout << "rejected\tconsumerError\t" << error.what() << '\n';
             }
         }
         if (rejectedStages != 0) return 1;
