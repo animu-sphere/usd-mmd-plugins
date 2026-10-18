@@ -1,5 +1,7 @@
 # Phase 8 joint snapshot reader follow-up (2026-10-18)
 
+Follow-up: [primitive mass inference evidence](2026-10-18-phase8-mass-reader.md).
+
 Dated local Windows evidence following the
 [kinematic reader probe](2026-10-18-phase8-kinematic-reader.md).
 This validates joint declaration conversion, not PMX simulation.

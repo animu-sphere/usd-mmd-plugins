@@ -23,10 +23,11 @@ interoperability and rest-direction evidence remain. Future
 physics execution is intended to consume the existing static stage through
 `usd-physics-plugins`; a local primitive reader increment accepts
 dynamic and kinematic Cube/Sphere/Capsule controls with collider-local poses
-and composed body transforms. A further local joint snapshot increment reads
-generic joint frames/limits: one PMX fixture yields three bodies/two standard
-joints, while 21 still reject missing dynamic mass. Full physics fidelity
-remains open ([consumer follow-up](reports/2026-10-18-phase8-joint-reader.md)).
+and composed body transforms. Joint frames/limits and primitive mass inference
+now allow all 22 physics-bearing PMX fixtures to yield three bodies/two
+standard joints each. A format-only joint remains outside the snapshot and
+full physics fidelity remains open
+([consumer follow-up](reports/2026-10-18-phase8-mass-reader.md)).
 MMD coupling stays here and simulation stays outside the
 importer. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
@@ -44,7 +45,7 @@ place that says what is implemented.
 | [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) · [ost/](reports/ost/README.md), the OpenStrata dogfooding reports |
 
 Latest physics consumer evidence:
-[2026-10-18 joint snapshot follow-up](reports/2026-10-18-phase8-joint-reader.md).
+[2026-10-18 primitive mass inference follow-up](reports/2026-10-18-phase8-mass-reader.md).
 
 ## Canonical documents
 
