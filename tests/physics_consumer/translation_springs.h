@@ -15,14 +15,8 @@ ApplyTranslationSprings(const pxr::UsdPrim& prim,
                         usd_physics::core::SixDofConstraintDescriptor& descriptor)
 {
     const auto springs = ReadJointSprings(prim);
-    const auto type = prim.GetAttribute(pxr::TfToken("mmd:physics:type"));
-    if (!type) return 0; // No activation rule for a conventional/unknown joint.
-    pxr::TfToken value;
-    if (type.GetTypeName() != pxr::SdfValueTypeNames->Token ||
-        type.GetNumTimeSamples() != 0 || !type.Get(&value))
-        throw std::runtime_error(prim.GetPath().GetString() +
-                                 ": MMD joint type requires a constant token");
-    if (value != pxr::TfToken("spring6Dof")) return 0;
+    if (!IsSpring6Dof(prim))
+        return 0;
     std::size_t applied = 0;
     for (int axis = 0; axis != 3; ++axis) {
         if (springs.translation[axis] <= 0 ||

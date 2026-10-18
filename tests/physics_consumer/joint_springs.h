@@ -10,6 +10,20 @@
 
 namespace mmd_physics_probe {
 
+inline bool
+IsSpring6Dof(const pxr::UsdPrim& prim)
+{
+    const auto type = prim.GetAttribute(pxr::TfToken("mmd:physics:type"));
+    if (!type)
+        return false;
+    pxr::TfToken value;
+    if (type.GetTypeName() != pxr::SdfValueTypeNames->Token || type.GetNumTimeSamples() != 0 ||
+        !type.Get(&value))
+        throw std::runtime_error(prim.GetPath().GetString() +
+                                 ": MMD joint type requires a constant token");
+    return value == pxr::TfToken("spring6Dof");
+}
+
 // Source coefficients are preserved verbatim, not converted to drive units.
 struct JointSprings {
     pxr::GfVec3f translation{0};

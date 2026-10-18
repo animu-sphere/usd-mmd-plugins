@@ -209,3 +209,10 @@ backend, bridge and all consumers into a separate prefix: the six-DOF
 descriptor layout changes. The probe remains test-only, with default OFF and
 no normal dependency, runtime-adapter API or published pin change
 ([translation spring evidence](../reports/2026-10-18-phase8-translation-springs.md)).
+
+The independent `MMD_PHYSICS_ROTATION_SPRINGS=ON` execution option requires
+locally rebuilt packages with `SixDofConstraintDescriptor::rotationSprings`.
+Rebuild core/backend/bridge and consumers together into a separate prefix:
+the static descriptor layout changes again. Source scaling remains test-only;
+no normal dependency or published pin changes
+([rotation spring evidence](../reports/2026-10-18-phase8-rotation-springs.md)).

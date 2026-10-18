@@ -40,9 +40,13 @@ physics-bearing fixture results approximate. An additional opt-in now
 approximates positive translation springs through neutral Hookean descriptors;
 60/240 Hz analytic controls measure numerical damping, and all 22 fixtures
 execute two translation axes each. Instantaneous
-source damping, timestep fidelity, source trajectories, angular springs and full
+source damping, timestep fidelity, source trajectories, finite-angle spring response and full
 physics fidelity remain open
 ([consumer follow-up](reports/2026-10-18-phase8-translation-springs.md)).
+An independent opt-in also approximates positive rotation springs using
+`0.08^2` stiffness scaling and small-angle motors. Source-inertia oscillator
+controls pass at 60/240 Hz; all 22 physics-bearing fixtures execute three
+rotation axes each ([rotation follow-up](reports/2026-10-18-phase8-rotation-springs.md)).
 MMD coupling stays here and simulation stays outside the
 importer. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only
@@ -60,7 +64,7 @@ place that says what is implemented.
 | [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) · [ost/](reports/ost/README.md), the OpenStrata dogfooding reports |
 
 Latest physics consumer evidence:
-[2026-10-18 joint spring metadata audit](reports/2026-10-18-phase8-joint-spring-audit.md).
+[2026-10-18 experimental rotation springs](reports/2026-10-18-phase8-rotation-springs.md).
 
 ## Canonical documents
 
