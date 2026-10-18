@@ -289,6 +289,17 @@ coefficients/filtering, springs, PMX zero-mass equivalence and runtime
 synchronization still precede MMD bone coupling
 ([report](../reports/2026-10-18-phase8-mass-reader.md)).
 
+**Experimental six-DOF execution follow-up (2026-10-18).** An explicitly
+enabled installed backend creates the two standard constraints and steps all
+22 physics-bearing fixtures 120 times with finite state. The neutral contract
+states body-origin frames, free/locked/limited axes and pair collision flags;
+angular execution uses twist/pyramid swing. The baseline scalar SDK fails a
+new Z-axis load test, while a separate candidate SDK passes. Execution remains
+opt-in pending SDK/hosted acceptance. Steps 1–2 remain open for full fidelity:
+source-only joints, coefficients/filtering, springs, PMX angular/zero-mass
+equivalence and runtime synchronization still precede MMD bone coupling
+([report](../reports/2026-10-18-phase8-six-dof-execution.md)).
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and

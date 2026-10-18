@@ -13,8 +13,10 @@ the shared physics reader: a local increment accepts Cube/Sphere/Capsule
 controls including kinematic bodies, with collider-local poses and composed
 body transforms. Joint frame/limit snapshots and primitive mass inference now
 accept all 22 physics-bearing PMX fixtures, each with three bodies/two standard
-joints; a format-only joint and complete physics fidelity remain open
-([follow-up report](../reports/2026-10-18-phase8-mass-reader.md)). Phase 10,
+joints. Experimental opt-in execution creates both constraints and steps each
+fixture 120 times with finite state on a candidate SDK; the baseline SDK fails
+an axis gate. Full physics fidelity remains open
+([follow-up report](../reports/2026-10-18-phase8-six-dof-execution.md)). Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -279,8 +281,11 @@ runtime composition described by
   controls. All 22 physics-bearing PMX fixtures yield three bodies/two standard
   joints each, with one format-only joint outside the snapshot in one fixture.
   Six physics-free fixtures return empty snapshots
-  ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-mass-reader.md)).
-  Resolve generic six-DOF execution, coefficients,
+  Experimental six-DOF execution now steps those fixtures with finite state on
+  a candidate SDK; resolve the baseline SDK's failed Z-axis gate and hosted
+  acceptance before enabling it by default
+  ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-six-dof-execution.md)).
+  Resolve SDK acceptance, coefficients,
   filtering and source-only semantics before claiming complete physics
   consumption. Public compatible package publication also remains.
 - ⬜ establish the optional MMD coupling-adapter component and installed
