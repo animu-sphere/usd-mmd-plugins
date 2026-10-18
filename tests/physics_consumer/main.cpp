@@ -2,6 +2,11 @@
 // Observe the installed generic reader against unmodified importer stages.
 // A reported rejection is evidence of a gap, not successful MMD simulation.
 #include <usd_physics/usd/box_scene.h>
+#ifdef MMD_PHYSICS_EXECUTION
+#include <usd_physics/usd/joint_conversion.h>
+#include <usd_physics/jolt/availability.h>
+#include <map>
+#endif
 
 #include <pxr/base/gf/vec3d.h>
 #include <pxr/base/gf/vec3f.h>
@@ -23,6 +28,46 @@
 #include <stdexcept>
 
 namespace {
+#ifdef MMD_PHYSICS_EXECUTION
+std::size_t Execute(const usd_physics::usd::PhysicsScene& scene)
+{
+    namespace core = usd_physics::core;
+    auto world = usd_physics::jolt::createWorld();
+    auto* constraints = dynamic_cast<core::SixDofConstraints*>(world.get());
+    if (!constraints) throw std::runtime_error("installed backend lacks six-DOF capability");
+    std::map<std::string, core::BodyHandle> bodies;
+    for (const auto& body : scene.bodies) {
+        const auto shape = world->createShape(body.shape);
+        bodies.emplace(body.path, world->createBody(
+            {shape, body.motionType, body.transform, body.mass}));
+    }
+    std::size_t count = 0;
+    for (const auto& joint : scene.joints) {
+        const auto endpoint = [&](const std::string& path) {
+            return path.empty() ? core::BodyHandle{} : bodies.at(path);
+        };
+        const auto descriptor = usd_physics::usd::toSixDofConstraint(
+            joint, endpoint(joint.body0), endpoint(joint.body1));
+        if (descriptor) {
+            constraints->createSixDofConstraint(*descriptor);
+            ++count;
+        }
+    }
+    for (int frame = 0; frame != 120; ++frame) {
+        world->step(core::PhysicsWorld::Duration{1.0 / 120.0});
+        for (const auto& entry : bodies) {
+            const auto state = world->bodyState(entry.second);
+            const auto p = state.transform.translation;
+            const auto q = state.transform.rotation;
+            const auto v = state.linearVelocity;
+            for (const double value : {p.x,p.y,p.z,q.w,q.x,q.y,q.z,v.x,v.y,v.z})
+                if (!std::isfinite(value)) throw std::runtime_error("non-finite runtime state");
+        }
+        world->takeChangedBodyStates();
+    }
+    return count;
+}
+#endif
 pxr::GfMatrix4d
 Matrix(const usd_physics::core::Transform& pose)
 {
@@ -230,6 +275,7 @@ main(int argc, char** argv)
     }
     try {
         CheckControl();
+        int rejectedStages = 0;
         for (int i = 1; i < argc; ++i) {
             const auto stage = pxr::UsdStage::Open(argv[i]);
             if (!stage)
@@ -252,13 +298,22 @@ main(int argc, char** argv)
                     throw std::runtime_error(
                         "PMX standard declaration counts differ from snapshot");
                 CheckPmxJointFrames(snapshot);
+#ifdef MMD_PHYSICS_EXECUTION
+                const auto constraints = Execute(snapshot);
+#endif
                 std::cout << "accepted\tbodies=" << snapshot.bodies.size()
-                          << "\tjoints=" << snapshot.joints.size() << '\n';
+                          << "\tjoints=" << snapshot.joints.size();
+#ifdef MMD_PHYSICS_EXECUTION
+                std::cout << "\tconstraints=" << constraints << "\tsteps=120";
+#endif
+                std::cout << '\n';
             } catch (const usd_physics::usd::ImportError& error) {
+                ++rejectedStages;
                 std::cout << "rejected\t" << CodeName(error.code()) << '\t' << error.path() << '\t'
                           << error.what() << '\n';
             }
         }
+        if (rejectedStages != 0) return 1;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;
