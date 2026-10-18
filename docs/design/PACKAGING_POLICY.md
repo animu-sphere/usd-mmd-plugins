@@ -1,12 +1,9 @@
 # USDZ packaging policy
 
-> Status: 2026-09-27. §1–§12 and §14 are **binding**: Phase 10 step 1
-> implements them with fixtures ([report](../reports/2026-09-26-phase10-mmd-export-local-models.md)).
-> §13 is **binding** since step 2's deterministic-archive tests; step 3 adds
-> §5.1's portable names and their fixture tests. §16 lists
-> what is not built. A section becomes binding when the Phase 10 step that
-> first implements it lands with a fixture
-> ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)).
+> Contract: **binding** for §1–§14, including portable names (§5.1)
+> and deterministic archives (§13). §16 defines conditional future scope.
+> [Capabilities](../reference/CAPABILITY_MATRIX.md#export-mmd_export)
+> own availability; [current.md](../roadmap/current.md) owns remaining work.
 >
 > This document owns `mmd_export`, the tool that writes an MMD model out as
 > conventional OpenUSD, and the distribution boundary it sits on. Its first

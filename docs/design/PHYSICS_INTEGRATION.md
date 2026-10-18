@@ -1,8 +1,11 @@
 # Physics integration contract (MMD-specific boundary)
 
-> Status: **proposed** (2026-09-21). The static stage contract is already
-> binding from Phase 6; this document defines the future runtime boundary
-> around it. Nothing here claims that simulation is implemented.
+> Contract: **accepted**. Sections 1–8 define the MMD boundary and conversion
+> rules; §12 owns physics fidelity and acceptance policy. The coupling API in
+> §5–§6 is an intended runtime contract, not a support claim.
+> Current availability is recorded only in the
+> [capability matrix](../reference/CAPABILITY_MATRIX.md#physics-preservation-and-execution).
+> Static authoring remains binding under [STAGE_CONTRACT §13](STAGE_CONTRACT.md#13-physics).
 
 ## 1. Scope
 
@@ -48,6 +51,8 @@ repository, and opening or inspecting a PMX never requires a physics runtime.
 | Backend objects and backend-specific collision layers | the selected physics backend integration |
 | Per-frame ordering | `usd-stage-runner` |
 | Cross-repository composition and playback state | `usd-avatar-runtime` |
+| Generic MotionClip, retargeting and UsdSkelAnimation processing | `usd-motion-plugins`; MMD IK interpretation stays here |
+| MMD / MToon / PreviewSurface rendering | `hydra-toon` |
 
 A useful placement test is:
 
@@ -232,26 +237,26 @@ by finite rates. This bounded conversion does not claim native MMD equivalence.
 
 [Jolt 5.5.0](https://github.com/jrouwe/JoltPhysics/blob/v5.5.0/Jolt/Physics/Body/MotionProperties.inl)
 approximates exponential decay by `max(0, 1-rate*dt)` per substep, after force
-integration. Linear/angular response controls at 60/240 Hz measure that
-approximation; force ordering, large rates/steps and full PMX trajectories
-remain fidelity gaps. The importer and generic USD reader do not change.
+integration. Force ordering and finite steps limit equivalence; response
+measurements belong in the [damping report](../reports/2026-10-18-phase8-body-damping.md).
+The importer and generic USD reader do not change.
 
 ### 7.3 Joint spring metadata audit
 
 The isolated consumer reads the preserved `translationSpring` and
 `rotationSpring` pair as constant `vector3f` values. Partial pairs, wrong
 types, missing/blocked values, time samples and non-finite components reject.
-Finite signed values remain verbatim: no stiffness conversion or force is
-implemented. The audit includes format-only joint prims outside the shared
+Finite signed values remain verbatim in the audit; the independent execution
+options in §7.4–§7.5 do not alter them. The audit includes format-only joint prims outside the shared
 snapshot, without interpreting source-type activation rules.
 
 Nonzero pairs are reported with the input, prim path and both vectors.
 Snapshot rows count affected prims and components and mark joint fidelity
 `approximate` when nonzero coefficients or format-only joints are present;
 otherwise it remains `unverified`. Snapshot acceptance and finite stepping
-do not establish spring fidelity. Unit conversion and a neutral execution
-contract still require independent response evidence
-([audit report](../reports/2026-10-18-phase8-joint-spring-audit.md)).
+do not establish spring fidelity. Approximate execution follows §7.4–§7.5;
+the [audit report](../reports/2026-10-18-phase8-joint-spring-audit.md) records
+the preservation evidence separately.
 
 ### 7.4 Experimental translation spring approximation
 
@@ -277,9 +282,9 @@ Success output names `translationSpringModel=experimentalHookean` and counts
 `approximateTranslationSpringAxes`; per-prim diagnostics state the approximation.
 `unsupportedSpringJoints`/`unsupportedSpringAxes` retain their source-fidelity
 meaning even for approximated axes, and `jointFidelity` stays `approximate`.
-The neutral backend's numerical damping is measured at 60/240 Hz. Source
-response, angular spring fidelity and runtime coupling remain open
-([evidence and sources](../reports/2026-10-18-phase8-translation-springs.md)).
+Numerical damping and finite-step behavior limit equivalence; see the
+[translation response evidence](../reports/2026-10-18-phase8-translation-springs.md).
+These limits follow §12's acceptance policy rather than creating a source-trajectory gate.
 
 ### 7.5 Experimental rotation spring approximation
 
@@ -300,15 +305,16 @@ or solver equivalence.
 The consumer fills neutral `rotationSprings`; shared code knows no MMD names.
 The backend's second-frame quaternion position motors are a small-angle
 approximation, distinct from Bullet's Euler spring motors and dimensionless
-damping. Body damping remains independent. Source-to-SI sphere controls compare
-every sample with an independent source-inertia oscillator at 60/240 Hz.
+damping. Body damping remains independent. The
+[rotation report](../reports/2026-10-18-phase8-rotation-springs.md)
+owns source-to-SI oscillator measurements.
 
 Output names `rotationSpringModel=experimentalSmallAngle` and counts
 `approximateRotationSpringAxes`, with per-prim approximation diagnostics.
 `unsupportedSpringJoints`/`unsupportedSpringAxes` and `jointFidelity` keep their
-source-fidelity meanings. Finite-angle/multi-axis response, source trajectories
-and runtime coupling remain open
-([evidence and sources](../reports/2026-10-18-phase8-rotation-springs.md)).
+source-fidelity meanings. Finite-angle/multi-axis and source-trajectory
+equivalence are outside this approximation's claim; §12 governs whether
+further work is needed for representative avatar behavior.
 
 ## 8. Dependency policy
 
@@ -340,169 +346,45 @@ reserved in [DEPENDENCIES.md §7](../architecture/DEPENDENCIES.md#7-usd-physics-
 4. **Run dynamic bodies.** Simulate `dynamic` bodies and constrained pairs.
 5. **Add `dynamicWithBone`.** Apply MMD-specific body feedback to the runtime
    pose outside the importer.
-6. **Improve joint fidelity.** Add limits, springs, damping and validation in
-   backend-independent increments.
+6. **Refine only for acceptance.** Improve limits, springs or damping when a
+   representative L3 failure or an explicit external contract requires it;
+   generic solver changes belong in `usd-physics-plugins`.
 
 Static preservation was completed in Phase 6. These runtime steps belong to
 Phase 8 composition and its external collaborators; they do not reopen Phase
 6 unless the authored contract itself is wrong.
 
-**First consumer evidence (2026-10-17).** An isolated probe linked only to
-installed `physicsUsd` 0.1 accepts its positive Box control but rejects all 22
-physics-bearing importer fixtures: its current reader requires collision on
-the body Cube, while §3's stage has a body Xform and a child collider. The
-[report](../reports/2026-10-17-phase8-physics-consumer.md) separates that
-observed failure from further gaps identified in the reader's source.
-Steps 1–2 are not complete. Expand the generic reader using these conventional
-USD declarations before fixing the MMD adapter's API; do not flatten the
-importer's hierarchy or add backend metadata to accommodate the Box subset.
-
-**Bounded reader follow-up (2026-10-18).** A local installed shared-reader
-increment accepts a centered, axis-aligned child Cube below a rigid body
-Xform, with composed body orientation/translation and child scale. The
-probe now checks this beside its original direct Cube control. All 22 full
-physics-bearing PMX fixtures still reject, at the joint declaration during
-the reader's initial validation pass. The changed rejection path does not
-establish body support. Collider-local offsets/rotations, sphere/capsule
-shapes, kinematic bodies and joints remain required; steps 1–2 remain open
-([follow-up report](../reports/2026-10-18-phase8-child-box-reader.md)).
-
-**Collider-local pose follow-up (2026-10-18).** A further local installed
-increment carries the child Cube's composed translation/rotation in a neutral
-shape-local transform, preserving the separate body frame. The isolated
-consumer checks this with a third positive control; all 22 full physics-bearing
-PMX fixtures still reject at joint validation. Sphere/capsule geometry,
-kinematic operations and joints remain required, and steps 1–2 remain open
-([report](../reports/2026-10-18-phase8-collider-local-pose.md)).
-
-**Primitive reader follow-up (2026-10-18).** A local installed increment adds
-Sphere/Capsule geometry and a `readPrimitiveScene()` snapshot API while
-retaining the Cube-only API. The probe accepts its three Box controls plus
-child Sphere/Capsule controls; all 22 full physics-bearing PMX fixtures still
-reject at joint declaration validation. Kinematic operations and joints
-remain required, and steps 1–2 remain open
-([report](../reports/2026-10-18-phase8-primitive-reader.md)).
-
-**Kinematic follow-up (2026-10-18).** A local installed shared increment adds
-neutral kinematic body descriptors and an optional pose-target movement
-capability implemented by Jolt. The reader admits standard time-independent
-kinematic flags without requiring dynamic mass. The probe accepts three
-mass-free child Cube/Sphere/Capsule controls alongside the previous five
-controls. All 22 full physics-bearing fixtures still reject at joint
-declaration validation; steps 1–2 remain open. Joint frames/limits are next,
-and MMD bone synchronization remains deferred
-([report](../reports/2026-10-18-phase8-kinematic-reader.md)).
-
-**Joint snapshot follow-up (2026-10-18).** A local installed shared increment
-adds `readPhysicsScene()`, preserving generic/fixed joint endpoints, local
-frames and six-axis limits in meters/radians. The body-only readers retain
-their joint rejection; the new API creates no runtime constraints. The probe
-accepts its previous eight controls and a two-body joint control. Of 22
-physics-bearing PMX fixtures, one yields three bodies/two standard joints
-with coincident reconstructed world joint frames, but also has a format-only
-joint outside the snapshot; 21 reject missing explicit dynamic mass. Six
-physics-free fixtures remain empty snapshots. Steps 1–2 remain open for
-complete consumption and fidelity. Mass inference, generic six-DOF execution,
-coefficients/filtering and source-only semantics precede MMD bone coupling
-([report](../reports/2026-10-18-phase8-joint-reader.md)).
-
-**Primitive mass inference follow-up (2026-10-18).** A local installed shared
-increment resolves zero/absent dynamic mass from single-primitive collision
-volume and body-local density, with USD's 1000 kg/m³ density fallback. All
-22 physics-bearing PMX fixtures now yield three bodies/two standard joints
-each; six physics-free fixtures yield empty snapshots. The isolated consumer
-also passes three new inference controls alongside its previous nine. One
-format-only joint remains outside the generic snapshot. Steps 1–2 remain
-open for full fidelity and simulation: six-DOF execution, physical
-coefficients/filtering, springs, PMX zero-mass equivalence and runtime
-synchronization still precede MMD bone coupling
-([report](../reports/2026-10-18-phase8-mass-reader.md)).
-
-**Experimental six-DOF execution follow-up (2026-10-18).** An explicitly
-enabled installed backend creates the two standard constraints and steps all
-22 physics-bearing fixtures 120 times with finite state. The neutral contract
-states body-origin frames, free/locked/limited axes and pair collision flags;
-angular execution uses twist/pyramid swing. The baseline scalar SDK fails a
-new Z-axis load test, while a separate candidate SDK passes. Execution remains
-opt-in pending SDK/hosted acceptance. Steps 1–2 remain open for full fidelity:
-source-only joints, coefficients/filtering, springs, PMX angular/zero-mass
-equivalence and runtime synchronization still precede MMD bone coupling
-([report](../reports/2026-10-18-phase8-six-dof-execution.md)).
-
-**SDK cause follow-up (2026-10-18).** The shared repository traced the
-baseline SDK's Z-axis failure to MSVC `/fp:fast`, which Jolt applies to
-non-deterministic Release builds; x86 SIMD options do not matter, and GCC
-passes either way. It selected `CROSS_PLATFORM_DETERMINISTIC=ON`, the
-configuration this repository's execution probe already used, and its source
-CI now builds Jolt that way ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)). The probe needs
-no rerun. Hosted six-DOF acceptance, coefficients/filtering, springs and
-runtime synchronization still precede MMD bone coupling.
-
-**Hosted six-DOF acceptance (2026-10-18).** The shared repository's
-`usd-jolt-six-dof` intent enables the capability over its deterministic CI
-Jolt, and its Windows (MSVC) and Linux (GCC) pull-request cells pass all 18
-tests, including the per-axis gate and the installed consumer's six-DOF
-section; those cells never package ([usd-physics-plugins #20](https://github.com/animu-sphere/usd-physics-plugins/pull/20)). The SDK gate is closed. The option
-stays OFF by default and no six-DOF package is published, so this
-repository's probe still builds the shared packages locally. Coefficients/
-filtering, springs, source-only semantics and runtime synchronization still
-precede MMD bone coupling.
-
-**MMD collision-filter follow-up (2026-10-18).** The isolated consumer now
-validates the preserved group/mask and passes the neutral filter at body
-creation, outside `physicsUsd`. Reader-only controls cover all 16 groups,
-zero/all/high-bit masks, asymmetric rejection and malformed metadata. Six
-execution controls check actual contacts, including same-group bodies with
-different masks in one world. All 22 physics-bearing fixtures still create
-three filtered bodies/two constraints and step 120 times with finite state;
-six physics-free fixtures remain empty. This closes the probe's source-filter
-gap locally, without establishing a runtime adapter or mixed-format category
-allocation. Coefficients, springs, source-only joints, PMX angular/zero-mass
-equivalence, hosted MMD-filter acceptance and synchronization remain open
-([report](../reports/2026-10-18-phase8-collision-filter.md)).
-
-**Contact-coefficient follow-up (2026-10-18).** Locally rebuilt installed
-core/backend packages now accept neutral friction/restitution on body creation.
-The isolated consumer validates the two MMD attributes in reader-only mode
-and passes them into execution. Four response controls distinguish sliding
-and bounce; the existing filter controls and all 22 physics-bearing fixtures
-still pass, with three materials/bodies, two constraints and 120 finite steps
-each. Damping, pair-mixing fidelity, springs, source-only semantics and runtime
-synchronization remain open. No runtime adapter or new normal dependency is
-introduced ([report](../reports/2026-10-18-phase8-contact-material.md)).
-
-**Body-damping follow-up (2026-10-18).** Locally rebuilt installed packages
-accept neutral linear/angular decay rates. The consumer validates and converts
-the two MMD coefficients in reader-only mode, then supplies them at body
-creation. Independent translation and free-spin controls pass at 60/240 Hz;
-all 22 physics-bearing fixtures still create three bodies/two constraints and
-step 120 times with finite state. Instantaneous damping (`d=1`), finite-step
-fidelity, springs, source-only joints and runtime synchronization remain open
-([report](../reports/2026-10-18-phase8-body-damping.md)).
-
-**Contact-mixing follow-up (2026-10-18).** Installed shared packages now accept
-neutral per-world coefficient rules and an optional friction ceiling. The
-consumer chooses products with a ceiling of 10; independent source metadata,
-asymmetric/equal/zero pairs and the ceiling pass at 60/240 Hz. All 22
-physics-bearing fixtures still create three bodies/two constraints and step
-120 times with finite state. Shared tests preserve default Jolt behavior and
-isolate simultaneously alive worlds. Source trajectories, mixed-format
-policies, springs and runtime synchronization remain open
-([report](../reports/2026-10-18-phase8-contact-mixing.md)).
+The [dated evidence map](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals)
+links reader, SDK, contact, damping and spring experiments.
+Current work is tracked only in [current.md](../roadmap/current.md).
+Further joint refinement is justified by §12's acceptance criteria, not by
+an unbounded requirement to reproduce a source solver.
 
 ## 10. Testing
 
-- Parser and canonical-model tests continue to verify every PMX value and
-  conversion without any physics runtime.
-- Stage tests verify APIs, relationships, meters, Y-up, deterministic paths
-  and exact `mmd:physics:*` preservation without simulation.
-- Contract tests reconstruct every body and joint from a stage alone.
-- Runtime integration tests cover bone → kinematic body, dynamic body motion,
-  a constrained pair and body → bone feedback.
-- Backend-specific tolerances stay in the backend integration tests, never in
-  parser or canonical-model tests.
-- Deterministic recorded motion drives CI; live devices and wall-clock timing
-  are not prerequisites.
+Parser/model tests verify source values and conversions without a runtime.
+Stage tests verify APIs, relationships, meters, Y-up, deterministic paths
+and exact preservation; contract tests reconstruct bodies/joints from the
+stage alone. Backend tolerances belong in shared backend tests.
+
+| Lane | Acceptance | PR blocking policy |
+| --- | --- | --- |
+| fast | Parser, metadata, schema, conversion units and doc links | Required |
+| integration | Installed shared reader/execution smoke, finite state and repeatability on representative generated fixtures | Required for the supported configuration once wired into CI |
+| acceptance | PMX + VMD → motion → physics → feedback under §12.3 | Small stable automated scenes should block once available |
+| research/manual | Bullet comparisons, long/high-resolution runs, large corpus sweeps and visual review | Nonblocking |
+
+This table defines policy, not a claim that all lanes already run.
+The current isolated probe wiring is in
+[tests/physics_consumer/CMakeLists.txt](../../tests/physics_consumer/CMakeLists.txt);
+CI adoption and avatar acceptance are tracked in [current.md](../roadmap/current.md).
+
+Preserve the generated corpus as regression evidence; do not require every
+fixture × platform × timestep combination on every PR. Keep spring-OFF
+regressions and spring-ON smoke. Use fixed timesteps, deterministic recorded
+input and pinned build configurations; live devices, networking and wall-clock
+timing are not prerequisites. Stability regressions block; a tolerance
+violation caused only by a known Bullet trajectory difference does not.
 
 ## 11. Non-goals
 
@@ -527,3 +409,78 @@ PMX → usd-mmd-plugins → OpenUSD stage
 
 MMD remains specialized but participates in the same reusable motion and
 physics architecture as other avatar formats.
+
+## 12. Fidelity and acceptance policy
+
+This section owns the project's physical success criteria. Preserve MMD's
+meaning and achieve stable, plausible avatar behavior through shared physics;
+do not grow a generic solver or a Bullet reproduction inside this repository.
+
+### 12.1 Fidelity levels
+
+| Level | Success criterion | Requirement |
+| --- | --- | --- |
+| L1 — Preserve | Retain source semantics and values; expose loss, repairs and unsupported meaning | Required |
+| L2 — Stable | Execute the supported bodies/constraints with finite state and repeatable results under a declared deterministic configuration | Required |
+| L3 — Plausible | Representative avatars show expected sway, contacts and bone recovery without visible or measured breakdown | Target for avatar composition, verified under §12.3 |
+| L4 — Bullet-equivalent | Reproduce Bullet/MMD trajectories or exact per-frame poses | Research only; not a release gate |
+
+Finite stepping or preserved coefficients alone cannot establish L3.
+Bullet solver order, floating-point details and exact MMD motion are
+non-goals. Investigate an L4 difference only for a concrete user-visible
+defect or an explicit external contract. Further spring or contact work must
+show a representative L3 improvement; known differences may remain limitations.
+
+### 12.2 Approximation and diagnostic rules
+
+- Start approximations opt-in; preserve defaults unless an explicit contract
+  change justifies a change. Source-to-neutral conversions are owned by §7;
+  the static coordinate and authoring rules remain in STAGE_CONTRACT §6/§13.
+- Describe preservation and execution separately. The capability matrix owns
+  their availability summary, including experimental scope.
+- Diagnostics must distinguish `exact`, `approximated`, `unsupported`
+  and `invalid` at least in logs; prefer machine-readable per-feature data.
+  `exact` refers to the stated conversion/feature contract, never whole-trajectory
+  equivalence. Well-formed but unexecuted semantics are unsupported;
+  malformed declarations are invalid.
+- This classification is a requirement for the consumer API, not an assertion
+  that those four strings are emitted today. The isolated probe's
+  `jointFidelity=approximate/unverified`, source-audit counts and
+  `approximateTranslationSpringAxes` / `approximateRotationSpringAxes`
+  retain their existing meanings (§7.3–§7.5). Do not lower preservation-gap
+  counts merely because an approximation executes.
+- Record remaining restrictions in the matrix and evidence in dated reports;
+  do not leave equivalence research as an indefinite mandatory gate.
+
+### 12.3 Representative scene acceptance
+
+Use 3–5 fixed scenarios across 1–2 licensed representative models/motions.
+Keep local real-model evidence separate from redistributable synthetic CI
+fixtures. Record source identifiers, permission boundaries, build SHAs,
+feature flags, timestep, duration, random seed where relevant, and repeatable
+commands in a new dated report.
+
+The minimum scene set covers:
+
+1. Rest under gravity: constrained secondary bodies settle without explosion,
+   NaN/Inf or sustained constraint breakdown.
+2. Keyed movement and recovery: animation drives kinematic bodies, secondary
+   bodies sway and return, and feedback produces a finite final bone pose.
+3. Contact and repeat playback: intended body pairs collide, filtered pairs
+   remain excluded, and repeated runs/resets do not accumulate significant drift.
+4. Optionally stress a representative spring/limit interaction and a
+   retargeted-input case when these affect the selected avatar's behavior.
+
+Before running, declare numeric bounds for contact penetration, joint-frame
+separation/limit error, final-pose drift, settling/recovery and repeatability.
+No unexplained penetration, explosion, NaN, constraint failure or material
+accumulated drift is allowed. Expected bounded contact penetration and
+solver tolerance must be stated explicitly.
+
+Automated assertions check finite body/bone transforms every step, declared
+constraint/contact bounds, expected qualitative motion and reset/replay
+repeatability. Verify the runtime actually consumes the final pose for
+rendering. Screenshots or visual review may supplement these assertions;
+they cannot alone close L3. Publish failures and known limitations beside the
+commands. This contract defines acceptance; only a measured report can claim
+that a selected scene set passes.

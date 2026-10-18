@@ -1,381 +1,80 @@
-# Phase 9, then Phase 8, and Phase 10 — shared motion, material and avatar composition, and USDZ packaging
+# Current roadmap
 
-Status: 🚧 Phase 9 in progress — `mmdControl`, both shared-motion adapters,
-skeletal end-to-end acceptance, MOT-O5, MOT-O6, MOT-O9 and MOT-O10 are
-done; MOT-O14 leaves the shoulder unaimed, as the adapter now does; expression interoperability waits on `usd-motion-plugins`; Phase 8
-has its `mmdSchema` bundle, the importer authors stage-contract v2 with the
-fallback graphs connected, and `mmdImaging` exposes `MmdMaterialAPI`
-to Hydra; generic VRMA- and BVH-derived clips reach a PMX, and MOT-O13 is
-resolved by `usd-motion-plugins` v0.5.3's opt-in fold; recorded mocopi
-captures reach a PMX through `motion-connectors` v0.1.0. The operator reports
-the `hdToon` look approximation complete (2026-10-17); the next gate is
-the shared physics reader: a local increment accepts Cube/Sphere/Capsule
-controls including kinematic bodies, with collider-local poses and composed
-body transforms. Joint frame/limit snapshots and primitive mass inference now
-accept all 22 physics-bearing PMX fixtures, each with three bodies/two standard
-joints. Experimental opt-in execution creates both constraints and steps each
-fixture 120 times with finite state on the deterministic SDK; the baseline
-SDK's failed axis gate is MSVC `/fp:fast`, and the shared six-axis tests now
-pass on hosted Windows/Linux with that SDK. Full physics fidelity remains open
-([follow-up report](../reports/2026-10-18-phase8-six-dof-execution.md)). Phase 10,
-USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
-opens without the plugins, its archive is deterministic across time zones,
-and `--portable-paths` offers ASCII archive names.
+> Scope: active work only. Historical evidence lives in reports.
+> Updated: 2026-10-18
 
-Three Phases remain. Phases 9 and 8 run in this order although they are
-numbered the other way, and Phase 10 needs only the importer's stage, so it
-can run alongside either
-([DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)):
+## Focus
 
-- **Phase 9 — shared motion core adoption.** This repository evaluates MMD
-  motion over the control rig (`mmdControl`) and hands the result to
-  `usd-motion-plugins` as a `MotionClip` (`mmdMotionAdapter`), while
-  `mmdSkeletonAdapter` exposes the PMX skeleton for generic retargeting
-  ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
-- **Phase 8 — material and avatar runtime composition.** This repository adds
-  `MmdMaterialAPI` and its UsdImaging bridge; `usd-avatar-runtime` composes this
-  repository with `usd-vrm-plugins`, `usd-motion-plugins`,
-  `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and
-  `usd-stage-runner` through
-  OpenStrata. Most of it is owned outside this repository: the runtime, not
-  this repository, is the avatar execution environment.
-- **Phase 10 — USDZ packaging.** `mmd_export` packages the imported stage and
-  its textures as a standard USDZ that opens without this repository's
-  plugins ([PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md)).
+MMD physics convergence and avatar end-to-end acceptance under the
+[L1–L4 policy](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy).
+Active priority is P0 → P1 → P2; Phase 8/9/10 remain scope identifiers.
 
-What is listed here is only the part this repository owes, or waits for; what
-the runtime consumes from here today is [v0.2.0](../releases/v0.2.0.md).
+Support claims belong to the [capability matrix](../reference/CAPABILITY_MATRIX.md).
+Experimental probe results do not establish a shipped coupling adapter or
+avatar acceptance. The [ownership audit](../reports/2026-10-18-docs-ownership-audit.md)
+maps the earlier completion history to its evidence.
 
-As of 2026-10-04 `usd-motion-plugins` v0.5.3 is consumed, with installable
-`motionCore`, `motionRetarget`, `motionSource` and `motionUsd`
-([DEPENDENCIES.md §6](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)).
-All four are consumed by digest-pinned artifacts: `motionCore` and
-`motionRetarget` by the adapters, `motionSource` by the skeleton adapter for
-the T-pose directions, and `motionUsd` by the skeletal acceptance test. `mmdMotionAdapter` and `mmdSkeletonAdapter` are implemented.
+## Active gates
 
-## Outcome
+States: `planned`, `in_progress`, `blocked`. A gate leaves this table when
+its outcome is verified; record measurements in a dated report.
 
-```text
-.pmx ─→ usdMmdFileFormat ─→ /Asset stage ─→ MmdMaterialAPI ─→ UsdImaging adapter ─→ hydra-toon
-.vmd ─→ motionVmd ─→ mmdMotionBinding ─→ mmdControl ─→ mmdMotionAdapter ─→ MotionClip
-.pmx ─→ mmdModel ─→ mmdSkeletonAdapter ─→ SkeletonDescriptor / RetargetMap
-                                                                              │
-usd-motion-plugins:  retarget to any skeleton, record, author UsdSkelAnimation ◀┘
-usd-stage-runner:    orders pose → MMD physics sync → physics step → feedback
-usd-avatar-runtime:  composes the above per frame and coordinates rendering
-```
+| ID | Outcome / exit gate | Owner | State | Evidence / contract |
+| --- | --- | --- | --- | --- |
+| P0-1 (Phase 8) | Fix the consumer's compatible shared physics API/build configuration; make reader and opt-in execution reproducible from installed packages with descriptor ABI matched across core/backend/bridge/consumer | `usd-physics-plugins` packages; MMD consumer here | in_progress | [Dependency boundary](../architecture/DEPENDENCIES.md#7-usd-physics-plugins), [execution evidence](../reports/2026-10-18-phase8-six-dof-execution.md), [spring evidence](../reports/2026-10-18-phase8-rotation-springs.md) |
+| P0-2 (Phase 8) | Maintain source preservation, reader compatibility and finite/repeatable stepping on representative fixtures, including spring OFF regressions and ON smoke; classify residual limitations in the capability matrix | MMD acceptance here; generic backend in `usd-physics-plugins` | planned | [Testing policy](../design/PHYSICS_INTEGRATION.md#10-testing), [capabilities](../reference/CAPABILITY_MATRIX.md#physics-preservation-and-execution) |
+| P1-1 (Phase 8) | Establish the optional coupling component/API from the first runtime consumer; verify pose → kinematic sync → shared step → body feedback → final pose | MMD adapter here; `usd-stage-runner` ordering; `usd-avatar-runtime` composition | planned | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [package contract](../architecture/PACKAGE_CONTRACT.md) |
+| P1-2 (Phase 8) | Run the fixed representative scene set with automatic assertions, known limitations and reproducible commands; publish a new acceptance report | `usd-avatar-runtime` + MMD acceptance; `hydra-toon` rendering | planned | [L3 acceptance](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance), [avatar composition](#avatar-runtime-composition) |
+| P1-3 (Phase 8) | Validate runtime material morphs and advanced UV/vertex-color behavior through the composed renderer | Runtime consumer + `hydra-toon`; MMD contracts here | planned | [Material contract](../design/MATERIAL_POLICY.md), [operator evidence boundary](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals) |
+| P2-1 (Phase 10) | Confirm USDZ portability, texture resolution, validation and ASCII archive paths as the release contract; make the installed consumer API and release notes consistent | Export tool and package owners here | planned | [Packaging contract](../design/PACKAGING_POLICY.md), [export guide](../guides/exporting.md), [release procedure](../releases/README.md) |
+| P2-2 (Phase 9) | Adopt expression interoperability only after a shared semantic exists; preserve source morph channels meanwhile | `usd-motion-plugins` semantic; MMD mapping here | blocked | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
 
-## Phase 9 — what remains
+## Avatar runtime composition
 
-- ✅ **`mmdControl`** (2026-09-19): Bézier sampling of a bound motion, bone
-  and group morphs, evaluation in MMD's order, appends, IK with the IK-enable
-  track, as
-  [MOTION_CONTRACT.md §11](../design/MOTION_CONTRACT.md#11-evaluating-the-control-rig)
-  says, with its unit, robustness, boundary, sanitizer and installed-consumer
-  tests over synthetic rigs with known answers, and checked against 13 local
-  models and two distributed motions
-  ([report](../reports/2026-09-19-phase9-local-control.md)). MOT-O7 is
-  resolved with it.
-- ✅ **MOT-O9** (2026-09-19): §11.7 kept. Against three.js r168's
-  `CCDIKSolver` on the same frames and inputs, at the same 40 iterations,
-  §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference
-  leaves 10.5 mm, and both leave at most 29 mm
-  ([report](../reports/2026-09-19-phase9-ik-reference.md)). MOT-O11 is
-  opened with it.
-- ⬜ **MOT-O11**: whether a knee's plane angle starts from its keyed rotation
-  rather than from zero — all of the reference's advantage on a motion that
-  keys its legs alongside their goals. Needs MMD's output on such a motion;
-  the rule does not change without it.
-- ✅ **MOT-O5 and MOT-O6** (2026-09-19): the humanoid role table, version 1,
-  and how evaluated motion becomes `HumanJoint` rotations and root motion
-  ([MOTION_CONTRACT.md §12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table)),
-  measured against the 13 local characters and two distributed motions
-  ([report](../reports/2026-09-19-phase9-roles-and-root.md)). No MMD bone is chosen as the root: it is the world
-  transform of the joint `hips` maps to. MOT-O10, the rest a clip from MMD
-  states, is opened with them.
-- ✅ **MOT-O10** (2026-10-04): the arm chain's reference rest
-  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)).
-  `mmdSkeletonAdapter` aims the shoulder, upper arm, lower arm and hand onto
-  `usd-motion-plugins` v0.5.2's public T-pose directions, and states it as
-  the source's `SourceRestPose` and as a PMX target's `TargetRestPose`; the
-  stage keeps its identity rests. Over the 17 local characters, an A-pose
-  clip onto level arms goes from a median 40° off to at most 0.04°, PMX to PMX
-  is exact for the shoulder and arms, and a level-arm clip reaches a PMX
-  target exactly instead of 40° low — the figures measured on 2026-09-25,
-  now from the shipped adapter
-  ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)). A
-  consumer retargeting onto a PMX passes `targetRest`.
-- ✅ **MOT-O14, the shoulder left unaimed** (2026-10-05): §12.6 aims only the
-  upper arm, the lower arm and the hand. The shoulder rests as the model
-  does, on both sides
-  ([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest)).
-  Aimed, it put a standing source's PMX shoulder a median 17° above the
-  model's own slope
-  ([report](../reports/2026-10-04-phase9-shoulder-rest.md)). As shipped,
-  the shoulder sits within the source clavicle's 2° of that slope. The arms
-  moved by at most 0.006° over the local captures, clips and characters
-  ([report](../reports/2026-10-05-phase9-shoulder-rest-shipped.md)).
-- ✅ **MOT-O12** (2026-09-25): role-table version 2. As a target, `上半身2`
-  and `上半身3` bind in the model's chain order. As a source, `upperChest` is
-  never emitted, because the shared retarget drops a joint a target lacks.
-  Arms from models with `上半身3` below `上半身2` went from at most 25° off
-  to at most 2.5°
-  ([report](../reports/2026-09-25-phase9-upper-chest.md)).
-- ✅ **`mmdMotionAdapter` and `mmdSkeletonAdapter`** (2026-09-21): digest-pinned
-  `motionCore` and `motionRetarget` v0.5.0 packages; role-table version 1;
-  stage-token `SkeletonDescriptor`, source rest and target `RetargetMap`;
-  evaluated world rotations normalized into `MotionClip`, root motion and
-  namespaced morph channels; unit, boundary and installed-consumer tests.
-- ✅ **Acceptance end to end** (2026-09-22): through `motionRetarget` and
-  `motionUsd`, a VMD-derived clip poses the PMX stage's
-  skeleton with legs driven by IK, and retargets to a non-MMD synthetic
-  skeleton through a translation unit whose interface and implementation name
-  no MMD type. The deterministic test uses generated source and target rigs;
-  a separate local run retargeted a 1,201-sample dance onto a 539-joint PMX
-  stage, passed `usdchecker`, and was observed moving in `usdview`
-  ([report](../reports/2026-09-22-phase9-motion-acceptance.md)).
-- ⛔ **Expression interoperability** waits for the shared core to promote a
-  common expression semantic. As of `usd-motion-plugins` v0.5.x none exists,
-  and one is promoted only by a revision of its motion contract, never by a
-  mapping. Until then, keep every original `mmd:morph:<source name>` channel.
-  When a semantic exists, optionally emit only explicit, versioned,
-  high-confidence mappings such as blink and basic mouth visemes. Unknown model-specific morphs remain source channels
-  and generic motion code contains no MMD name table. Model visibility remains
-  independently available under `mmd:model:visibility`
-  ([MOTION_CONTRACT.md §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels)).
+This heading is retained for links from earlier evidence.
+P1 verifies the frame order in the owning physics contract; generic retarget,
+MMD pose completion, physics and rendering must run together in the consumer.
 
-## Phase 8 — what remains
+Select 1–2 licensed representative PMX models and VMD motions and document
+their acquisition/use terms. Keep local real-model runs separate from
+redistributable generated fixtures. CI receives third-party assets only with
+explicit redistribution permission. The scene set and required assertions are
+defined once in [PHYSICS_INTEGRATION §12.3](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance).
 
-### Material schema and renderer integration
+## External dependencies
 
-Phase 3 remains complete: contract-v1 stages already preserve every canonical
-MMD material value and carry generic `preview` and `mtlx` fallbacks. Phase 8
-formalizes that contract for an MMD-aware renderer as stage-contract v2. It
-keeps the fallbacks, and connects them to the canonical values instead of
-copying those values
-([MATERIAL_POLICY.md](../design/MATERIAL_POLICY.md)).
+| Dependency | Needed outcome | Tracking |
+| --- | --- | --- |
+| `usd-physics-plugins` | Compatible installed descriptors, deterministic backend configuration and explicit opt-in capabilities; publication is required before claiming a published runtime dependency | [DEPENDENCIES §7](../architecture/DEPENDENCIES.md#7-usd-physics-plugins) |
+| `usd-stage-runner` / `usd-avatar-runtime` | First composed consumer to fix scheduling and the MMD coupling API | [PHYSICS_INTEGRATION §6](../design/PHYSICS_INTEGRATION.md#6-runtime-order) |
+| `hydra-toon` | Composed material/geometry acceptance; renderer-private common code only after both MMD and MToon paths provide evidence | [MATERIAL_POLICY](../design/MATERIAL_POLICY.md) |
+| `usd-motion-plugins` | Common expression semantic for P2-2 | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
+| `usd-motion-plugins` / first model-free VMD consumer | Standalone VMD stage decision (MOT-O2), before `usdVmdFileFormat` | [MOTION §9](../design/MOTION_CONTRACT.md#9-open-questions) |
+| `usd-vrm-plugins` | Second working packager before extracting shared packaging code | [PACKAGING §16](../design/PACKAGING_POLICY.md#16-later) |
 
-- ✅ **Schema decision and attribute inventory** (2026-09-22):
-  `MmdMaterialAPI` is a single-apply API on `UsdShadeMaterial`; existing
-  `mmd:material:*` names, types and meanings are retained, neutral fallbacks are
-  fixed, provenance stays outside the API, and MAT-O4 is resolved as an
-  UsdImaging adapter rather than a third realization graph.
-- ✅ **Canonical values as Material interface inputs** (2026-09-25, MAT-O5):
-  UsdShade connects only `inputs:`, so a plain `mmd:material:*` attribute
-  cannot drive a realization. In Storm the connection is ignored without an
-  error. The values become `inputs:mmd:material:*` with the same types. RGBA
-  stays `color4f`, because a textured preview connects it to
-  `UsdUVTexture.scale` exactly. The morph-modulated values and the texture
-  slots are varying. The change is stage-contract v2
-  ([report](../reports/2026-09-25-phase8-material-inputs.md)).
-- ✅ **`mmdSchema`** (2026-09-25): the `usd-schema` bundle registers
-  `MmdMaterialAPI`, the §4.1 inventory as `inputs:mmd:material:*`, with
-  C++ accessors (`UsdMmdMaterialAPI`, `UsdMmdTokens`) generated from
-  `schema/schema.usda`, and Python through the schema registry. It is also
-  installed as a CMake package. Its tests cover registration, the inventory,
-  connectability, the accessors and regeneration drift, and `ost plugin test`
-  runs its L0–L5 pyramid. It also has CI cells, and a probe in the
-  installed-consumer lane. It admits no other MMD schema.
-- ✅ **Importer on stage-contract v2** (2026-09-25): `usdMmdFileFormat`
-  applies `MmdMaterialAPI` to every material and authors the canonical inputs
-  through its accessors. It stamps version 2, and `mmdSchema` is a declared
-  and Plug-loaded runtime dependency. A safe texture slot states its sRGB
-  encoding on the canonical input. A connected shader reads its colour space
-  there, and without it Storm's MaterialX path drew textures lighter. MAT-O6
-  is resolved: the untextured `/preview` keeps a static copy
-  ([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
-- ✅ **Realizations connected** (2026-09-25): `/mtlx` reads diffuse and the
-  texture, and a textured `/preview` reads them too, through their graph
-  interface inputs. Over 15 local models, both contexts draw as v1 did, to
-  Storm's own render noise. A runtime diffuse override reaches both
-  realizations of a textured material, and `/mtlx` of an untextured one. An
-  untextured material whose texture path was refused draws in Storm's
-  translucent pass, which changes only its edges
-  ([report](../reports/2026-09-25-phase8-importer-contract-v2.md)).
-- ✅ **`mmdImaging`** (2026-10-04): the UsdImaging adapter exposes
-  `MmdMaterialAPI` to Hydra as `mmd/material/<field>` and `mmd/drawOrder` on
-  the material prim, in `vrmImaging`'s shape, which answers `hydra-toon`'s
-  MAT-Q1
-  ([MATERIAL_POLICY.md §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging)).
-  The importer does not depend on it, and it links nothing of this
-  repository. Its suites cover discovery, the Hydra view of a hand-authored
-  stage with and without the schema, invalidation and time samples, and
-  every importer fixture with materials. It is a release member, and the
-  product smoke loads it installed.
-- The operator reports **`hdToon` look approximation complete** (2026-10-17).
-  Renderer implementation and visual evidence belong to `hydra-toon`; this
-  status does not establish runtime material-morph or advanced UV/vertex-color
-  acceptance. Validate those behaviors with the runtime consumer when composed.
-- ⬜ After both `VrmMToonAPI` and `MmdMaterialAPI` paths work, evaluate
-  renderer-private common code. Do not introduce a USD-level `ToonMaterialAPI`
-  until the two concrete implementations demonstrate stable common semantics.
+## Deferred / non-goals
 
-### Avatar runtime composition
-
-- ⬜ Consume the packages from `usd-avatar-runtime` — `usdMmdFileFormat`, and
-  `motionVmd`, `mmdMotionBinding`, `mmdControl`, `mmdMotionAdapter` and
-  `mmdSkeletonAdapter` for
-  motion — and change a contract here only if that consumer shows one is
-  wrong ([PACKAGE_CONTRACT.md](../architecture/PACKAGE_CONTRACT.md)).
-- ⛔ `usdVmdFileFormat` waits for MOT-O2: `usd-motion-plugins` defines the
-  standalone motion stage, and what a model-free VMD can put in it is still
-  open ([MOTION_CONTRACT.md §9](../design/MOTION_CONTRACT.md#9-open-questions)).
-  When it is answered, the basis functions a model-free `.vmd` stage needs are
-  extracted from `mmdModel` with it (MOT-O1).
-- ✅ **Generic clips onto a PMX** (2026-10-04): a semantic motion stage,
-  read by `motionUsd`, retargets onto a PMX through `mmdSkeletonAdapter`'s
-  map and target rest, with no VMD evaluated
-  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
-  `mmdSkeletonAdapter_generic_clips` holds it on generated stages, with
-  identity and with rotated source rests. Over seven VRMA clips through
-  `usdVrmaFileFormat`, a mocopi BVH through `motion_convert`, and 17 local
-  characters, every limb segment turns exactly with its source wherever the
-  PMX binds every joint the clip drives
-  ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
-- ✅ **MOT-O13** (2026-10-04): on a PMX without `上半身3`, 15 of the 17,
-  the shared retarget drops a generic clip's `upperChest` motion by default,
-  and the arms miss up to 4.2° from a VRMA and 9.8° from a mocopi BVH.
-  `usd-motion-plugins` v0.5.3 added the fold this repository measured as an
-  opt-in, `RetargetOptions::foldUnboundIntermediateRotations`
-  ([#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)), and
-  a consumer onto a PMX sets it
-  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
-  The adapters pin v0.5.3, and the generic-clip test holds the fold exact
-  without `上半身3` and inert with it. Over the local clips and characters,
-  every arm and neck spread goes to at most 0.04°, within 0.005° of the
-  hand-written fold
-  ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
-- ✅ **MOT-O15, finishing a retargeted pose on a PMX** (2026-10-05): a
-  consumer moves arm roll onto `腕捩`/`手捩` with `CarryArmRoll`, and
-  evaluates the model's appends and IK clear of the adapter's `heldJoints`
-  with `mmdControl::Evaluator::Complete`
-  ([MOTION_CONTRACT.md §10.10](../design/MOTION_CONTRACT.md#1010-finishing-a-retargeted-pose-on-a-pmx),
-  §11.9). Without it, three of the 17 local characters kept their sleeve and
-  arm helpers in the A-pose
-  ([report](../reports/2026-10-05-phase8-pmx-pose-finish.md)). As shipped,
-  their arm IK chains reach their goals to within 1.3 mm, the carry is exact
-  below the twist bones, and held joints come back unchanged
-  ([report](../reports/2026-10-05-phase8-pmx-pose-finish-shipped.md)).
-- ✅ **Recorded connector captures onto a PMX** (2026-10-04): mocopi
-  captures replayed through `motion-connectors` v0.1.0's `MocopiConnector`
-  deliver a `MotionPose` stream that §10.9's recipe retargets onto a PMX,
-  with the source rest the device states
-  ([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
-  Over five recorded device sessions, 7,690 frames, the generated corpus and
-  17 local characters, every segment's spread is 0.00°. The residuals are
-  those of the mocopi BVH to within 0.01°
-  ([report](../reports/2026-10-04-phase8-connector-captures-onto-pmx.md)).
-  Nothing here links a connector, and no protocol dependency entered this
-  repository. VMC has no recorded sender, and VRChat OSC's trackers need an
-  operator's assignment before they are a pose. Each is `motion-connectors`'
-  operator evidence first. Live devices and network access stay demo
-  concerns, not CI requirements.
-
-### Physics runtime integration
-
-Static physics preservation is complete in Phase 6. Phase 8 owns only the
-runtime composition described by
-[PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md):
-
-- ⛔ Complete generic scene consumption waits on `usd-physics-plugins`: local
-  installed snapshots accept primitive/kinematic, mass inference and joint
-  controls. All 22 physics-bearing PMX fixtures yield three bodies/two standard
-  joints each, with one format-only joint outside the snapshot in one fixture.
-  Six physics-free fixtures return empty snapshots
-  Experimental six-DOF execution now steps those fixtures with finite state on
-  the deterministic SDK. The baseline SDK's failed Z-axis gate is MSVC
-  `/fp:fast` in non-deterministic Jolt, and the shared CI now builds
-  deterministic Jolt ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)). Its
-  `usd-jolt-six-dof` cells pass the six-axis tests on hosted Windows/Linux
-  ([usd-physics-plugins #20](https://github.com/animu-sphere/usd-physics-plugins/pull/20)); the option stays OFF by default
-  ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-six-dof-execution.md)).
-  The isolated consumer now maps the source group/mask to neutral collision
-  filters; six local contact controls pass, including distinct masks for
-  same-group bodies in one world, and all 22 fixtures still step 120 times
-  ([filtering evidence](../reports/2026-10-18-phase8-collision-filter.md)).
-  The consumer also passes preserved friction/restitution to locally rebuilt
-  shared packages; four contact-response controls and all fixtures pass
-  ([contact evidence](../reports/2026-10-18-phase8-contact-material.md)).
-  Linear/angular damping now reaches the backend as converted neutral rates;
-  local 60/240 Hz translation and free-spin controls pass
-  ([damping evidence](../reports/2026-10-18-phase8-body-damping.md)).
-  Product pair coefficients with friction capped at 10 now pass asymmetric,
-  zero and ceiling controls at 60/240 Hz
-  ([mixing evidence](../reports/2026-10-18-phase8-contact-mixing.md)).
-  The consumer now audits preserved spring vectors and marks all 22
-  physics-bearing fixture results approximate; source coefficients are
-  reported but no spring force is executed
-  ([spring audit](../reports/2026-10-18-phase8-joint-spring-audit.md)).
-  An independent opt-in approximates positive translation springs as Hookean
-  springs. All 22 fixtures execute two translation axes each and the
-  60/240 Hz oscillator controls pass; numerical damping and source-response
-  equivalence remain explicit gaps
-  ([translation evidence](../reports/2026-10-18-phase8-translation-springs.md)).
-  A separate opt-in now approximates positive rotation springs with SI
-  stiffness scaled by `0.08^2` and small-angle motors. All 22 fixtures execute
-  three rotation axes each; source-inertia oscillator controls pass at 60/240 Hz
-  ([rotation evidence](../reports/2026-10-18-phase8-rotation-springs.md)).
-  Resolve instantaneous damping (`d=1`), timestep and source-trajectory fidelity,
-  finite-angle spring response and source-only semantics before claiming
-  complete physics consumption. Hosted MMD-filter acceptance and public
-  compatible package publication also remain.
-- ⬜ establish the optional MMD coupling-adapter component and installed
-  dependency only when that first consumer fixes the required API;
-- ⬜ synchronize `followBone` bodies from the evaluated/retargeted pose;
-- ⬜ simulate dynamic bodies and constrained pairs;
-- ⬜ apply `dynamicWithBone` feedback to the runtime pose outside the importer;
-- ⬜ improve limits, springs and damping incrementally, with backend-specific
-  tolerances confined to backend tests.
-
-The intended frame order is pose evaluation, bone → body synchronization,
-shared physics step, body → bone feedback, then final pose consumption.
-`usd-stage-runner` owns that order; `usd-avatar-runtime` owns composition and
-playback state. PMX parsing and `Usd.Stage.Open("model.pmx")` remain usable
-without any physics runtime.
-
-## Phase 10 — what remains
-
-The design was measured first with OpenUSD 26.08's own packaging over the
-local models
-([report](../reports/2026-09-25-usdz-packaging-probe.md)). A `.pmx` handed to
-OpenUSD's packager as it stands becomes the package's root layer. A
-materialized `.usdc` with its textures at their stage-relative paths opens
-without the plugins. 31 of the 41 local PMX files name a BMP, which USDZ
-cannot hold.
-
-- ✅ **Step 1 — a minimal package** (2026-09-26). `mmd_export` in
-  `tools/mmdExport/`, a workspace and release member, built and tested by
-  the workspace cells, and run from the installed product by the product
-  smoke
-  ([WORKSPACE.md §1.1](../architecture/WORKSPACE.md#11-first-target)).
-  Open, discover, convert BMP and TGA to PNG, materialize, write with
-  `SdfZipFileWriter`, validate, and move into place
-  ([PACKAGING_POLICY.md §3](../design/PACKAGING_POLICY.md#3-pipeline)), with
-  the `MMD_PKG_` diagnostics. The `packaging/` fixtures hold BMP, a `.spa`
-  holding BMP, TGA, JPEG, a PNG under `.sph`, non-ASCII names, a shared toon,
-  and a missing, an unsupported and a colliding texture. A plugin-free open,
-  `usdchecker` and the `.pmx`-against-`.usdz` comparison pass for every
-  fixture and for all 41 local models
-  ([guide](../guides/exporting.md),
-  [report](../reports/2026-09-26-phase10-mmd-export-local-models.md)).
-
-Step 2 is complete (2026-09-27): file/directory collisions are detected
-before staging; normalized source aliases and missing-path reporting are
-fixture-tested. PKG-O1 is resolved by fixed local timestamps on private
-copies, with byte comparisons across time zones and source mtimes
-([PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism)).
-
-Step 3 is complete (2026-09-27): `--portable-paths` resolves PKG-O2 with
-ASCII root and texture names ([PACKAGING §5.1](../design/PACKAGING_POLICY.md#51-portable-archive-names)).
-The fixture suite covers both modes with non-ASCII input/output directories
-and filenames in every platform's workspace CI cell. Unit, boundary and
-fixture tests passed locally on Windows; Linux and macOS execution remains
-for CI.
-
-- ⬜ **Step 4 — a shared packaging layer**, only once `usd-vrm-plugins` has a
-  packager too, extracted from the two working tools.
+- Bullet/MMD trajectory or frame-by-frame equivalence is not a release gate.
+  Research reopens only for a concrete user-visible defect or external contract.
+- Further spring/solver refinement, finite-angle equivalence, additional contact
+  models and solver-order matching are deferred; the
+  [capability matrix](../reference/CAPABILITY_MATRIX.md#physics-preservation-and-execution)
+  records execution limits. Existing opt-in rotation approximation remains experimental.
+- MOT-O11's keyed-knee comparison awaits MMD output, without changing the
+  current rule; it is a bounded research question, not a physics release gate.
+- Model-free VMD stage opening and shared packaging extraction remain contingent
+  work as listed above; neither blocks the present importer/exporter scope.
+- Long corpus runs, exhaustive timestep/platform combinations and manual
+  Bullet comparisons are research/manual work, outside PR blocking acceptance.
 
 ## Completion criteria
 
-[DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)'s acceptance for
-Phase 9, for Phase 8 and for Phase 10.
+- P0: compatible installed packages and representative source/reader/stability
+  regressions pass; execution limits are explicit and discoverable.
+- P1: representative PMX + VMD motion → physics → bone feedback → render
+  behavior satisfies the owning L3 assertions, with a reproducible report.
+- P2: users can build, inspect and export through the documented entry points,
+  judge support and portability, and assess a release without further fidelity
+  exploration. External blocked features stay explicitly outside that release's claim.
+
+No avatar L3 completion is claimed by this roadmap update.

@@ -4,28 +4,10 @@ What the current code supports, feature by feature. This page states **facts
 about the tree**, not plans; a status here changes only in the change that adds
 the fixture proving it.
 
-**As of 2026-09-22 the tree holds Phases 0–7 and most of Phase 9:** `.pmx` is registered, every
-table of a PMX 2.0 or 2.1 file is parsed and validated (by `mmdPmx`, reported
-by `mmd_inspect`), canonicalized (by `mmdModel`), and authored as the
-canonical stage — mesh, UVs, material prims and subsets, skeleton and
-skinning. Phase 3 adds MMD material semantics plus unlit-compatible preview
-and MaterialX graphs, and Phase 4 every morph: vertex morphs as blend shapes,
-every other type preserved declaratively. Phase 5 preserves every bone's
-control semantics under `/Asset/rig` — IK chains, append relations, axes,
-external parents, tails, transform layers — with nothing solved, and Phase 6
-every rigid body and joint under `/Asset/physics`, as `UsdPhysics` where it
-matches and `mmd:physics:*` throughout, with nothing simulated. Phase 7 reads
-VMD motion (`motionVmd`, reported by `vmd_inspect`) and binds it to a
-canonical model by MMD's name rule (`mmdMotionBinding`), baking nothing.
-Phase 9's `mmdControl` evaluates a bound motion at an explicit time over the
-control rig — Bézier curves, bone and group morphs, appends, IK — into
-deformation-joint transforms, outside the importer. `mmdSkeletonAdapter`
-builds the shared skeleton, rest and versioned role map, and
-`mmdMotionAdapter` turns evaluated poses into a `MotionClip`.
-The *intended* column is the
-claim the design makes for the first substantial release
-([DESIGN_POLICY.md §14.1](../design/DESIGN_POLICY.md#141-first-substantial-release--definition-of-done));
-it is listed so reviewers can see the target, and it is not a support claim.
+This is the only current feature-support summary. Contracts own semantics,
+[current.md](../roadmap/current.md) owns task status, and dated reports own
+measurements. The PMX import table's Intended column states a contract target,
+not an execution claim.
 
 The fixtures behind the current claims are in
 [plugins/usdMmdFileFormat/tests/fixtures/](../../plugins/usdMmdFileFormat/tests/fixtures/);
@@ -39,6 +21,7 @@ The fixtures behind the current claims are in
 | **approximated** | imported with documented loss or a generic fallback |
 | **preserved** | the source semantic is retained on the stage but not executed or rendered |
 | **unsupported** | intentionally rejected or omitted, with a diagnostic |
+| **experimental** | scope qualifier for opt-in local probes; not shipped runtime support |
 | **unverified** | an implementation may exist, but the project makes no support claim |
 | **—** | no implementation exists |
 
@@ -126,6 +109,7 @@ lane against digest-pinned `usd-motion-plugins` v0.5.3 packages.
 | Explicit time range and rate, endpoint sampling, seconds and 30 VMD frames per second | supported | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation), [§10.5](../design/MOTION_CONTRACT.md#105-time-coordinates-and-root-motion) |
 | Non-bone morph weights under `mmd:morph:<source name>` channels | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
 | Evaluated model visibility under the reserved `mmd:model:visibility` channel | supported | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
+| Cross-format common expression mapping | —; source morph channels retained, no common expression mapping emitted | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
 | Non-finite evaluated shared values | rejected, never replaced | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
 | VMD-derived, IK-evaluated legs through a `motionUsd` round trip and `motionRetarget`, onto a PMX-derived stage skeleton and a non-MMD synthetic skeleton | supported | [Phase 9 acceptance report](../reports/2026-09-22-phase9-motion-acceptance.md) |
 | The arm chain's reference rest, aimed onto the shared T-pose directions, as `SourceRestPose` and as a PMX target's `TargetRestPose`; stage rests unchanged (MOT-O10) | supported | [MOTION §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest), [report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md) |
@@ -210,6 +194,41 @@ tool's unit and fixture tests, and the
 | A byte-deterministic archive across runs, source mtimes and time zones, for the same input bytes, output stem and tool/OpenUSD build | supported | [PACKAGING §13](../design/PACKAGING_POLICY.md#13-determinism) |
 | `.usdc` / `.usda` output | — (when `usdcat` proves insufficient) | [PACKAGING §16](../design/PACKAGING_POLICY.md#16-later) |
 
+## Physics preservation and execution
+
+Preservation refers to the imported static stage. Execution below refers only
+to the isolated [consumer probe](../../tests/physics_consumer/CMakeLists.txt)
+against locally rebuilt installed shared packages. It is experimental and
+does not establish a shipped MMD coupling adapter or avatar L3 acceptance.
+[PHYSICS_INTEGRATION §7](../design/PHYSICS_INTEGRATION.md#7-collision-filtering-and-joints)
+owns conversion rules; [§12](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy)
+owns adoption criteria.
+
+| Feature | Source / static preservation | Execution claim and limits | Contract / evidence |
+| --- | --- | --- | --- |
+| Body primitives, local poses, kinematic flags and mass | Supported stage authoring | Experimental reader; shared primitive mass inference is not PMX zero-mass equivalence | [Stage §13](../design/STAGE_CONTRACT.md#13-physics), [mass reader](../reports/2026-10-18-phase8-mass-reader.md) |
+| Standard 6-DOF endpoints, frames and limits | Supported stage authoring | Approximated experimental six-DOF stepping, opt-in; backend angular limits differ from source conventions | [Execution report](../reports/2026-10-18-phase8-six-dof-execution.md) |
+| Collision groups/masks | Preserved | Experimental neutral filter mapping; mixed-format category allocation has no runtime contract | [§7](../design/PHYSICS_INTEGRATION.md#7-collision-filtering-and-joints), [filter report](../reports/2026-10-18-phase8-collision-filter.md) |
+| Friction/restitution and pair mixing | Preserved | Experimental coefficient execution and selected product policy; no trajectory-equivalence claim | [§7.1](../design/PHYSICS_INTEGRATION.md#71-contact-coefficients), [mixing report](../reports/2026-10-18-phase8-contact-mixing.md) |
+| Linear/angular damping | Preserved | Approximated finite-rate execution for accepted coefficients; instantaneous d=1 is unsupported | [§7.2](../design/PHYSICS_INTEGRATION.md#72-body-damping), [damping report](../reports/2026-10-18-phase8-body-damping.md) |
+| Joint spring metadata audit | Preserved source vectors | Supported local audit only; source-gap counts remain even for approximated execution | [§7.3](../design/PHYSICS_INTEGRATION.md#73-joint-spring-metadata-audit), [audit report](../reports/2026-10-18-phase8-joint-spring-audit.md) |
+| Positive translation springs on free/limited standard spring6Dof axes | Preserved | Approximated experimental Hookean execution, independently default OFF; numerical damping and timestep dependence | [§7.4](../design/PHYSICS_INTEGRATION.md#74-experimental-translation-spring-approximation), [response report](../reports/2026-10-18-phase8-translation-springs.md) |
+| Positive rotation springs on free/limited standard spring6Dof axes | Preserved | Approximated experimental small-angle execution, independently default OFF; finite-angle/multi-axis equivalence unverified | [§7.5](../design/PHYSICS_INTEGRATION.md#75-experimental-rotation-spring-approximation), [response report](../reports/2026-10-18-phase8-rotation-springs.md) |
+| Negative/locked-axis spring coefficients; format-only PMX 2.1 joints | Preserved | Unsupported execution in this probe; audit reports source meaning | [§7.3–§7.5](../design/PHYSICS_INTEGRATION.md#73-joint-spring-metadata-audit) |
+| Bone association and followBone/dynamic/dynamicWithBone modes | Preserved | No MMD bone synchronization/feedback adapter; avatar L3 unverified | [§5–§6](../design/PHYSICS_INTEGRATION.md#5-rigid-body-modes) |
+| Bullet/MMD full trajectories and solver equivalence | Source values remain inspectable | Unverified; not a release gate | [§12](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy) |
+
+Malformed metadata rejects in the probe's strict readers; an unsupported
+well-formed feature is distinct from invalid input. Existing probe output
+uses `jointFidelity=approximate/unverified` and approximation counters,
+not a uniform four-state per-feature capability API.
+
+Corpus counts, finite-step results, SDK/hosted evidence and response error
+measurements remain in the linked reports. Accepted reader/finite-state
+tests prove their bounded claims, not native MMD trajectories.
+[DEPENDENCIES §7](../architecture/DEPENDENCIES.md#7-usd-physics-plugins)
+owns package/ABI requirements and option discovery.
+
 ## Outside the PMX importer
 
 | Capability | Status | Where it belongs |
@@ -218,16 +237,12 @@ tool's unit and fixture tests, and the
 | IK solving, append-transform evaluation of a bound motion (`mmdControl`) | supported, outside the importer — see [Control evaluation](#control-evaluation-mmdcontrol) | [MOTION §11](../design/MOTION_CONTRACT.md#11-evaluating-the-control-rig) |
 | A VMD as a `MotionClip`, and a PMX model as a retarget target (`SkeletonDescriptor`, humanoid `RetargetMap`) | supported — see [Shared-motion adapters](#shared-motion-adapters-mmdskeletonadapter-mmdmotionadapter) | [MOTION §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core), [§12](../design/MOTION_CONTRACT.md#12-the-humanoid-role-table) |
 | Retargeting, recording, `UsdSkelAnimation` authoring of motion | unsupported by design | `usd-motion-plugins` ([MOTION §10.6](../design/MOTION_CONTRACT.md#106-what-this-repository-does-not-do-with-the-result)) |
-| Physics simulation | unsupported by design | `usd-stage-runner` or another runtime |
-| Existing PMX physics stage consumed by `physicsUsd` | approximated by local snapshots and experimental opt-in six-DOF execution: all 22 physics-bearing fixtures create three bodies/two constraints and step 120 times with finite state on the deterministic SDK (the baseline's Z-axis failure is MSVC `/fp:fast`, [usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19); hosted Windows/Linux six-axis tests pass, [usd-physics-plugins #20](https://github.com/animu-sphere/usd-physics-plugins/pull/20)). The isolated consumer maps collision filters, friction/restitution and converted linear/angular damping to neutral per-body values, and selects product pair rules with friction capped at 10. Six filter, four contact-response, independent damping and asymmetric/zero/ceiling mixing controls at 60/240 Hz pass locally. Instantaneous source damping (`d=1`), timestep/source-trajectory fidelity, a format-only joint, spring response fidelity, PMX angular/zero-mass equivalence and bone coupling remain open | [2026-10-18 consumer follow-up](../reports/2026-10-18-phase8-contact-mixing.md) |
-| Preserved joint spring metadata audited by the isolated consumer | supported locally: strict constant-vector reader, per-prim diagnostics and nonzero component counts; all 22 physics-bearing fixtures explicitly marked approximate. Counts retain source-fidelity gaps even when experimental spring approximations are enabled | [2026-10-18 spring audit](../reports/2026-10-18-phase8-joint-spring-audit.md) |
-| Translation springs in the isolated execution consumer | approximated locally, default OFF: positive coefficients of standard `spring6Dof` joints on free/limited axes use neutral Hookean stiffness, zero equilibrium and zero viscous damping. All 22 physics-bearing fixtures execute two axes each; source-to-SI response controls at 60/240 Hz pass with measured numerical damping. Negative/locked/source-only coefficients and source solver equivalence remain unsupported | [2026-10-18 translation springs](../reports/2026-10-18-phase8-translation-springs.md) |
-| Rotation springs in the isolated execution consumer | approximated locally, independently default OFF: positive `spring6Dof` coefficients on free/limited angular axes use neutral small-angle motors with stiffness scaled by `0.08^2`, identity equilibrium and zero viscous damping. All 22 physics-bearing fixtures execute three axes each; source-inertia oscillator controls pass at 60/240 Hz. Finite-angle/source solver equivalence and negative/locked/source-only coefficients remain unsupported | [2026-10-18 rotation springs](../reports/2026-10-18-phase8-rotation-springs.md) |
+| Generic physics simulation | unsupported here by design | `usd-physics-plugins` backend; runtime schedules execution; see [physics capabilities](#physics-preservation-and-execution) |
 | `MmdMaterialAPI` → Hydra data (`mmdImaging`) | supported: `mmd/material/<field>` and `mmd/drawOrder` on the Hydra material prim, per-field invalidation, time-sampled values followed; checked over a hand-authored stage and every importer fixture with materials | [MATERIAL §12.1](../design/MATERIAL_POLICY.md#121-the-hydra-view-mmdimaging) |
 | Toon rendering | unsupported by design | `hydra-toon`; this repository supplies the schema and imaging adapter, not the renderer |
 | Opening a `.vmd` as a stage (`usdVmdFileFormat`) | — (waits for MOT-O2) | [MOTION §2](../design/MOTION_CONTRACT.md#2-components-and-boundaries) |
 | VMD playback | unsupported by design | a runtime scheduling `mmdControl` (Phase 8) |
-| VMD bake to `UsdSkelAnimation` | — (end-to-end acceptance remains) | `mmdControl` evaluates, the adapters normalize, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
+| VMD bake to `UsdSkelAnimation` | supported through the evaluated clip/shared-core path above; no standalone bake CLI | `mmdControl` evaluates, the adapters normalize, the shared core authors ([MOTION §8.2](../design/MOTION_CONTRACT.md#82-a-bake-is-not-a-data-conversion)) |
 | PMD | — (not planned) | `mmdPmd`, if ever |
 | PMX / VMD writing | — (not planned) | [DESIGN_POLICY.md §2.4](../design/DESIGN_POLICY.md#24-reader-first) |
 | Export to a format that is not USD (FBX, glTF, …) | unsupported by design | [PACKAGING §15](../design/PACKAGING_POLICY.md#15-non-goals) |
@@ -236,4 +251,4 @@ tool's unit and fixture tests, and the
 
 - [DIAGNOSTICS.md](DIAGNOSTICS.md) — the codes an approximation or refusal raises.
 - [SOURCE_MAPPING.md](SOURCE_MAPPING.md) — where each PMX field lands on the stage.
-- [roadmap/](../roadmap/README.md) — when each Phase is scheduled.
+- [current.md](../roadmap/current.md) — active priorities and external blockers.
