@@ -5,6 +5,7 @@
 
 #include <pxr/base/gf/vec3d.h>
 #include <pxr/base/gf/vec3f.h>
+#include <pxr/base/gf/matrix4d.h>
 #include <pxr/usd/usd/primRange.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/sphere.h>
@@ -14,12 +15,50 @@
 #include <pxr/usd/usdPhysics/collisionAPI.h>
 #include <pxr/usd/usdPhysics/massAPI.h>
 #include <pxr/usd/usdPhysics/rigidBodyAPI.h>
+#include <pxr/usd/usdPhysics/joint.h>
+#include <pxr/usd/usdPhysics/limitAPI.h>
 
 #include <iostream>
 #include <cmath>
 #include <stdexcept>
 
 namespace {
+pxr::GfMatrix4d
+Matrix(const usd_physics::core::Transform& pose)
+{
+    pxr::GfMatrix4d matrix(1.0);
+    const auto q = pose.rotation;
+    matrix.SetRotate(pxr::GfQuatd(q.w, q.x, q.y, q.z));
+    const auto p = pose.translation;
+    matrix.SetTranslateOnly(pxr::GfVec3d(p.x, p.y, p.z));
+    return matrix;
+}
+
+// Imported PMX joint frames describe one common rest frame. Reconstruct it
+// solely from the installed reader's neutral snapshot, never collider frames.
+void
+CheckPmxJointFrames(const usd_physics::usd::PhysicsScene& scene)
+{
+    for (const auto& joint : scene.joints) {
+        const auto world = [&](const std::string& path,
+                               const usd_physics::core::Transform& local) {
+            for (const auto& body : scene.bodies) {
+                if (body.path == path)
+                    return Matrix(local) * Matrix(body.transform);
+            }
+            throw std::runtime_error("PMX joint endpoint has no body snapshot");
+        };
+        const auto a = world(joint.body0, joint.localFrame0);
+        const auto b = world(joint.body1, joint.localFrame1);
+        for (int row = 0; row != 4; ++row) {
+            for (int col = 0; col != 4; ++col) {
+                if (std::abs(a[row][col] - b[row][col]) > 1e-6)
+                    throw std::runtime_error("PMX joint local frames disagree in world space");
+            }
+        }
+    }
+}
+
 const char*
 CodeName(usd_physics::usd::ImportErrorCode code)
 {
@@ -139,6 +178,33 @@ CheckControl()
         }
         std::cout << "control-kinematic-" << type << "\taccepted\t1\n";
     }
+    const auto other = pxr::UsdGeomCube::Define(childStage, pxr::SdfPath("/Other"));
+    pxr::UsdPhysicsCollisionAPI::Apply(other.GetPrim());
+    pxr::UsdPhysicsRigidBodyAPI::Apply(other.GetPrim());
+    pxr::UsdPhysicsMassAPI::Apply(other.GetPrim()).CreateMassAttr().Set(1.0f);
+    const auto joint = pxr::UsdPhysicsJoint::Define(childStage, pxr::SdfPath("/Joint"));
+    joint.CreateBody0Rel().SetTargets({body.GetPath()});
+    joint.CreateBody1Rel().SetTargets({other.GetPath()});
+    joint.CreateLocalPos0Attr().Set(pxr::GfVec3f(1, 2, 3));
+    joint.CreateLocalPos1Attr().Set(pxr::GfVec3f(-1, -2, -3));
+    const auto angular = pxr::UsdPhysicsLimitAPI::Apply(joint.GetPrim(), pxr::TfToken("rotZ"));
+    angular.CreateLowAttr().Set(-90.0f);
+    angular.CreateHighAttr().Set(90.0f);
+    const auto locked = pxr::UsdPhysicsLimitAPI::Apply(joint.GetPrim(), pxr::TfToken("transX"));
+    locked.CreateLowAttr().Set(0.25f);
+    locked.CreateHighAttr().Set(0.25f);
+    const auto scene = usd_physics::usd::readPhysicsScene(childStage);
+    if (scene.bodies.size() != 2 || scene.joints.size() != 1 ||
+        scene.joints[0].body0 != "/World/Body" || scene.joints[0].body1 != "/Other" ||
+        scene.joints[0].localFrame0.translation != usd_physics::core::Vector3{1, 2, 3} ||
+        scene.joints[0].localFrame1.translation != usd_physics::core::Vector3{-1, -2, -3} ||
+        scene.joints[0].limits[1].applied || !scene.joints[0].limits[0].applied ||
+        scene.joints[0].limits[0].low != 0.25 || scene.joints[0].limits[0].high != 0.25 ||
+        std::abs(scene.joints[0].limits[5].low + std::acos(-1.0) / 2) > 1e-9 ||
+        std::abs(scene.joints[0].limits[5].high - std::acos(-1.0) / 2) > 1e-9) {
+        throw std::runtime_error("installed reader failed the joint frame/limit control");
+    }
+    std::cout << "control-joint\taccepted\tbodies=2\tjoints=1\n";
 }
 } // namespace
 
@@ -156,14 +222,24 @@ main(int argc, char** argv)
             if (!stage)
                 throw std::runtime_error("could not open input stage");
             std::size_t rigidBodies = 0;
+            std::size_t joints = 0, preservedOnlyJoints = 0;
             for (const auto& prim : stage->Traverse()) {
                 if (prim.HasAPI<pxr::UsdPhysicsRigidBodyAPI>())
                     ++rigidBodies;
+                if (prim.IsA<pxr::UsdPhysicsJoint>())
+                    ++joints;
+                else if (prim.HasAttribute(pxr::TfToken("mmd:physics:type")))
+                    ++preservedOnlyJoints;
             }
-            std::cout << argv[i] << "\trigidBodies=" << rigidBodies << '\t';
+            std::cout << argv[i] << "\trigidBodies=" << rigidBodies << "\tjoints=" << joints
+                      << "\tpreservedOnlyJoints=" << preservedOnlyJoints << '\t';
             try {
-                const auto snapshot = usd_physics::usd::readPrimitiveScene(stage);
-                std::cout << "accepted\t" << snapshot.size() << '\n';
+                const auto snapshot = usd_physics::usd::readPhysicsScene(stage);
+                if (snapshot.bodies.size() != rigidBodies || snapshot.joints.size() != joints)
+                    throw std::runtime_error("PMX standard declaration counts differ from snapshot");
+                CheckPmxJointFrames(snapshot);
+                std::cout << "accepted\tbodies=" << snapshot.bodies.size()
+                          << "\tjoints=" << snapshot.joints.size() << '\n';
             } catch (const usd_physics::usd::ImportError& error) {
                 std::cout << "rejected\t" << CodeName(error.code()) << '\t' << error.path() << '\t'
                           << error.what() << '\n';
