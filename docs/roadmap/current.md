@@ -293,7 +293,10 @@ runtime composition described by
   filters; six local contact controls pass, including distinct masks for
   same-group bodies in one world, and all 22 fixtures still step 120 times
   ([filtering evidence](../reports/2026-10-18-phase8-collision-filter.md)).
-  Resolve coefficients, springs and source-only semantics before claiming
+  The consumer also passes preserved friction/restitution to locally rebuilt
+  shared packages; four contact-response controls and all fixtures pass
+  ([contact evidence](../reports/2026-10-18-phase8-contact-material.md)).
+  Resolve damping, pair-mixing fidelity, springs and source-only semantics before claiming
   complete physics consumption. Hosted MMD-filter acceptance and public
   compatible package publication also remain.
 - ⬜ establish the optional MMD coupling-adapter component and installed

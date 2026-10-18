@@ -3,6 +3,7 @@
 // A reported rejection is evidence of a gap, not successful MMD simulation.
 #include <usd_physics/usd/box_scene.h>
 #include "collision_filter.h"
+#include "contact_material.h"
 #ifdef MMD_PHYSICS_EXECUTION
 #include <usd_physics/usd/joint_conversion.h>
 #include <usd_physics/jolt/availability.h>
@@ -32,7 +33,8 @@ namespace {
 #ifdef MMD_PHYSICS_EXECUTION
 std::size_t
 Execute(const usd_physics::usd::PhysicsScene& scene,
-        const std::vector<usd_physics::core::CollisionFilter>& filters)
+        const std::vector<usd_physics::core::CollisionFilter>& filters,
+        const std::vector<usd_physics::core::ContactMaterial>& materials)
 {
     namespace core = usd_physics::core;
     auto world = usd_physics::jolt::createWorld();
@@ -45,7 +47,8 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
         const auto shape = world->createShape(body.shape);
         bodies.emplace(
             body.path,
-            world->createBody({shape, body.motionType, body.transform, body.mass, filters.at(i)}));
+            world->createBody({shape, body.motionType, body.transform, body.mass,
+                               filters.at(i), materials.at(i)}));
     }
     std::size_t count = 0;
     for (const auto& joint : scene.joints) {
@@ -305,15 +308,20 @@ main(int argc, char** argv)
                         "PMX standard declaration counts differ from snapshot");
                 CheckPmxJointFrames(snapshot);
                 std::vector<usd_physics::core::CollisionFilter> filters;
-                for (const auto& body : snapshot.bodies)
+                std::vector<usd_physics::core::ContactMaterial> materials;
+                for (const auto& body : snapshot.bodies) {
                     filters.push_back(mmd_physics_probe::ReadCollisionFilter(
                         stage->GetPrimAtPath(pxr::SdfPath(body.path))));
+                    materials.push_back(mmd_physics_probe::ReadContactMaterial(
+                        stage->GetPrimAtPath(pxr::SdfPath(body.path))));
+                }
 #ifdef MMD_PHYSICS_EXECUTION
-                const auto constraints = Execute(snapshot, filters);
+                const auto constraints = Execute(snapshot, filters, materials);
 #endif
                 std::cout << "accepted\tbodies=" << snapshot.bodies.size()
                           << "\tjoints=" << snapshot.joints.size()
-                          << "\tfilters=" << filters.size();
+                          << "\tfilters=" << filters.size()
+                          << "\tmaterials=" << materials.size();
 #ifdef MMD_PHYSICS_EXECUTION
                 std::cout << "\tconstraints=" << constraints << "\tsteps=120";
 #endif
