@@ -200,6 +200,8 @@ Preservation refers to the imported static stage. Execution below refers only
 to the isolated [consumer probe](../../tests/physics_consumer/CMakeLists.txt)
 against locally rebuilt installed shared packages. It is experimental and
 does not establish a shipped MMD coupling adapter or avatar L3 acceptance.
+[Installed-package compatibility](../reports/2026-10-18-phase8-package-compatibility.md)
+is checked at configure time; packages without compatibility metadata reject.
 [PHYSICS_INTEGRATION §7](../design/PHYSICS_INTEGRATION.md#7-collision-filtering-and-joints)
 owns conversion rules; [§12](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy)
 owns adoption criteria.
