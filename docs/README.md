@@ -27,8 +27,8 @@ and composed body transforms. Joint frames/limits and primitive mass inference
 now allow all 22 physics-bearing PMX fixtures to yield three bodies/two
 standard joints each. An opt-in experimental backend also creates those
 constraints and steps each fixture 120 times with finite state on a validated
-candidate SDK. The baseline SDK fails an axis gate; full physics fidelity
-remains open
+deterministic SDK. The baseline SDK's failed axis gate is MSVC `/fp:fast`;
+hosted acceptance and full physics fidelity remain open
 ([consumer follow-up](reports/2026-10-18-phase8-six-dof-execution.md)).
 MMD coupling stays here and simulation stays outside the
 importer. Everything

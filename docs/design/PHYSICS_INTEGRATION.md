@@ -300,6 +300,15 @@ source-only joints, coefficients/filtering, springs, PMX angular/zero-mass
 equivalence and runtime synchronization still precede MMD bone coupling
 ([report](../reports/2026-10-18-phase8-six-dof-execution.md)).
 
+**SDK cause follow-up (2026-10-18).** The shared repository traced the
+baseline SDK's Z-axis failure to MSVC `/fp:fast`, which Jolt applies to
+non-deterministic Release builds; x86 SIMD options do not matter, and GCC
+passes either way. It selected `CROSS_PLATFORM_DETERMINISTIC=ON`, the
+configuration this repository's execution probe already used, and its source
+CI now builds Jolt that way ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)). The probe needs
+no rerun. Hosted six-DOF acceptance, coefficients/filtering, springs and
+runtime synchronization still precede MMD bone coupling.
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and
