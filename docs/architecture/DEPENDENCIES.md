@@ -4,21 +4,18 @@ What `usd-mmd-plugins` builds against, what it refuses to depend on, and the
 test a new dependency has to pass. Edges *between* this repository's own
 components are [WORKSPACE.md §2](WORKSPACE.md#2-dependency-directions)'s.
 
-Status (2026-09-21): the Phase 0 decisions are closed, and every value below
-is what the workspace builds with. The OpenUSD pin is enforced at configure
-time. §6, `usd-motion-plugins`, was added on 2026-09-17 and is planned: no
-component links it yet. §7 records the proposed optional runtime edge to
-`usd-physics-plugins`; the static import path never takes it.
+Exact versions, ranges and artifact digests live in build manifests and pin
+modules. This page owns dependency boundaries and required interfaces.
 
 ## 1. OpenUSD
 
 | | |
 | --- | --- |
-| Pin | OpenUSD **26.08**, exactly (`PXR_VERSION` 2608), enforced by [cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake) for `ost` and plain-CMake builds alike and declared as `runtime.openusd: "==26.08"` in the bundle manifest; the release the rest of the ecosystem pins (`usd-vrm-plugins` too), because `usd-avatar-runtime` composes every plugin into one OpenUSD process |
+| Pin source | [cmake/UsdMmdOpenUsd.cmake](../../cmake/UsdMmdOpenUsd.cmake) enforces the exact release for both build modes; [bundle manifests](../../plugins/usdMmdFileFormat/openstrata.plugin.yaml) mirror it as runtime.openusd. All plugins composed in one process must agree |
 | Used by | `usdMmdFileFormat`; `mmdSchema`; `mmd_export`; `mmdImaging`, the only user of imaging; `mmdMotionAdapter` and `mmdSkeletonAdapter` use only the foundation types (`gf`, `tf`, `vt`) exposed through the shared motion packages, and no stage (§6) |
 | Modules | linked today: `arch`, `tf`, `gf`, `vt`, `ar`, `sdf`, `usd`, `usdGeom`, `usdPhysics`, `usdShade`, `usdSkel`, `kind` (`usdShade` and `usdSkel` since Phase 2, `usdPhysics` since Phase 6); `hd` and `usdImaging` by `mmdImaging` alone, since Phase 8 |
 | Not used | OpenExec, Hydra render delegates — nothing is evaluated or rendered here, so unlike `usd-vrm-plugins`' pin module this one probes for no OpenExec. `mmdImaging` uses UsdImaging's scene-index API to describe materials, and draws nothing |
-| CI runtimes | the OpenUSD 26.08 leaves of OpenStrata's runtime matrix, the same digests `usd-vrm-plugins` pins ([openstrata.ci.yaml](../../openstrata.ci.yaml)) |
+| CI runtimes | the runtime matrix and digests declared in [openstrata.ci.yaml](../../openstrata.ci.yaml) |
 
 The pin is exact rather than a range for the same reason as in
 `usd-vrm-plugins`: a plugin built against one OpenUSD release is not loadable
@@ -38,7 +35,7 @@ calls the MaterialX library. The MaterialX document version it declares
 | Compilers | MSVC on Windows, Clang on macOS (arm64), GCC on Linux — the three hosted lanes `usd-vrm-plugins` runs |
 | Windows flags | `/utf-8`, `NOMINMAX`, applied by `usdmmd_target_defaults()` in [cmake/UsdMmdTargets.cmake](../../cmake/UsdMmdTargets.cmake) ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
 | Python | the Python OpenUSD was built against — 3.13 for the 26.08 runtimes — for stage tests and tooling. The root project finds the interpreter *after* OpenUSD, so it inherits the one `pxrConfig.cmake` names |
-| OpenStrata | `ost` **0.23.13**, pinned in `openstrata.ci.yaml`; 0.23.2 or later for digest-pinned external-library artifacts in root builds, and 0.23.10 or later for the `usd-imaging` bundle kind `mmdImaging` declares |
+| OpenStrata | The tool pin in [openstrata.ci.yaml](../../openstrata.ci.yaml); requires external-library artifacts and the usd-imaging bundle kind |
 | Unit-test framework | **none**, as in `usd-vrm-plugins`: each suite is a plain executable that checks with `assert()`, compiled with `NDEBUG` undefined so Release builds still check, and registered with CTest |
 | Sanitizers and fuzzing | Clang 18's AddressSanitizer, UndefinedBehaviorSanitizer and libFuzzer, from Ubuntu 24.04's packages, in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml) only; the `USDMMD_SANITIZERS` and `USDMMD_BUILD_FUZZERS` options of [cmake/UsdMmdSanitizers.cmake](../../cmake/UsdMmdSanitizers.cmake) switch them on, and nothing shipped is built with them. Toolchain runtimes, not dependencies: no code is vendored and nothing links them outside that lane |
 
@@ -46,7 +43,7 @@ calls the MaterialX library. The MaterialX document version it declares
 
 | Dependency | Refused because |
 | --- | --- |
-| Bullet, PhysX, Jolt, any physics engine directly | nothing in this repository owns backend objects; future simulation is reached through the optional shared `usd-physics-plugins` contract ([PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy)) |
+| Bullet, PhysX, Jolt, any physics engine directly | production components own no backend objects; the isolated installed-backend probe exception is defined in §7. Simulation is reached through the optional shared `usd-physics-plugins` contract ([PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy)) |
 | An image decoder in the importer | the importer never reads texture pixels; authoring stays independent of image content and of whether files exist ([TEXT_ENCODING_POLICY.md §7.3](../design/TEXT_ENCODING_POLICY.md#73-no-filesystem-access-while-authoring)) |
 | ICU, `iconv`, OS code-page APIs | PMX text is UTF-8 or UTF-16LE, decoded by the parser; CP932 (for VMD, PMD) uses a table the project owns ([TEXT_ENCODING_POLICY.md §9](../design/TEXT_ENCODING_POLICY.md#9-pmd-and-vmd)) |
 | A third-party PMX parser, by default | PMX is a bounded format; a purpose-built parser avoids inheriting an application's semantics ([DESIGN_POLICY.md §10](../design/DESIGN_POLICY.md#10-parser-strategy)) — adoption is possible only through §4 |
@@ -93,126 +90,62 @@ exact version, and listed in `THIRD_PARTY_NOTICES.md`.
 
 ## 6. usd-motion-plugins
 
-The shared motion core: vendor- and avatar-format-neutral poses and clips,
-humanoid joint semantics, sampling, retargeting, recording and the
-`UsdSkelAnimation` bridge. v0.5.0 was published on 2026-09-20 with installable
-`motionCore`, `motionRetarget` and `motionUsd`, and v0.5.2 on 2026-09-30 added
-what MOT-O10 waited for, and v0.5.3 on 2026-10-04 what MOT-O13 did; the
-adapters and their tests consume per-target, digest-pinned OpenStrata
-artifacts of v0.5.3.
+The shared motion core owns format-neutral poses/clips, humanoid semantics,
+sampling, retargeting, recording and the UsdSkelAnimation bridge. MMD names,
+IK and source interpretation remain here.
 
-| | |
+| Boundary | Contract |
 | --- | --- |
-| Packages | `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionClip`), `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`, `SourceRestPose`, `TargetRestPose`), `motionSource` (`TPoseDirection` and `ShortestRotation` only) and `motionUsd` (the standalone motion-stage writer/reader), each by `find_package(<name> CONFIG)` and linked as `<name>::<name>` |
-| Used by | `mmdMotionAdapter` (`motionCore`), `mmdSkeletonAdapter` (`motionRetarget`, and privately `motionSource`, plus their required `motionCore` artifact closure) the Phase 9 acceptance test (`motionRetarget`, `motionUsd`) and the Phase 8 generic-clip test (`motionUsd`); later perhaps `usdVmdFileFormat` (MOT-O2) |
-| Consumed as | an installed package, by `find_package` with a version range admitting the release it was verified against, the way siblings are ([WORKSPACE.md §5](WORKSPACE.md#5-build-modes)) |
-| Version | `>=0.5.3,<0.6`, verified against v0.5.3: the first that folds an unbound intermediate. v0.5.2 was the first with `TargetRestPose` and the public T-pose directions, and is still the floor `mmdSkeletonAdapter`'s package asks of `motionSource` |
-| OpenUSD | the same exact pin as §1 |
-| Direction | one way: `usd-motion-plugins` never depends on this repository |
+| Installed interfaces | `motionCore` (poses/clips), `motionRetarget` (skeleton, maps and source/target rests), `motionSource` (public T-pose directions and shortest rotation), `motionUsd` (motion-stage reader/writer) |
+| Adapters | `mmdMotionAdapter` uses motionCore; `mmdSkeletonAdapter` uses motionRetarget and privately motionSource. Static consumers still need the private link closure |
+| Test-only interface | motionUsd is used by skeletal acceptance and generic-clip tests; exported adapter targets/packages do not require it |
+| Consumption | Installed `find_package(<name> CONFIG)` targets `<name>::<name>`; never a copy of shared algorithms |
+| Required semantics | TargetRestPose, shared T-pose directions and the opt-in unbound-intermediate rotation fold; [MOTION §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx) owns the consumer recipe |
+| Pin/range sources | [Motion adapter manifest](../../libs/mmdMotionAdapter/openstrata.library.yaml), [skeleton adapter manifest](../../libs/mmdSkeletonAdapter/openstrata.library.yaml), and their [installed package config](../../libs/mmdSkeletonAdapter/cmake/mmdSkeletonAdapterConfig.cmake.in) |
+| OpenUSD / direction | Same exact release as §1; shared motion never depends on MMD |
 
-**Why a dependency and not a copy.** The motion policy places generic
-motion in one repository so that VRM, MMD and live sources share one
-retarget and one USD mapping; a private MMD copy would be the permanent
-duplication that policy forbids (its §37). What stays here is what needs MMD
-to be understood ([MOTION_CONTRACT.md §10](../design/MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)).
-
-**v0.5.2, for MOT-O10.** `mmdSkeletonAdapter` states the arm chain's
-reference rest
-([MOTION_CONTRACT.md §12.6](../design/MOTION_CONTRACT.md#126-the-arm-chains-reference-rest))
-with v0.5.2's `TargetRestPose` and `motionSource`'s public `TPoseDirection`
-and `ShortestRotation`, so the directions are read from the shared core and
-never copied ([WORKSPACE.md §7](WORKSPACE.md#7-invariants), invariant 9).
-`motionSource` needs only `motionCore` and OpenUSD. It is a private link of
-the static library, so the installed package config still finds it for a
-consumer's link line.
-
-**v0.5.3, for MOT-O13.** v0.5.3 (2026-10-04) adds
-`RetargetOptions::foldUnboundIntermediateRotations`, the opt-in fold of an
-unbound intermediate's rotation into its nearest bound ancestor, proposed from
-here as [usd-motion-plugins#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35).
-A consumer retargeting a generic clip onto a PMX sets it
-([MOTION_CONTRACT.md §10.9](../design/MOTION_CONTRACT.md#109-a-generic-clip-onto-a-pmx)).
-Both adapters pin every package to v0.5.3, and `mmdSkeletonAdapter`'s
-package asks for `motionRetarget` 0.5.3, so its consumer has the option. No
-edge is added.
-
-`motionUsd` is test-only today. Its pin lives on `mmdMotionAdapter`'s manifest
-for the Phase 9 acceptance test, and on `mmdSkeletonAdapter`'s for the Phase 8
-generic-clip test, with the same range and digests, so a standalone or
-workspace test has the same artifact CI uses. Neither exported target nor
-installed package links or requires it.
+Package manifests own the artifact closure for workspace and standalone
+builds. They and generated package configs own compatible ranges; do not
+duplicate the version history or digest tables here. Measured adapter changes
+are linked from the [evidence map](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals).
 
 ## 7. usd-physics-plugins
 
-The future backend-neutral physics layer: scene construction from authored
-`UsdPhysics`, simulation stepping, queries and backend integration. Proposed,
-not linked; no package name or version is assumed until that repository
-publishes its contract.
+The shared physics layer owns neutral descriptors, reader APIs, backend
+objects, constraints, contacts, damping, spring approximation and stepping.
+MMD metadata interpretation and bone/body coupling stay here.
 
-| | |
+| Boundary | Contract |
 | --- | --- |
-| Used by | a future MMD-specific bone/body coupling adapter, only after its first runtime consumer fixes the component identity in [WORKSPACE.md](WORKSPACE.md) |
-| Not used by | `mmdPmx`, `mmdModel`, `usdMmdFileFormat`, `motionVmd`, `mmdMotionBinding`, `mmdControl`, `mmdMotionAdapter` or `mmdSkeletonAdapter` |
-| Consumed as | an installed package with a declared compatible version, never sibling source, a submodule or vendored code |
-| Backend direction | this repository never links Jolt, PhysX, Bullet or another backend directly |
-| OpenUSD | the same exact pin as §1 when the package exposes OpenUSD types |
-| Runtime ownership | `usd-stage-runner` orders the step; `usd-avatar-runtime` composes it; neither moves generic physics or MMD coupling into the importer |
+| Production consumer | An optional MMD coupling adapter, whose component/API is fixed by the first runtime consumer under [WORKSPACE](WORKSPACE.md); no normal physics dependency is declared yet |
+| Static path | Parser/model/importer and motion components do not require physics packages |
+| Consumption | Installed packages with declared compatibility; never sibling source, submodules or vendored backend code |
+| Backend direction | Production MMD components use shared neutral interfaces; no direct Jolt/Bullet/PhysX backend integration |
+| Runtime | usd-stage-runner owns order/tick; usd-avatar-runtime owns composition |
+| OpenUSD | Same exact release as §1 wherever shared interfaces expose OpenUSD types |
+| Probe requirements | [tests/physics_consumer/CMakeLists.txt](../../tests/physics_consumer/CMakeLists.txt) owns package names, requested versions and default-OFF options; it links installed physicsUsd and, for execution, physicsJolt |
+| API/build compatibility | Core/backend/bridge/consumer must use matching descriptor layouts, compiler/runtime/OpenUSD configuration and an accepted deterministic SDK; matching a package's minor version alone does not prove ABI compatibility |
+| Experimental enablement | Execution requires the installed six-DOF capability; translation and rotation options independently require execution and the corresponding descriptor fields |
 
-The authored hand-off and staged integration are
-[PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md). Static PMX import,
-inspection and stage authoring remain fully functional when this dependency is
-absent.
+The probe is isolated contract evidence, outside normal workspace/release
+membership. Its direct link to the installed backend facade is a test-only
+exception, not ownership of backend implementation. No published physics
+artifact pin or production coupling API is selected.
 
-An isolated, opt-in [consumer probe](../../tests/physics_consumer/CMakeLists.txt)
-uses a local installed `physicsUsd` 0.1 package for contract evidence only
-([2026-10-17 report](../reports/2026-10-17-phase8-physics-consumer.md)). It is
-not a workspace/release member or a runtime dependency; no published artifact
-pin or coupling-adapter API has been selected.
-Its independent `MMD_PHYSICS_EXECUTION=ON` option additionally links installed
-`physicsJolt` to exercise the experimental six-DOF capability; the shared
-backend must explicitly enable it. This does not add a normal importer or
-workspace dependency. The [execution report](../reports/2026-10-18-phase8-six-dof-execution.md)
-records the candidate SDK and the baseline SDK's failed axis gate; the shared
-repository traced that failure to MSVC `/fp:fast` and selected deterministic
-Jolt ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)).
+For contact/damping/spring API changes, rebuild shared core, backend, bridge
+and every consumer together into a separate compatible prefix. Mixing new
+descriptor headers with older static libraries is invalid.
+`BodyDescriptor::contactMaterial` / `damping`,
+`validateContactMaterial()` / `validateBodyDamping()`, and
+`SixDofConstraintDescriptor::translationSprings` / `rotationSprings` are
+required where the corresponding probe feature is used. The probe's source
+mapping remains outside the generic USD reader.
 
-The probe also translates MMD collision metadata into the existing neutral
-`CollisionFilter` before creating bodies. This helper and its independent
-CTest controls are test-only; no coupling-adapter package or shared-reader
-dependency on MMD is introduced
-([filtering report](../reports/2026-10-18-phase8-collision-filter.md)).
-
-The contact-coefficient probe requires locally rebuilt shared packages with
-`BodyDescriptor::contactMaterial` and `validateContactMaterial()`. It maps
-existing MMD friction/restitution metadata outside the generic reader.
-Rebuild core, backend, bridge and all consumers together: the body descriptor
-layout is incompatible with earlier static libraries. This remains test-only
-with no published pin ([contact report](../reports/2026-10-18-phase8-contact-material.md)).
-
-The damping follow-up additionally requires `BodyDescriptor::damping` and
-`validateBodyDamping()`. Source coefficients convert to neutral inverse-second
-rates in the test-only consumer. Rebuild shared packages and both probe modes
-together into a separate prefix; the descriptor layout changes again. No
-normal dependency or published pin changes
-([damping report](../reports/2026-10-18-phase8-body-damping.md)).
-
-The joint spring audit uses these same installed packages. Its test-only
-reader and CLI regression report source coefficients absent from the generic
-snapshot, without adding a dependency or changing shared APIs
-([spring audit](../reports/2026-10-18-phase8-joint-spring-audit.md)).
-
-The additional `MMD_PHYSICS_TRANSLATION_SPRINGS=ON` option requires execution
-mode and locally rebuilt packages carrying
-`SixDofConstraintDescriptor::translationSprings`. It approximates positive
-translation coefficients outside the generic reader. Rebuild shared core,
-backend, bridge and all consumers into a separate prefix: the six-DOF
-descriptor layout changes. The probe remains test-only, with default OFF and
-no normal dependency, runtime-adapter API or published pin change
-([translation spring evidence](../reports/2026-10-18-phase8-translation-springs.md)).
-
-The independent `MMD_PHYSICS_ROTATION_SPRINGS=ON` execution option requires
-locally rebuilt packages with `SixDofConstraintDescriptor::rotationSprings`.
-Rebuild core/backend/bridge and consumers together into a separate prefix:
-the static descriptor layout changes again. Source scaling remains test-only;
-no normal dependency or published pin changes
-([rotation spring evidence](../reports/2026-10-18-phase8-rotation-springs.md)).
+[PHYSICS_INTEGRATION](../design/PHYSICS_INTEGRATION.md) owns conversions,
+diagnostic meaning and acceptance.
+[Capabilities](../reference/CAPABILITY_MATRIX.md#physics-preservation-and-execution)
+own feature availability; [current.md](../roadmap/current.md) owns package
+adoption and runtime gates. Dated
+[execution](../reports/2026-10-18-phase8-six-dof-execution.md) and
+[spring](../reports/2026-10-18-phase8-rotation-springs.md) reports record
+validated environments and reproduction commands.

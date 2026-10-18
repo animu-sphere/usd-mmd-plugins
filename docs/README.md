@@ -1,113 +1,45 @@
 # usd-mmd-plugins documentation
 
-Documentation is organized by responsibility: each category answers one class
-of question. The layout is the one `usd-vrm-plugins`, `open-strata` and
-`hydra-merlin` use, so the repositories read the same way.
+Each fact has one owner. Use the capability matrix for support claims and
+the current roadmap for active work; contracts define behavior, reports
+preserve evidence, and release records describe shipped versions.
 
-**The tree holds Phases 0–7 and most of Phase 9 (2026-09-22):** the PMX structural parser reads
-every table of a PMX 2.0 or 2.1 file, `mmd_inspect` reports on it, and `.pmx`
-opens as the canonical stage — mesh, UVs, material prims and subsets,
-skeleton and skinning, Y-up, in meters. Phase 3 adds canonical MMD material
-semantics and unlit-compatible `preview` and `mtlx` realizations, and Phase 4
-every morph: vertex morphs as blend shapes, every other type preserved
-declaratively. Phase 5 preserves every bone's control semantics — IK
-chains, append relations, axes — under `/Asset/rig`, solving nothing, and
-Phase 6 every rigid body and joint under `/Asset/physics`, as `UsdPhysics`
-where it matches, simulating nothing. Phase 7 reads VMD motion without a
-model (`motionVmd`, `vmd_inspect`) and binds it to one by MMD's name rule
-(`mmdMotionBinding`), baking nothing. Phase 9 evaluates MMD's control rig over
-a bound motion (`mmdControl`) and hands the result to `usd-motion-plugins`
-through `mmdMotionAdapter` and `mmdSkeletonAdapter`. Skeletal end-to-end
-retarget and animation authoring acceptance is covered; expression
-interoperability and rest-direction evidence remain. Future
-physics execution is intended to consume the existing static stage through
-`usd-physics-plugins`; a local primitive reader increment accepts
-dynamic and kinematic Cube/Sphere/Capsule controls with collider-local poses
-and composed body transforms. Joint frames/limits and primitive mass inference
-now allow all 22 physics-bearing PMX fixtures to yield three bodies/two
-standard joints each. An opt-in experimental backend also creates those
-constraints and steps each fixture 120 times with finite state on a validated
-deterministic SDK; the shared six-axis tests pass on hosted Windows/Linux.
-The isolated consumer now maps MMD collision groups/masks to neutral filters,
-with six contact controls and the same fixture stepping gate. Friction and
-restitution now reach locally rebuilt shared packages, with four response
-controls and the same fixture gate. Converted linear/angular damping rates now
-pass independent translation/free-spin controls at 60/240 Hz. The consumer
-also selects product pair coefficients with a friction ceiling of 10;
-asymmetric, zero and ceiling controls pass at both rates. A source spring
-metadata audit now reports omitted coefficients and marks all 22
-physics-bearing fixture results approximate. An additional opt-in now
-approximates positive translation springs through neutral Hookean descriptors;
-60/240 Hz analytic controls measure numerical damping, and all 22 fixtures
-execute two translation axes each. Instantaneous
-source damping, timestep fidelity, source trajectories, finite-angle spring response and full
-physics fidelity remain open
-([consumer follow-up](reports/2026-10-18-phase8-translation-springs.md)).
-An independent opt-in also approximates positive rotation springs using
-`0.08^2` stiffness scaling and small-angle motors. Source-inertia oscillator
-controls pass at 60/240 Hz; all 22 physics-bearing fixtures execute three
-rotation axes each ([rotation follow-up](reports/2026-10-18-phase8-rotation-springs.md)).
-MMD coupling stays here and simulation stays outside the
-importer. Everything
-else in `design/` is intended behavior; [reference/](reference/) is the only
-place that says what is implemented.
-
-| Category | Answers | Start here |
+| Category | Responsibility | Entry |
 | --- | --- | --- |
-| [architecture/](architecture/) | How the workspace is structured: component identities, dependency directions, build modes, external dependencies, installed packages. | [WORKSPACE.md](architecture/WORKSPACE.md) · [DEPENDENCIES.md](architecture/DEPENDENCIES.md) · [PACKAGE_CONTRACT.md](architecture/PACKAGE_CONTRACT.md) |
-| [design/](design/) | What the importer authors and why. | [DESIGN_POLICY.md](design/DESIGN_POLICY.md) |
-| [guides/](guides/) | How to accomplish a task, with commands that have been run. | [building.md](guides/building.md) · [opening.md](guides/opening.md) · [inspecting.md](guides/inspecting.md) · [exporting.md](guides/exporting.md) |
-| [reference/](reference/) | Facts about the current tree: what is supported, which diagnostics exist, where each PMX field lands. | [CAPABILITY_MATRIX.md](reference/CAPABILITY_MATRIX.md) · [DIAGNOSTICS.md](reference/DIAGNOSTICS.md) · [SOURCE_MAPPING.md](reference/SOURCE_MAPPING.md) |
-| [roadmap/](roadmap/) | What is planned next (incomplete work only), and which release carries it. | [README.md](roadmap/README.md) · [current.md](roadmap/current.md) |
-| [contributing/](contributing/) | How to maintain these documents. | [documentation.md](contributing/documentation.md) |
-| [releases/](releases/) | Immutable per-version release records, and how a release is cut. | [README.md](releases/README.md) · [v0.1.0.md](releases/v0.1.0.md) · [v0.2.0.md](releases/v0.2.0.md) |
-| [reports/](reports/) | Dated evidence from real runs; append-only. | [2026-09-15-phase2-local-models.md](reports/2026-09-15-phase2-local-models.md) · [2026-09-16-phase4-local-models.md](reports/2026-09-16-phase4-local-models.md) · [2026-09-16-phase5-local-models.md](reports/2026-09-16-phase5-local-models.md) · [2026-09-17-phase6-local-models.md](reports/2026-09-17-phase6-local-models.md) · [2026-09-17-phase7-local-motions.md](reports/2026-09-17-phase7-local-motions.md) · [2026-09-22-phase9-motion-acceptance.md](reports/2026-09-22-phase9-motion-acceptance.md) · [ost/](reports/ost/README.md), the OpenStrata dogfooding reports |
+| [architecture/](architecture/) | Stable structure, dependency directions, package interfaces and links to pin sources | [WORKSPACE.md](architecture/WORKSPACE.md) · [DEPENDENCIES.md](architecture/DEPENDENCIES.md) · [PACKAGE_CONTRACT.md](architecture/PACKAGE_CONTRACT.md) |
+| [design/](design/) | Semantics, public contracts and acceptance policy | [DESIGN_POLICY.md](design/DESIGN_POLICY.md) |
+| [guides/](guides/) | Reproducible user tasks | [building.md](guides/building.md) · [opening.md](guides/opening.md) · [inspecting.md](guides/inspecting.md) · [exporting.md](guides/exporting.md) |
+| [reference/](reference/) | Current feature support, diagnostics and source mapping | [CAPABILITY_MATRIX.md](reference/CAPABILITY_MATRIX.md) · [DIAGNOSTICS.md](reference/DIAGNOSTICS.md) · [SOURCE_MAPPING.md](reference/SOURCE_MAPPING.md) |
+| [roadmap/](roadmap/) | Active priorities, owners, external blockers and exit gates | [current.md](roadmap/current.md) |
+| [reports/](reports/) | Dated experiments and decision evidence | [Ownership audit](reports/2026-10-18-docs-ownership-audit.md) · [OpenStrata reports](reports/ost/README.md) |
+| [releases/](releases/) | Per-version shipped scope and release procedure | [README.md](releases/README.md) |
+| [contributing/](contributing/) | Maintenance rules | [documentation.md](contributing/documentation.md) · [release note template](contributing/RELEASE_NOTES_TEMPLATE.md) |
 
-Latest physics consumer evidence:
-[2026-10-18 experimental rotation springs](reports/2026-10-18-phase8-rotation-springs.md).
+## Canonical contracts
 
-## Canonical documents
+Focused contracts win over the general design policy in their own area.
+Keep the existing owner instead of creating a synonymous contract.
 
-- [design/DESIGN_POLICY.md](design/DESIGN_POLICY.md) is the **design policy**:
-  the central rule (parse MMD, normalize it once, author conventional OpenUSD,
-  keep evaluation and rendering outside the importer), the component
-  responsibilities, the schema admission test, the testing policy, the
-  **Phase 0–10** sequence, the decisions frozen early, where the design
-  departs from the 2026-09-15 implementation policy it was distilled from, and
-  how it aligns with the `usd-motion-plugins` design policy (§20).
-- Seven focused contracts own one area each, and on that area they win over the
-  design policy:
-  - [design/STAGE_CONTRACT.md](design/STAGE_CONTRACT.md) — the exact authored
-    stage: hierarchy, types, metadata, the coordinate conversion, skeleton,
-    skinning, morph layout, and the stage-contract version;
-  - [design/PMX_CONTRACT.md](design/PMX_CONTRACT.md) — how PMX 2.0/2.1 bytes are
-    read and what each source concept becomes in the canonical model;
-  - [design/MATERIAL_POLICY.md](design/MATERIAL_POLICY.md) — `MmdMaterialAPI`,
-    native MMD semantics, `UsdPreviewSurface` / MaterialX fallbacks, and the
-    `mmdImaging` → `hydra-toon` boundary;
-  - [design/TEXT_ENCODING_POLICY.md](design/TEXT_ENCODING_POLICY.md) — text
-    decoding, source names versus USD identifiers, collisions, texture paths;
-  - [design/MOTION_CONTRACT.md](design/MOTION_CONTRACT.md) — the MMD-specific
-    motion boundary: how VMD bytes are read, how a motion binds to a
-    model, how MMD's control rig is evaluated, and how the result enters the
-    shared motion core of `usd-motion-plugins`;
-  - [design/PHYSICS_INTEGRATION.md](design/PHYSICS_INTEGRATION.md) — the
-    proposed runtime boundary after static physics preservation: MMD coupling
-    here, generic simulation in `usd-physics-plugins`, execution order in
-    `usd-stage-runner`, and composition in `usd-avatar-runtime`;
-  - [design/PACKAGING_POLICY.md](design/PACKAGING_POLICY.md) — the
-    `mmd_export` tool: how the imported stage and its textures become a
-    standard USDZ that opens without this repository's plugins.
-- [architecture/WORKSPACE.md](architecture/WORKSPACE.md) is the binding
-  **workspace contract**. When a document disagrees with it about structure, it
-  wins, and structural changes go there first, in their own pull request.
+| Area | Owner |
+| --- | --- |
+| Authored stage, coordinates, skeleton and metadata | [STAGE_CONTRACT.md](design/STAGE_CONTRACT.md) |
+| PMX bytes and canonical semantics | [PMX_CONTRACT.md](design/PMX_CONTRACT.md) |
+| Material schema, fallbacks and rendering interface | [MATERIAL_POLICY.md](design/MATERIAL_POLICY.md) |
+| Text, names, identifiers and texture paths | [TEXT_ENCODING_POLICY.md](design/TEXT_ENCODING_POLICY.md) |
+| VMD, IK, motion conversion and adapters | [MOTION_CONTRACT.md](design/MOTION_CONTRACT.md) |
+| MMD physics conversion, runtime boundary and L1–L4 acceptance | [PHYSICS_INTEGRATION.md](design/PHYSICS_INTEGRATION.md) |
+| USDZ export and portability | [PACKAGING_POLICY.md](design/PACKAGING_POLICY.md) |
 
 ## Source-of-truth rules
 
-- Code is authoritative for implemented behavior; `architecture/` and
-  `reference/` record it and change with it.
-- `design/` defines intended contracts and must label what is not yet
-  implemented.
-- `roadmap/` holds incomplete work only; the release a Phase lands in is stated
-  only in its [status table](roadmap/README.md#status-at-a-glance).
-- The details are in [contributing/documentation.md](contributing/documentation.md).
+- Code and fixtures establish implemented behavior; the
+  [capability matrix](reference/CAPABILITY_MATRIX.md) summarizes it once.
+- [current.md](roadmap/current.md) alone owns current work status.
+- Contracts hold semantics and stable decisions, without a running progress log.
+- Dated reports hold measurements and environment details; later findings
+  get new reports. The [ownership audit](reports/2026-10-18-docs-ownership-audit.md)
+  maps the evidence retained during this reorganization.
+- [Release records](releases/README.md) own shipped scope.
+- Build manifests and pin modules own exact dependency versions and digests.
+- [Documentation guidelines](contributing/documentation.md) define the change
+  matrix and lightweight checks.

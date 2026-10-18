@@ -1,12 +1,8 @@
 # usd-mmd-plugins — design policy
 
-> Status: **accepted** as the project's design policy, 2026-09-15. Phases 0–7
-> are implemented — the workspace skeleton, the PMX structural parser, the
-> canonical stage, the material triad, morphs, control semantics, physics
-> preservation, and VMD reading and binding; every other behavior
-> described here is intended, and
-> [reference/CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md) is the
-> only document that says what is implemented.
+> Contract: **accepted** as the project's design policy.
+> [CAPABILITY_MATRIX.md](../reference/CAPABILITY_MATRIX.md) owns support claims;
+> [current.md](../roadmap/current.md) owns active work status.
 >
 > This is the canonical, long-form policy: why the project is shaped the way it
 > is, where its boundaries are, and the order it is built in. It is distilled
@@ -244,9 +240,9 @@ struct CanonicalDocument {
 }
 ```
 
-That is the document as of Phase 2
-([libs/mmdModel/include/mmdModel/CanonicalDocument.h](../../libs/mmdModel/include/mmdModel/CanonicalDocument.h));
-each later Phase adds what it authors.
+This sketch illustrates the canonical model boundary. The full declaration is
+[CanonicalDocument.h](../../libs/mmdModel/include/mmdModel/CanonicalDocument.h);
+contracts below define the additional source semantics.
 
 ### 5.3 `mmdMaterial` — deferred
 
@@ -524,8 +520,8 @@ may describe what they showed.
 
 This repository has **one** phase sequence, written `Phase 0`–`Phase 10`, and
 this section is its source of truth. A phase is not a release; which release
-carries a phase is decided in the
-[roadmap](../roadmap/README.md#status-at-a-glance), never here. Should a second
+carries a phase is recorded in
+[release records](../releases/README.md), never here. Should a second
 sequence ever appear, both get a qualifier, as they do in `usd-vrm-plugins`.
 
 | Phase | Goal | Acceptance |
@@ -538,7 +534,7 @@ sequence ever appear, both get a qualifier, as they do in `usd-vrm-plugins`.
 | **5 — control semantics** | Narrow MMD semantics for IK, append transforms, axes, morph composition and material morphs — schema only where §6 admits one. | A consumer can reconstruct every IK chain and append relation from the stage alone. |
 | **6 — physics preservation** | Standard `UsdPhysics` where it matches; everything else preserved. | No simulation; every rigid body and joint recoverable. |
 | **7 — VMD** | Model-independent `libs/motionVmd` (defined as extraction-ready; VMD stays here since 2026-09-17, §9.1), bound to a model by `mmdMotionBinding`; the hand-off to the shared motion core is Phase 9; `usdVmdFileFormat` only once direct stage-open has a contract. | Per [MOTION_CONTRACT.md](MOTION_CONTRACT.md). |
-| **8 — avatar runtime composition** | Composition through OpenStrata with `usd-vrm-plugins`, `usd-motion-plugins`, `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and `usd-stage-runner`, under `usd-avatar-runtime`; this repository first supplies `MmdMaterialAPI` and its UsdImaging bridge, while MMD-specific physics coupling follows [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md). | The runtime, not this repository, is the avatar execution environment; `hydra-toon` consumes MMD semantics without PMX or importer dependencies, and physics can progress from `followBone` through dynamic bodies to bone feedback without putting a renderer or solver in the importer. |
+| **8 — avatar runtime composition** | Composition through OpenStrata with `usd-vrm-plugins`, `usd-motion-plugins`, `usd-physics-plugins`, `motion-connectors`, `hydra-toon` and `usd-stage-runner`, under `usd-avatar-runtime`; this repository first supplies `MmdMaterialAPI` and its UsdImaging bridge, while MMD-specific physics coupling follows [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md). | The runtime, not this repository, is the avatar execution environment; `hydra-toon` consumes MMD semantics without PMX or importer dependencies, and physics progresses from `followBone` through dynamic bodies to bone feedback under [PHYSICS_INTEGRATION §12](PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy), without putting a renderer or solver in the importer. |
 | **9 — shared motion core adoption** | `mmdControl` evaluates a bound motion over the control rig; `mmdMotionAdapter` builds a `MotionClip`, while `mmdSkeletonAdapter` builds a `SkeletonDescriptor`, `SourceRestPose` and humanoid `RetargetMap`, against `usd-motion-plugins`' installed `motionCore` and `motionRetarget`; MOT-O5, MOT-O6 and MOT-O7 resolved ([MOTION_CONTRACT.md §10](MOTION_CONTRACT.md#10-normalizing-into-the-shared-motion-core)). | On synthetic rigs with known answers, IK and append evaluation match; the same inputs give the same bits; a VMD-derived `MotionClip`, authored by the shared core as `UsdSkelAnimation`, poses the PMX stage's skeleton with legs driven by IK; the same clip retargets to a non-MMD synthetic skeleton through the shared retarget with no MMD code on that path; no generic motion algorithm exists in this repository. |
 | **10 — USDZ packaging** | `mmd_export`, the counterpart of `usd-vrm-plugins`' `vrm_export`, materializes the stage the importer authors as a `.usdc` and packages it, with every texture it names, as a standard USDZ; a texture USDZ cannot hold is converted to PNG losslessly ([PACKAGING_POLICY.md](PACKAGING_POLICY.md)). Step 1: a minimal package with validation. Step 2: robust assets and a deterministic archive (PKG-O1). Step 3: portability, including `--portable-paths` (PKG-O2). Step 4: a packaging layer shared with `usd-vrm-plugins`, only once a second packager exists. | For every fixture, the package opens in a process with no MMD plugin, passes `usdchecker`, and matches the `.pmx` stage prim for prim and value for value, texture renames aside; the importer is unchanged. |
 
@@ -546,6 +542,11 @@ Phases are numbered in the order they were defined, not the order they run.
 Phase 9 was added on 2026-09-17, when the motion architecture was settled
 (§20), and it runs **before** the MMD half of Phase 8: the runtime composes
 this repository's evaluated motion rather than evaluating MMD itself.
+Phase numbers describe scope; active priorities are owned by
+[current.md](../roadmap/current.md). Physics adoption criteria and the boundary
+between release acceptance and equivalence research are owned only by
+[PHYSICS_INTEGRATION §12](PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy).
+
 Phase 10 was added on 2026-09-25 from the USDZ packaging memo. It needs only
 the importer's stage, so it can run alongside Phases 8 and 9.
 

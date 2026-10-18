@@ -1,76 +1,14 @@
 # Motion contract (MMD-specific boundary)
 
-> Status: **binding** since Phase 7 for §2–§8.1 and §8.3: `motionVmd` reads
-> VMD as §3–§6 say, `vmd_inspect` reports on it, and `mmdMotionBinding` binds
-> a motion to a model as §7 and §8.1 say, each with fixtures. §11 is
-> **binding** since Phase 9's `mmdControl`: it evaluates a bound motion as §11
-> says, with a synthetic rig behind each rule. §10 and §12 are **binding**
-> since `mmdMotionAdapter` and `mmdSkeletonAdapter` adopted the released
-> `usd-motion-plugins` v0.5.0 packages, with synthetic adapter tests and an
-> installed consumer, §12.6 since `mmdSkeletonAdapter` states it against
-> v0.5.2, and §10.9's fold since v0.5.3. This document holds
-> only what is specific to MMD motion — VMD's source facts, its text encoding,
-> where it meets a PMX model, how MMD's control rig is evaluated, and how the
-> result enters the shared motion core. Generic motion concepts (`MotionPose`,
-> `MotionClip`, humanoid joint semantics, sampling, retarget, recording, the
-> `UsdSkelAnimation` bridge) are owned by `usd-motion-plugins` and consumed
-> from it; VMD itself stays here, because it is MMD's format (the
-> `usd-motion-plugins` design policy, §26). Section numbers are stable.
->
-> Revised 2026-09-17 to that policy: MOT-O3 is superseded (§8.2), `motionVmd`
-> is no longer described as leaving this repository (§2), and §10 is new.
-> Revised 2026-09-19: §11 is new, and MOT-O7 is resolved by it. Revised again
-> the same day: §10 follows what `usd-motion-plugins` has merged — the rig
-> types are `motionRetarget`'s, not `motionCore`'s, and a map binds a *target*
-> rig — §12 is new, MOT-O5 and MOT-O6 are resolved by it, and MOT-O10 is
-> opened. §12 was accepted there and became binding with the adapters.
-> Revised again the same day: MOT-O9 is resolved against an independent
-> implementation with §11.7 unchanged, and MOT-O11 is opened.
-> Revised 2026-09-21: the shared-motion edge is split by responsibility:
-> `mmdMotionAdapter` emits evaluated motion, while `mmdSkeletonAdapter` exposes
-> the PMX skeleton, rest pose and versioned humanoid mapping.
-> Revised again on 2026-09-21: `usd-motion-plugins` v0.5.0 shipped installable
-> `motionCore` and `motionRetarget`, and both adapters implemented §10 and §12.
-> Revised 2026-09-25: MOT-O10 is narrowed by a measured comparison, MOT-O12 is
-> opened, and §10.7 records that the shared core has promoted no common
-> expression semantic yet.
-> Revised again the same day: MOT-O12 is resolved by table version 2 (§12.2,
-> §12.5). `上半身2` and `上半身3` bind as a target in the model's own chain
-> order, and a source never emits `upperChest`.
-> Revised 2026-10-04: MOT-O10 is resolved by §12.6, now that
-> `usd-motion-plugins` v0.5.2 takes a target reference rest and publishes the
-> T-pose directions. Both sides state the arm chain's aimed rest; the stage
-> does not change. §12.6 became **binding** the same day, when
-> `mmdSkeletonAdapter` stated both rests, with synthetic tests and a rerun
-> over the local models that matches the measurement
-> ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)).
-> Revised again the same day: §10.9 is new and states how a generic clip,
-> from a `.vrma` or a BVH, reaches a PMX. MOT-O13 is opened: such a clip's
-> upper-chest motion is dropped on a PMX without `上半身3`
-> ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)).
-> Revised again the same day: MOT-O13 is resolved by `usd-motion-plugins`
-> v0.5.3's opt-in fold of an unbound intermediate, which §10.9 has a consumer
-> retargeting onto a PMX set. That step became **binding** the same day,
-> when `mmdSkeletonAdapter`'s generic-clip test held it against v0.5.3 and a
-> rerun over the local clips and characters matched the measured fold
-> ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)).
-> Revised again the same day: MOT-O14 is resolved, and §12.6's aim leaves the
-> shoulder out. The chain it aims is the upper arm, the lower arm and the
-> hand; the shoulder rests as the model does, on both sides
-> ([report](../reports/2026-10-04-phase9-shoulder-rest.md)). It became
-> **binding** on 2026-10-05, when `mmdSkeletonAdapter` stopped aiming the
-> shoulder, with synthetic tests and a rerun over the local models that
-> matches the measurement
-> ([report](../reports/2026-10-05-phase9-shoulder-rest-shipped.md)).
-> Revised again on 2026-10-05: MOT-O15 is resolved. §10.10 is new: a pose
-> retargeted onto a PMX is finished with the model's own twist bones,
-> appends and IK. §11.9 is new: `mmdControl` evaluates from a given pose. A
-> consumer of §10.9 now links `mmdControl`, and still evaluates no VMD
-> ([report](../reports/2026-10-05-phase8-pmx-pose-finish.md)). Both became
-> **binding** the same day, when `mmdSkeletonAdapter` shipped `CarryArmRoll`
-> and `heldJoints` and `mmdControl` shipped `Complete`, with synthetic tests
-> and a rerun over the local models
-> ([report](../reports/2026-10-05-phase8-pmx-pose-finish-shipped.md)).
+> Contract: **binding** for VMD reading/binding (§2–§8.1, §8.3),
+> control evaluation (§11), shared-motion adapters (§10, §12), reference rest
+> (§12.6), generic input (§10.9) and pose completion (§10.10, §11.9).
+> This document owns MMD semantics; generic motion belongs to
+> `usd-motion-plugins`. Current support is in the
+> [capability matrix](../reference/CAPABILITY_MATRIX.md); measured comparisons
+> and revision evidence are linked in the
+> [ownership audit](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals).
+> Section numbers and decision IDs remain stable.
 
 ---
 
@@ -330,7 +268,7 @@ as a whole.
 | MOT-O2 | What a directly opened `.vmd` stage looks like. `usd-motion-plugins` fixes the frame (`/Animation`, the body as `UsdSkelAnimation`, `customData.motion`); what remains is that a VMD without a model has only control-rig tracks, which no evaluator can turn into body motion (§10.2) — so either the stage carries source tracks outside `Body`, or no such stage exists | `usd-motion-plugins`' `motionUsd` contract, then a consumer |
 | MOT-O4 | Camera and light tracks: any USD mapping at all | a consumer that needs one |
 | MOT-O8 | Whether `mmdControl` must also evaluate from a stage alone — `/Asset/rig` and `/Asset/morph` — for a runtime that holds no `CanonicalDocument` (§10.3) | a consumer that holds only the stage |
-| MOT-O11 | Whether a plane link starts from its keyed rotation. §11.7 starts an enabled chain's plane angles at zero, so a knee's keyed rotation never reaches the pose and the knee is solved from straight; three.js r168 starts from the keyed rotation. On a motion that keys its legs' rotations alongside their goals, that start alone leaves a median 0.05 mm where §11.7 leaves 2.4 mm, and moves the knees a median 4.6 mm and at most 66 mm; on an IK-authored motion it changes little ([report](../reports/2026-09-19-phase9-ik-reference.md)). Which MMD does | MMD's output on a motion that keys its IK links |
+| MOT-O11 | Whether a plane link starts from its keyed rotation; §11.7 currently starts enabled plane angles at zero | MMD output on a motion keying leg rotations alongside IK goals; [comparison evidence](../reports/2026-09-19-phase9-ik-reference.md) |
 
 Resolved:
 
@@ -341,12 +279,12 @@ Resolved:
 | MOT-O7 | Which morph types `mmdControl` evaluates into the pose, and which reach `MotionChannelSet` as source weights | bone morphs, directly or as members of group morphs, are evaluated into the pose; every other bound morph track — group morphs included, bone morphs not — is a channel with its sampled weight, unexpanded (§11.3) | Phase 9, 2026-09-19 |
 | MOT-O5 | Which MMD bones (`全ての親`, `センター`, `グルーブ`) become `RootMotion` and which stay hips-local motion | none is chosen: the root is the evaluated world transform of the joint `hips` maps to, so every ancestor's motion reaches it, and nothing of it stays in a local rotation below (§12.3) | Phase 9, 2026-09-19 |
 | MOT-O6 | Which MMD bone names map to which `HumanJoint`, how English names and variants are matched, and how the table is versioned | table version 1, §12.2: exact source names, deforming (`D`) bones first; English names and spelling variants never match (§12.1); the version is recorded with every clip and bumped with any entry (§12.5) | Phase 9, 2026-09-19 |
-| MOT-O9 | Whether MMD's own IK reaches a reachable goal closer than §11.7 does at a model's stored loop count | kept: §11.7 is unchanged. Against an independent implementation (three.js r168's `CCDIKSolver`) at the same 40 iterations, on the same frames and inputs, §11.7 leaves a median 0.55 mm on an IK-authored motion where the reference leaves 10.5 mm, and both leave at most 29 mm — the residual of 40 iterations of cyclic coordinate descent. Where the reference leaves less, the difference is the knee's start (MOT-O11). Matching MMD's own playback stays unverified ([report](../reports/2026-09-19-phase9-ik-reference.md)) | Phase 9, 2026-09-19 |
-| MOT-O12 | Where `上半身3` falls in the role table, which version 1 put above `上半身2` although both local models that have it chain `上半身` → `上半身3` → `上半身2` → `首` | table version 2, §12.2: as a target the two bind in the model's chain order; as a source `upperChest` is never emitted, because the shared retarget drops a joint a target lacks (its RETARGETING_POLICY §4.1, case 6). Arms from those models onto targets without `上半身3` went from at most 25° to at most 2.5°, the same as every other pair ([report](../reports/2026-09-25-phase9-upper-chest.md)) | Phase 9, 2026-09-25 |
-| MOT-O10 | The rest a clip from MMD states. Every MMD bone rests at identity rotation, and in that rest every local character's upper arms point 37–42° below horizontal — not the level arms a VRM's identity rest describes | §12.6: the arm chain alone (shoulder, upper arm, lower arm, hand) is aimed onto the shared core's T-pose directions, and the same rest is stated on **both** sides — as the source's `SourceRestPose` and as a PMX target's `TargetRestPose` — while `/Asset/skel/Skeleton` keeps its identity rests. Measured beforehand ([report](../reports/2026-09-25-phase9-rest-pose-comparison.md)): onto a level-arm skeleton every arm segment goes from a median 40° off to at most 0.04°; PMX to PMX goes from a median 2.5° to 0.00° for the shoulder and arms, while the hand, measured to the middle finger, goes from 2.7° to 3.6° because that line differs between models' hands; a level-arm source reaches a PMX target exactly instead of 40° low. The whole-body construction is refused: it flips the chest where `上半身3` lies below `上半身2`. It waited for `usd-motion-plugins` v0.5.2's target reference rest and public `TPoseDirection`. As shipped, the adapter's rests give the same figures over the same 17 models ([report](../reports/2026-10-04-phase9-arm-chain-reference-rest.md)). The shoulder was later left out of the chain (MOT-O14) | Phase 9, 2026-10-04 |
-| MOT-O15 | What a pose retargeted onto a PMX needs from the model's own rig. The shared retarget drives the bound joints only. A model's appends and IK helpers, such as `手捩1`–`3` and `腕W` toward `腕WIK`, stay in the A-pose, and on three of the 17 local characters the sleeves and arm skin stayed there with them | §10.10: the adapter moves arm roll onto `腕捩` and `手捩` and states the held joints, and `mmdControl` evaluates the model's appends and the IK chains clear of them (§11.9). Held joints are unchanged bit for bit. Every arm IK chain reached its goal to within 1.3 mm, from 10–580 mm, and up to 54° of upper-arm roll moved onto `腕捩` ([report](../reports/2026-10-05-phase8-pmx-pose-finish.md)). As shipped, the carry is exact to float rounding below the twist bones, once the twist bone's offset turns with the roll, and `Complete` returns every held joint unchanged ([report](../reports/2026-10-05-phase8-pmx-pose-finish-shipped.md)) | Phase 8, 2026-10-05 |
-| MOT-O14 | Whether §12.6's aim includes the shoulder. As shipped it did, and a mocopi capture retargeted onto a PMX showed visibly raised shoulders while the arms were right | no: the shoulder rests as the model does, on both sides, and the chain is the upper arm, the lower arm and the hand (§12.6). Every local character's `肩` slopes 5–30° down at rest, and the aim put a standing source's PMX shoulder a median 17° and at most 30° above that slope. Unaimed, it sits within 2° of it, with the arms' directions unchanged ([report](../reports/2026-10-04-phase9-shoulder-rest.md)). As shipped, the adapter gives the same shoulder; the arms moved by at most 0.006° and the hand by 0.09° ([report](../reports/2026-10-05-phase9-shoulder-rest-shipped.md)) | Phase 9, 2026-10-04; shipped 2026-10-05 |
-| MOT-O13 | How a generic clip's `upperChest` reaches a PMX without `上半身3`, as 15 of the 17 local characters are. Both producers measured, `usdVrmaFileFormat` and `motion_convert`, drive it, and by default the shared retarget drops a joint the target does not bind (its RETARGETING_POLICY §4.1, case 6): everything above the chest missed up to 4.2° on a VRMA's arms and 9.8° on a mocopi BVH's, where a model with `上半身3` is exact ([report](../reports/2026-10-04-phase8-generic-clips-onto-pmx.md)) | §10.9: a consumer retargeting onto a PMX also sets `RetargetOptions::foldUnboundIntermediateRotations`, `usd-motion-plugins` v0.5.3's opt-in fold (its RETARGETING_POLICY §4.2, from [#35](https://github.com/animu-sphere/usd-motion-plugins/issues/35)). It carries the upper chest's rotation into `chest` as `Qc · Quc · S⁻¹`, the rule this repository measured: every arm and neck spread went to at most 0.04°, while the naive `Qc · Quc` is wrong wherever `S` is not identity. The rule is the shared core's, so this repository keeps no copy of it. As shipped, the option gives the hand-written fold's figures to within 0.005° over the same clips and characters, and changes nothing on the two with `上半身3` ([report](../reports/2026-10-04-phase8-upper-chest-fold.md)) | Phase 8, 2026-10-04 |
+| MOT-O9 | Whether the IK algorithm should change after comparison with an independent implementation | Keep §11.7; MMD playback equivalence remains unverified and the keyed-knee question is MOT-O11; [comparison evidence](../reports/2026-09-19-phase9-ik-reference.md) | Phase 9 |
+| MOT-O12 | Where 上半身3 falls in the role table | Table version 2, §12.2: bind 上半身2/上半身3 in target chain order; never emit source upperChest; [evidence](../reports/2026-09-25-phase9-upper-chest.md) | Phase 9 |
+| MOT-O10 | Which reference rest MMD motion and PMX targets state | §12.6: use the shared T-pose directions for upper arm, lower arm and hand on both sides, as SourceRestPose and TargetRestPose; leave shoulders unaimed (MOT-O14) and stage rests at identity. Refuse a whole-body aim; [rest evidence](../reports/2026-10-04-phase9-arm-chain-reference-rest.md), [shoulder evidence](../reports/2026-10-05-phase9-shoulder-rest-shipped.md) | Phase 9 |
+| MOT-O15 | How to finish a generic retargeted pose on a PMX | §10.10 and §11.9: carry arm roll with the twist offset, then Complete appends/IK with held joints unchanged; [evidence](../reports/2026-10-05-phase8-pmx-pose-finish-shipped.md) | Phase 8 |
+| MOT-O14 | Whether §12.6 aims the shoulder | Leave the shoulder at the model rest on both sides; aim upper arm, lower arm and hand only; [evidence](../reports/2026-10-05-phase9-shoulder-rest-shipped.md) | Phase 9 |
+| MOT-O13 | How a generic clip's upperChest reaches a PMX without 上半身3 | §10.9: set the shared retarget's foldUnboundIntermediateRotations option; the shared core owns the fold; [evidence](../reports/2026-10-04-phase8-upper-chest-fold.md) | Phase 8 |
 
 ## 10. Normalizing into the shared motion core
 
@@ -502,11 +440,10 @@ the bound weight as a scalar. That source-preserving channel is retained even
 when an optional semantic expression is emitted beside it.
 
 The shared core owns common expression vocabulary; this repository owns any
-mapping from an MMD source name to that vocabulary. As of `usd-motion-plugins`
-v0.5.x there is none: a common semantic such as `face/blinkLeft` is promoted
-only by a revision of the shared motion contract, never invented by a mapping
-(its MOTION_CONTRACT.md §6), and none has been promoted, so this repository
-emits source channels only. Such a mapping is explicit,
+mapping from an MMD source name to that vocabulary. A common semantic such
+as `face/blinkLeft` must be promoted by a revision of the shared motion
+contract, never invented by a mapping (its MOTION_CONTRACT.md §6).
+Until the required semantic exists, emit source channels only. Such a mapping is explicit,
 versioned and limited to high-confidence conventions such as blink and basic
 mouth visemes. It preserves the original channel, diagnoses ambiguity and
 never turns an unknown model-specific morph into a guess. Generic motion code

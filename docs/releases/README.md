@@ -4,9 +4,8 @@ Each released version gets one record here: what it set out to do, what it
 shipped, what it is compatible with, and what it does not do. A record is
 history — once its version is released it is not rewritten; a later finding
 goes into a new record or a dated [report](../reports/). Incomplete work lives
-in the [roadmap](../roadmap/README.md), and which release carries a Phase is
-stated only in its
-[status table](../roadmap/README.md#status-at-a-glance).
+in [current.md](../roadmap/current.md). Each version's record owns its
+shipped Phase scope; the roadmap does not maintain a parallel release table.
 
 | Version | Record | Theme |
 | --- | --- | --- |
@@ -19,8 +18,8 @@ stated only in its
    reads it directly), including the sibling ranges the manifests require —
    `scripts/check_docs.py` fails until they agree. Move the changelog's
    `[Unreleased]` entries under `## [X.Y.Z] - YYYY-MM-DD`, write the record
-   here, and give the Phases it carries their release in the
-   [roadmap](../roadmap/README.md#status-at-a-glance). Merge.
+   here with the Phase scope it carries, and remove completed gates from
+   [current.md](../roadmap/current.md). Merge.
 2. Run [release.yml](../../.github/workflows/release.yml) by hand on `main`
    (`gh workflow run release.yml`): the dry run builds, verifies and packages
    everything a tag would, and uploads it as workflow artifacts.

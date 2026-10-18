@@ -28,8 +28,12 @@ component's *Codes.h declares the codes it raises: every declared code must be
 catalogued as *emitted* with its declared severity, and every *emitted* code
 must be declared.
 
+Ownership -- required document owners and index links must exist. Additional
+capability/current-status tables and README/design progress markers are
+advisory during cleanup; historical reports/releases are exempt.
+
   check_docs.py             check the repository
-  check_docs.py --selftest  check the slug and link rules against known cases
+  check_docs.py --selftest  check link, mirror and ownership rules against known cases
 """
 
 from __future__ import annotations
@@ -283,6 +287,75 @@ def check_diagnostics(root: pathlib.Path) -> list[str]:
     return errors
 
 
+DOC_OWNERS = (
+    "docs/design/DESIGN_POLICY.md", "docs/design/STAGE_CONTRACT.md",
+    "docs/design/PMX_CONTRACT.md", "docs/design/MATERIAL_POLICY.md",
+    "docs/design/TEXT_ENCODING_POLICY.md", "docs/design/MOTION_CONTRACT.md",
+    "docs/design/PHYSICS_INTEGRATION.md", "docs/design/PACKAGING_POLICY.md",
+    "docs/architecture/WORKSPACE.md", "docs/architecture/DEPENDENCIES.md",
+    "docs/architecture/PACKAGE_CONTRACT.md",
+    "docs/reference/CAPABILITY_MATRIX.md", "docs/reference/DIAGNOSTICS.md",
+    "docs/reference/SOURCE_MAPPING.md", "docs/roadmap/current.md",
+    "docs/contributing/documentation.md", "docs/releases/README.md",
+)
+
+
+def check_doc_owners(root: pathlib.Path) -> list[str]:
+    """Keep the existing owners discoverable; no synonymous physics contract."""
+    errors = [f"{name}: required owning document is missing"
+              for name in ("README.md", "docs/README.md", "docs/roadmap/README.md",
+                           *DOC_OWNERS) if not (root / name).is_file()]
+    index = root / "docs/README.md"
+    if index.is_file():
+        linked = {(index.parent / match.group(1).split("#", 1)[0]).resolve()
+                  for _, line in markdown_lines(index)
+                  for match in LINK.finditer(line)
+                  if not EXTERNAL.match(match.group(1))}
+        errors.extend(f"docs/README.md: missing link to owner {name}"
+                      for name in DOC_OWNERS if (root / name).resolve() not in linked)
+    if (root / "docs/design/PHYSICS_CONTRACT.md").exists():
+        errors.append("docs/design/PHYSICS_CONTRACT.md: duplicate physics owner; "
+                      "use PHYSICS_INTEGRATION.md or revise ownership explicitly")
+    return errors
+
+
+def doc_advisories(root: pathlib.Path, files: list[pathlib.Path]) -> list[str]:
+    """Heuristics only: warn about drift, never block on wording/line count."""
+    warnings: list[str] = []
+    for path in files:
+        where = path.relative_to(root).as_posix()
+        if where.startswith(("docs/reports/", "docs/releases/")):
+            continue
+        lines = list(markdown_lines(path))
+        if where != "docs/reference/CAPABILITY_MATRIX.md":
+            for number, line in lines:
+                if not line.lstrip().startswith("|"):
+                    continue
+                cells = {cell.strip().lower() for cell in line.strip().strip("|").split("|")}
+                if (("capability" in cells and bool(cells & {"current", "status"}))
+                        or ("feature" in cells and "execution claim and limits" in cells)):
+                    warnings.append(f"{where}:{number}: capability table outside "
+                                    "CAPABILITY_MATRIX.md; link to the owner")
+                    break
+        if where != "docs/roadmap/current.md":
+            for number, line in lines:
+                cells = {cell.strip().lower() for cell in line.strip().strip("|").split("|")}
+                if line.lstrip().startswith("|") and {"id", "owner", "state"} <= cells:
+                    warnings.append(f"{where}:{number}: current-work table outside "
+                                    "roadmap/current.md; link to the owner")
+                    break
+        if where in {"README.md", "docs/README.md"} or where.startswith("docs/design/"):
+            for number, line in lines:
+                progress = re.search(r"✅|🚧|\bas of\b", line, re.IGNORECASE)
+                status = re.search(r"\bStatus:", line, re.IGNORECASE)
+                normative = re.search(r"\b(binding|accepted|proposed|superseded|rejected)\b", line, re.IGNORECASE)
+                if progress or (status and not normative):
+                    warnings.append(f"{where}:{number}: progress wording in entry/contract; "
+                                    "consider current.md or a dated report")
+                    break
+    return warnings
+
+
 def selftest() -> int:
     cases = {
         "14.1 First substantial release — definition of done":
@@ -376,6 +449,45 @@ def selftest() -> int:
         if len(found) != 1 or "libs/example/openstrata.library.yaml: version" not in found[0]:
             failures.append(f"stale source manifest was not diagnosed: {found}")
 
+        # Missing owners/index links are errors; duplicate summaries only warn.
+        for name in ("README.md", "docs/roadmap/README.md", *DOC_OWNERS):
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("# Contract\n", encoding="utf-8")
+        index = root / "docs/README.md"
+        index.write_text("# Docs\n" + "\n".join(
+            f"[owner]({name.removeprefix('docs/')})" for name in DOC_OWNERS),
+            encoding="utf-8")
+        if check_doc_owners(root):
+            failures.append("complete owner tree was rejected")
+        owner = root / "docs/design/PHYSICS_INTEGRATION.md"
+        owner.unlink()
+        if not any("required owning document is missing" in e for e in check_doc_owners(root)):
+            failures.append("missing owner was not diagnosed")
+        owner.write_text("# Contract\n", encoding="utf-8")
+        index.write_text("# Docs\n", encoding="utf-8")
+        if not any("missing link to owner" in e for e in check_doc_owners(root)):
+            failures.append("missing owner index links were not diagnosed")
+        alias = root / "docs/design/PHYSICS_CONTRACT.md"
+        alias.write_text("# Duplicate\n", encoding="utf-8")
+        if not any("duplicate physics owner" in e for e in check_doc_owners(root)):
+            failures.append("duplicate physics contract was not diagnosed")
+        owner.write_text(
+            "# Contract\n> Status: **binding**\n```\n✅ example\n```\n",
+            encoding="utf-8")
+        if doc_advisories(root, [owner]):
+            failures.append("binding label/fenced example produced a progress warning")
+        owner.write_text(
+            "# Contract\n| Capability | Current |\n| --- | --- |\n"
+            "| ID | Owner | State |\n✅ done\n", encoding="utf-8")
+        if len(doc_advisories(root, [owner])) != 3:
+            failures.append("capability/current/progress advisories were not emitted")
+        report = root / "docs/reports/evidence.md"
+        report.parent.mkdir(parents=True)
+        report.write_text(owner.read_text(encoding="utf-8"), encoding="utf-8")
+        if doc_advisories(root, [report]):
+            failures.append("historical report was linted as current status")
+
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
@@ -391,13 +503,17 @@ def main() -> int:
     errors = [e for path in files for e in check_file(path, cache)]
     errors += check_mirrors(REPO)
     errors += check_diagnostics(REPO)
+    errors += check_doc_owners(REPO)
+    for warning in doc_advisories(REPO, files):
+        print(f"advisory: {warning}", file=sys.stderr)
     if errors:
         print("\n".join(errors), file=sys.stderr)
         print(f"{len(errors)} problem(s)", file=sys.stderr)
         return 1
     print(f"{len(files)} Markdown file(s): every relative link and anchor "
           f"resolves; every version and pin mirror agrees; the diagnostic "
-          f"catalog matches the {len(declared_codes(REPO))} declared codes")
+          f"catalog matches the {len(declared_codes(REPO))} declared codes; "
+          "required document owners and index links exist")
     return 0
 
 
