@@ -1,5 +1,7 @@
 # Phase 8 MMD collision-filter consumer follow-up (2026-10-18)
 
+Later evidence: [contact coefficients](2026-10-18-phase8-contact-material.md) now reach locally rebuilt installed core/backend packages.
+
 Local Windows evidence after the [six-DOF execution probe](2026-10-18-phase8-six-dof-execution.md)
 and shared hosted acceptance recorded in
 [PHYSICS_INTEGRATION §9](../design/PHYSICS_INTEGRATION.md#9-implementation-sequence).

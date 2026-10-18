@@ -181,3 +181,10 @@ The probe also translates MMD collision metadata into the existing neutral
 CTest controls are test-only; no coupling-adapter package or shared-reader
 dependency on MMD is introduced
 ([filtering report](../reports/2026-10-18-phase8-collision-filter.md)).
+
+The contact-coefficient probe requires locally rebuilt shared packages with
+`BodyDescriptor::contactMaterial` and `validateContactMaterial()`. It maps
+existing MMD friction/restitution metadata outside the generic reader.
+Rebuild core, backend, bridge and all consumers together: the body descriptor
+layout is incompatible with earlier static libraries. This remains test-only
+with no published pin ([contact report](../reports/2026-10-18-phase8-contact-material.md)).

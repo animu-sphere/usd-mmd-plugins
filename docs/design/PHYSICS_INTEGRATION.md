@@ -193,6 +193,23 @@ limits. Angular/translational limits, springs and drive-like behavior follow
 incrementally. Perfect one-to-one backend behavior is not a prerequisite for
 the first integration, but silent loss of source meaning is forbidden.
 
+### 7.1 Contact coefficients
+
+The isolated consumer reads the existing constant `float` attributes
+`mmd:physics:friction` and `mmd:physics:restitution` into the shared core's
+neutral `ContactMaterial`. Friction must be finite and non-negative;
+restitution must be finite and in `[0,1]`. A partial pair, wrong type,
+missing/blocked value or time sample rejects. A conventional body with neither
+attribute retains the neutral defaults. Values are copied without clamping,
+and backend scalar limitations can reject at body creation.
+
+This is bounded coefficient consumption, not source-solver equivalence. Jolt
+uses geometric-mean friction and maximum restitution for a contact pair;
+those mixing rules remain a fidelity gap for PMX. The probe does not translate
+these values into a USD material binding or change the importer stage.
+Linear/angular damping remains preserved metadata and execution retains the
+backend's defaults until its source semantics and shared contract are defined.
+
 ## 8. Dependency policy
 
 The static path remains lightweight:
@@ -343,6 +360,16 @@ gap locally, without establishing a runtime adapter or mixed-format category
 allocation. Coefficients, springs, source-only joints, PMX angular/zero-mass
 equivalence, hosted MMD-filter acceptance and synchronization remain open
 ([report](../reports/2026-10-18-phase8-collision-filter.md)).
+
+**Contact-coefficient follow-up (2026-10-18).** Locally rebuilt installed
+core/backend packages now accept neutral friction/restitution on body creation.
+The isolated consumer validates the two MMD attributes in reader-only mode
+and passes them into execution. Four response controls distinguish sliding
+and bounce; the existing filter controls and all 22 physics-bearing fixtures
+still pass, with three materials/bodies, two constraints and 120 finite steps
+each. Damping, pair-mixing fidelity, springs, source-only semantics and runtime
+synchronization remain open. No runtime adapter or new normal dependency is
+introduced ([report](../reports/2026-10-18-phase8-contact-material.md)).
 
 ## 10. Testing
 
