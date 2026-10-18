@@ -197,6 +197,15 @@ normal dependency or published pin changes
 ([damping report](../reports/2026-10-18-phase8-body-damping.md)).
 
 The joint spring audit uses these same installed packages. Its test-only
-reader and CLI regression report source coefficients absent from the shared
-snapshot/execution, without adding a dependency or changing shared APIs
+reader and CLI regression report source coefficients absent from the generic
+snapshot, without adding a dependency or changing shared APIs
 ([spring audit](../reports/2026-10-18-phase8-joint-spring-audit.md)).
+
+The additional `MMD_PHYSICS_TRANSLATION_SPRINGS=ON` option requires execution
+mode and locally rebuilt packages carrying
+`SixDofConstraintDescriptor::translationSprings`. It approximates positive
+translation coefficients outside the generic reader. Rebuild shared core,
+backend, bridge and all consumers into a separate prefix: the six-DOF
+descriptor layout changes. The probe remains test-only, with default OFF and
+no normal dependency, runtime-adapter API or published pin change
+([translation spring evidence](../reports/2026-10-18-phase8-translation-springs.md)).

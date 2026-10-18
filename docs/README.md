@@ -36,10 +36,13 @@ pass independent translation/free-spin controls at 60/240 Hz. The consumer
 also selects product pair coefficients with a friction ceiling of 10;
 asymmetric, zero and ceiling controls pass at both rates. A source spring
 metadata audit now reports omitted coefficients and marks all 22
-physics-bearing fixture results approximate. Instantaneous
-source damping, timestep fidelity, source trajectories, springs and full
+physics-bearing fixture results approximate. An additional opt-in now
+approximates positive translation springs through neutral Hookean descriptors;
+60/240 Hz analytic controls measure numerical damping, and all 22 fixtures
+execute two translation axes each. Instantaneous
+source damping, timestep fidelity, source trajectories, angular springs and full
 physics fidelity remain open
-([consumer follow-up](reports/2026-10-18-phase8-joint-spring-audit.md)).
+([consumer follow-up](reports/2026-10-18-phase8-translation-springs.md)).
 MMD coupling stays here and simulation stays outside the
 importer. Everything
 else in `design/` is intended behavior; [reference/](reference/) is the only

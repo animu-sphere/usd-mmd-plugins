@@ -6,6 +6,9 @@
 #include "contact_material.h"
 #include "body_damping.h"
 #include "joint_springs.h"
+#ifdef MMD_PHYSICS_TRANSLATION_SPRINGS
+#include "translation_springs.h"
+#endif
 #ifdef MMD_PHYSICS_EXECUTION
 #include <usd_physics/usd/joint_conversion.h>
 #include <usd_physics/jolt/availability.h>
@@ -33,8 +36,12 @@
 
 namespace {
 #ifdef MMD_PHYSICS_EXECUTION
-std::size_t
+struct ExecutionResult {
+    std::size_t constraints{0}, translationSpringAxes{0};
+};
+ExecutionResult
 Execute(const usd_physics::usd::PhysicsScene& scene,
+        const pxr::UsdStageRefPtr& stage,
         const std::vector<usd_physics::core::CollisionFilter>& filters,
         const std::vector<usd_physics::core::ContactMaterial>& materials,
         const std::vector<usd_physics::core::BodyDamping>& damping)
@@ -53,16 +60,25 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
             world->createBody({shape, body.motionType, body.transform, body.mass,
                                filters.at(i), materials.at(i), damping.at(i)}));
     }
-    std::size_t count = 0;
+    ExecutionResult result;
     for (const auto& joint : scene.joints) {
         const auto endpoint = [&](const std::string& path) {
             return path.empty() ? core::BodyHandle{} : bodies.at(path);
         };
-        const auto descriptor = usd_physics::usd::toSixDofConstraint(
+        auto descriptor = usd_physics::usd::toSixDofConstraint(
             joint, endpoint(joint.body0), endpoint(joint.body1));
         if (descriptor) {
+#ifdef MMD_PHYSICS_TRANSLATION_SPRINGS
+            const auto applied = mmd_physics_probe::ApplyTranslationSprings(
+                stage->GetPrimAtPath(pxr::SdfPath(joint.path)), *descriptor);
+            result.translationSpringAxes += applied;
+            if (applied)
+                std::cerr << stage->GetRootLayer()->GetIdentifier() << '\t' << joint.path
+                          << "\tapproximateTranslationSprings\taxes=" << applied
+                          << "\tHookean SI stiffness; zero viscous damping; source response unverified\n";
+#endif
             constraints->createSixDofConstraint(*descriptor);
-            ++count;
+            ++result.constraints;
         }
     }
     for (int frame = 0; frame != 120; ++frame) {
@@ -77,7 +93,7 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
         }
         world->takeChangedBodyStates();
     }
-    return count;
+    return result;
 }
 #endif
 pxr::GfMatrix4d
@@ -319,7 +335,7 @@ main(int argc, char** argv)
                         std::cerr << argv[i] << '\t' << prim.GetPath()
                                   << "\tunsupportedJointSprings\ttranslation=" << springs.translation
                                   << "\trotation=" << springs.rotation
-                                  << "\tnot represented in the neutral snapshot or executed\n";
+                                  << "\tsource fidelity unsupported; experimental translation execution, if enabled, is approximate\n";
                     }
                 }
                 std::vector<usd_physics::core::CollisionFilter> filters;
@@ -334,7 +350,7 @@ main(int argc, char** argv)
                         stage->GetPrimAtPath(pxr::SdfPath(body.path))));
                 }
 #ifdef MMD_PHYSICS_EXECUTION
-                const auto constraints = Execute(snapshot, filters, materials, damping);
+                const auto constraints = Execute(snapshot, stage, filters, materials, damping);
 #endif
                 std::cout << "accepted\tbodies=" << snapshot.bodies.size()
                           << "\tjoints=" << snapshot.joints.size()
@@ -346,7 +362,11 @@ main(int argc, char** argv)
                           << "\tjointFidelity="
                           << ((springJoints || preservedOnlyJoints) ? "approximate" : "unverified");
 #ifdef MMD_PHYSICS_EXECUTION
-                std::cout << "\tconstraints=" << constraints << "\tsteps=120";
+                std::cout << "\tconstraints=" << constraints.constraints << "\tsteps=120";
+#endif
+#ifdef MMD_PHYSICS_TRANSLATION_SPRINGS
+                std::cout << "\ttranslationSpringModel=experimentalHookean"
+                          << "\tapproximateTranslationSpringAxes=" << constraints.translationSpringAxes;
 #endif
                 std::cout << '\n';
             } catch (const usd_physics::usd::ImportError& error) {

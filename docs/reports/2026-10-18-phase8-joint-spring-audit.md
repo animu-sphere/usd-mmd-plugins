@@ -1,5 +1,7 @@
 # Phase 8 joint spring metadata audit (2026-10-18)
 
+Later evidence: [experimental translation springs](2026-10-18-phase8-translation-springs.md) adds an independent opt-in approximation while retaining the source-fidelity audit.
+
 Local Windows evidence after [contact mixing](2026-10-18-phase8-contact-mixing.md).
 The isolated consumer now exposes the preserved spring coefficients omitted
 from the generic snapshot and experimental execution. No spring force is added.
