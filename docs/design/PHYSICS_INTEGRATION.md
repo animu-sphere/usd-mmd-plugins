@@ -264,6 +264,19 @@ declaration validation; steps 1–2 remain open. Joint frames/limits are next,
 and MMD bone synchronization remains deferred
 ([report](../reports/2026-10-18-phase8-kinematic-reader.md)).
 
+**Joint snapshot follow-up (2026-10-18).** A local installed shared increment
+adds `readPhysicsScene()`, preserving generic/fixed joint endpoints, local
+frames and six-axis limits in meters/radians. The body-only readers retain
+their joint rejection; the new API creates no runtime constraints. The probe
+accepts its previous eight controls and a two-body joint control. Of 22
+physics-bearing PMX fixtures, one yields three bodies/two standard joints
+with coincident reconstructed world joint frames, but also has a format-only
+joint outside the snapshot; 21 reject missing explicit dynamic mass. Six
+physics-free fixtures remain empty snapshots. Steps 1–2 remain open for
+complete consumption and fidelity. Mass inference, generic six-DOF execution,
+coefficients/filtering and source-only semantics precede MMD bone coupling
+([report](../reports/2026-10-18-phase8-joint-reader.md)).
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and

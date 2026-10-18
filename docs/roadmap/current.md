@@ -11,8 +11,10 @@ captures reach a PMX through `motion-connectors` v0.1.0. The operator reports
 the `hdToon` look approximation complete (2026-10-17); the next gate is
 the shared physics reader: a local increment accepts Cube/Sphere/Capsule
 controls including kinematic bodies, with collider-local poses and composed
-body transforms, but complete PMX physics scenes still reject
-([follow-up report](../reports/2026-10-18-phase8-kinematic-reader.md)). Phase 10,
+body transforms. A further joint frame/limit snapshot increment accepts one
+PMX fixture's three bodies/two standard joints; 21 fixtures still reject
+missing dynamic mass, and complete physics fidelity remains open
+([follow-up report](../reports/2026-10-18-phase8-joint-reader.md)). Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
 and `--portable-paths` offers ASCII archive names.
@@ -272,16 +274,16 @@ Static physics preservation is complete in Phase 6. Phase 8 owns only the
 runtime composition described by
 [PHYSICS_INTEGRATION.md](../design/PHYSICS_INTEGRATION.md):
 
-- ⛔ Generic scene consumption waits on `usd-physics-plugins`: a local
-  installed reader increment accepts direct/child Cube and child Sphere/Capsule
-  controls, including mass-free kinematic child bodies. All 22
-  physics-bearing importer fixtures still reject; six physics-free fixtures
-  return empty snapshots
-  ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-kinematic-reader.md)).
-  Add joint frames/limits before claiming the existing stage is
-  consumed. The first rejection is now a joint because declarations are
-  validated before body conversion; this is not full-body acceptance or a
-  stage-contract defect. Public compatible package publication also remains.
+- ⛔ Generic scene consumption waits on `usd-physics-plugins`: local installed
+  snapshots accept primitive/kinematic controls and a joint frame/limit
+  control. Of 22 physics-bearing PMX fixtures, one yields three bodies and two
+  standard joints but keeps one format-only joint outside the snapshot;
+  21 reject with `invalidValue` on missing dynamic mass. Six physics-free
+  fixtures return empty snapshots
+  ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-joint-reader.md)).
+  Resolve explicit/inferred mass, generic six-DOF execution, coefficients,
+  filtering and source-only semantics before claiming complete physics
+  consumption. Public compatible package publication also remains.
 - ⬜ establish the optional MMD coupling-adapter component and installed
   dependency only when that first consumer fixes the required API;
 - ⬜ synchronize `followBone` bodies from the evaluated/retargeted pose;
