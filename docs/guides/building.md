@@ -105,6 +105,48 @@ labelled and can be left out:
 ctest --preset windows-release -LE installed-consumer
 ```
 
+## Optional physics consumer
+
+This isolated probe is outside the normal build. It consumes installed shared
+packages with compatibility metadata revision 1; older `0.1` packages must be
+rebuilt together. See [DEPENDENCIES §7](../architecture/DEPENDENCIES.md#7-usd-physics-plugins)
+for the boundary and [the compatibility report](../reports/2026-10-18-phase8-package-compatibility.md)
+for the validated environment. These commands were run on Windows on 2026-10-18.
+
+Set `PHYSICS_PREFIX` to a clean installation of rebuilt `physicsCore`,
+`physicsUsd` and `physicsJolt`, `USD_ROOT` to OpenUSD 26.08 and `JOLT_ROOT`
+to the validated deterministic Jolt SDK. Execution requires the backend built
+with `PHYSICSJOLT_ENABLE_SIX_DOF=ON`. Keep SDK and compiler/runtime settings
+consistent with those used to build the packages. No sibling source is read.
+
+```powershell
+$env:PATH = "$env:USD_ROOT/bin;$env:USD_ROOT/lib;$env:PATH"
+$cases = @(@('reader','OFF','OFF','OFF'),
+           @('execution','ON','OFF','OFF'),
+           @('springs','ON','ON','ON'))
+foreach ($case in $cases) {
+  $buildDir = "build/physics-package-$($case[0])"
+  cmake -S tests/physics_consumer -B $buildDir `
+    -G 'Visual Studio 18 2026' -A x64 `
+    "-DCMAKE_PREFIX_PATH=$env:PHYSICS_PREFIX;$env:USD_ROOT" `
+    "-DJolt_DIR=$env:JOLT_ROOT/lib/cmake/Jolt" `
+    "-DMMD_PHYSICS_EXECUTION=$($case[1])" `
+    "-DMMD_PHYSICS_TRANSLATION_SPRINGS=$($case[2])" `
+    "-DMMD_PHYSICS_ROTATION_SPRINGS=$($case[3])"
+  if ($LASTEXITCODE) { throw 'Physics consumer configure failed' }
+  cmake --build $buildDir --config Release
+  if ($LASTEXITCODE) { throw 'Physics consumer build failed' }
+  ctest --test-dir $buildDir -C Release --output-on-failure
+  if ($LASTEXITCODE) { throw 'Physics consumer tests failed' }
+}
+```
+
+The reader configuration needs no Jolt SDK and may omit `Jolt_DIR` (CMake
+otherwise reports an unused-variable warning). Spring flags remain independent
+and default OFF. These tests establish the isolated reader/execution boundary;
+avatar synchronization and L3 acceptance follow the
+[physics contract](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy).
+
 ## One component, plain CMake
 
 Every component under `libs/`, `tools/` and `plugins/` configures on its own,

@@ -124,7 +124,7 @@ MMD metadata interpretation and bone/body coupling stay here.
 | Runtime | usd-stage-runner owns order/tick; usd-avatar-runtime owns composition |
 | OpenUSD | Same exact release as §1 wherever shared interfaces expose OpenUSD types |
 | Probe requirements | [tests/physics_consumer/CMakeLists.txt](../../tests/physics_consumer/CMakeLists.txt) owns package names, requested versions and default-OFF options; it links installed physicsUsd and, for execution, physicsJolt |
-| API/build compatibility | Core/backend/bridge/consumer must use matching descriptor layouts, compiler/runtime/OpenUSD configuration and an accepted deterministic SDK; matching a package's minor version alone does not prove ABI compatibility |
+| API/build compatibility | The probe requires package compatibility metadata revision 1. Installed configs check the core descriptor/build identity across backend/bridge/consumer, installed core/bridge headers and OpenUSD version/headers; execution requires a deterministic SDK. Matching a package's minor version alone does not prove ABI compatibility |
 | Experimental enablement | Execution requires the installed six-DOF capability; translation and rotation options independently require execution and the corresponding descriptor fields |
 
 The probe is isolated contract evidence, outside normal workspace/release
@@ -135,6 +135,11 @@ artifact pin or production coupling API is selected.
 For contact/damping/spring API changes, rebuild shared core, backend, bridge
 and every consumer together into a separate compatible prefix. Mixing new
 descriptor headers with older static libraries is invalid.
+The conservative package identity does not audit every compiler flag, custom
+macro or SDK binary; keep headers, configs and static libraries from the same
+build together. Packages lacking metadata must be rebuilt, including reader-only
+configurations. The [build guide](../guides/building.md#optional-physics-consumer)
+provides the installed-package checks.
 `BodyDescriptor::contactMaterial` / `damping`,
 `validateContactMaterial()` / `validateBodyDamping()`, and
 `SixDofConstraintDescriptor::translationSprings` / `rotationSprings` are
