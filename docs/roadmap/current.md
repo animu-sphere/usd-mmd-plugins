@@ -15,7 +15,8 @@ body transforms. Joint frame/limit snapshots and primitive mass inference now
 accept all 22 physics-bearing PMX fixtures, each with three bodies/two standard
 joints. Experimental opt-in execution creates both constraints and steps each
 fixture 120 times with finite state on the deterministic SDK; the baseline
-SDK's failed axis gate is MSVC `/fp:fast`. Full physics fidelity remains open
+SDK's failed axis gate is MSVC `/fp:fast`, and the shared six-axis tests now
+pass on hosted Windows/Linux with that SDK. Full physics fidelity remains open
 ([follow-up report](../reports/2026-10-18-phase8-six-dof-execution.md)). Phase 10,
 USDZ packaging, has steps 1–3: `mmd_export` writes a validated USDZ that
 opens without the plugins, its archive is deterministic across time zones,
@@ -284,12 +285,13 @@ runtime composition described by
   Experimental six-DOF execution now steps those fixtures with finite state on
   the deterministic SDK. The baseline SDK's failed Z-axis gate is MSVC
   `/fp:fast` in non-deterministic Jolt, and the shared CI now builds
-  deterministic Jolt ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)); hosted acceptance
-  remains before enabling it by default
+  deterministic Jolt ([usd-physics-plugins #19](https://github.com/animu-sphere/usd-physics-plugins/pull/19)). Its
+  `usd-jolt-six-dof` cells pass the six-axis tests on hosted Windows/Linux
+  ([usd-physics-plugins #20](https://github.com/animu-sphere/usd-physics-plugins/pull/20)); the option stays OFF by default
   ([2026-10-18 follow-up and reproducible probe](../reports/2026-10-18-phase8-six-dof-execution.md)).
-  Resolve hosted SDK acceptance, coefficients,
-  filtering and source-only semantics before claiming complete physics
-  consumption. Public compatible package publication also remains.
+  Resolve coefficients, filtering and source-only semantics before claiming
+  complete physics consumption. Public compatible package publication also
+  remains.
 - ⬜ establish the optional MMD coupling-adapter component and installed
   dependency only when that first consumer fixes the required API;
 - ⬜ synchronize `followBone` bodies from the evaluated/retargeted pose;
