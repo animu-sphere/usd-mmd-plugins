@@ -41,13 +41,15 @@ namespace {
 #ifdef MMD_PHYSICS_EXECUTION
 struct ExecutionResult {
     std::size_t constraints{0}, translationSpringAxes{0}, rotationSpringAxes{0};
+    std::vector<usd_physics::core::BodyState> trajectory;
 };
 ExecutionResult
 Execute(const usd_physics::usd::PhysicsScene& scene,
         const pxr::UsdStageRefPtr& stage,
         const std::vector<usd_physics::core::CollisionFilter>& filters,
         const std::vector<usd_physics::core::ContactMaterial>& materials,
-        const std::vector<usd_physics::core::BodyDamping>& damping)
+        const std::vector<usd_physics::core::BodyDamping>& damping,
+        bool reportApproximations = true)
 {
     namespace core = usd_physics::core;
     auto world = usd_physics::jolt::createWorld(mmd_physics_probe::ContactMixing());
@@ -75,7 +77,7 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
             const auto rotationAxes = mmd_physics_probe::ApplyRotationSprings(
                 stage->GetPrimAtPath(pxr::SdfPath(joint.path)), *descriptor);
             result.rotationSpringAxes += rotationAxes;
-            if (rotationAxes)
+            if (rotationAxes && reportApproximations)
                 std::cerr << stage->GetRootLayer()->GetIdentifier() << '\t' << joint.path
                           << "\tapproximateRotationSprings\taxes=" << rotationAxes
                           << "\tstiffness scaled by 0.08^2; small-angle motor; source response "
@@ -85,7 +87,7 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
             const auto applied = mmd_physics_probe::ApplyTranslationSprings(
                 stage->GetPrimAtPath(pxr::SdfPath(joint.path)), *descriptor);
             result.translationSpringAxes += applied;
-            if (applied)
+            if (applied && reportApproximations)
                 std::cerr << stage->GetRootLayer()->GetIdentifier() << '\t' << joint.path
                           << "\tapproximateTranslationSprings\taxes=" << applied
                           << "\tHookean SI stiffness; zero viscous damping; source response unverified\n";
@@ -103,6 +105,7 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
             const auto v = state.linearVelocity;
             for (const double value : {p.x,p.y,p.z,q.w,q.x,q.y,q.z,v.x,v.y,v.z})
                 if (!std::isfinite(value)) throw std::runtime_error("non-finite runtime state");
+            result.trajectory.push_back(state);
         }
         world->takeChangedBodyStates();
     }
@@ -365,6 +368,17 @@ main(int argc, char** argv)
                 }
 #ifdef MMD_PHYSICS_EXECUTION
                 const auto constraints = Execute(snapshot, stage, filters, materials, damping);
+                // A fresh world must reproduce every exposed state, not just
+                // finish with the same body counts or a finite final pose.
+                const auto replay = Execute(snapshot, stage, filters, materials, damping, false);
+                if (constraints.trajectory.size() != replay.trajectory.size())
+                    throw std::runtime_error("runtime replay state count differs");
+                for (std::size_t sample = 0; sample != constraints.trajectory.size(); ++sample) {
+                    const auto& a = constraints.trajectory[sample];
+                    const auto& b = replay.trajectory[sample];
+                    if (a.transform != b.transform || a.linearVelocity != b.linearVelocity)
+                        throw std::runtime_error("runtime replay state differs");
+                }
 #endif
                 std::cout << "accepted\tbodies=" << snapshot.bodies.size()
                           << "\tjoints=" << snapshot.joints.size()
@@ -376,7 +390,8 @@ main(int argc, char** argv)
                           << "\tjointFidelity="
                           << ((springJoints || preservedOnlyJoints) ? "approximate" : "unverified");
 #ifdef MMD_PHYSICS_EXECUTION
-                std::cout << "\tconstraints=" << constraints.constraints << "\tsteps=120";
+                std::cout << "\tconstraints=" << constraints.constraints << "\tsteps=120"
+                          << "\treplay=identical\treplaySamples=" << constraints.trajectory.size();
 #endif
 #ifdef MMD_PHYSICS_TRANSLATION_SPRINGS
                 std::cout << "\ttranslationSpringModel=experimentalHookean"
