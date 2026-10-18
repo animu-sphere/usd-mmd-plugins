@@ -277,6 +277,18 @@ complete consumption and fidelity. Mass inference, generic six-DOF execution,
 coefficients/filtering and source-only semantics precede MMD bone coupling
 ([report](../reports/2026-10-18-phase8-joint-reader.md)).
 
+**Primitive mass inference follow-up (2026-10-18).** A local installed shared
+increment resolves zero/absent dynamic mass from single-primitive collision
+volume and body-local density, with USD's 1000 kg/m³ density fallback. All
+22 physics-bearing PMX fixtures now yield three bodies/two standard joints
+each; six physics-free fixtures yield empty snapshots. The isolated consumer
+also passes three new inference controls alongside its previous nine. One
+format-only joint remains outside the generic snapshot. Steps 1–2 remain
+open for full fidelity and simulation: six-DOF execution, physical
+coefficients/filtering, springs, PMX zero-mass equivalence and runtime
+synchronization still precede MMD bone coupling
+([report](../reports/2026-10-18-phase8-mass-reader.md)).
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and

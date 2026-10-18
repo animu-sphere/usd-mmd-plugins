@@ -40,8 +40,7 @@ void
 CheckPmxJointFrames(const usd_physics::usd::PhysicsScene& scene)
 {
     for (const auto& joint : scene.joints) {
-        const auto world = [&](const std::string& path,
-                               const usd_physics::core::Transform& local) {
+        const auto world = [&](const std::string& path, const usd_physics::core::Transform& local) {
             for (const auto& body : scene.bodies) {
                 if (body.path == path)
                     return Matrix(local) * Matrix(body.transform);
@@ -140,6 +139,12 @@ CheckControl()
     }
     std::cout << "control-offset-box\taccepted\t1\n";
 
+    pxr::UsdPhysicsMassAPI(body.GetPrim()).CreateMassAttr().Set(0.0f);
+    if (std::abs(usd_physics::usd::readBoxScene(childStage)[0].mass - 8000.0) > 1e-8)
+        throw std::runtime_error("installed reader failed inferred child Box mass");
+    std::cout << "control-inferred-box\taccepted\tmass=8000\n";
+    pxr::UsdPhysicsMassAPI(body.GetPrim()).CreateMassAttr().Set(3.0f);
+
     for (const bool capsule : {false, true}) {
         const auto prim = collider.GetPrim();
         prim.SetTypeName(pxr::TfToken(capsule ? "Capsule" : "Sphere"));
@@ -163,6 +168,14 @@ CheckControl()
             throw std::runtime_error("installed reader failed rounded geometry control");
         }
         std::cout << (capsule ? "control-capsule" : "control-sphere") << "\taccepted\t1\n";
+        pxr::UsdPhysicsMassAPI(body.GetPrim()).CreateMassAttr().Set(0.0f);
+        const auto inferred = usd_physics::usd::readPrimitiveScene(childStage);
+        const double expected = 1000.0 * std::acos(-1.0) * (capsule ? 11.0 / 12.0 : 1.0 / 6.0);
+        if (std::abs(inferred[0].mass - expected) > expected * 1e-12)
+            throw std::runtime_error("installed reader failed inferred rounded mass");
+        std::cout << (capsule ? "control-inferred-capsule" : "control-inferred-sphere")
+                  << "\taccepted\tmass=" << inferred[0].mass << '\n';
+        pxr::UsdPhysicsMassAPI(body.GetPrim()).CreateMassAttr().Set(3.0f);
     }
     pxr::UsdPhysicsRigidBodyAPI(body.GetPrim()).CreateKinematicEnabledAttr().Set(true);
     body.GetPrim().RemoveAPI<pxr::UsdPhysicsMassAPI>();
@@ -236,7 +249,8 @@ main(int argc, char** argv)
             try {
                 const auto snapshot = usd_physics::usd::readPhysicsScene(stage);
                 if (snapshot.bodies.size() != rigidBodies || snapshot.joints.size() != joints)
-                    throw std::runtime_error("PMX standard declaration counts differ from snapshot");
+                    throw std::runtime_error(
+                        "PMX standard declaration counts differ from snapshot");
                 CheckPmxJointFrames(snapshot);
                 std::cout << "accepted\tbodies=" << snapshot.bodies.size()
                           << "\tjoints=" << snapshot.joints.size() << '\n';
