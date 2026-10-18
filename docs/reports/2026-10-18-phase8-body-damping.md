@@ -1,5 +1,7 @@
 # Phase 8 MMD body damping follow-up (2026-10-18)
 
+Later evidence: [contact pair mixing](2026-10-18-phase8-contact-mixing.md) selects product rules and a friction ceiling through installed packages.
+
 Local Windows evidence after [contact coefficients](2026-10-18-phase8-contact-material.md).
 This is bounded consumption of saved linear/angular damping, with explicit
 source conversion and a finite-step approximation.

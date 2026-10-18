@@ -203,10 +203,15 @@ missing/blocked value or time sample rejects. A conventional body with neither
 attribute retains the neutral defaults. Values are copied without clamping,
 and backend scalar limitations can reject at body creation.
 
-This is bounded coefficient consumption, not source-solver equivalence. Jolt
-uses geometric-mean friction and maximum restitution for a contact pair;
-those mixing rules remain a fidelity gap for PMX. The probe does not translate
-these values into a USD material binding or change the importer stage.
+The consumer selects neutral per-world `ContactMixing`: products for both
+coefficients, with combined friction capped at 10. This follows the default
+non-negative coefficient policy in
+[Bullet 3.25](https://github.com/bulletphysics/bullet3/blob/3.25/src/BulletCollision/CollisionDispatch/btManifoldResult.cpp#L48-L63).
+Jolt's no-argument world factory keeps its geometric-mean friction and maximum
+restitution defaults. Policy selection stays outside the generic USD reader;
+no solver-specific properties or USD material bindings are authored.
+This is a scalar policy reference, not native MMD trajectory evidence.
+Mixed-format policy selection remains a runtime decision.
 
 ### 7.2 Body damping
 
@@ -400,6 +405,16 @@ all 22 physics-bearing fixtures still create three bodies/two constraints and
 step 120 times with finite state. Instantaneous damping (`d=1`), finite-step
 fidelity, springs, source-only joints and runtime synchronization remain open
 ([report](../reports/2026-10-18-phase8-body-damping.md)).
+
+**Contact-mixing follow-up (2026-10-18).** Installed shared packages now accept
+neutral per-world coefficient rules and an optional friction ceiling. The
+consumer chooses products with a ceiling of 10; independent source metadata,
+asymmetric/equal/zero pairs and the ceiling pass at 60/240 Hz. All 22
+physics-bearing fixtures still create three bodies/two constraints and step
+120 times with finite state. Shared tests preserve default Jolt behavior and
+isolate simultaneously alive worlds. Source trajectories, mixed-format
+policies, springs and runtime synchronization remain open
+([report](../reports/2026-10-18-phase8-contact-mixing.md)).
 
 ## 10. Testing
 

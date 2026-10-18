@@ -39,7 +39,7 @@ Execute(const usd_physics::usd::PhysicsScene& scene,
         const std::vector<usd_physics::core::BodyDamping>& damping)
 {
     namespace core = usd_physics::core;
-    auto world = usd_physics::jolt::createWorld();
+    auto world = usd_physics::jolt::createWorld(mmd_physics_probe::ContactMixing());
     auto* constraints = dynamic_cast<core::SixDofConstraints*>(world.get());
     if (!constraints)
         throw std::runtime_error("installed backend lacks six-DOF capability");

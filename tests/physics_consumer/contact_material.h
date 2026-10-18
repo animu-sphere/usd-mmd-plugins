@@ -10,7 +10,15 @@
 namespace mmd_physics_probe {
 
 // Source coefficients remain MMD metadata. Generic physicsUsd does not read it.
-// Pair mixing remains the selected backend's policy, not PMX equivalence.
+// Bullet's default non-negative pair coefficients: product, friction capped
+// at 10. This reference policy does not establish native MMD trajectories.
+inline usd_physics::core::ContactMixing
+ContactMixing()
+{
+    using Rule = usd_physics::core::ContactCombineRule;
+    return {Rule::product, Rule::product, 10};
+}
+
 inline usd_physics::core::ContactMaterial
 ReadContactMaterial(const pxr::UsdPrim& body)
 {

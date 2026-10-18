@@ -299,7 +299,10 @@ runtime composition described by
   Linear/angular damping now reaches the backend as converted neutral rates;
   local 60/240 Hz translation and free-spin controls pass
   ([damping evidence](../reports/2026-10-18-phase8-body-damping.md)).
-  Resolve instantaneous damping (`d=1`), timestep fidelity, pair-mixing fidelity, springs and source-only semantics before claiming
+  Product pair coefficients with friction capped at 10 now pass asymmetric,
+  zero and ceiling controls at 60/240 Hz
+  ([mixing evidence](../reports/2026-10-18-phase8-contact-mixing.md)).
+  Resolve instantaneous damping (`d=1`), timestep and source-trajectory fidelity, springs and source-only semantics before claiming
   complete physics consumption. Hosted MMD-filter acceptance and public
   compatible package publication also remain.
 - ⬜ establish the optional MMD coupling-adapter component and installed
