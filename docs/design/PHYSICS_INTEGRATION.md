@@ -309,6 +309,16 @@ CI now builds Jolt that way ([usd-physics-plugins #19](https://github.com/animu-
 no rerun. Hosted six-DOF acceptance, coefficients/filtering, springs and
 runtime synchronization still precede MMD bone coupling.
 
+**Hosted six-DOF acceptance (2026-10-18).** The shared repository's
+`usd-jolt-six-dof` intent enables the capability over its deterministic CI
+Jolt, and its Windows (MSVC) and Linux (GCC) pull-request cells pass all 18
+tests, including the per-axis gate and the installed consumer's six-DOF
+section; those cells never package ([usd-physics-plugins #20](https://github.com/animu-sphere/usd-physics-plugins/pull/20)). The SDK gate is closed. The option
+stays OFF by default and no six-DOF package is published, so this
+repository's probe still builds the shared packages locally. Coefficients/
+filtering, springs, source-only semantics and runtime synchronization still
+precede MMD bone coupling.
+
 ## 10. Testing
 
 - Parser and canonical-model tests continue to verify every PMX value and
