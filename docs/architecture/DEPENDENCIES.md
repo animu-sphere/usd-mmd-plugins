@@ -121,7 +121,7 @@ MMD metadata interpretation and bone/body coupling stay here.
 | Static path | Parser/model/importer and motion components do not require physics packages |
 | Consumption | Installed packages with declared compatibility; never sibling source, submodules or vendored backend code |
 | Backend direction | Production MMD components use shared neutral interfaces; no direct Jolt/Bullet/PhysX backend integration |
-| Runtime | usd-stage-runner owns order/tick; usd-avatar-runtime owns composition |
+| Runtime | usd-avatar-runtime owns avatar evaluation order, composition and shared-world physics barriers; usd-stage-runner supplies the host loop/ticks |
 | OpenUSD | Same exact release as §1 wherever shared interfaces expose OpenUSD types |
 | Probe requirements | [tests/physics_consumer/CMakeLists.txt](../../tests/physics_consumer/CMakeLists.txt) owns package names, requested versions and default-OFF options; it links installed physicsUsd and, for execution, physicsJolt |
 | API/build compatibility | The probe requires package compatibility metadata revision 1. Installed configs check the core descriptor/build identity across backend/bridge/consumer, installed core/bridge headers and OpenUSD version/headers; execution requires a deterministic SDK. Matching a package's minor version alone does not prove ABI compatibility |

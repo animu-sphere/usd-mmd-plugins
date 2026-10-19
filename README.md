@@ -12,8 +12,9 @@ support and limitations.
 The importer parses MMD, normalizes coordinates once, and authors conventional
 OpenUSD. Motion evaluation lives in MMD libraries outside the importer;
 generic motion and physics come from `usd-motion-plugins` and
-`usd-physics-plugins`. `usd-stage-runner` orders execution,
-`usd-avatar-runtime` composes it, and `hydra-toon` renders it.
+`usd-physics-plugins`. `usd-avatar-runtime` composes avatar evaluation and owns
+its order and shared physics barriers; `usd-stage-runner` supplies the host
+loop, and `hydra-toon` renders the result.
 
 ```text
 PMX → mmdPmx → mmdModel → usdMmdFileFormat → USD stage
