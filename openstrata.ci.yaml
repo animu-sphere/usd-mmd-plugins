@@ -2,14 +2,18 @@
 #
 # Policy: this file is the CI contract; .github/workflows/ost-*.yml are
 # renderer output from `ost ci generate github`. Do not hand-edit CI semantics
-# in the generated workflow YAML -- change this file and regenerate. Three
+# in the generated workflow YAML -- change this file and regenerate. Four
 # workflows are hand-written, each for what this matrix cannot express:
 # docs-check.yml checks documentation and builds nothing;
 # parser-sanitizers.yml builds mmdPmx, mmdModel, motionVmd,
 # mmdMotionBinding and mmdControl on their own -- no runtime, since none links
 # OpenUSD -- under ASan and UBSan, and fuzzes both readers (docs/architecture/
 # WORKSPACE.md §3, §6); and release.yml, on a tag, packages the product and
-# drafts the GitHub release. release.yml MIRRORS this file's ost version,
+# drafts the GitHub release. physics-installed.yml builds test-only external
+# sources into installed packages and runs the isolated representative physics
+# consumer in three configurations; it reads this file's Windows runtime/ost
+# pins rather than adding a second runtime pin source.
+# release.yml MIRRORS this file's ost version,
 # runtime digests, OpenUSD requirement, host packages and pyramid depths --
 # re-pin it with them (docs/releases/README.md).
 #
