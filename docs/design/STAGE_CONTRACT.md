@@ -606,6 +606,13 @@ is applied (STAGE-O6). Rigid-body indices are indices into
 `/Asset/physics/rigidBodies`' children, which keep the source table's order,
 and joint indices are canonical joint indices (§9.1); `−1` names none.
 
+This section alone owns the exact physics attribute names, types, units and
+authored layout. Runtime coupling consumes this existing representation;
+it adds neither aliases nor backend-specific attributes such as `jolt:*`.
+The physics representation introduced in contract v1 remains in contract v2.
+Coupling and runtime conversion policy are owned by
+[PHYSICS_INTEGRATION](PHYSICS_INTEGRATION.md).
+
 ### 13.1 Rigid bodies
 
 One `UsdGeomXform` per rigid body at `/Asset/physics/rigidBodies/<id>`, in
@@ -688,7 +695,28 @@ it joins from these properties alone, which is Phase 6's acceptance
 ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). Runtime simulation is
 the optional, downstream flow defined by
 [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md): `usd-physics-plugins`
-simulates, `usd-stage-runner` orders the step, and the importer remains static.
+simulates, `usd-avatar-runtime` owns avatar evaluation order and the shared
+physics barrier, and `usd-stage-runner` supplies the host loop. The importer
+remains static.
+
+### 13.5 Consumer validation and round-trip preservation
+
+Consumer validation must reconstruct body/joint counts and source order, schema types,
+canonical bone associations, modes, filters, rest frames, local joint frames
+and units from the stage alone. Standard values and preserved metadata must
+agree wherever they represent the same property, allowing the documented
+unit conversions. Body/bone offsets are derived from the existing rest frames;
+they are not an additional authored property.
+
+Saving and reopening the imported USD must retain the §13 values, provenance
+and ordering, subject only to the explicit source repairs in §13.3. This is
+USD preservation, not a PMX writer or byte-for-byte source round trip.
+
+Malformed runtime declarations (wrong types, missing required values,
+out-of-range references or time-sampled preservation attributes) must be
+diagnosed rather than silently corrected or replaced by backend defaults.
+The documented `−1` sentinel remains distinct from an invalid reference.
+Runtime validation does not change the importer's source repair policy.
 
 ## 14. Validation checklist
 

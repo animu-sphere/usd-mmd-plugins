@@ -17,8 +17,10 @@
   [STAGE_CONTRACT.md §13](STAGE_CONTRACT.md#13-physics); and
 - adapting the MMD-only bone/body coupling rules for a runtime.
 
-It does not own a solver, fixed-timestep loop, collision-query system or
-backend integration. Those are shared physics/runtime concerns.
+This boundary also applies to PMD if that format is added; it does not imply
+PMD support. It does not own world creation, stepping, contact queries,
+backend selection or fixed-time management. Those belong to
+`usd-physics-plugins` and runtime orchestration.
 
 ```text
 PMX rigid bodies and joints
@@ -49,10 +51,10 @@ repository, and opening or inspecting a PMX never requires a physics runtime.
 | MMD bone-to-body and body-to-bone coupling | an MMD-specific runtime adapter owned here |
 | Physics scene construction, stepping, queries and backend abstraction | `usd-physics-plugins` |
 | Backend objects and backend-specific collision layers | the selected physics backend integration |
-| Per-frame ordering | `usd-stage-runner` |
-| Cross-repository composition and playback state | `usd-avatar-runtime` |
+| Avatar evaluation order, shared-world boundaries and physics barriers; composition and playback state | `usd-avatar-runtime` |
+| Host loop and delivery of ticks | `usd-stage-runner` |
 | Generic MotionClip, retargeting and UsdSkelAnimation processing | `usd-motion-plugins`; MMD IK interpretation stays here |
-| MMD / MToon / PreviewSurface rendering | `hydra-toon` |
+| GPU skinning and MMD / MToon / PreviewSurface rendering | `hydra-toon` |
 
 A useful placement test is:
 
@@ -132,18 +134,59 @@ evaluated pose → physics step → MMD body-to-bone feedback → final pose
 
 The importer preserves the mode and association. The MMD adapter computes the
 feedback; the shared physics layer supplies simulated body transforms and does
-not learn MMD's convention.
+not learn MMD's convention. Feedback respects the mode's preserved bone-position
+semantics in [STAGE_CONTRACT §13.1](STAGE_CONTRACT.md#131-rigid-bodies).
+
+### 5.4 Coupling lifecycle
+
+The adapter exposes a thin interface with these conceptual operations:
+
+| Operation | Responsibility |
+| --- | --- |
+| `Bind(skeleton, worldHandle)` | Resolve canonical bone associations, body handles and rest offsets against a caller-owned world |
+| `UpdateKinematicBodies(prePhysicsPose)` | Transfer the evaluated bone pose to `followBone` bodies before the shared step |
+| `ApplyPhysicsToPose(simulatedBodies, inoutPose)` | Apply `dynamicWithBone` feedback after the shared step; `dynamic` has no bone feedback |
+| `Reset()` | Clear coupling history and restore a reproducible adapter state for restart/replay |
+
+These names and signatures illustrate responsibilities; naming, ownership types
+and ABI follow existing component conventions and the first runtime consumer.
+They are not a published API. None of these operations calls `Step`, creates a
+world, chooses a backend or advances time. World reset and replay of motion
+input remain the caller's responsibility; adapter reset must compose with them.
+
+### 5.5 Offsets and pose spaces
+
+Bind derives each bone/body rest offset from the existing skeleton and body
+rest frames; no duplicate offset attribute is added to the stage. Pre-step
+synchronization composes the evaluated bone transform with this offset.
+Post-step feedback removes the offset and converts the result back into the
+pose's local joint space, accounting for the current parent hierarchy and the
+mode's position rule.
+
+The adapter owns conversions among skeleton-local, asset and shared-world
+spaces, including placement transforms and units. Source basis/length
+normalization follows [STAGE_CONTRACT §6](STAGE_CONTRACT.md#6-coordinate-conversion)
+once; an imported meter-valued stage must not be scaled or mirrored again.
+Non-unit scale must be handled explicitly; a scale or transform the shared
+body representation cannot express must be diagnosed rather than discarded.
+
+An absent association (`−1`) is distinct from a malformed or out-of-range bone
+reference. It cannot drive or receive a bone pose; binding must expose the
+resulting coupling limitation. Malformed references or attributes must be
+diagnosed and rejected for the affected binding, without substituting a bone,
+mode or offset. Static source repairs remain those of STAGE_CONTRACT §13.3.
 
 ## 6. Runtime order
 
-`usd-stage-runner` owns execution order. `usd-avatar-runtime` composes the
-participants and chooses playback state; neither re-implements MMD semantics.
+`usd-avatar-runtime` owns avatar evaluation order, composition, playback state,
+shared-world boundaries and the physics barrier. `usd-stage-runner` supplies
+the host loop and ticks. MMD evaluation and coupling remain implemented here.
 
 ```text
 VMD or shared motion input
         │
         ▼
-MMD control evaluation / generic retarget
+pre-physics MMD evaluation / generic retarget
         │
         ▼
 runtime pose
@@ -158,6 +201,9 @@ usd-physics-plugins step
 MMD body → bone feedback
         │
         ▼
+post-physics MMD control/morph evaluation (where required)
+        │
+        ▼
 final runtime pose → UsdSkel / renderer consumer
 ```
 
@@ -166,6 +212,20 @@ plain library in this repository, but it owns no thread, clock or solver. Its
 exact component identity is added to
 [WORKSPACE.md](../architecture/WORKSPACE.md) only when the first runtime
 consumer makes its API concrete.
+
+The consumer connects the adapter through avatar-runtime pre/post physics
+callbacks. For each shared world, all participating avatars finish pre-step
+updates before orchestration steps that world; all post-step callbacks consume
+the resulting body snapshot before final poses are published. An adapter must
+not step a shared world once per avatar.
+
+The MMD evaluator must state any IK, append or morph dependency on pre- versus
+post-physics pose, including the preserved deform-after-physics flag. Runtime
+integration must respect those requirements and diagnose unsupported ordering;
+the diagram does not permit moving every control/morph operation before physics
+by default. The current offline, no-simulation evaluation order is defined in
+[MOTION_CONTRACT §11.5](MOTION_CONTRACT.md#115-evaluation-order), and does not
+by itself establish a split runtime evaluation API.
 
 ## 7. Collision filtering and joints
 
@@ -192,6 +252,12 @@ Joint translation follows the same rule:
 2. read `mmd:physics:*` for source meaning that representation cannot express;
 3. report the fidelity gap; and
 4. enable enhanced behavior only when the runtime/backend supports it.
+
+Standard USD values take precedence for properties represented by standard
+schemas when building neutral descriptors. The MMD compatibility adapter
+explicitly converts group/mask, spring and coefficient semantics that need
+additional interpretation; it reports approximations and unsupported meaning
+without silently replacing standard values with preservation metadata.
 
 Initial runtime support may start with connected bodies, frames and basic
 limits. Angular/translational limits, springs and drive-like behavior follow
@@ -336,16 +402,21 @@ reserved in [DEPENDENCIES.md §7](../architecture/DEPENDENCIES.md#7-usd-physics-
 
 ## 9. Implementation sequence
 
-1. **Confirm the cross-repository stage contract.** Build a consumer against
-   the existing `/Asset/physics` layout, units, frames and metadata. Change
-   stage-contract version 1 only if the consumer proves a defect.
-2. **Consume generic physics.** Translate the authored `UsdPhysics` scene into
-   `usd-physics-plugins` without MMD bone coupling.
-3. **Synchronize `followBone`.** Drive kinematic bodies from the evaluated
-   pose before each step.
-4. **Run dynamic bodies.** Simulate `dynamic` bodies and constrained pairs.
-5. **Add `dynamicWithBone`.** Apply MMD-specific body feedback to the runtime
-   pose outside the importer.
+1. **Verify the stage contract.** Assert body/joint counts, types, canonical
+   bone references, modes, filters, rest offsets and units from PMX → USD.
+   Reconstruct preserved values and diagnose malformed runtime declarations
+   without implicit correction. Existing physics attributes remain unchanged.
+2. **Define thin coupling operations.** Bind to caller-owned skeleton/world
+   state and expose pre-step update, post-step feedback and reset (§5.4).
+   The adapter never steps the world.
+3. **Verify modes independently.** Cover `followBone`, `dynamic` and
+   `dynamicWithBone` with small fixtures, including parent/child bones,
+   static offsets, non-unit scale, repeated reset and missing bone references.
+4. **Consume joints and filters.** Prefer standard USD values in neutral
+   descriptors; apply explicit MMD conversions and diagnostics under §7.
+5. **Connect the runtime consumer.** Hook the adapter into avatar-runtime's
+   pre/post physics callbacks and shared barrier (§6), retaining a physics-free
+   importer and a host-loop-only stage-runner.
 6. **Refine only for acceptance.** Improve limits, springs or damping when a
    representative L3 failure or an explicit external contract requires it;
    generic solver changes belong in `usd-physics-plugins`.
@@ -392,11 +463,34 @@ input and pinned build configurations; live devices, networking and wall-clock
 timing are not prerequisites. Stability regressions block; a tolerance
 violation caused only by a known Bullet trajectory difference does not.
 
+### 10.1 Coupling MVP acceptance
+
+The minimum coupling integration must demonstrate:
+
+- One redistributable PMX fixture independently exercises all three modes:
+  pre-step bone → body for `followBone`, no bone feedback for `dynamic`, and
+  post-step body → bone for `dynamicWithBone` under §5.
+- Parent/child bones, nonzero rest offsets, non-unit scale and missing bone
+  associations have explicit assertions; invalid or unsupported bindings have
+  diagnostics, including malformed bone references.
+- Re-evaluating the same timestamp does not accumulate feedback or advance
+  simulation implicitly. Repeated reset/replay with the same input and declared
+  physics configuration gives stable results.
+- The importer alone builds/loads without linking `usd-physics-plugins` or a
+  backend; runtime hooks use the shared barrier defined in §6.
+
+Each implementation PR requires focused unit tests and an integration smoke
+appropriate to its scope. This MVP establishes bounded coupling behavior;
+avatar fidelity still uses §12's representative scene acceptance. Bullet
+numerical equivalence and long fidelity comparisons are not normal CI gates.
+
 ## 11. Non-goals
 
 This repository does not become a physics framework, backend wrapper, game
 runtime, scheduler, renderer or editor. It does not duplicate shared physics
-worlds, stepping, queries or backend object creation.
+worlds, stepping, queries or backend object creation. Bullet-specific solver
+settings, exact spring trajectories for every model, GPU physics and direct
+coupling to a renderer are outside this integration's goals.
 
 The intended end state is:
 
@@ -408,9 +502,10 @@ PMX → usd-mmd-plugins → OpenUSD stage
                                 │
                   usd-motion-plugins + usd-physics-plugins
                                 │
-                       usd-stage-runner
-                                │
                        usd-avatar-runtime
+                  (evaluation + shared barrier)
+                                ▲
+                  usd-stage-runner (host ticks)
 ```
 
 MMD remains specialized but participates in the same reusable motion and

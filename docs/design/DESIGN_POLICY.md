@@ -393,8 +393,9 @@ importer.
 
 The future execution boundary is
 [PHYSICS_INTEGRATION.md](PHYSICS_INTEGRATION.md): `usd-physics-plugins` owns
-generic simulation and backend integration, `usd-stage-runner` owns per-frame
-order, and an MMD-specific adapter owns bone/body coupling. All runtime
+generic simulation and backend integration, `usd-avatar-runtime` owns avatar
+evaluation order and shared physics barriers, `usd-stage-runner` supplies the
+host loop, and an MMD-specific adapter owns bone/body coupling. All runtime
 dependencies are optional; the parser, canonical model and importer remain
 usable without them.
 
@@ -653,8 +654,8 @@ than forcing them into one library.
 | `usd-physics-plugins` | backend-neutral physics worlds, stepping, queries and backend integration |
 | `motion-connectors` | live external inputs, normalized into `usd-motion-plugins`' types |
 | `hydra-toon` | MToon and MMD toon rendering through format-specific schema adapters, consuming the USD contract — never PMX |
-| `usd-stage-runner` | the update and evaluation loop |
-| `usd-avatar-runtime` | OpenStrata composition, scheduling of evaluation, and the cross-format avatar contract |
+| `usd-stage-runner` | the host loop and delivery of ticks |
+| `usd-avatar-runtime` | OpenStrata composition, avatar evaluation order, shared-world physics barriers, and the cross-format avatar contract |
 
 Dependencies point one way: `usd-mmd-plugins`, `usd-vrm-plugins` and
 `motion-connectors` depend on `usd-motion-plugins`, and `usd-avatar-runtime`
