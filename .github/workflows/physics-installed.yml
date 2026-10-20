@@ -1,0 +1,154 @@
+# Hand-written: ost's matrix cannot express building an external source package
+# and testing three configurations of a separate installed consumer project.
+# Runtime/ost pins come from openstrata.ci.yaml; source pins below are test-only.
+name: installed physics
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: physics-installed-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: physics-installed-windows
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      OST_HOME: ${{ github.workspace }}/build/physics-ost
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - name: Read the owning runtime and tool pins
+        run: |
+          python -m pip install PyYAML==6.0.2
+          if ($LASTEXITCODE) { throw 'Could not install the CI manifest reader' }
+          @'
+          import json, os, pathlib, sys, yaml
+          ci = yaml.safe_load(pathlib.Path('openstrata.ci.yaml').read_text())
+          cell = next(c for c in ci['cells'] if c['name'] == 'workspace-pr-windows')
+          assert cell['host_python'] == f'{sys.version_info.major}.{sys.version_info.minor}'
+          values = {
+              'OST_VERSION': ci['bootstrap']['ost']['version'],
+              'OST_REPOSITORY': ci['bootstrap']['ost']['repository'],
+              'RUNTIME_ARTIFACT': cell['runtime_artifact'],
+              'RUNTIME_REMOTE': cell['runtime_remote']['uri'],
+              'REQUIRE_OPENUSD': cell['require_openusd'],
+              'REQUIRE_OPENUSD_VERSION': cell['require_openusd_version'],
+              'OST_PLATFORM': cell['platform'], 'OST_PROFILE': cell['profile'],
+          }
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as out:
+              for key, value in values.items():
+                  print(f'{key}={value}', file=out)
+          pathlib.Path('build').mkdir(exist_ok=True)
+          pathlib.Path('build/physics-ci-inputs.json').write_text(json.dumps(values, indent=2))
+          '@ | python -
+          if ($LASTEXITCODE) { throw 'Could not read the CI contract' }
+      - name: Regress foreign Python SDK hints
+        run: |
+          python -m unittest discover -s scripts -p test_run_physics_ci.py -v
+          if ($LASTEXITCODE) { throw 'Python SDK override regression failed' }
+      - name: Bootstrap the checksum-verified ost release
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $asset = 'ost-cli-x86_64-pc-windows-msvc.zip'
+          $base = "https://github.com/$env:OST_REPOSITORY/releases/download/v$env:OST_VERSION"
+          Invoke-WebRequest "$base/$asset" -OutFile "build/$asset"
+          Invoke-WebRequest "$base/$asset.sha256" -OutFile "build/$asset.sha256"
+          $actual = (Get-FileHash "build/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
+          $published = ((Get-Content "build/$asset.sha256" -Raw).Trim() -split '\s+')[0]
+          if ($actual -ne $published) { throw 'ost checksum mismatch' }
+          Expand-Archive "build/$asset" -DestinationPath build/physics-bootstrap
+          $bins = @(Get-ChildItem build/physics-bootstrap -Recurse -Filter ost.exe)
+          if ($bins.Count -ne 1) { throw 'Expected one ost executable' }
+          $bins[0].Directory.FullName >> $env:GITHUB_PATH
+          $actual | Set-Content build/physics-ost-sha256.txt
+      - name: Pull and verify the SDK, then build MMD
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Invoke-Checked([scriptblock] $Command) {
+            & $Command
+            if ($LASTEXITCODE) { throw "Command failed with exit code $LASTEXITCODE" }
+          }
+          if ((& ost --version) -ne "ost $env:OST_VERSION") { throw 'Unexpected ost version' }
+          Invoke-Checked { ost ci validate }
+          Invoke-Checked { ost artifact pull $env:RUNTIME_REMOTE --expect-artifact $env:RUNTIME_ARTIFACT --require-kind runtime --require-openusd $env:REQUIRE_OPENUSD --require-openusd-version $env:REQUIRE_OPENUSD_VERSION }
+          Invoke-Checked { ost artifact verify $env:RUNTIME_ARTIFACT --minimum-trust local --require-sbom --require-provenance --require-openusd $env:REQUIRE_OPENUSD --require-openusd-version $env:REQUIRE_OPENUSD_VERSION }
+          Invoke-Checked { ost runtime pull $env:OST_PLATFORM --profile $env:OST_PROFILE --from-artifact $env:RUNTIME_ARTIFACT --force }
+          Invoke-Checked { ost library pull --target $env:OST_PLATFORM --profile $env:OST_PROFILE --json }
+          Invoke-Checked { ost runtime validate $env:OST_PLATFORM --profile $env:OST_PROFILE --json }
+          Invoke-Checked { ost build --target $env:OST_PLATFORM --profile $env:OST_PROFILE }
+          $caches = @(Get-ChildItem build -Recurse -Filter CMakeCache.txt | Where-Object {
+            (Select-String -LiteralPath $_.FullName -Pattern '^CMAKE_PROJECT_NAME:STATIC=UsdMmdPlugins$' -Quiet) -and
+            (Select-String -LiteralPath $_.FullName -Pattern '^OPENSTRATA_RUNTIME_PREFIX:.*=' -Quiet)
+          })
+          if ($caches.Count -ne 1) { throw 'Expected one ost workspace cache' }
+          $line = (Select-String -LiteralPath $caches[0].FullName -Pattern '^OPENSTRATA_RUNTIME_PREFIX:.*=').Line
+          "USD_ROOT=$($line.Split('=', 2)[1])" >> $env:GITHUB_ENV
+          "MMD_BUILD=$($caches[0].Directory.FullName)" >> $env:GITHUB_ENV
+      - name: Check out the compatible shared physics source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: animu-sphere/usd-physics-plugins
+          ref: 54a3406fb42fb47c926737b36ef10e4b771cbe6c
+          path: build/physics-source
+          persist-credentials: false
+      - name: Check out Jolt Physics 5.5.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: jrouwe/JoltPhysics
+          ref: 23dadd0e603f1b321142d4c74df07fce85064989
+          path: build/jolt-source
+          persist-credentials: false
+      - name: Install deterministic Jolt and the shared physics packages
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Invoke-Checked([scriptblock] $Command) {
+            & $Command
+            if ($LASTEXITCODE) { throw "Command failed with exit code $LASTEXITCODE" }
+          }
+          $jolt = "$env:GITHUB_WORKSPACE/build/physics-jolt-prefix"
+          $physics = "$env:GITHUB_WORKSPACE/build/physics-shared-prefix"
+          $pythonArgs = @(python -c "import json,sys; sys.path.insert(0,'scripts'); from run_physics_ci import python_cmake_args; print(json.dumps(python_cmake_args()))" | ConvertFrom-Json)
+          if ($LASTEXITCODE) { throw 'Could not locate the host Python development SDK' }
+          git rev-parse HEAD | Set-Content build/physics-mmd-commit.txt
+          git -C build/physics-source rev-parse HEAD | Set-Content build/physics-shared-commit.txt
+          git -C build/jolt-source rev-parse HEAD | Set-Content build/physics-jolt-commit.txt
+          Invoke-Checked { cmake -S build/jolt-source/Build -B build/physics-jolt-build -A x64 "-DCMAKE_INSTALL_PREFIX=$jolt" -DCMAKE_BUILD_TYPE=Release -DINTERPROCEDURAL_OPTIMIZATION=OFF -DDOUBLE_PRECISION=OFF -DCROSS_PLATFORM_DETERMINISTIC=ON -DENABLE_ALL_WARNINGS=OFF -DGENERATE_DEBUG_SYMBOLS=OFF -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_STATIC_MSVC_RUNTIME_LIBRARY=OFF -DTARGET_UNIT_TESTS=OFF -DTARGET_HELLO_WORLD=OFF -DTARGET_PERFORMANCE_TEST=OFF -DTARGET_SAMPLES=OFF -DTARGET_VIEWER=OFF }
+          Invoke-Checked { cmake --build build/physics-jolt-build --config Release --target Jolt --parallel 2 }
+          Invoke-Checked { cmake --install build/physics-jolt-build --config Release }
+          Invoke-Checked { cmake -S build/physics-source -B build/physics-shared-build -A x64 "-DCMAKE_PREFIX_PATH=$env:USD_ROOT" "-DJolt_DIR=$jolt/lib/cmake/Jolt" @pythonArgs -DUSDPHYSICS_BUILD_USD=ON -DUSDPHYSICS_BUILD_TESTS=OFF -DPHYSICSJOLT_REQUIRE_JOLT=ON -DPHYSICSJOLT_ENABLE_SIX_DOF=ON }
+          Invoke-Checked { cmake --build build/physics-shared-build --config Release --parallel 2 }
+          Invoke-Checked { cmake --install build/physics-shared-build --config Release --prefix $physics }
+      - name: Test reader, execution and experimental springs through installed packages
+        run: |
+          python scripts/run_physics_ci.py --mmd-build "$env:MMD_BUILD" --usd-root "$env:USD_ROOT" --physics-prefix build/physics-shared-prefix --jolt-root build/physics-jolt-prefix --build-root build/physics-installed
+          if ($LASTEXITCODE) { throw 'Installed physics lane failed' }
+      - name: Upload configuration, diagnostics and replay evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: physics-installed-windows
+          path: |
+            build/physics-ci-inputs.json
+            build/physics-*.txt
+            build/physics-installed/*.json
+            build/physics-installed/*.log
+            build/physics-installed/*.xml
+            build/physics-installed/**/CMakeCache.txt
+            build/physics-installed/**/Testing/Temporary/
+            build/physics-shared-build/CMakeCache.txt
+            build/physics-jolt-build/CMakeCache.txt

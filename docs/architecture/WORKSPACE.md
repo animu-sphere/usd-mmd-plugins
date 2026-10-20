@@ -276,7 +276,7 @@ runtime consumer makes them concrete
 ```text
 usd-mmd-plugins/
 ├─ .github/workflows/          ost-source-ci.yml (generated from openstrata.ci.yaml); hand-written:
-│                              docs-check.yml, parser-sanitizers.yml, release.yml
+│                              docs-check.yml, parser-sanitizers.yml, physics-installed.yml, release.yml
 ├─ cmake/                      UsdMmdProject, UsdMmdTargets, UsdMmdSanitizers, UsdMmdPackage,
 │                              UsdMmdTesting, UsdMmdOpenUsd (.cmake: §5), utf8-code-page.manifest
 ├─ docs/                       see docs/README.md
@@ -317,9 +317,11 @@ usd-mmd-plugins/
 │  ├─ fixtures/                generate_fixtures.py, the one author of every PMX byte;
 │  │                           generate_vmd_fixtures.py, of every VMD byte (written, never committed)
 │  ├─ integration/             stage-open and Unicode-path tests
-│  └─ installed_consumer/      a project consumed from outside the tree
+│  ├─ installed_consumer/      a project consumed from outside the tree
+│  └─ physics_consumer/        opt-in installed shared-physics reader/execution probe
 ├─ scripts/                    check_library_boundaries.py, check_installed_consumer.py, check_docs.py;
-│                              make_release_notes.py, stage_release.py, product_smoke.py (release.yml)
+│                              make_release_notes.py, stage_release.py, product_smoke.py (release.yml),
+│                              run_physics_ci.py (physics-installed.yml)
 ├─ CMakeLists.txt  CMakePresets.json
 ├─ VERSION  CHANGELOG.md  LICENSE  THIRD_PARTY_NOTICES.md  README.md
 ├─ openstrata.toml  openstrata.ci.yaml
@@ -460,6 +462,7 @@ target, header root and required packages — is
 | pyramid | the bundle manifest's `tests:` | `ost plugin test` L0–L5, from the build tree and from the package | — (`ost`) |
 | baseline | each bundle's `tests/fixtures/` | compact goldens do not change silently | the L5 goldens of `minimal.pmx`, `recoverable/unsafe-texture-paths.pmx` and `mmdSchema`'s `basic.usda` |
 | installed consumer | `tests/installed_consumer/` | installed packages work from a clean prefix outside the repository | `workspace_installed_consumer` |
+| installed physics | `tests/physics_consumer/`, `scripts/run_physics_ci.py` | isolated reader, execution and experimental spring configurations consume installed shared packages and MMD bundles; bounded generated fixtures preserve source evidence and execution replays exposed state | `physics-installed.yml` (Windows); hosted verification status in [current.md](../roadmap/current.md) |
 | shared-motion acceptance | `libs/mmdMotionAdapter/tests/`, `libs/mmdSkeletonAdapter/tests/` | VMD-derived IK motion survives `motionUsd`, poses a PMX-derived stage skeleton, and retargets through an MMD-free translation unit to a non-MMD skeleton; a generic semantic motion stage, read by `motionUsd`, poses a PMX skeleton as the stage's own animation does, with no VMD evaluated | `mmdMotionAdapter_acceptance`, `mmdSkeletonAdapter_generic_clips` |
 | fuzz | `libs/mmdPmx/fuzz/`, `libs/motionVmd/fuzz/` | malformed input never crashes or over-reads, under ASan and UBSan | `mmdPmx_fuzz` and `motionVmd_fuzz` in [parser-sanitizers.yml](../../.github/workflows/parser-sanitizers.yml), which also runs every plain library's unit and robustness tests instrumented |
 

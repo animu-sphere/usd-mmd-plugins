@@ -163,6 +163,25 @@ the runs. These tests establish the isolated reader/execution boundary;
 avatar synchronization and L3 acceptance follow the
 [physics contract](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy).
 
+The same bounded three-configuration lane is available through
+[run_physics_ci.py](../../scripts/run_physics_ci.py). Given an already built
+MMD workspace and installed shared packages/SDKs, it installs MMD into a new
+prefix, configures isolated consumers, and retains verbose logs and JUnit
+results. Choose a new output directory on each invocation; no downloads or
+package publication occur. The [CI report](../reports/2026-10-20-phase8-physics-ci.md)
+records the tested invocation and environment.
+
+[physics-installed.yml](../../.github/workflows/physics-installed.yml) uses
+this driver on Windows. It reads runtime/ost pins from
+[openstrata.ci.yaml](../../openstrata.ci.yaml), builds pinned test-only shared
+physics and deterministic Jolt sources into separate prefixes, and uploads
+configuration, fidelity diagnostics and replay results even on failure.
+Shared-package and consumer configurations explicitly use the selected host
+Python's development files, overriding build-machine paths retained by the
+relocated OpenUSD SDK; see the [hosted Python correction](../reports/2026-10-20-phase8-physics-ci-python.md).
+The source checkout is used only to build/install shared packages, never added
+to MMD's CMake graph. It establishes no published physics dependency.
+
 ## One component, plain CMake
 
 Every component under `libs/`, `tools/` and `plugins/` configures on its own,
