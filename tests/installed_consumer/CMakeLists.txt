@@ -64,3 +64,12 @@ if(MSVC)
     target_compile_options(schema_probe PRIVATE /utf-8)
     target_compile_definitions(schema_probe PRIVATE NOMINMAX)
 endif()
+
+# Optional owner coupling package resolves its own control and USD closure.
+find_package(mmdPhysicsAdapter 0.2 CONFIG REQUIRED)
+add_executable(physics_probe physics_probe.cpp)
+target_link_libraries(physics_probe PRIVATE mmdPhysicsAdapter::mmdPhysicsAdapter)
+if(MSVC)
+    target_compile_options(physics_probe PRIVATE /utf-8)
+    target_compile_definitions(physics_probe PRIVATE NOMINMAX)
+endif()

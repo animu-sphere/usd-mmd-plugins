@@ -151,6 +151,26 @@ installed package contract. The installed-consumer lane binds a
 generated VMD to a generated PMX, evaluates it, and builds a shared
 `MotionClip` through both installed adapters.
 
+## `mmdPhysicsAdapter`
+
+| | |
+| --- | --- |
+| `find_package` | `find_package(mmdPhysicsAdapter 0.2 CONFIG REQUIRED)` |
+| Imported target | `mmdPhysicsAdapter::mmdPhysicsAdapter` (static library) |
+| Headers | `include/mmdPhysicsAdapter/` — `Adapter.h`, `Codes.h` |
+| Required packages | `mmdControl` and OpenUSD 26.08 (`usdSkel`, `usdPhysics`, `usdGeom`, `usd`, `sdf`, `vt`, `gf`, `tf`, or the monolith), resolved by the package config |
+| Language | C++20 (`cxx_std_20`) |
+| Version compatibility | `SameMinorVersion` |
+| Installed files | `${CMAKE_INSTALL_LIBDIR}/`, `${CMAKE_INSTALL_LIBDIR}/cmake/mmdPhysicsAdapter/`, and `include/mmdPhysicsAdapter/` |
+
+This independent optional package has `aggregate_member: false`. It declares no
+physics/runtime/backend dependency and the importer never links it. The
+[lifecycle contract](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle)
+defines ownership and restrictions. The installed-consumer `physics_probe`
+opens a generated PMX, binds a VMD and checks three modes, post append and
+reset/replay through `BeginPhysics` / `ResumePhysics` with a caller-supplied
+world body snapshot.
+
 ## `mmdSchema`
 
 A plugin bundle that is also a CMake package. The plug registry discovers

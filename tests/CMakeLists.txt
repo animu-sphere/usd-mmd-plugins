@@ -154,3 +154,16 @@ add_test(NAME workspace_installed_consumer
         ${_consumer_toolchain})
 set_tests_properties(workspace_installed_consumer PROPERTIES
     LABELS "installed-consumer")
+
+# First generated coupling consumer, using caller-supplied snapshots without Step.
+usdmmd_test_executable(mmdPhysicsAdapter_smoke installed_consumer/physics_probe.cpp)
+target_link_libraries(mmdPhysicsAdapter_smoke PRIVATE mmdPhysicsAdapter::mmdPhysicsAdapter)
+set(_coupling_vmd "${PROJECT_BINARY_DIR}/coupling-vmd")
+add_test(NAME mmdPhysicsAdapter_vmd_fixture
+    COMMAND "${USDMMD_TEST_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/generate_vmd_fixtures.py"
+        --out "${_coupling_vmd}")
+set_tests_properties(mmdPhysicsAdapter_vmd_fixture PROPERTIES FIXTURES_SETUP coupling_vmd)
+add_test(NAME mmdPhysicsAdapter_smoke COMMAND mmdPhysicsAdapter_smoke
+    "${_fixtures}/coupling-modes.pmx" "${_coupling_vmd}/sample.vmd")
+set_tests_properties(mmdPhysicsAdapter_smoke PROPERTIES
+    FIXTURES_REQUIRED coupling_vmd ENVIRONMENT_MODIFICATION "${_plugin_env}")

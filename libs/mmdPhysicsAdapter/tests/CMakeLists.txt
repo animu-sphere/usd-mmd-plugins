@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/UsdMmdTesting.cmake")
+usdmmd_test_executable(mmdPhysicsAdapter_tests test_adapter.cpp)
+target_link_libraries(mmdPhysicsAdapter_tests PRIVATE mmdPhysicsAdapter::mmdPhysicsAdapter)
+add_test(NAME mmdPhysicsAdapter_unit COMMAND mmdPhysicsAdapter_tests)
+usdmmd_openusd_test_environment(mmdPhysicsAdapter_unit)
+set(_coupling_links mmdControl::mmdControl)
+if(TARGET usd_ms)
+    list(APPEND _coupling_links usd_ms)
+else()
+    foreach(_t IN ITEMS tf gf vt sdf usd usdGeom usdSkel usdPhysics)
+        if(TARGET ${_t})
+            list(APPEND _coupling_links ${_t})
+        else()
+            list(APPEND _coupling_links pxr::${_t})
+        endif()
+    endforeach()
+endif()
+set(_coupling_allowed)
+foreach(_link IN LISTS _coupling_links)
+    list(APPEND _coupling_allowed --allow "${_link}")
+endforeach()
+usdmmd_add_boundary_test(mmdPhysicsAdapter TARGET mmdPhysicsAdapter BINARY mmdPhysicsAdapter_tests
+    ARGS ${_coupling_allowed} --allow-openusd
+         --forbid-include avatarRuntime/ --forbid-include physicsCore/
+         --forbid-import UsdMmdFileFormat)

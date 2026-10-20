@@ -72,6 +72,8 @@ endif()
 # OpenUSD so those packages reuse the foundation targets resolved above.
 add_subdirectory("libs/mmdSkeletonAdapter")
 add_subdirectory("libs/mmdMotionAdapter")
+# Optional MMD coupling: USD declarations and control poses, no solver/runtime.
+add_subdirectory("libs/mmdPhysicsAdapter")
 
 # Every plugin bundle: an immediate plugins/<name>/ carrying both an
 # openstrata.plugin.yaml and a CMakeLists.txt. Named rather than globbed, so

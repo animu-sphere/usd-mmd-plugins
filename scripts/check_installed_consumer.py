@@ -66,7 +66,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
     # makes lib64 on some Linux distributions; the plugin bundle's lib/ is
     # fixed by its plugInfo.json LibraryPath (PACKAGE_CONTRACT.md).
     for package in ("mmdPmx", "mmdModel", "motionVmd", "mmdMotionBinding", "mmdControl",
-                    "mmdSkeletonAdapter", "mmdMotionAdapter", "mmdSchema"):
+                    "mmdSkeletonAdapter", "mmdMotionAdapter", "mmdPhysicsAdapter", "mmdSchema"):
         config_dirs = sorted(p.parent for p in prefix.glob(
             f"lib*/cmake/{package}/{package}Config.cmake"))
         if len(config_dirs) != 1:
@@ -85,6 +85,7 @@ def check_prefix(prefix: pathlib.Path, build_dir: pathlib.Path) -> list[str]:
         pathlib.Path("include", "mmdControl", "Evaluator.h"),
         pathlib.Path("include", "mmdSkeletonAdapter", "Adapter.h"),
         pathlib.Path("include", "mmdMotionAdapter", "Adapter.h"),
+        pathlib.Path("include", "mmdPhysicsAdapter", "Adapter.h"),
         pathlib.Path("include", "mmdSchema", "mmdMaterialAPI.h"),
         pathlib.Path("bin", executable("mmd_inspect")),
         pathlib.Path("bin", executable("vmd_inspect")),
@@ -351,6 +352,24 @@ def main() -> int:
                   file=sys.stderr)
             return 1
         print(f"ok  the installed mmdSchema applied its API: {want}")
+
+        physics_probes = sorted(build.rglob(executable("physics_probe")))
+        if not physics_probes:
+            print("the consumer built no physics_probe", file=sys.stderr)
+            return 1
+        coupling_env = dict(schema_env)
+        coupling_env["PXR_PLUGINPATH_NAME"] = os.pathsep.join(
+            [str(prefix / PLUGIN_RESOURCES), str(prefix / SCHEMA_RESOURCES)])
+        coupling = subprocess.run(
+            [str(physics_probes[0]), str(fixtures / "coupling-modes.pmx"),
+             str(vmd_fixtures / "sample.vmd")], text=True, encoding="utf-8",
+            stdout=subprocess.PIPE, env=coupling_env)
+        want = "coupling=3 targets=1 feedback=1 postAppend=30 replay=3"
+        if coupling.returncode != 0 or coupling.stdout.splitlines() != [want]:
+            print(f"the installed coupling probe returned {coupling.returncode}: "
+                  f"{coupling.stdout!r}", file=sys.stderr)
+            return 1
+        print(f"ok  the installed mmdPhysicsAdapter: {want}")
 
         # The Python host, with only the prefix on the plugin path: the
         # importer and the schema bundle it requires.

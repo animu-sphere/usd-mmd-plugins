@@ -1,8 +1,8 @@
 # Physics integration contract (MMD-specific boundary)
 
 > Contract: **accepted**. Sections 1–8 define the MMD boundary and conversion
-> rules; §12 owns physics fidelity and acceptance policy. The coupling API in
-> §5–§6 is an intended runtime contract, not a support claim.
+> rules; §12 owns physics fidelity and acceptance policy. The coupling lifecycle in
+> §5–§6 is the runtime contract, not a support claim.
 > Current availability is recorded only in the
 > [capability matrix](../reference/CAPABILITY_MATRIX.md#physics-preservation-and-execution).
 > Static authoring remains binding under [STAGE_CONTRACT §13](STAGE_CONTRACT.md#13-physics).
@@ -154,6 +154,37 @@ They are not a published API. None of these operations calls `Step`, creates a
 world, chooses a backend or advances time. World reset and replay of motion
 input remain the caller's responsibility; adapter reset must compose with them.
 
+The concrete optional package is `mmdPhysicsAdapter`. `Adapter::Bind` takes a
+composed `UsdSkelSkeleton` and an explicit body set on the same stage. It owns
+topology, placement and derived rest offsets; it retains no stage or world.
+`UpdateKinematicBodies` returns path-keyed rigid world transforms in metres;
+the caller resolves paths to world handles. `ApplyPhysicsToPose` takes an
+immutable body snapshot and the barrier pose and returns sparse joint-local
+`mmdControl::Evaluator::PhysicsFeedback` for `ResumePhysics`, without mutating
+the pose or executing post controls. `Reset` preserves the stateless binding;
+world reset and input replay remain caller responsibilities.
+
+Poses must use the bound skeleton's exact canonical joint order and rest space,
+with joint-local translations already in metres. Bind converts stage rest and
+placement translations using `metersPerUnit` once, with no PMX conversion.
+Rebind after layout, rest or placement changes. Only Y-up, static finite rigid
+frames with unit scale are admitted. Scale, shear, reflection and animated
+placement reject explicitly, including body and skeleton rest transforms.
+
+For `dynamicWithBone`, feedback changes local rotation and retains pre-physics
+local translation. Parent feedback is resolved before child conversion,
+including through non-driven intermediate joints. Multiple feedback bodies for
+one joint reject as ambiguous. `dynamic` never writes a bone, even with an
+association. `-1` emits `MMD_PHYSICS_BONE_UNASSOCIATED` and produces no coupling.
+Malformed, out-of-range, varying, time-sampled, blocked or missing declarations
+reject. Mode must agree with standard enabled-body/kinematic flags.
+
+Malformed pose sizes/transforms, unknown or duplicate snapshot paths, and
+missing associated feedback-body rows return fatal diagnostics and no partial
+commands or feedback. Other declared body rows are optional and validated when
+supplied. Diagnostic codes are catalogued in
+[DIAGNOSTICS §5.5](../reference/DIAGNOSTICS.md#55-morphs-materials-physics).
+
 ### 5.5 Offsets and pose spaces
 
 Bind derives each bone/body rest offset from the existing skeleton and body
@@ -209,9 +240,8 @@ final runtime pose → UsdSkel / renderer consumer
 
 The static importer is not in this loop. The MMD coupling adapter may be a
 plain library in this repository, but it owns no thread, clock or solver. Its
-exact component identity is added to
-[WORKSPACE.md](../architecture/WORKSPACE.md) only when the first runtime
-consumer makes its API concrete.
+component identity and edges are defined in
+[WORKSPACE.md](../architecture/WORKSPACE.md).
 
 The consumer connects the adapter through avatar-runtime pre/post physics
 callbacks. For each shared world, all participating avatars finish pre-step

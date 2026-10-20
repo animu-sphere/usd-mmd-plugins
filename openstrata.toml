@@ -22,6 +22,7 @@ members = [
   "libs/mmdControl",
   "libs/mmdSkeletonAdapter",
   "libs/mmdMotionAdapter",
+  "libs/mmdPhysicsAdapter",
   "tools/mmdInspect",
   "tools/vmdInspect",
   "tools/mmdExport",
