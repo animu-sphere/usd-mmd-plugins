@@ -213,6 +213,12 @@ raises; every other code is reserved.
 | `MMD_PHYSICS_UNKNOWN_MODE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 | `MMD_PHYSICS_UNKNOWN_JOINT_TYPE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 
+| `MMD_PHYSICS_BINDING_INVALID` *emitted* | fatal | `mmdPhysicsAdapter` (`Bind`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
+| `MMD_PHYSICS_TRANSFORM_UNSUPPORTED` *emitted* | fatal | `mmdPhysicsAdapter` (`Bind`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
+| `MMD_PHYSICS_BONE_UNASSOCIATED` *emitted* | info | `mmdPhysicsAdapter` (`Bind`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
+| `MMD_PHYSICS_POSE_INVALID` *emitted* | fatal | `mmdPhysicsAdapter` (`pose conversion`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
+| `MMD_PHYSICS_SNAPSHOT_INVALID` *emitted* | fatal | `mmdPhysicsAdapter` (`ApplyPhysicsToPose`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
+
 ### 5.6 Motion (Phases 7 and 9)
 
 | Code | Severity | Raised by | Defined in |

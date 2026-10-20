@@ -1436,6 +1436,26 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
             importer=sdef),
     })
 
+    coupling = empty_model(2.0, UTF16LE)
+    flags = ROTATABLE | TRANSLATABLE
+    coupling["bones"] = [
+        bone("センター", "root", (0.0, 0.0, 0.0), -1, flags, (0.0, 1.0, 0.0)),
+        bone("driver", "driver", (0.0, 10.0, 0.0), 0, flags, (0.0, 1.0, 0.0)),
+        bone("post", "post", (0.0, 15.0, 0.0), 1,
+             flags | APPEND_ROTATION | DEFORM_AFTER_PHYSICS,
+             (0.0, 1.0, 0.0), append=(1, 0.5)),
+    ]
+    coupling["rigidBodies"] = [
+        rigid_body("follow", "follow", 0, 0, 0, (1.0, 0.0, 0.0),
+                   (1.0, 0.0, 0.0), (0.0, 0.0, 0.0), 1.0, 0),
+        rigid_body("free", "free", 0, 0, 0, (1.0, 0.0, 0.0),
+                   (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 1.0, 1),
+        rigid_body("feedback", "feedback", 1, 0, 0, (1.0, 0.0, 0.0),
+                   (0.0, 11.0, 0.0), (0.0, 0.0, 0.0), 1.0, 2),
+    ]
+    entries["coupling-modes.pmx"] = opens(
+        coupling, "three coupling modes, nonzero rest offsets and a post-physics append")
+
     # Recoverable: the model opens, and the stage records why it is not exact.
     bad_utf8 = sample_model(2.0, UTF8, 1, 0)
     bad_utf8["materials"][1]["name"] = b"\xE8\x82"  # a truncated sequence

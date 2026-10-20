@@ -1,0 +1,21 @@
+schema: openstrata.library/v1alpha1
+library:
+  id: mmdPhysicsAdapter
+  version: 0.2.0
+requires:
+  libraries:
+    - id: mmdControl
+      version: ">=0.2,<0.3"
+cmake:
+  package: mmdPhysicsAdapter
+  target: mmdPhysicsAdapter::mmdPhysicsAdapter
+package:
+  standalone: true
+  aggregate_member: false
+package_contract:
+  package_name: mmdPhysicsAdapter
+  exported_targets: [mmdPhysicsAdapter::mmdPhysicsAdapter]
+  public_headers: [include/mmdPhysicsAdapter/**]
+  consumer:
+    include: mmdPhysicsAdapter/Adapter.h
+    symbol: mmd::physics::Adapter::Bind

@@ -93,7 +93,7 @@ rule by `mmdControl_robustness`.
 | Physics before after-physics bones | unsupported by design (nothing is simulated) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
 | The same inputs give the same bits, whatever was evaluated before | supported | [MOTION §11.1](../design/MOTION_CONTRACT.md#111-the-evaluator) |
 | Appends and IK over a given pose, such as a retarget's, with held joints returned unchanged and chains over them or feeding them off (`Complete`) | supported | [MOTION §11.9](../design/MOTION_CONTRACT.md#119-evaluating-from-a-given-pose) |
-| Owned pre/post-physics control continuation (`BeginPhysics` / `ResumePhysics`) with sparse joint-local feedback and retained sampled VMD state | supported by generated control tests; no coupling adapter, world step or runtime integration | [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary) |
+| Owned pre/post-physics control continuation (`BeginPhysics` / `ResumePhysics`) with sparse joint-local feedback and retained sampled VMD state | supported by generated control tests; no world step or runtime integration in this evaluator | [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary) |
 
 ## Shared-motion adapters (`mmdSkeletonAdapter`, `mmdMotionAdapter`)
 
@@ -219,7 +219,7 @@ owns adoption criteria.
 | Positive rotation springs on free/limited standard spring6Dof axes | Preserved | Approximated experimental small-angle execution, independently default OFF; finite-angle/multi-axis equivalence unverified | [§7.5](../design/PHYSICS_INTEGRATION.md#75-experimental-rotation-spring-approximation), [response report](../reports/2026-10-18-phase8-rotation-springs.md) |
 | Negative/locked-axis spring coefficients; format-only PMX 2.1 joints | Preserved | Unsupported execution in this probe; audit reports source meaning | [§7.3–§7.5](../design/PHYSICS_INTEGRATION.md#73-joint-spring-metadata-audit) |
 | Representative generated PMX reader/stability regression | Existing stage-contract tests verify preservation | Automated installed-importer probe; finite exposed state and exact numerical replay within one build/configuration, spring OFF and ON; no cross-platform determinism claim | [Fixture/replay report](../reports/2026-10-18-phase8-fixture-replay.md), [testing policy](../design/PHYSICS_INTEGRATION.md#10-testing) |
-| Bone association and followBone/dynamic/dynamicWithBone modes | Preserved; USDA/USDC save/reopen checked | Experimental strict declaration validation with unbound-bone diagnostics; no MMD bone synchronization/feedback adapter; avatar L3 unverified | [Stage validation report](../reports/2026-10-20-phase8-stage-validation.md), [§5–§6](../design/PHYSICS_INTEGRATION.md#5-rigid-body-modes) |
+| Bone association and followBone/dynamic/dynamicWithBone modes | Preserved; USDA/USDC save/reopen checked | Optional `mmdPhysicsAdapter`: generated all-mode coupling/continuation smoke; rigid static placements only; no world step, runtime callbacks or avatar L3 acceptance | [Coupling report](../reports/2026-10-21-phase8-coupling-adapter.md), [§5–§6](../design/PHYSICS_INTEGRATION.md#5-rigid-body-modes) |
 | Bullet/MMD full trajectories and solver equivalence | Source values remain inspectable | Unverified; not a release gate | [§12](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy) |
 
 Malformed metadata rejects in the probe's strict readers; an unsupported

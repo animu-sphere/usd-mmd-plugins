@@ -117,7 +117,7 @@ MMD metadata interpretation and bone/body coupling stay here.
 
 | Boundary | Contract |
 | --- | --- |
-| Production consumer | An optional MMD coupling adapter, whose component/API is fixed by the first runtime consumer under [WORKSPACE](WORKSPACE.md); no normal physics dependency is declared yet |
+| Production consumer | `mmdPhysicsAdapter` consumes caller-supplied path-keyed body snapshots under [WORKSPACE](WORKSPACE.md); it declares no normal physics dependency |
 | Static path | Parser/model/importer and motion components do not require physics packages |
 | Consumption | Installed packages with declared compatibility; never sibling source, submodules or vendored backend code |
 | Backend direction | Production MMD components use shared neutral interfaces; no direct Jolt/Bullet/PhysX backend integration |
@@ -130,7 +130,8 @@ MMD metadata interpretation and bone/body coupling stay here.
 The probe is isolated contract evidence, outside normal workspace/release
 membership. Its direct link to the installed backend facade is a test-only
 exception, not ownership of backend implementation. No published physics
-artifact pin or production coupling API is selected.
+artifact pin is selected. The optional coupling package uses caller body
+snapshots without adding a physics-package dependency.
 
 For contact/damping/spring API changes, rebuild shared core, backend, bridge
 and every consumer together into a separate compatible prefix. Mixing new

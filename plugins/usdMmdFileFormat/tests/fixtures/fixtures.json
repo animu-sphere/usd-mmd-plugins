@@ -843,6 +843,336 @@
       "skinned": true
     }
   },
+  "coupling-modes.pmx": {
+    "counts": {
+      "bones": 3,
+      "displayFrames": 0,
+      "faces": 0,
+      "joints": 0,
+      "materials": 0,
+      "morphs": 0,
+      "rigidBodies": 3,
+      "softBodies": 0,
+      "textures": 0,
+      "vertices": 0
+    },
+    "diagnostics": [],
+    "modelName": "minimal",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "three coupling modes, nonzero rest offsets and a post-physics append",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1,
+        2
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "englishName": "root",
+          "name": "センター",
+          "path": "root",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.0,
+            0.8,
+            0.0
+          ],
+          "englishName": "driver",
+          "name": "driver",
+          "path": "root/driver",
+          "sourceIndex": 1
+        },
+        {
+          "bind": [
+            0.0,
+            1.2,
+            0.0
+          ],
+          "englishName": "post",
+          "name": "post",
+          "path": "root/driver/post",
+          "sourceIndex": 2
+        }
+      ],
+      "materials": [],
+      "mesh": null,
+      "morphs": [],
+      "physics": {
+        "joints": [],
+        "rigidBodies": [
+          {
+            "angularDamping": 0.25,
+            "bone": 0,
+            "collisionGroup": 0,
+            "collisionMask": 65534,
+            "englishName": "follow",
+            "friction": 0.75,
+            "id": "follow",
+            "kinematic": true,
+            "linearDamping": 0.5,
+            "mass": 1.0,
+            "mode": "followBone",
+            "name": "follow",
+            "orientation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "position": [
+              0.08,
+              0.0,
+              0.0
+            ],
+            "restitution": 0.125,
+            "shape": "sphere",
+            "size": [
+              0.08,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 0
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": 0,
+            "collisionGroup": 0,
+            "collisionMask": 65534,
+            "englishName": "free",
+            "friction": 0.75,
+            "id": "free",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 1.0,
+            "mode": "dynamic",
+            "name": "free",
+            "orientation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "restitution": 0.125,
+            "shape": "sphere",
+            "size": [
+              0.08,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 1
+          },
+          {
+            "angularDamping": 0.25,
+            "bone": 1,
+            "collisionGroup": 0,
+            "collisionMask": 65534,
+            "englishName": "feedback",
+            "friction": 0.75,
+            "id": "feedback",
+            "kinematic": false,
+            "linearDamping": 0.5,
+            "mass": 1.0,
+            "mode": "dynamicWithBone",
+            "name": "feedback",
+            "orientation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "position": [
+              0.0,
+              0.88,
+              0.0
+            ],
+            "restitution": 0.125,
+            "shape": "sphere",
+            "size": [
+              0.08,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 2
+          }
+        ],
+        "sourceRelations": {
+          "joints": [],
+          "rigidBodies": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              1
+            ]
+          ]
+        }
+      },
+      "rig": {
+        "bones": [
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.07999999821186066,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": false
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.07999999821186066,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": false
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.5,
+            "appendRotation": true,
+            "appendSource": 1,
+            "appendTranslation": false,
+            "deformAfterPhysics": true,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.0,
+              0.07999999821186066,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": false
+          }
+        ],
+        "ikChains": [],
+        "sourceRelations": {
+          "appends": [
+            [
+              2,
+              1
+            ]
+          ],
+          "ikChains": []
+        }
+      },
+      "skinned": true
+    }
+  },
   "identifiers.pmx": {
     "counts": {
       "bones": 4,

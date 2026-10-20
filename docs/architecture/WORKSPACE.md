@@ -88,6 +88,17 @@ And the tool Phase 10 created
 | --- | --- | --- | --- | --- | --- | --- |
 | `mmd_export` | CLI executable | `tools/mmdExport/` | `openstrata.tool.yaml` | Writes the stage the importer authors out, in the format the output's extension names. First, `.usdz`: the stage materialized as a `.usdc` and packaged with the textures it names, as a standard USDZ that opens without this repository's plugins. `.usdc` and `.usda` on disk follow when `usdcat` over the file format proves insufficient, each with its own section in [PACKAGING_POLICY.md](../design/PACKAGING_POLICY.md) first. Reaches the importer through Plug at run time and links OpenUSD only. The counterpart of `usd-vrm-plugins`' `vrm_export`. | Phase 10 | exists — `.usdz` |
 
+Phase 8 adds `mmdPhysicsAdapter`, a plain static CMake library at
+`libs/mmdPhysicsAdapter/`, with `openstrata.library.yaml`. It binds the composed
+USD skeleton/body declarations and converts between `mmdControl` barrier poses
+and caller-owned world body snapshots. Its first consumer is the generated
+continuation integration smoke, following avatar-runtime's evaluator split.
+The runtime resolves returned body paths to its world handles. The adapter owns
+no world or backend and links only `mmdControl` and OpenUSD (`usdSkel`,
+`usdPhysics`, `usdGeom`, `usd`, `sdf`, `tf`, `vt`, `gf`). It is an independent
+package (`aggregate_member: false`); the importer never links it. Runtime
+callbacks and an installed physics-package dependency remain separate work.
+
 ### 1.2 Later, only when their responsibility is real
 
 Named now so the boundaries are designed for them; created only when the
@@ -118,6 +129,7 @@ motionVmd ───────────→ nothing                         (
 mmdMotionBinding ────→ mmdModel, motionVmd             (no OpenUSD)
 vmd_inspect ─────────→ motionVmd                       (no OpenUSD)
 mmdControl ──────────→ mmdMotionBinding, mmdModel      (no OpenUSD)
+mmdPhysicsAdapter ───→ mmdControl, OpenUSD             (no solver/runtime)
 mmdSchema ───────────→ OpenUSD only
 mmdImaging ──────────→ OpenUSD only (arch, tf, vt, sdf, usd, hd,
                        usdImaging); mmdSchema at run time, through the
