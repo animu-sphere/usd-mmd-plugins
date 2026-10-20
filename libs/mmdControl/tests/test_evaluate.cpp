@@ -19,6 +19,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <numbers>
 #include <string>
 #include <vector>
@@ -93,15 +94,17 @@ Hold(std::int32_t joint, Float3 translation, const Quat& rotation)
 void
 SortTracks(binding::BoundMotion& motion)
 {
-    std::sort(motion.bones.begin(), motion.bones.end(),
-              [](const auto& a, const auto& b) { return a.joint < b.joint; });
+    std::sort(motion.bones.begin(), motion.bones.end(), [](const auto& a, const auto& b) {
+        return a.joint < b.joint;
+    });
 }
 
 bool
 HasCode(const std::vector<Diagnostic>& diagnostics, const Code& code)
 {
-    return std::any_of(diagnostics.begin(), diagnostics.end(),
-                       [&](const Diagnostic& d) { return d.code == code.id; });
+    return std::any_of(diagnostics.begin(), diagnostics.end(), [&](const Diagnostic& d) {
+        return d.code == code.id;
+    });
 }
 
 // -- Rest pose and forward kinematics (§11.4) ---------------------------------
@@ -191,8 +194,8 @@ TestMorphs()
     // and the inner group's 0.5 through the outer -- 1.7 -- applied after
     // the key: 1.7 * 90 + 10 = 163 degrees, and 1.7 m along X.
     const JointTransform& x = pose.joints[static_cast<std::size_t>(J(model, 1))];
-    assert(Near(x.translation,
-                {model.skeleton.bones[1].localTranslation[0] + 1.7, 0.0, 0.0}, 1e-6));
+    assert(
+        Near(x.translation, {model.skeleton.bones[1].localTranslation[0] + 1.7, 0.0, 0.0}, 1e-6));
     assert(SameRotation(x.rotation, AboutZ(163.0 * kPi / 180.0), 1e-9));
 
     // Channels: every track but the bone morph's, weights unexpanded.
@@ -213,7 +216,8 @@ TestAppends()
         Appending(MakeBone("B", {12.5f, 0, 0}, pmx::kNoIndex), 0, 0.5f, BoneFlag::AppendRotation),
         Appending(MakeBone("C", {25.0f, 0, 0}, pmx::kNoIndex), 1, 1.0f, BoneFlag::AppendRotation),
         Appending(MakeBone("D", {37.5f, 0, 0}, pmx::kNoIndex), 0, -1.0f, BoneFlag::AppendRotation),
-        Appending(MakeBone("E", {50.0f, 0, 0}, pmx::kNoIndex), 0, 2.0f, BoneFlag::AppendTranslation),
+        Appending(
+            MakeBone("E", {50.0f, 0, 0}, pmx::kNoIndex), 0, 2.0f, BoneFlag::AppendTranslation),
     };
     const CanonicalDocument model = Canonical(doc);
     const Evaluator evaluator = Prepared(model);
@@ -235,11 +239,12 @@ TestAppends()
     // D: a negative ratio turns the other way.
     assert(SameRotation(joint(3).rotation, AboutZ(-90 * degree), 1e-9));
     // E: twice A's motion translation, on top of its rest; no rotation.
-    assert(Near(joint(4).translation,
-                {model.skeleton.bones[static_cast<std::size_t>(J(model, 4))].localTranslation[0] + 0.2,
-                 0.0,
-                 0.0},
-                1e-7));
+    assert(
+        Near(joint(4).translation,
+             {model.skeleton.bones[static_cast<std::size_t>(J(model, 4))].localTranslation[0] + 0.2,
+              0.0,
+              0.0},
+             1e-7));
     assert(joint(4).rotation == kIdentity);
     std::puts("ok  appends: ratio, negative ratio, chains, translation");
 }
@@ -253,10 +258,14 @@ TestPhysicsBoundaryAppends()
     pmx::Document doc;
     doc.bones = {
         MakeBone("source", {0, 0, 0}, pmx::kNoIndex),
-        Appending(MakeBone("pre", {12.5f, 0, 0}, 0), 0, 0.5f,
+        Appending(MakeBone("pre", {12.5f, 0, 0}, 0),
+                  0,
+                  0.5f,
                   BoneFlag::AppendRotation | BoneFlag::AppendTranslation),
         Appending(MakeBone("post", {25.0f, 0, 0}, 1, BoneFlag::DeformAfterPhysics),
-                  0, 0.5f, BoneFlag::AppendRotation | BoneFlag::AppendTranslation),
+                  0,
+                  0.5f,
+                  BoneFlag::AppendRotation | BoneFlag::AppendTranslation),
     };
     pmx::Morph vertex;
     vertex.name = "vertex";
@@ -276,8 +285,7 @@ TestPhysicsBoundaryAppends()
     // orders the post bone last, but does not suspend it across a world Step.
     for (const std::size_t source : {1u, 2u}) {
         assert(SameRotation(offline.joints[at(source)].rotation, AboutZ(30 * degree), 1e-7));
-        assert(Near(offline.joints[at(source)].translation,
-                    {1.125, 0.0, 0.0}, 1e-12));
+        assert(Near(offline.joints[at(source)].translation, {1.125, 0.0, 0.0}, 1e-12));
     }
 
     // Inject a local pose as though bone/body feedback changed the source.
@@ -306,7 +314,108 @@ TestPhysicsBoundaryAppends()
     held[at(2)] = true;
     assert(evaluator.Complete(feedback, held).joints == feedback.joints);
     assert(evaluator.Evaluate(motion, 0.0) == offline); // no hidden feedback history
+    const auto suspended = evaluator.BeginPhysics(motion, 0.0);
+    const Pose before = suspended.BeforePhysics();
+    assert(before.joints[at(1)] == offline.joints[at(1)]);
+    assert(before.joints[at(2)].rotation == kIdentity);
+    assert(Near(before.joints[at(2)].translation, {1.0, 0.0, 0.0}, 1e-12));
+    assert(evaluator.ResumePhysics(suspended).value() == offline);
+    const std::vector<Evaluator::PhysicsFeedback> edits{{J(model, 0), feedback.joints[at(0)]}};
+    const Pose resumed = evaluator.ResumePhysics(suspended, edits).value();
+    assert(resumed.joints[at(1)] == before.joints[at(1)]);
+    assert(SameRotation(resumed.joints[at(2)].rotation, AboutZ(60 * degree), 1e-7));
+    assert(Near(resumed.joints[at(2)].translation, {1.25, 0.0, 0.0}, 1e-12));
+    assert(resumed.channels == offline.channels);
+    assert(evaluator.ResumePhysics(suspended, edits).value() == resumed);
+    assert(suspended.BeforePhysics() == before);
+    assert(evaluator.ResumePhysics(evaluator.BeginPhysics(motion, 0.0), edits).value() == resumed);
+
+    // Feedback on an already appended joint replaces its total transform.
+    // A post follower reads it once; the pre append does not execute again.
+    const JointTransform edited{{1.75, 0.0, 0.0}, AboutX(0.6)};
+    const Pose editedPre = evaluator.ResumePhysics(suspended, {{J(model, 1), edited}}).value();
+    assert(Near(editedPre.joints[at(1)].translation, edited.translation, 1e-12));
+    assert(SameRotation(editedPre.joints[at(1)].rotation, edited.rotation, 1e-12));
+    assert(editedPre.joints[at(2)] == offline.joints[at(2)]);
     std::puts("ok  physics boundary: offline append order is not a pre/post continuation");
+}
+
+void
+TestContinuationValidationAndLifetime()
+{
+    const CanonicalDocument model = Canonical({});
+    Evaluator evaluator = Prepared(model);
+    const Evaluator other = Prepared(model);
+    const auto suspended = evaluator.BeginPhysics({}, 0.0);
+    assert(evaluator.ResumePhysics(suspended).value().joints.empty());
+    auto invalid = other.ResumePhysics(suspended);
+    assert(!invalid.ok() && invalid.fatal()->code == codes::MotionContinuationInvalid.id);
+    assert(!evaluator.ResumePhysics(Evaluator::Continuation{}).ok());
+    Evaluator moved = std::move(evaluator);
+    assert(moved.ResumePhysics(suspended).ok());
+    Evaluator copy = moved;
+    assert(copy.ResumePhysics(suspended).ok());
+
+    pmx::Document doc;
+    doc.bones = {MakeBone("root", {}, pmx::kNoIndex)};
+    const Evaluator one = Prepared(Canonical(doc));
+    const auto state = one.BeginPhysics({}, 0.0);
+    for (const auto& edits : std::vector<std::vector<Evaluator::PhysicsFeedback>>{
+             {{-1, {}}},
+             {{1, {}}},
+             {{0, {}}, {0, {}}},
+             {{0, {{}, {0, 0, 0, 0}}}},
+             {{0, {{}, {0, 0, 0, std::numeric_limits<double>::infinity()}}}},
+             {{0, {{std::numeric_limits<double>::quiet_NaN(), 0, 0}, kIdentity}}}}) {
+        const auto result = one.ResumePhysics(state, edits);
+        assert(!result.ok() && result.fatal()->code == codes::MotionPhysicsFeedbackInvalid.id);
+    }
+    assert(one.ResumePhysics(state).value() == one.Evaluate({}, 0.0));
+    // Source evaluator and motion may be destroyed; only a matching copy is needed.
+    auto detached = [&] {
+        Evaluator local = one;
+        binding::BoundMotion motion;
+        motion.bones.push_back(Hold(0, {0.5f, 0, 0}, AboutX(0.3)));
+        return local.BeginPhysics(motion, 0.0);
+    }();
+    assert(Near(one.ResumePhysics(detached).value().joints[0].translation, {0.5, 0, 0}, 1e-12));
+    std::puts("ok  continuation: validation, empty rig, evaluator copy/move and owned lifetime");
+}
+
+void
+TestContinuationFeedbackAppendChain()
+{
+    using pmx::BoneFlag;
+    pmx::Document doc;
+    doc.bones = {
+        MakeBone("source", {}, pmx::kNoIndex),
+        Appending(MakeBone("pre", {12.5f, 0, 0}, pmx::kNoIndex),
+                  0,
+                  0.5f,
+                  BoneFlag::AppendRotation | BoneFlag::AppendTranslation),
+        Appending(MakeBone("post", {25.0f, 0, 0}, pmx::kNoIndex, BoneFlag::DeformAfterPhysics),
+                  1,
+                  0.5f,
+                  BoneFlag::AppendRotation | BoneFlag::AppendTranslation),
+    };
+    const auto model = Canonical(doc);
+    const auto evaluator = Prepared(model);
+    binding::BoundMotion motion;
+    motion.bones.push_back(Hold(J(model, 0), {0.25f, 0, 0}, AboutZ(0.8)));
+    const auto suspended = evaluator.BeginPhysics(motion, 0.0);
+    const auto pre = static_cast<std::size_t>(J(model, 1));
+    const auto post = static_cast<std::size_t>(J(model, 2));
+    const JointTransform edit{{1.75, 0.0, 0.0}, AboutX(0.6)};
+    const auto resumed = evaluator.ResumePhysics(suspended, {{J(model, 1), edit}}).value();
+    assert(SameRotation(resumed.joints[pre].rotation, AboutX(0.6), 1e-12));
+    assert(SameRotation(resumed.joints[post].rotation, AboutX(0.3), 1e-12));
+    assert(Near(resumed.joints[post].translation, {2.375, 0, 0}, 1e-12));
+    // Feedback on a post joint is its base before its scheduled append.
+    const auto editedPost = evaluator.ResumePhysics(suspended, {{J(model, 2), edit}}).value();
+    assert(SameRotation(
+        editedPost.joints[post].rotation, test::Multiply(AboutX(0.6), AboutZ(0.2)), 1e-7));
+    assert(Near(editedPost.joints[post].translation, {1.8125, 0, 0}, 1e-12));
+    std::puts("ok  continuation: noncommuting feedback, retained append, post append chain");
 }
 
 // -- IK (§11.7) ---------------------------------------------------------------
@@ -335,8 +444,8 @@ TestIkSingleLink()
         const CanonicalDocument model = Canonical(OneLinkArm(static_cast<float>(kPi), 10));
         const Evaluator evaluator = Prepared(model);
         const Pose pose = evaluator.Evaluate({}, 0.0);
-        assert(SameRotation(pose.joints[static_cast<std::size_t>(J(model, 0))].rotation,
-                            AboutZ(kPi / 2), 1e-12));
+        assert(SameRotation(
+            pose.joints[static_cast<std::size_t>(J(model, 0))].rotation, AboutZ(kPi / 2), 1e-12));
         const auto world = evaluator.World(pose);
         assert(Near(world[static_cast<std::size_t>(J(model, 1))].translation, {0, 1, 0}, 1e-12));
     }
@@ -346,7 +455,8 @@ TestIkSingleLink()
         const Evaluator evaluator = Prepared(model);
         const Pose pose = evaluator.Evaluate({}, 0.0);
         assert(SameRotation(pose.joints[static_cast<std::size_t>(J(model, 0))].rotation,
-                            AboutZ(3.0 * static_cast<double>(0.2f)), 1e-9));
+                            AboutZ(3.0 * static_cast<double>(0.2f)),
+                            1e-9));
     }
     // A limited link, about X and Z: the Euler Z angle stops at 0.5 rad, and
     // the next iteration improves nothing, so the solve stops there.
@@ -357,7 +467,8 @@ TestIkSingleLink()
         const Evaluator evaluator = Prepared(model);
         const Pose pose = evaluator.Evaluate({}, 0.0);
         assert(SameRotation(pose.joints[static_cast<std::size_t>(J(model, 0))].rotation,
-                            AboutZ(static_cast<double>(0.5f)), 1e-9));
+                            AboutZ(static_cast<double>(0.5f)),
+                            1e-9));
     }
     // No iterations, no solve.
     {
@@ -481,7 +592,9 @@ TestDiagnostics()
     pmx::Document doc = OneLinkArm(1.0f, 1000);
     doc.bones.push_back(MakeBone("external", {0, 0, 0}, pmx::kNoIndex, BoneFlag::ExternalParent));
     doc.bones.back().externalParentKey = 7;
-    doc.bones.push_back(Appending(MakeBone("local", {0, 0, 0}, pmx::kNoIndex), 0, 1.0f,
+    doc.bones.push_back(Appending(MakeBone("local", {0, 0, 0}, pmx::kNoIndex),
+                                  0,
+                                  1.0f,
                                   BoneFlag::AppendRotation | BoneFlag::LocalAppend));
     const CanonicalDocument model = Canonical(doc);
     auto prepared = Evaluator::Prepare(model);
@@ -560,10 +673,34 @@ TestThroughBind()
     assert(completed.visible);
     assert(Near(completedWorld[ankle].translation, {0.0, 0.2, 0.05}, 1e-3));
     assert(evaluator.Evaluate(bound.value(), 10.0) == disabled);
+    for (const double frame : {0.0, 10.0}) {
+        const auto suspended = evaluator.BeginPhysics(bound.value(), frame);
+        assert(
+            Near(evaluator.World(suspended.BeforePhysics())[ankle].translation, {0, 0, 0}, 1e-12));
+        // Resuming does not inspect the motion again. Post IK is permitted
+        // to rotate the pre-physics thigh/knee links and the follower sees it.
+        binding::BoundMotion discarded = bound.value();
+        const auto independent = evaluator.BeginPhysics(discarded, frame);
+        discarded = {};
+        const Pose resumed = evaluator.ResumePhysics(independent).value();
+        assert(resumed == evaluator.Evaluate(bound.value(), frame));
+        assert(evaluator.ResumePhysics(suspended).value() == resumed);
+        const JointTransform goal{{0.0, 0.1, 0.1}, kIdentity};
+        const Pose feedback = evaluator.ResumePhysics(suspended, {{J(model, 4), goal}}).value();
+        const auto world = evaluator.World(feedback);
+        if (frame == 0.0) {
+            assert(Near(world[ankle].translation, goal.translation, 1e-3));
+            assert(SameRotation(feedback.joints[static_cast<std::size_t>(J(model, 5))].rotation,
+                                feedback.joints[static_cast<std::size_t>(J(model, 1))].rotation,
+                                1e-7));
+        } else {
+            assert(!feedback.visible);
+            assert(Near(world[ankle].translation, {0, 0, 0}, 1e-12));
+        }
+    }
     std::puts("ok  a VMD through Bind: IK on, then off");
     std::puts("ok  physics boundary: Complete does not retain VMD IK/visibility state");
 }
-
 
 // -- Evaluating from a given pose (§11.9) --------------------------------------
 
@@ -635,22 +772,26 @@ TestCompleteIk()
     {
         const CanonicalDocument model = Canonical(Leg());
         const Evaluator evaluator = Prepared(model);
-        const auto at = [&](std::size_t source) { return static_cast<std::size_t>(J(model, source)); };
+        const auto at = [&](std::size_t source) {
+            return static_cast<std::size_t>(J(model, source));
+        };
         Pose given = RestPose(model);
         given.joints[at(4)].translation = {0.0, 0.2, 0.05}; // the IK goal raised
         given.joints[at(5)].rotation = AboutX(-0.4);        // 足D, as a retarget left it
         std::vector<bool> held(model.skeleton.bones.size(), false);
         held[at(5)] = true;
         const Pose pose = evaluator.Complete(given, held);
-        assert(pose.joints[at(1)].rotation == kIdentity && pose.joints[at(2)].rotation == kIdentity);
+        assert(pose.joints[at(1)].rotation == kIdentity &&
+               pose.joints[at(2)].rotation == kIdentity);
         assert(pose.joints[at(5)] == given.joints[at(5)]);
         // Nothing held: the leg reaches the goal and 足D follows the thigh.
         const Pose free = evaluator.Complete(given, {});
         const auto world = evaluator.World(free);
         assert(Near(world[at(3)].translation, world[at(4)].translation, 1e-3));
-        assert(SameRotation(free.joints[at(5)].rotation,
-                            test::Multiply(given.joints[at(5)].rotation, free.joints[at(1)].rotation),
-                            1e-9));
+        assert(
+            SameRotation(free.joints[at(5)].rotation,
+                         test::Multiply(given.joints[at(5)].rotation, free.joints[at(1)].rotation),
+                         1e-9));
     }
     std::puts("ok  complete: IK clear of held joints, off over them and what feeds them");
 }
@@ -668,10 +809,11 @@ TestCompleteMatchesEvaluate()
         const Double3 offset{0.0, 0.01 * static_cast<double>(j), 0.0};
         given.joints[j].rotation = test::Normalized(test::ToQuat(test::ToFloat4(rotation)));
         given.joints[j].translation = {given.joints[j].translation[0] + offset[0],
-                                       given.joints[j].translation[1] + static_cast<double>(static_cast<float>(offset[1])),
+                                       given.joints[j].translation[1] +
+                                           static_cast<double>(static_cast<float>(offset[1])),
                                        given.joints[j].translation[2] + offset[2]};
-        motion.bones.push_back(Hold(static_cast<std::int32_t>(j),
-                                    {0.0f, static_cast<float>(offset[1]), 0.0f}, rotation));
+        motion.bones.push_back(Hold(
+            static_cast<std::int32_t>(j), {0.0f, static_cast<float>(offset[1]), 0.0f}, rotation));
     }
     const Pose a = evaluator.Complete(given, {});
     const Pose b = evaluator.Evaluate(motion, 0.0);
@@ -692,6 +834,8 @@ RunEvaluateTests()
     TestMorphs();
     TestAppends();
     TestPhysicsBoundaryAppends();
+    TestContinuationValidationAndLifetime();
+    TestContinuationFeedbackAppendChain();
     TestIkSingleLink();
     TestIkLeg();
     TestStatelessAndDeterministic();

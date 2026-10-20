@@ -793,13 +793,14 @@ is the given pose, with every chain enabled.
 
 ### 11.10 Intended physics continuation boundary
 
-This section defines requirements for a future split evaluation API, not an
-implemented entry point. `Evaluate` remains the atomic offline operation in
+`BeginPhysics` and `ResumePhysics` implement the split evaluation boundary.
+`Evaluate` remains the atomic offline operation in
 §11.5; `Complete` remains the independent retarget completion in §11.9.
-Neither exposes a suspension point across the shared physics barrier in
+Those atomic operations expose no suspension point across the shared physics
+barrier in
 [PHYSICS_INTEGRATION §6](PHYSICS_INTEGRATION.md#6-runtime-order).
 
-A runtime continuation must:
+A continuation follows these rules:
 
 - Sample keys, effective bone morphs, non-bone channels, visibility and IK
   enable states once for the requested time. Preserve those values across
@@ -828,7 +829,46 @@ The caller must retain an explicit per-evaluation continuation, or an equivalent
 owner-defined state, so repeating a timestamp and reset/replay cannot accumulate
 feedback implicitly. World stepping and reset remain outside `mmdControl`.
 The [boundary probe](../reports/2026-10-21-phase8-control-boundary.md) records
-the current owner behavior that motivates these requirements.
+the offline owner behavior that motivates these requirements.
+
+#### Entry points and feedback
+
+`BeginPhysics(motion, frame)` returns an owned, immutable, copyable
+`Evaluator::Continuation`. `BeforePhysics()` exposes its joint-local pose,
+with only pre-physics controls executed. Sampled bone/morph contributions,
+non-bone channels, IK enables and visibility remain owned by the snapshot;
+the motion and original evaluator need not stay alive. The snapshot carries
+the identity of its prepared evaluator: copies and moves retain that identity,
+while a separate `Prepare`, even of the same model, has a different identity.
+
+`ResumePhysics(continuation, feedback)` returns `Result<Pose>`. Feedback is a
+sparse list of `PhysicsFeedback {joint, local}` in canonical joint order's
+indices. Each transform is local to the parent, in canonical basis/metres,
+with rest translation included and a unit quaternion. The coupling owner
+must convert body/world/model poses to this space before calling it
+([PHYSICS §5.5](PHYSICS_INTEGRATION.md#55-offsets-and-pose-spaces)).
+
+An edit replaces the joint's total transform at the barrier. Let `t, q` be
+the edit and `appendT, appendR` its retained append contributions. Set
+`a = t - rest - appendT`, `rho = q * inverse(appendR)`, and `ik = identity`.
+Prior IK on an edited joint is thus absorbed into its new motion base;
+unedited joints retain all their contributions. Post-physics operations
+then execute in their original order, including any post append on an edited
+joint and any post IK using an earlier link. Feedback does not hold a joint
+against subsequent controls. Pre controls, including dependent appends,
+are never repeated to propagate a later change backwards across the barrier.
+The existing external-parent/local-append limitations are still diagnosed
+by `Prepare` (§11.8); partitioning does not silently reorder dependencies.
+
+An empty/default or foreign snapshot fails with fatal
+`MMD_MOTION_CONTINUATION_INVALID`. Out-of-range or duplicate feedback indices,
+non-finite translations/rotations, or quaternion squared norm differing from
+one by more than `1e-6` fail with fatal `MMD_MOTION_PHYSICS_FEEDBACK_INVALID`.
+Failure produces no pose and leaves the snapshot unchanged. Every resume
+uses a fresh working copy; repeated resumes and a fresh begin at the same
+timestamp cannot accumulate edits. Empty feedback reproduces `Evaluate`
+bit for bit. No world step, body association, placement/scale conversion or
+runtime callback is implemented by this API.
 
 ## 12. The humanoid role table
 

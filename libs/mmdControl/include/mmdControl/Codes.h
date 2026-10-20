@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// The diagnostic codes mmdControl raises -- what preparing a model for
-// evaluation detects. Same rules as mmdPmx/Codes.h: a code is never renamed,
+// The diagnostic codes mmdControl raises during preparation and continuation
+// validation. Same rules as mmdPmx/Codes.h: a code is never renamed,
 // reused, or given another severity, and scripts/check_docs.py fails when this
 // list and docs/reference/DIAGNOSTICS.md §5 disagree.
 #pragma once
@@ -16,5 +16,8 @@ inline constexpr Code MotionExternalParentIgnored{"MMD_MOTION_EXTERNAL_PARENT_IG
 inline constexpr Code MotionLocalAppendApproximated{"MMD_MOTION_LOCAL_APPEND_APPROXIMATED",
                                                     Severity::Info};
 inline constexpr Code MotionIkLoopClamped{"MMD_MOTION_IK_LOOP_CLAMPED", Severity::Warning};
+inline constexpr Code MotionContinuationInvalid{"MMD_MOTION_CONTINUATION_INVALID", Severity::Fatal};
+inline constexpr Code MotionPhysicsFeedbackInvalid{"MMD_MOTION_PHYSICS_FEEDBACK_INVALID",
+                                                   Severity::Fatal};
 
 } // namespace mmd::codes

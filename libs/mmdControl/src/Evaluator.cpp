@@ -132,9 +132,9 @@ struct Evaluator::State {
     detail::Transform Local(std::int32_t j) const
     {
         const auto i = static_cast<std::size_t>(j);
-        return {detail::Add(detail::Add((*joints)[i].rest, motionTranslation[i]),
-                            appendTranslation[i]),
-                detail::Multiply(detail::Multiply(ik[i], motionRotation[i]), appendRotation[i])};
+        return {
+            detail::Add(detail::Add((*joints)[i].rest, motionTranslation[i]), appendTranslation[i]),
+            detail::Multiply(detail::Multiply(ik[i], motionRotation[i]), appendRotation[i])};
     }
 
     detail::Transform World(std::int32_t j) const
@@ -146,6 +146,12 @@ struct Evaluator::State {
         }
         return world;
     }
+};
+
+struct Evaluator::Continuation::Data {
+    std::shared_ptr<const int> identity;
+    State state;
+    std::vector<bool> enabled;
 };
 
 Result<Evaluator>
@@ -250,13 +256,20 @@ Evaluator::Prepare(const CanonicalDocument& model)
     }
     const auto key = [&](std::int32_t j) {
         const auto i = static_cast<std::size_t>(j);
-        const bool afterPhysics = i < model.rig.bones.size() && model.rig.bones[i].deformAfterPhysics;
-        const std::int32_t layer = i < model.rig.bones.size() ? model.rig.bones[i].transformLayer : 0;
+        const bool afterPhysics =
+            i < model.rig.bones.size() && model.rig.bones[i].deformAfterPhysics;
+        const std::int32_t layer =
+            i < model.rig.bones.size() ? model.rig.bones[i].transformLayer : 0;
         return std::tuple(afterPhysics, layer, bones[i].sourceIndex, j);
     };
-    std::sort(evaluator._order.begin(), evaluator._order.end(), [&](std::int32_t a, std::int32_t b) {
-        return key(a) < key(b);
-    });
+    std::sort(evaluator._order.begin(),
+              evaluator._order.end(),
+              [&](std::int32_t a, std::int32_t b) { return key(a) < key(b); });
+    evaluator._physicsBoundary =
+        static_cast<std::size_t>(std::find_if(evaluator._order.begin(),
+                                              evaluator._order.end(),
+                                              [&](std::int32_t j) { return std::get<0>(key(j)); }) -
+                                 evaluator._order.begin());
 
     const auto morphCount = static_cast<std::int32_t>(model.morphs.size());
     evaluator._morphs.resize(model.morphs.size());
@@ -269,17 +282,20 @@ Evaluator::Prepare(const CanonicalDocument& model)
             evaluator._boneMorphs.push_back(static_cast<std::int32_t>(m));
             for (const MorphBoneOffset& offset : source.boneOffsets) {
                 if (valid(offset.joint)) {
-                    morph.boneOffsets.push_back(BoneOffset{
-                        offset.joint,
-                        ToVec3(offset.translation),
-                        {offset.rotation[0], offset.rotation[1], offset.rotation[2], offset.rotation[3]}});
+                    morph.boneOffsets.push_back(BoneOffset{offset.joint,
+                                                           ToVec3(offset.translation),
+                                                           {offset.rotation[0],
+                                                            offset.rotation[1],
+                                                            offset.rotation[2],
+                                                            offset.rotation[3]}});
                 }
             }
         } else if (source.type == MorphType::Group) {
             for (const MorphMember& member : source.members) {
                 if (member.morph >= 0 && member.morph < morphCount) {
                     morph.members.push_back(GroupMember{member.morph, member.weight});
-                    if (model.morphs[static_cast<std::size_t>(member.morph)].type == MorphType::Group) {
+                    if (model.morphs[static_cast<std::size_t>(member.morph)].type ==
+                        MorphType::Group) {
                         ++listedBy[static_cast<std::size_t>(member.morph)];
                     }
                 }
@@ -322,8 +338,18 @@ Evaluator::Evaluate(const binding::BoundMotion& motion, double frame) const
 void
 Evaluator::Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose) const
 {
-    const std::size_t count = _joints.size();
     State state;
+    std::vector<bool> enabled;
+    _Sample(motion, frame, state, pose, enabled);
+    _Pass(state, enabled, nullptr, 0, _order.size());
+    _WritePose(state, pose);
+}
+
+void
+Evaluator::_Sample(const binding::BoundMotion& motion, double frame, State& state, Pose& pose,
+                   std::vector<bool>& enabled) const
+{
+    const std::size_t count = _joints.size();
     state.joints = &_joints;
     state.motionTranslation.assign(count, Vec3{});
     state.motionRotation.assign(count, kIdentity);
@@ -372,13 +398,13 @@ Evaluator::Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose
             const auto j = static_cast<std::size_t>(offset.joint);
             state.motionTranslation[j] =
                 detail::Add(state.motionTranslation[j], detail::Scale(offset.translation, weight));
-            state.motionRotation[j] = detail::Multiply(detail::ScaleRotation(offset.rotation, weight),
-                                                       state.motionRotation[j]);
+            state.motionRotation[j] = detail::Multiply(
+                detail::ScaleRotation(offset.rotation, weight), state.motionRotation[j]);
         }
     }
 
     // IK enable states (§11.2).
-    std::vector<bool> enabled(_chains.size(), true);
+    enabled.assign(_chains.size(), true);
     for (const binding::IkTrack& track : motion.ik) {
         if (track.joint < 0 || static_cast<std::size_t>(track.joint) >= count) {
             continue;
@@ -389,14 +415,78 @@ Evaluator::Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose
         }
     }
 
-    _Pass(state, enabled, nullptr);
+    pose.visible = SampleVisibility(motion.visibility, frame);
+}
 
-    pose.joints.resize(count);
-    for (std::size_t j = 0; j < count; ++j) {
+void
+Evaluator::_WritePose(const State& state, Pose& pose) const
+{
+    pose.joints.resize(_joints.size());
+    for (std::size_t j = 0; j < _joints.size(); ++j) {
         const detail::Transform local = state.Local(static_cast<std::int32_t>(j));
         pose.joints[j] = JointTransform{local.translation, local.rotation};
     }
-    pose.visible = SampleVisibility(motion.visibility, frame);
+}
+
+Evaluator::Continuation
+Evaluator::BeginPhysics(const binding::BoundMotion& motion, double frame) const
+{
+    Continuation continuation;
+    auto data = std::make_shared<Continuation::Data>();
+    data->identity = _identity;
+    _Sample(motion, frame, data->state, continuation._pose, data->enabled);
+    _Pass(data->state, data->enabled, nullptr, 0, _physicsBoundary);
+    _WritePose(data->state, continuation._pose);
+    // No borrowed pointer survives the call. Resume rebinds its working copy.
+    data->state.joints = nullptr;
+    continuation._data = std::move(data);
+    return continuation;
+}
+
+Result<Pose>
+Evaluator::ResumePhysics(const Continuation& continuation,
+                         const std::vector<PhysicsFeedback>& feedback) const
+{
+    if (!continuation._data || continuation._data->identity != _identity) {
+        return Result<Pose>::Failure(
+            MakeDiagnostic(codes::MotionContinuationInvalid,
+                           "continuation is empty or belongs to another evaluator"));
+    }
+    std::vector<bool> changed(_joints.size(), false);
+    for (const PhysicsFeedback& edit : feedback) {
+        const auto j = static_cast<std::size_t>(edit.joint);
+        double norm = 0.0;
+        for (const double v : edit.local.rotation) {
+            norm += v * v;
+        }
+        if (j >= _joints.size() || changed[j] || !std::isfinite(norm) ||
+            std::abs(norm - 1.0) > 1e-6 ||
+            !std::all_of(edit.local.translation.begin(),
+                         edit.local.translation.end(),
+                         [](double v) { return std::isfinite(v); })) {
+            return Result<Pose>::Failure(MakeDiagnostic(
+                codes::MotionPhysicsFeedbackInvalid,
+                "feedback must name each joint at most once with a finite rigid local transform"));
+        }
+        changed[j] = true;
+    }
+
+    State state = continuation._data->state;
+    state.joints = &_joints;
+    for (const PhysicsFeedback& edit : feedback) {
+        const auto j = static_cast<std::size_t>(edit.joint);
+        // The edited total replaces motion + prior IK, retaining the append
+        // separately so it is neither doubled nor lost when a post control runs.
+        state.motionTranslation[j] = detail::Sub(
+            detail::Sub(edit.local.translation, _joints[j].rest), state.appendTranslation[j]);
+        state.motionRotation[j] =
+            detail::Multiply(edit.local.rotation, detail::Conjugate(state.appendRotation[j]));
+        state.ik[j] = kIdentity;
+    }
+    _Pass(state, continuation._data->enabled, nullptr, _physicsBoundary, _order.size());
+    Pose pose = continuation._pose;
+    _WritePose(state, pose);
+    return Result<Pose>::Success(std::move(pose));
 }
 
 Pose
@@ -451,7 +541,7 @@ Evaluator::Complete(const Pose& given, const std::vector<bool>& held, Pose& pose
         }
     }
 
-    _Pass(state, enabled, &held);
+    _Pass(state, enabled, &held, 0, _order.size());
 
     pose.joints.resize(count);
     for (std::size_t j = 0; j < count; ++j) {
@@ -467,22 +557,26 @@ Evaluator::Complete(const Pose& given, const std::vector<bool>& held, Pose& pose
 }
 
 void
-Evaluator::_Pass(State& state, const std::vector<bool>& enabled, const std::vector<bool>* held) const
+Evaluator::_Pass(State& state, const std::vector<bool>& enabled, const std::vector<bool>* held,
+                 std::size_t begin, std::size_t end) const
 {
     // The pass (§11.5): appends (§11.6), then IK (§11.7), in MMD's order.
-    for (const std::int32_t j : _order) {
+    for (std::size_t position = begin; position < end; ++position) {
+        const std::int32_t j = _order[position];
         const auto i = static_cast<std::size_t>(j);
         const Joint& joint = _joints[i];
         if (joint.appendSource != kNone && !(held && i < held->size() && (*held)[i])) {
             const auto s = static_cast<std::size_t>(joint.appendSource);
             if (joint.appendRotation) {
-                const Quat whole = detail::Multiply(
-                    detail::Multiply(state.ik[s], state.motionRotation[s]), state.appendRotation[s]);
+                const Quat whole =
+                    detail::Multiply(detail::Multiply(state.ik[s], state.motionRotation[s]),
+                                     state.appendRotation[s]);
                 state.appendRotation[i] = detail::ScaleRotation(whole, joint.appendRatio);
             }
             if (joint.appendTranslation) {
                 state.appendTranslation[i] = detail::Scale(
-                    detail::Add(state.motionTranslation[s], state.appendTranslation[s]), joint.appendRatio);
+                    detail::Add(state.motionTranslation[s], state.appendTranslation[s]),
+                    joint.appendRatio);
             }
         }
         if (joint.chain != kNone && enabled[static_cast<std::size_t>(joint.chain)]) {
@@ -532,8 +626,8 @@ Evaluator::_Solve(const Chain& chain, State& state) const
                 const Vec3 axis = UnitAxis(link.planeAxis);
                 const double forward =
                     detail::Dot(detail::Rotate(detail::AxisAngle(axis, angle), toEffector), toGoal);
-                const double backward =
-                    detail::Dot(detail::Rotate(detail::AxisAngle(axis, -angle), toEffector), toGoal);
+                const double backward = detail::Dot(
+                    detail::Rotate(detail::AxisAngle(axis, -angle), toEffector), toGoal);
                 double theta = planeAngle[k] + (forward > backward ? angle : -angle);
                 const double lower = link.lower[a];
                 const double upper = link.upper[a];
@@ -555,15 +649,16 @@ Evaluator::_Solve(const Chain& chain, State& state) const
             if (!(crossLength >= kMinLength)) {
                 continue;
             }
-            Quat rotation = detail::Multiply(
-                detail::Multiply(state.ik[i], state.motionRotation[i]),
-                detail::AxisAngle(detail::Scale(cross, 1.0 / crossLength), angle));
+            Quat rotation =
+                detail::Multiply(detail::Multiply(state.ik[i], state.motionRotation[i]),
+                                 detail::AxisAngle(detail::Scale(cross, 1.0 / crossLength), angle));
             if (link.hasLimits) {
                 Vec3 euler = ToEuler(detail::Normalize(rotation), previousEuler[k]);
                 for (std::size_t axis = 0; axis < 3; ++axis) {
                     const double limited = Clamp(euler[axis], link.lower[axis], link.upper[axis]);
-                    euler[axis] = previousEuler[k][axis] +
-                                  Clamp(limited - previousEuler[k][axis], -chain.limitAngle, chain.limitAngle);
+                    euler[axis] = previousEuler[k][axis] + Clamp(limited - previousEuler[k][axis],
+                                                                 -chain.limitAngle,
+                                                                 chain.limitAngle);
                 }
                 previousEuler[k] = euler;
                 rotation = FromEuler(euler);
@@ -595,11 +690,10 @@ Evaluator::World(const Pose& pose) const
         const detail::Transform local{pose.joints[j].translation, pose.joints[j].rotation};
         const std::int32_t parent = _joints[j].parent;
         const detail::Transform composed =
-            parent == kNone
-                ? local
-                : detail::Compose({world[static_cast<std::size_t>(parent)].translation,
-                                   world[static_cast<std::size_t>(parent)].rotation},
-                                  local);
+            parent == kNone ? local
+                            : detail::Compose({world[static_cast<std::size_t>(parent)].translation,
+                                               world[static_cast<std::size_t>(parent)].rotation},
+                                              local);
         world[j] = JointTransform{composed.translation, composed.rotation};
     }
     return world;

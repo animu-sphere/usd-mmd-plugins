@@ -45,7 +45,11 @@ public:
     bool OneIn(std::size_t n) { return Below(n) == 0; }
 
     /// [-1, 1), in steps of 2^-20.
-    float Unit() { return static_cast<float>(static_cast<std::int64_t>(Below(1u << 21)) - (1 << 20)) / (1 << 20); }
+    float Unit()
+    {
+        return static_cast<float>(static_cast<std::int64_t>(Below(1u << 21)) - (1 << 20)) /
+               (1 << 20);
+    }
 
 private:
     std::uint64_t _state;
@@ -104,8 +108,8 @@ Generate(Random& r, bool tame)
         }
         if (b.flags & BoneFlag::Ik) {
             b.ik.target = Index(r, bones);
-            b.ik.loopCount = tame ? static_cast<std::int32_t>(r.Below(60))
-                                  : static_cast<std::int32_t>(r.Next());
+            b.ik.loopCount =
+                tame ? static_cast<std::int32_t>(r.Below(60)) : static_cast<std::int32_t>(r.Next());
             b.ik.limitAngle = tame ? std::abs(r.Unit()) * 3.0f : Float(r, false);
             const std::size_t links = r.Below(5);
             for (std::size_t k = 0; k < links; ++k) {
@@ -142,16 +146,17 @@ Generate(Random& r, bool tame)
             m.type = pmx::MorphType::Bone;
             for (std::size_t k = r.Below(4); k > 0; --k) {
                 const pmx::Vec3 v = Vec3(r, tame);
-                m.boneOffsets.push_back(pmx::BoneOffset{
-                    static_cast<std::int32_t>(r.Below(bones)), Vec3(r, tame), {v[0], v[1], v[2], Float(r, tame)}});
+                m.boneOffsets.push_back(pmx::BoneOffset{static_cast<std::int32_t>(r.Below(bones)),
+                                                        Vec3(r, tame),
+                                                        {v[0], v[1], v[2], Float(r, tame)}});
             }
             break;
         case 1:
         case 2:
             m.type = pmx::MorphType::Group;
             for (std::size_t k = r.Below(4); k > 0; --k) {
-                m.groupOffsets.push_back(pmx::GroupOffset{static_cast<std::int32_t>(r.Below(morphs)),
-                                                          tame ? r.Unit() : Float(r, false)});
+                m.groupOffsets.push_back(pmx::GroupOffset{
+                    static_cast<std::int32_t>(r.Below(morphs)), tame ? r.Unit() : Float(r, false)});
             }
             break;
         default:
@@ -183,8 +188,10 @@ Motion(Random& r, const CanonicalDocument& model, bool tame)
             key.translation = {t[0], t[1], t[2]};
             key.rotation = {Float(r, tame), Float(r, tame), Float(r, tame), Float(r, tame)};
             for (motionVmd::Bezier& curve : key.curves) {
-                curve = {static_cast<std::uint8_t>(r.Below(128)), static_cast<std::uint8_t>(r.Below(128)),
-                         static_cast<std::uint8_t>(r.Below(128)), static_cast<std::uint8_t>(r.Below(128))};
+                curve = {static_cast<std::uint8_t>(r.Below(128)),
+                         static_cast<std::uint8_t>(r.Below(128)),
+                         static_cast<std::uint8_t>(r.Below(128)),
+                         static_cast<std::uint8_t>(r.Below(128))};
             }
             track.keys.push_back(key);
         }
@@ -192,14 +199,15 @@ Motion(Random& r, const CanonicalDocument& model, bool tame)
     }
     for (std::size_t m = 0; m < model.morphs.size(); ++m) {
         if (r.OneIn(2)) {
-            motion.morphs.push_back(binding::MorphTrack{
-                static_cast<std::int32_t>(m), {{0, tame ? r.Unit() : Float(r, false)}, {10, r.Unit()}}});
+            motion.morphs.push_back(
+                binding::MorphTrack{static_cast<std::int32_t>(m),
+                                    {{0, tame ? r.Unit() : Float(r, false)}, {10, r.Unit()}}});
         }
     }
     for (std::size_t j = 0; j < joints; ++j) {
         if (r.OneIn(4)) {
-            motion.ik.push_back(binding::IkTrack{static_cast<std::int32_t>(j),
-                                                 {{0, r.OneIn(2)}, {7, r.OneIn(2)}}});
+            motion.ik.push_back(
+                binding::IkTrack{static_cast<std::int32_t>(j), {{0, r.OneIn(2)}, {7, r.OneIn(2)}}});
         }
     }
     return motion;
@@ -298,6 +306,16 @@ main()
         for (const double frame : {0.0, 3.5, 11.0, -2.0, 1e9}) {
             const Pose first = evaluator.Evaluate(motion, frame);
             const Pose second = evaluator.Evaluate(motion, frame);
+            const auto suspended = evaluator.BeginPhysics(motion, frame);
+            const auto resumed = evaluator.ResumePhysics(suspended);
+            const auto replayed = evaluator.ResumePhysics(suspended);
+            assert(resumed.ok() && replayed.ok());
+            if (!Identical(first, resumed.value()) ||
+                !Identical(resumed.value(), replayed.value())) {
+                std::printf(
+                    "FAIL case %d frame %g: split evaluation or replay differs\n", i, frame);
+                ++failures;
+            }
             ++evaluated;
             if (!Identical(first, second)) {
                 std::printf("FAIL case %d frame %g: two evaluations differ\n", i, frame);

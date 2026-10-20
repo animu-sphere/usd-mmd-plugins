@@ -43,6 +43,12 @@ main(int argc, char** argv)
     mmd::control::Pose pose;
     for (std::uint32_t frame = 0; frame <= last; ++frame) {
         evaluator.Evaluate(bound, frame, pose);
+        const auto suspended = evaluator.BeginPhysics(bound, frame);
+        const auto resumed = evaluator.ResumePhysics(suspended);
+        if (!resumed.ok() || resumed.value() != pose) {
+            std::fprintf(stderr, "split evaluation differs from offline evaluation\n");
+            return 2;
+        }
         for (const auto& world : evaluator.World(pose)) {
             for (const double v : world.translation) {
                 finite = finite && std::isfinite(v);

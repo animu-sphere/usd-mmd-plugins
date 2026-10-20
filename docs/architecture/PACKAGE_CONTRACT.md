@@ -110,7 +110,11 @@ a motion or avatar runtime, which schedules it, so its manifest marks it
 builds a consumer that includes `mmdControl/Evaluator.h` and names
 `mmd::control::Evaluator::Prepare` against a prefix holding its closure of
 five packages alone. The installed-consumer lane's `control_probe` finds
-`mmdControl` only, binds a VMD fixture to a PMX fixture and evaluates it.
+`mmdControl` only, binds a VMD fixture to a PMX fixture and evaluates it,
+comparing the offline result with `BeginPhysics` / `ResumePhysics` with no
+feedback. `Evaluator.h` also exposes the owned `Evaluator::Continuation` and
+sparse joint-local `Evaluator::PhysicsFeedback`; their lifecycle and validation
+are defined in [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary).
 
 ## `mmdSkeletonAdapter`
 
