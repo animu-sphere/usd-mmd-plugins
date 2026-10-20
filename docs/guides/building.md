@@ -176,6 +176,9 @@ this driver on Windows. It reads runtime/ost pins from
 [openstrata.ci.yaml](../../openstrata.ci.yaml), builds pinned test-only shared
 physics and deterministic Jolt sources into separate prefixes, and uploads
 configuration, fidelity diagnostics and replay results even on failure.
+Shared-package and consumer configurations explicitly use the selected host
+Python's development files, overriding build-machine paths retained by the
+relocated OpenUSD SDK; see the [hosted Python correction](../reports/2026-10-20-phase8-physics-ci-python.md).
 The source checkout is used only to build/install shared packages, never added
 to MMD's CMake graph. It establishes no published physics dependency.
 

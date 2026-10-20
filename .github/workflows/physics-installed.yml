@@ -57,6 +57,10 @@ jobs:
           pathlib.Path('build/physics-ci-inputs.json').write_text(json.dumps(values, indent=2))
           '@ | python -
           if ($LASTEXITCODE) { throw 'Could not read the CI contract' }
+      - name: Regress foreign Python SDK hints
+        run: |
+          python -m unittest discover -s scripts -p test_run_physics_ci.py -v
+          if ($LASTEXITCODE) { throw 'Python SDK override regression failed' }
       - name: Bootstrap the checksum-verified ost release
         run: |
           $ErrorActionPreference = 'Stop'
@@ -118,13 +122,15 @@ jobs:
           }
           $jolt = "$env:GITHUB_WORKSPACE/build/physics-jolt-prefix"
           $physics = "$env:GITHUB_WORKSPACE/build/physics-shared-prefix"
+          $pythonArgs = @(python -c "import json,sys; sys.path.insert(0,'scripts'); from run_physics_ci import python_cmake_args; print(json.dumps(python_cmake_args()))" | ConvertFrom-Json)
+          if ($LASTEXITCODE) { throw 'Could not locate the host Python development SDK' }
           git rev-parse HEAD | Set-Content build/physics-mmd-commit.txt
           git -C build/physics-source rev-parse HEAD | Set-Content build/physics-shared-commit.txt
           git -C build/jolt-source rev-parse HEAD | Set-Content build/physics-jolt-commit.txt
           Invoke-Checked { cmake -S build/jolt-source/Build -B build/physics-jolt-build -A x64 "-DCMAKE_INSTALL_PREFIX=$jolt" -DCMAKE_BUILD_TYPE=Release -DINTERPROCEDURAL_OPTIMIZATION=OFF -DDOUBLE_PRECISION=OFF -DCROSS_PLATFORM_DETERMINISTIC=ON -DENABLE_ALL_WARNINGS=OFF -DGENERATE_DEBUG_SYMBOLS=OFF -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_STATIC_MSVC_RUNTIME_LIBRARY=OFF -DTARGET_UNIT_TESTS=OFF -DTARGET_HELLO_WORLD=OFF -DTARGET_PERFORMANCE_TEST=OFF -DTARGET_SAMPLES=OFF -DTARGET_VIEWER=OFF }
           Invoke-Checked { cmake --build build/physics-jolt-build --config Release --target Jolt --parallel 2 }
           Invoke-Checked { cmake --install build/physics-jolt-build --config Release }
-          Invoke-Checked { cmake -S build/physics-source -B build/physics-shared-build -A x64 "-DCMAKE_PREFIX_PATH=$env:USD_ROOT" "-DJolt_DIR=$jolt/lib/cmake/Jolt" -DUSDPHYSICS_BUILD_USD=ON -DUSDPHYSICS_BUILD_TESTS=OFF -DPHYSICSJOLT_REQUIRE_JOLT=ON -DPHYSICSJOLT_ENABLE_SIX_DOF=ON }
+          Invoke-Checked { cmake -S build/physics-source -B build/physics-shared-build -A x64 "-DCMAKE_PREFIX_PATH=$env:USD_ROOT" "-DJolt_DIR=$jolt/lib/cmake/Jolt" @pythonArgs -DUSDPHYSICS_BUILD_USD=ON -DUSDPHYSICS_BUILD_TESTS=OFF -DPHYSICSJOLT_REQUIRE_JOLT=ON -DPHYSICSJOLT_ENABLE_SIX_DOF=ON }
           Invoke-Checked { cmake --build build/physics-shared-build --config Release --parallel 2 }
           Invoke-Checked { cmake --install build/physics-shared-build --config Release --prefix $physics }
       - name: Test reader, execution and experimental springs through installed packages

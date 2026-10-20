@@ -10,11 +10,28 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import sysconfig
 
 REPO = Path(__file__).resolve().parents[1]
 CASES = (("reader", "OFF", "OFF"),
          ("execution", "ON", "OFF"),
          ("springs", "ON", "ON"))
+
+
+def python_cmake_args() -> list[str]:
+    """Override SDK build-machine Python hints with this host's development SDK."""
+    include = Path(sysconfig.get_path("include"))
+    if not (include / "Python.h").is_file():
+        raise FileNotFoundError(f"Host Python development headers missing: {include}")
+    options = [f"-DPython3_EXECUTABLE={Path(sys.executable).as_posix()}",
+               f"-DPython3_INCLUDE_DIR={include.as_posix()}"]
+    if os.name == "nt":
+        name = Path(sysconfig.get_config_var("LIBRARY")).with_suffix(".lib")
+        library = Path(sys.base_prefix) / "libs" / name
+        if not library.is_file():
+            raise FileNotFoundError(f"Host Python import library missing: {library}")
+        options.append(f"-DPython3_LIBRARY={library.as_posix()}")
+    return options
 
 
 def main() -> int:
@@ -54,11 +71,13 @@ def main() -> int:
               end="", flush=True)
         result.check_returncode()
 
+    python_options = python_cmake_args()
     provenance = {
         "configuration": "Release", "fullCorpus": False,
         "mmdBuild": str(mmd_build), "physicsPrefix": str(physics),
         "usdRoot": str(usd), "joltRoot": str(jolt),
         "cases": [case[0] for case in CASES],
+        "pythonCmakeArgs": python_options,
     }
     (root / "configuration.json").write_text(json.dumps(provenance, indent=2) + "\n",
                                              encoding="utf-8")
@@ -76,7 +95,7 @@ def main() -> int:
         build = root / name
         options = [
             f"-DCMAKE_PREFIX_PATH={physics.as_posix()};{usd.as_posix()}",
-            f"-DPython3_EXECUTABLE={Path(sys.executable).as_posix()}",
+            *python_options,
             f"-DMMD_PHYSICS_MMD_PREFIX={mmd.as_posix()}",
             "-DBUILD_TESTING=ON", "-DMMD_PHYSICS_FULL_CORPUS=OFF",
             "-DCMAKE_BUILD_TYPE=Release",
