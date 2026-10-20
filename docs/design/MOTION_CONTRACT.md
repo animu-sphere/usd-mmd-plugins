@@ -791,6 +791,45 @@ takes the set of **held** joints. It returns a pose of the same shape:
 With no joint held, `Complete` is `Evaluate` of a motion whose every bone key
 is the given pose, with every chain enabled.
 
+### 11.10 Intended physics continuation boundary
+
+This section defines requirements for a future split evaluation API, not an
+implemented entry point. `Evaluate` remains the atomic offline operation in
+§11.5; `Complete` remains the independent retarget completion in §11.9.
+Neither exposes a suspension point across the shared physics barrier in
+[PHYSICS_INTEGRATION §6](PHYSICS_INTEGRATION.md#6-runtime-order).
+
+A runtime continuation must:
+
+- Sample keys, effective bone morphs, non-bone channels, visibility and IK
+  enable states once for the requested time. Preserve those values across
+  the barrier rather than re-sampling or replacing them with defaults.
+- Execute the `deformAfterPhysics == false` portion of §11.5 before
+  bone-to-body synchronization, then suspend the same evaluation state.
+- Accept bone/body feedback in the pose spaces defined by
+  [PHYSICS_INTEGRATION §5.5](PHYSICS_INTEGRATION.md#55-offsets-and-pose-spaces).
+  Reconcile changed local transforms with the retained motion, append and IK
+  contributions; an already appended output is not a fresh motion input.
+- Execute the `deformAfterPhysics == true` portion after feedback, preserving
+  the within-partition order. Do not run pre-physics controls again. An enabled
+  post-physics IK chain may still rotate an earlier joint used as its link:
+  the partition selects control operations, not immutable output joints.
+- Preserve the sampled non-bone channels and visibility in the final pose,
+  and honor the sampled IK enables in both partitions. Diagnose unsupported
+  model dependencies rather than silently moving operations across the barrier.
+
+Calling `Complete(Evaluate(...), held)` does not satisfy this contract:
+unheld appends consume prior append results as motion and apply again; held
+appends cannot consume changed physics input; all eligible IK chains become
+enabled; channels and visibility use §11.9's defaults. A joint held to suppress
+duplicate work may also suppress a post-physics IK chain that needs it.
+
+The caller must retain an explicit per-evaluation continuation, or an equivalent
+owner-defined state, so repeating a timestamp and reset/replay cannot accumulate
+feedback implicitly. World stepping and reset remain outside `mmdControl`.
+The [boundary probe](../reports/2026-10-21-phase8-control-boundary.md) records
+the current owner behavior that motivates these requirements.
+
 ## 12. The humanoid role table
 
 Binding, with §10: `mmdSkeletonAdapter` implements it, and

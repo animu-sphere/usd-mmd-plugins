@@ -244,6 +244,71 @@ TestAppends()
     std::puts("ok  appends: ratio, negative ratio, chains, translation");
 }
 
+// -- Physics boundary requirements (PHYSICS_INTEGRATION.md §6) -----------------
+
+void
+TestPhysicsBoundaryAppends()
+{
+    using pmx::BoneFlag;
+    pmx::Document doc;
+    doc.bones = {
+        MakeBone("source", {0, 0, 0}, pmx::kNoIndex),
+        Appending(MakeBone("pre", {12.5f, 0, 0}, 0), 0, 0.5f,
+                  BoneFlag::AppendRotation | BoneFlag::AppendTranslation),
+        Appending(MakeBone("post", {25.0f, 0, 0}, 1, BoneFlag::DeformAfterPhysics),
+                  0, 0.5f, BoneFlag::AppendRotation | BoneFlag::AppendTranslation),
+    };
+    pmx::Morph vertex;
+    vertex.name = "vertex";
+    vertex.type = pmx::MorphType::Vertex;
+    doc.morphs.push_back(vertex);
+    const CanonicalDocument model = Canonical(doc);
+    const Evaluator evaluator = Prepared(model);
+    const auto at = [&](std::size_t source) { return static_cast<std::size_t>(J(model, source)); };
+    const double degree = kPi / 180.0;
+    binding::BoundMotion motion;
+    motion.bones.push_back(Hold(J(model, 0), {0.25f, 0, 0}, AboutZ(60 * degree)));
+    motion.morphs.push_back(binding::MorphTrack{0, {{0, 0.25f}}});
+    const Pose offline = evaluator.Evaluate(motion, 0.0);
+    assert((offline.channels == std::vector<MorphChannel>{{0, 0.25}}));
+
+    // Offline evaluation executes BOTH controls before returning. The flag
+    // orders the post bone last, but does not suspend it across a world Step.
+    for (const std::size_t source : {1u, 2u}) {
+        assert(SameRotation(offline.joints[at(source)].rotation, AboutZ(30 * degree), 1e-7));
+        assert(Near(offline.joints[at(source)].translation,
+                    {1.125, 0.0, 0.0}, 1e-12));
+    }
+
+    // Inject a local pose as though bone/body feedback changed the source.
+    // This is a dependency probe, not a physics solver or coupling adapter.
+    Pose feedback = offline;
+    feedback.joints[at(0)] = JointTransform{{0.5, 0.0, 0.0}, AboutZ(120 * degree)};
+    assert(feedback.joints[at(2)] == offline.joints[at(2)]); // stale post append
+
+    // Complete treats the already appended pose as NEW motion. It adds the
+    // source's new 60 degrees / 0.25 m to the old 30 degrees / 0.125 m,
+    // and re-runs the pre control too. It cannot serve as a continuation.
+    const Pose completed = evaluator.Complete(feedback, {});
+    assert(completed.channels.empty());
+    for (const std::size_t source : {1u, 2u}) {
+        assert(SameRotation(completed.joints[at(source)].rotation, AboutZ(90 * degree), 1e-7));
+        assert(Near(completed.joints[at(source)].translation, {1.375, 0.0, 0.0}, 1e-12));
+    }
+    // A continuation would leave pre at 30 degrees / 1.125 m and compute
+    // post once from the new source: 60 degrees / 1.25 m, in joint-local space.
+    assert(!SameRotation(completed.joints[at(2)].rotation, AboutZ(60 * degree), 1e-3));
+    std::vector<bool> held(model.skeleton.bones.size(), false);
+    held[at(0)] = held[at(1)] = true;
+    const Pose heldPre = evaluator.Complete(feedback, held);
+    assert(heldPre.joints[at(1)] == offline.joints[at(1)]);
+    assert(SameRotation(heldPre.joints[at(2)].rotation, AboutZ(90 * degree), 1e-7));
+    held[at(2)] = true;
+    assert(evaluator.Complete(feedback, held).joints == feedback.joints);
+    assert(evaluator.Evaluate(motion, 0.0) == offline); // no hidden feedback history
+    std::puts("ok  physics boundary: offline append order is not a pre/post continuation");
+}
+
 // -- IK (§11.7) ---------------------------------------------------------------
 
 /// A one-link arm from the origin to (1, 0, 0) m, and an IK bone at
@@ -453,7 +518,10 @@ VmdName(const std::string& utf8, std::size_t width)
 void
 TestThroughBind()
 {
-    const CanonicalDocument model = Canonical(Leg());
+    pmx::Document source = Leg();
+    source.bones[4].flags |= pmx::BoneFlag::DeformAfterPhysics;
+    source.bones[5].flags |= pmx::BoneFlag::DeformAfterPhysics;
+    const CanonicalDocument model = Canonical(source);
     const Evaluator evaluator = Prepared(model);
 
     // The same goal as TestIkLeg, in the source basis: (0, 0.2, 0.05) m is
@@ -467,7 +535,7 @@ TestThroughBind()
     for (const auto& [frame, enabled] : {std::pair{0u, 1}, std::pair{10u, 0}}) {
         vmd::IkKeyframe ik;
         ik.frame = frame;
-        ik.visible = 1;
+        ik.visible = static_cast<std::uint8_t>(enabled);
         ik.ik.push_back(vmd::IkState{VmdName("左足ＩＫ", 20), static_cast<std::uint8_t>(enabled)});
         doc.ikKeyframes.push_back(ik);
     }
@@ -482,7 +550,18 @@ TestThroughBind()
     assert(Near(on[ankle].translation, {0.0, 0.2, 0.05}, 1e-3));
     const auto off = evaluator.World(evaluator.Evaluate(bound.value(), 10.0));
     assert(Near(off[ankle].translation, {0, 0, 0}, 1e-12));
+
+    // A second Complete call cannot continue the VMD state after physics:
+    // it enables the chain again and replaces visibility with its own default.
+    const Pose disabled = evaluator.Evaluate(bound.value(), 10.0);
+    assert(!disabled.visible);
+    const Pose completed = evaluator.Complete(disabled, {});
+    const auto completedWorld = evaluator.World(completed);
+    assert(completed.visible);
+    assert(Near(completedWorld[ankle].translation, {0.0, 0.2, 0.05}, 1e-3));
+    assert(evaluator.Evaluate(bound.value(), 10.0) == disabled);
     std::puts("ok  a VMD through Bind: IK on, then off");
+    std::puts("ok  physics boundary: Complete does not retain VMD IK/visibility state");
 }
 
 
@@ -612,6 +691,7 @@ RunEvaluateTests()
     TestOrder();
     TestMorphs();
     TestAppends();
+    TestPhysicsBoundaryAppends();
     TestIkSingleLink();
     TestIkLeg();
     TestStatelessAndDeterministic();

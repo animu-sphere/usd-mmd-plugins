@@ -225,7 +225,10 @@ integration must respect those requirements and diagnose unsupported ordering;
 the diagram does not permit moving every control/morph operation before physics
 by default. The current offline, no-simulation evaluation order is defined in
 [MOTION_CONTRACT §11.5](MOTION_CONTRACT.md#115-evaluation-order), and does not
-by itself establish a split runtime evaluation API.
+by itself establish a split runtime evaluation API. The intended owner-side
+continuation requirements are defined in
+[MOTION_CONTRACT §11.10](MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary);
+retarget completion cannot substitute for that continuation.
 
 ## 7. Collision filtering and joints
 
