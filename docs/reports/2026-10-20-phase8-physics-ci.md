@@ -1,5 +1,7 @@
 # Phase 8 installed physics CI wiring (2026-10-20)
 
+Follow-up: [hosted Windows verification](2026-10-20-phase8-physics-hosted.md).
+
 ## Scope
 
 P0-2 CI wiring at MMD baseline `a34b3b5`, plus this working-tree change.

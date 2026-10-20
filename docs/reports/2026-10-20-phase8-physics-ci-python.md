@@ -1,5 +1,7 @@
 # Phase 8 hosted Python SDK overrides (2026-10-20)
 
+Follow-up: [hosted Windows verification](2026-10-20-phase8-physics-hosted.md).
+
 ## Failure and correction
 
 The [first hosted run](https://github.com/animu-sphere/usd-mmd-plugins/actions/runs/39278795693)
