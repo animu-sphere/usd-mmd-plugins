@@ -57,6 +57,13 @@ add_test(NAME usdMmdFileFormat_stage_open
 set_tests_properties(usdMmdFileFormat_stage_open PROPERTIES
     ENVIRONMENT_MODIFICATION "${_plugin_env}")
 
+add_test(NAME usdMmdFileFormat_physics_roundtrip
+    COMMAND "${USDMMD_TEST_PYTHON}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/integration/test_physics_roundtrip.py"
+        --fixtures "${_fixtures}")
+set_tests_properties(usdMmdFileFormat_physics_roundtrip PROPERTIES
+    ENVIRONMENT_MODIFICATION "${_plugin_env}")
+
 # The importer without the schema bundle it requires: Plug must refuse to load
 # it, naming the schema type its plugInfo.json depends on.
 add_test(NAME usdMmdFileFormat_schema_required
