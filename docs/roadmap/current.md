@@ -21,7 +21,7 @@ its outcome is verified; record measurements in a dated report.
 
 | ID | Outcome / exit gate | Owner | State | Evidence / contract |
 | --- | --- | --- | --- | --- |
-| P1-C (Phase 8 / PR-C) | Extend the verified headless pre/post coupling path to the composed host and final renderer consumer with a physics-free importer | `usd-avatar-runtime` orchestration; MMD adapter here; `usd-stage-runner` host loop | in_progress | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [runtime consumer report](../reports/2026-10-21-phase8-runtime-consumer.md), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) |
+| P1-C (Phase 8 / PR-C) | Complete composed host and resident renderer integration beyond the verified pre/post coupling and final-snapshot transport probes, with a physics-free importer | `usd-avatar-runtime` orchestration; MMD adapter here; `usd-stage-runner` host loop | in_progress | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [Toon consumer report](../reports/2026-10-21-phase8-toon-consumer.md), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) |
 | P1-2 (Phase 8) | Run the fixed representative scene set with automatic assertions, known limitations and reproducible commands; publish a new acceptance report | `usd-avatar-runtime` + MMD acceptance; `hydra-toon` rendering | planned | [L3 acceptance](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance), [avatar composition](#avatar-runtime-composition) |
 | P1-3 (Phase 8) | Validate runtime material morphs and advanced UV/vertex-color behavior through the composed renderer | Runtime consumer + `hydra-toon`; MMD contracts here | planned | [Material contract](../design/MATERIAL_POLICY.md), [operator evidence boundary](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals) |
 | P2-1 (Phase 10) | Confirm USDZ portability, texture resolution, validation and ASCII archive paths as the release contract; make the installed consumer API and release notes consistent | Export tool and package owners here | planned | [Packaging contract](../design/PACKAGING_POLICY.md), [export guide](../guides/exporting.md), [release procedure](../releases/README.md) |
@@ -55,7 +55,11 @@ The [runtime consumer report](../reports/2026-10-21-phase8-runtime-consumer.md)
 closes P1-1's first-consumer boundary using installed owner packages, runtime
 pre/post callbacks and concrete Jolt body handles. It records generated shared
 world and final CPU pose evidence. Host/renderer composition remains P1-C;
-representative avatar L3 acceptance remains P1-2.
+representative avatar L3 acceptance remains P1-2. The
+[Toon consumer report](../reports/2026-10-21-phase8-toon-consumer.md) extends
+that evidence to final-snapshot transport through the installed renderer adapter
+using explicit generated resources. Resident-avatar binding, rendered/Hydra
+agreement and Stage Runner composition remain in P1-C.
 
 Select 1–2 licensed representative PMX models and VMD motions and document
 their acquisition/use terms. Keep local real-model runs separate from
