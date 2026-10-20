@@ -19,6 +19,7 @@
 #include <mmdPmx/Result.h>
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace mmd::control {
@@ -63,6 +64,28 @@ inline constexpr std::int32_t kMaxIkIterations = 256;
 /// time. It does not refer to the model it was prepared from.
 class Evaluator {
 public:
+    /// Immutable, copyable snapshot of one evaluation at the physics barrier.
+    /// It owns its storage and survives evaluator moves. Only the evaluator
+    /// that created it (or a copy of that evaluator) may resume it.
+    class Continuation {
+    public:
+        Continuation() = default;
+        const Pose& BeforePhysics() const noexcept { return _pose; }
+
+    private:
+        friend class Evaluator;
+        struct Data;
+        std::shared_ptr<const Data> _data;
+        Pose _pose;
+    };
+
+    /// Sparse joint-local feedback, canonical basis/metres, rest included.
+    /// Each joint may occur once; rotations must be finite unit quaternions.
+    struct PhysicsFeedback {
+        std::int32_t joint = kNone;
+        JointTransform local;
+    };
+
     /// Prepares `model`. Never fails; what the evaluation cannot honor is
     /// reported here, once per element (MOTION_CONTRACT.md §11.8):
     ///
@@ -83,6 +106,16 @@ public:
     /// The same, refilling `pose`, whose storage a caller may reuse from
     /// frame to frame.
     void Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose) const;
+
+    /// Sample once and run only pre-physics controls (MOTION §11.10).
+    Continuation BeginPhysics(const binding::BoundMotion& motion, double frame) const;
+
+    /// Apply sparse local feedback, then run only post-physics controls.
+    /// Does not mutate the snapshot: repeated resumes do not accumulate.
+    /// No world stepping or pose-space conversion occurs here. Invalid or
+    /// foreign snapshots and malformed feedback return fatal diagnostics.
+    Result<Pose> ResumePhysics(const Continuation& continuation,
+                               const std::vector<PhysicsFeedback>& feedback = {}) const;
 
     /// The model's appends and IK over a pose another solver produced, such as
     /// a retarget onto the model (MOTION_CONTRACT.md §11.9). `given` holds one
@@ -144,17 +177,23 @@ private:
     };
     struct Morph {
         MorphType type = MorphType::Group;
-        std::vector<BoneOffset> boneOffsets;  ///< a bone morph's
-        std::vector<GroupMember> members;     ///< a group morph's
+        std::vector<BoneOffset> boneOffsets; ///< a bone morph's
+        std::vector<GroupMember> members;    ///< a group morph's
     };
     struct State;
 
     Evaluator() = default;
 
     void _Solve(const Chain& chain, State& state) const;
+    void _Sample(const binding::BoundMotion& motion, double frame, State& state, Pose& pose,
+                 std::vector<bool>& enabled) const;
+    void _WritePose(const State& state, Pose& pose) const;
     /// Appends then IK, in MMD's order (§11.5); `held` joints take neither.
-    void _Pass(State& state, const std::vector<bool>& enabled, const std::vector<bool>* held) const;
+    void _Pass(State& state, const std::vector<bool>& enabled, const std::vector<bool>* held,
+               std::size_t begin, std::size_t end) const;
 
+    std::shared_ptr<const int> _identity = std::make_shared<const int>(0);
+    std::size_t _physicsBoundary = 0;
     std::vector<Joint> _joints;
     std::vector<std::int32_t> _order;
     std::vector<Chain> _chains;

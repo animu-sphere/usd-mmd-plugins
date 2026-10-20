@@ -45,12 +45,12 @@ The [stage validation report](../reports/2026-10-20-phase8-stage-validation.md)
 records the PR-A preservation and malformed-declaration checks that precede
 the remaining coupling gates.
 
-Before wiring PR-B/PR-C callbacks, implement an owner-side control continuation
-under [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary).
-The existing atomic offline evaluator and retarget completion cannot preserve
-pre/post-physics append/IK and sampled VMD state across a world step.
-The boundary probe supplies generated regression evidence; it does not close
-the coupling gate or establish a runtime adapter.
+PR-B/PR-C callbacks must consume the owner-side control continuation under
+[MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary),
+rather than composing the atomic offline evaluator and retarget completion.
+The [continuation report](../reports/2026-10-21-phase8-control-continuation.md)
+records generated pre/post append, IK, feedback and retained VMD-state evidence.
+It does not close the coupling gate or establish a runtime adapter.
 
 Select 1–2 licensed representative PMX models and VMD motions and document
 their acquisition/use terms. Keep local real-model runs separate from

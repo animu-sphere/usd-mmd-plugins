@@ -93,6 +93,7 @@ rule by `mmdControl_robustness`.
 | Physics before after-physics bones | unsupported by design (nothing is simulated) | [MOTION §10.3](../design/MOTION_CONTRACT.md#103-evaluation) |
 | The same inputs give the same bits, whatever was evaluated before | supported | [MOTION §11.1](../design/MOTION_CONTRACT.md#111-the-evaluator) |
 | Appends and IK over a given pose, such as a retarget's, with held joints returned unchanged and chains over them or feeding them off (`Complete`) | supported | [MOTION §11.9](../design/MOTION_CONTRACT.md#119-evaluating-from-a-given-pose) |
+| Owned pre/post-physics control continuation (`BeginPhysics` / `ResumePhysics`) with sparse joint-local feedback and retained sampled VMD state | supported by generated control tests; no coupling adapter, world step or runtime integration | [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary) |
 
 ## Shared-motion adapters (`mmdSkeletonAdapter`, `mmdMotionAdapter`)
 
