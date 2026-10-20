@@ -1,7 +1,7 @@
 # Current roadmap
 
 > Scope: active work only. Historical evidence lives in reports.
-> Updated: 2026-10-20
+> Updated: 2026-10-21
 
 ## Focus
 
@@ -21,7 +21,7 @@ its outcome is verified; record measurements in a dated report.
 
 | ID | Outcome / exit gate | Owner | State | Evidence / contract |
 | --- | --- | --- | --- | --- |
-| P1-1 (Phase 8 / PR-B) | Establish the optional coupling component/API from the first runtime consumer; verify all modes, pose-space conversion and reset without stepping | MMD adapter here | planned | [Lifecycle](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance), [package contract](../architecture/PACKAGE_CONTRACT.md) |
+| P1-1 (Phase 8 / PR-B) | Establish the optional coupling component/API from the first runtime consumer; verify all modes, pose-space conversion and reset without stepping | MMD adapter here | in_progress | [Lifecycle](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance), [package contract](../architecture/PACKAGE_CONTRACT.md), [control-boundary probe](../reports/2026-10-21-phase8-control-boundary.md) |
 | P1-C (Phase 8 / PR-C) | Connect coupling to avatar-runtime pre/post physics callbacks; verify shared-world ordering and final pose consumption with a physics-free importer | `usd-avatar-runtime` orchestration; MMD adapter here; `usd-stage-runner` host loop | planned | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) |
 | P1-2 (Phase 8) | Run the fixed representative scene set with automatic assertions, known limitations and reproducible commands; publish a new acceptance report | `usd-avatar-runtime` + MMD acceptance; `hydra-toon` rendering | planned | [L3 acceptance](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance), [avatar composition](#avatar-runtime-composition) |
 | P1-3 (Phase 8) | Validate runtime material morphs and advanced UV/vertex-color behavior through the composed renderer | Runtime consumer + `hydra-toon`; MMD contracts here | planned | [Material contract](../design/MATERIAL_POLICY.md), [operator evidence boundary](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals) |
@@ -44,6 +44,13 @@ coupling and avatar acceptance require the separate gates above.
 The [stage validation report](../reports/2026-10-20-phase8-stage-validation.md)
 records the PR-A preservation and malformed-declaration checks that precede
 the remaining coupling gates.
+
+Before wiring PR-B/PR-C callbacks, implement an owner-side control continuation
+under [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary).
+The existing atomic offline evaluator and retarget completion cannot preserve
+pre/post-physics append/IK and sampled VMD state across a world step.
+The boundary probe supplies generated regression evidence; it does not close
+the coupling gate or establish a runtime adapter.
 
 Select 1–2 licensed representative PMX models and VMD motions and document
 their acquisition/use terms. Keep local real-model runs separate from
