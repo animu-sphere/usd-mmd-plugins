@@ -21,7 +21,6 @@ its outcome is verified; record measurements in a dated report.
 
 | ID | Outcome / exit gate | Owner | State | Evidence / contract |
 | --- | --- | --- | --- | --- |
-| P0-2 (Phase 8) | Verify the hosted Windows configuration of the wired installed-package representative lane; maintain source/reader/stability regressions and explicit execution limits | MMD acceptance here; generic backend in `usd-physics-plugins` | in_progress | [Hosted Python correction](../reports/2026-10-20-phase8-physics-ci-python.md), [CI wiring and local verification](../reports/2026-10-20-phase8-physics-ci.md), [testing policy](../design/PHYSICS_INTEGRATION.md#10-testing) |
 | P1-A (Phase 8 / PR-A) | Extend stage contract fixtures for counts/types, bone references, modes, filters, offsets, units and USD save/reopen preservation; reject malformed runtime declarations with diagnostics | MMD stage/fixture owners here | planned | [Stage validation](../design/STAGE_CONTRACT.md#135-consumer-validation-and-round-trip-preservation), [implementation sequence](../design/PHYSICS_INTEGRATION.md#9-implementation-sequence) |
 | P1-1 (Phase 8 / PR-B) | Establish the optional coupling component/API from the first runtime consumer; verify all modes, pose-space conversion and reset without stepping | MMD adapter here | planned | [Lifecycle](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance), [package contract](../architecture/PACKAGE_CONTRACT.md) |
 | P1-C (Phase 8 / PR-C) | Connect coupling to avatar-runtime pre/post physics callbacks; verify shared-world ordering and final pose consumption with a physics-free importer | `usd-avatar-runtime` orchestration; MMD adapter here; `usd-stage-runner` host loop | planned | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) |
@@ -39,8 +38,9 @@ MMD pose completion, physics and rendering must run together in the consumer.
 Coupling work proceeds PR-A → PR-B → PR-C, then representative L3 acceptance
 (P1-2). Each PR requires focused unit coverage and a small integration smoke
 for its scope under [the testing policy](../design/PHYSICS_INTEGRATION.md#10-testing).
-Keep long fidelity comparisons outside normal CI. P0-2 tracks adoption of the
-existing installed-package lane separately from these coupling changes.
+Keep long fidelity comparisons outside normal CI. The existing installed-package
+lane has [hosted Windows evidence](../reports/2026-10-20-phase8-physics-hosted.md);
+coupling and avatar acceptance require the separate gates above.
 
 Select 1–2 licensed representative PMX models and VMD motions and document
 their acquisition/use terms. Keep local real-model runs separate from
