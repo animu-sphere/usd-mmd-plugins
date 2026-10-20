@@ -1,5 +1,7 @@
 # Phase 8 stage validation before coupling (2026-10-20)
 
+Follow-up: [Windows USDC lifetime correction](2026-10-20-phase8-stage-validation-windows.md).
+
 ## Scope
 
 This verifies PR-A under [STAGE_CONTRACT §13.5](../design/STAGE_CONTRACT.md#135-consumer-validation-and-round-trip-preservation)

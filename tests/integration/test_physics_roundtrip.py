@@ -43,6 +43,26 @@ def offsets(stage, expectation):
     return result
 
 
+def check_reopened(path, expectation, where, original):
+    """Release every stage-owning wrapper before the caller removes the file.
+
+    USDC layers may keep their backing file mapped on Windows. The checker
+    also owns the stage, so dropping only the direct stage variable is not
+    sufficient to release the file.
+    """
+    reopened = Usd.Stage.Open(str(path))
+    checker = stage_checks.Checker(reopened, expectation, where)
+    checker.physics()
+    mesh = UsdGeom.Mesh.Get(reopened, "/Asset/geo/Mesh")
+    checker.skeleton(mesh if mesh else None)
+    assert UsdGeom.GetStageMetersPerUnit(reopened) == 1.0
+    assert UsdGeom.GetStageUpAxis(reopened) == UsdGeom.Tokens.y
+    restored = offsets(reopened, expectation)
+    assert original.keys() == restored.keys()
+    for key in original:
+        assert Gf.IsClose(original[key], restored[key], 1e-12)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixtures", required=True, type=pathlib.Path)
@@ -59,17 +79,10 @@ def main():
             for extension in ("usda", "usdc"):
                 path = pathlib.Path(scratch) / f"{count}.{extension}"
                 assert stage.Export(str(path))
-                reopened = Usd.Stage.Open(str(path))
-                checker = stage_checks.Checker(reopened, expectation, f"{relative} -> {extension}")
-                checker.physics()
-                mesh = UsdGeom.Mesh.Get(reopened, "/Asset/geo/Mesh")
-                checker.skeleton(mesh if mesh else None)
-                assert UsdGeom.GetStageMetersPerUnit(reopened) == 1.0
-                assert UsdGeom.GetStageUpAxis(reopened) == UsdGeom.Tokens.y
-                restored = offsets(reopened, expectation)
-                assert original.keys() == restored.keys()
-                for key in original:
-                    assert Gf.IsClose(original[key], restored[key], 1e-12)
+                check_reopened(path, expectation, f"{relative} -> {extension}", original)
+                # Exercise the Windows lifetime requirement for every file,
+                # including the last USDC, before TemporaryDirectory cleanup.
+                path.unlink()
             count += 1
     assert count > 0, "no physics fixtures tested"
     print(f"{count} physics fixtures preserved through USDA and USDC save/reopen")
