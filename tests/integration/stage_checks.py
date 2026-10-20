@@ -679,11 +679,25 @@ class Checker:
     JOINT_VECTORS = ("translationLowerLimit", "translationUpperLimit", "rotationLowerLimit",
                      "rotationUpperLimit", "translationSpring", "rotationSpring")
     LIMIT_AXES = ("transX", "transY", "transZ", "rotX", "rotY", "rotZ")
+    PHYSICS_TYPES = {
+        **dict.fromkeys(("bone", "collisionGroup", "collisionMask", "rigidBodyA",
+                         "rigidBodyB"), Sdf.ValueTypeNames.Int),
+        **dict.fromkeys(("shape", "mode", "type"), Sdf.ValueTypeNames.Token),
+        **dict.fromkeys(("mass", "linearDamping", "angularDamping", "restitution",
+                         "friction"), Sdf.ValueTypeNames.Float),
+        **dict.fromkeys(JOINT_VECTORS, Sdf.ValueTypeNames.Vector3f),
+        "size": Sdf.ValueTypeNames.Float3,
+        "position": Sdf.ValueTypeNames.Point3d,
+        "orientation": Sdf.ValueTypeNames.Quatf,
+    }
 
     def uniform(self, prim: Usd.Prim, name: str):
         attr = prim.GetAttribute(f"mmd:physics:{name}")
         self.expect(attr.IsValid() and attr.GetVariability() == Sdf.VariabilityUniform,
                     f"{prim.GetPath()} has no uniform mmd:physics:{name}")
+        self.expect(attr.GetTypeName() == self.PHYSICS_TYPES[name]
+                    and attr.GetNumTimeSamples() == 0 and attr.HasAuthoredValue(),
+                    f"{attr.GetPath()} must have a constant authored {self.PHYSICS_TYPES[name]} value")
         value = attr.Get()
         return str(value) if isinstance(value, str) else value
 

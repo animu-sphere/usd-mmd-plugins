@@ -5,6 +5,8 @@
 #include "collision_filter.h"
 #include "contact_material.h"
 #include "body_damping.h"
+#include "bone_binding.h"
+#include "stage_declarations.h"
 #include "joint_springs.h"
 #ifdef MMD_PHYSICS_ROTATION_SPRINGS
 #include "rotation_springs.h"
@@ -338,6 +340,7 @@ main(int argc, char** argv)
             std::cout << argv[i] << "\trigidBodies=" << rigidBodies << "\tjoints=" << joints
                       << "\tpreservedOnlyJoints=" << preservedOnlyJoints << '\t';
             try {
+                mmd_physics_probe::ValidateStageDeclarations(stage);
                 const auto snapshot = usd_physics::usd::readPhysicsScene(stage);
                 if (snapshot.bodies.size() != rigidBodies || snapshot.joints.size() != joints)
                     throw std::runtime_error(
@@ -359,6 +362,13 @@ main(int argc, char** argv)
                 std::vector<usd_physics::core::ContactMaterial> materials;
                 std::vector<usd_physics::core::BodyDamping> damping;
                 for (const auto& body : snapshot.bodies) {
+                    const auto prim = stage->GetPrimAtPath(pxr::SdfPath(body.path));
+                    const auto binding = mmd_physics_probe::ReadBoneBinding(
+                        prim, pxr::UsdSkelSkeleton::Get(stage, pxr::SdfPath("/Asset/skel/Skeleton")),
+                        prim.GetPath().HasPrefix(pxr::SdfPath("/Asset/physics/rigidBodies")));
+                    if (binding && binding->bone == -1)
+                        std::cerr << argv[i] << '\t' << prim.GetPath()
+                                  << "\tunboundBone\tbone=-1; no bone synchronization or feedback\n";
                     filters.push_back(mmd_physics_probe::ReadCollisionFilter(
                         stage->GetPrimAtPath(pxr::SdfPath(body.path))));
                     materials.push_back(mmd_physics_probe::ReadContactMaterial(
