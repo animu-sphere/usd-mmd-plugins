@@ -3,6 +3,7 @@
 // Caller supplies the body snapshot; no physics step occurs in this smoke.
 #include <mmdPhysicsAdapter/Adapter.h>
 #include <mmdPhysicsAdapter/BodyProperties.h>
+#include <mmdPhysicsAdapter/JointSprings.h>
 #include <mmdModel/Canonicalize.h>
 #include <mmdPmx/Reader.h>
 #include <motionVmd/Reader.h>
@@ -58,6 +59,22 @@ main(int argc, char** argv)
         if (prim.HasAPI<UsdPhysicsRigidBodyAPI>())
             bodies.push_back(prim);
     const auto skeleton = UsdSkelSkeleton(stage->GetPrimAtPath(SdfPath("/Asset/skel/Skeleton")));
+    // A second generated fixture supplies a standard spring6Dof declaration.
+    const auto springStage = UsdStage::Open((std::filesystem::path(argv[1]).parent_path() /
+                                            "live-physics-pendulum.pmx").string());
+    if (!springStage) return 20;
+    bool springRead = false;
+    for (const auto& prim : springStage->Traverse()) {
+        if (!prim.GetAttribute(TfToken("mmd:physics:translationSpring"))) continue;
+        const auto springs = mmd::physics::ReadJointSprings(prim);
+        if (!springs || !springs.value() || !springs.value()->spring6Dof) return 18;
+        GfVec3f sourceRotation;
+        prim.GetAttribute(TfToken("mmd:physics:rotationSpring")).Get(&sourceRotation);
+        for (int axis = 0; axis < 3; ++axis)
+            if (!Near(springs.value()->rotation[axis], double(sourceRotation[axis]) * .0064)) return 19;
+        springRead = true;
+    }
+    if (!springRead) return 20;
     for (const auto& body : bodies) {
         const auto properties = mmd::physics::ReadBodyProperties(body);
         if (!properties || !properties.value().filter || !properties.value().contact ||

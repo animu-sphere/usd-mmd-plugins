@@ -157,7 +157,7 @@ generated VMD to a generated PMX, evaluates it, and builds a shared
 | --- | --- |
 | `find_package` | `find_package(mmdPhysicsAdapter 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdPhysicsAdapter::mmdPhysicsAdapter` (static library) |
-| Headers | `include/mmdPhysicsAdapter/` — `Adapter.h`, `BodyProperties.h`, `Codes.h` |
+| Headers | `include/mmdPhysicsAdapter/` — `Adapter.h`, `BodyProperties.h`, `JointSprings.h`, `Codes.h` |
 | Required packages | `mmdControl` and OpenUSD 26.08 (`usdSkel`, `usdPhysics`, `usdGeom`, `usd`, `sdf`, `vt`, `gf`, `tf`, or the monolith), resolved by the package config |
 | Language | C++20 (`cxx_std_20`) |
 | Version compatibility | `SameMinorVersion` |
@@ -168,11 +168,14 @@ physics/runtime/backend dependency and the importer never links it. The
 package exports `mmdPhysicsAdapter_BODY_PROPERTIES_VERSION=1` for consumers
 requiring the optional body-property conversion API in
 [PHYSICS §7.1](../design/PHYSICS_INTEGRATION.md#71-contact-coefficients).
+It also exports `mmdPhysicsAdapter_JOINT_SPRINGS_VERSION=1` for the owned,
+backend-independent spring conversion in
+[PHYSICS §7.3](../design/PHYSICS_INTEGRATION.md#73-joint-spring-metadata-audit).
 The [lifecycle contract](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle)
 defines ownership and restrictions. The installed-consumer `physics_probe`
 opens a generated PMX, binds a VMD and checks three modes, post append and
 reset/replay through `BeginPhysics` / `ResumePhysics` with a caller-supplied
-world body snapshot.
+world body snapshot, plus spring conversion from a second generated fixture.
 
 ## `mmdSchema`
 

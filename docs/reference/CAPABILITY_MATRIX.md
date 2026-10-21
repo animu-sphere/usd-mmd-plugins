@@ -247,8 +247,12 @@ validates a generated skinned pendulum through live Jolt, owner bone feedback
 and final UsdSkel publication. Its
 [body-properties follow-up](../reports/2026-10-21-phase8-live-body-properties.md)
 consumes owner `ReadBodyProperties` for admission masks, contact coefficients
-and finite damping rates, with generated live response/refusal checks. Joint
-spring metadata remains reported as unapplied. This bounded visual path does
+and finite damping rates, with generated live response/refusal checks. The
+[spring follow-up](../reports/2026-10-21-phase8-live-springs.md) consumes owner
+`ReadJointSprings` with independent default-OFF Hookean translation and
+small-angle rotation opt-ins. Generated response, activation, reset/replay,
+refusal and actual-window checks validate that bounded approximation;
+negative/locked/format-only meaning remains unsupported. This visual path does
 not establish representative PMX/VMD,
 hair/skirt, material/morph or Hydra/direct parity acceptance.
 

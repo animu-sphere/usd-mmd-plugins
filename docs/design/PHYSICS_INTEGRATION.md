@@ -355,6 +355,20 @@ The importer and generic USD reader do not change.
 
 ### 7.3 Joint spring metadata audit
 
+The optional owner package exposes `ReadJointSprings` in `JointSprings.h`.
+It reads an optional complete uniform unsampled `vector3f` pair and an optional
+uniform unsampled token type, returning owned signed SI coefficients and a
+`spring6Dof` activation flag. Missing/other types never activate execution;
+an absent pair returns no value. Malformed declarations emit
+`MMD_PHYSICS_METADATA_INVALID` with the joint path, including malformed types
+when the pair is absent. Reading edits no stage and creates no resources.
+Translation coefficients retain their number; rotation scales by `0.08^2`
+under section 7.5. Negative coefficients remain signed for gap reporting.
+Hosts independently opt into the approximations below and apply only positive
+coefficients to free/limited standard joint axes, with zero equilibrium and
+viscous damping. Locked, negative and format-only meaning remains unsupported;
+approximated source meaning must still be reported as a fidelity gap.
+
 The isolated consumer reads the preserved `translationSpring` and
 `rotationSpring` pair as constant `vector3f` values. Partial pairs, wrong
 types, missing/blocked values, time samples and non-finite components reject.
