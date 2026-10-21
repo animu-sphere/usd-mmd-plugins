@@ -208,6 +208,12 @@ is checked at configure time; packages without compatibility metadata reject.
 owns conversion rules; [§12](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy)
 owns adoption criteria.
 
+The [scene-resource consumer report](../reports/2026-10-21-phase8-scene-resources.md)
+extends generated lifecycle evidence to reusable host-owned body/joint resource
+sets, construction rollback and constrained selective unload. It does not
+establish automatic application/world binding, cross-avatar constraint policy,
+resident rendering or representative L3 acceptance.
+
 | Feature | Source / static preservation | Execution claim and limits | Contract / evidence |
 | --- | --- | --- | --- |
 | Body primitives, local poses, kinematic flags and mass | Supported stage authoring | Experimental reader; shared primitive mass inference is not PMX zero-mass equivalence | [Stage §13](../design/STAGE_CONTRACT.md#13-physics), [mass reader](../reports/2026-10-18-phase8-mass-reader.md) |
