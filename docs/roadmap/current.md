@@ -32,8 +32,11 @@ its outcome is verified; record measurements in a dated report.
 The immediate visual priority is live single-avatar usdview playback. The
 [first live-host report](../reports/2026-10-21-phase8-usdview-live.md) records a
 generated contact-free skinned pendulum through the actual usdview Qt lifecycle
-and final UsdSkel publication. Next connect owner-side physics metadata and
-representative PMX/VMD inputs. This does not close P1-C or L3 acceptance; resident
+and final UsdSkel publication. The
+[body-properties follow-up](../reports/2026-10-21-phase8-live-body-properties.md)
+connects owner filter/contact/damping conversion to that host. Next connect
+owner-side spring semantics and representative PMX/VMD inputs. This does not
+close P1-C or L3 acceptance; resident
 Toon binding and Hydra/direct agreement remain separate requirements.
 
 This heading is retained for links from earlier evidence.

@@ -299,6 +299,19 @@ the first integration, but silent loss of source meaning is forbidden.
 
 ### 7.1 Contact coefficients
 
+The optional `mmdPhysicsAdapter` package exposes `ReadBodyProperties` in
+`BodyProperties.h`. It returns owned optional filter, contact and damping
+values without a generic physics dependency. Each absent pair leaves host
+defaults untouched; present pairs must be complete, uniform, unsampled and
+correctly typed. Invalid declarations emit `MMD_PHYSICS_METADATA_INVALID`;
+unit damping emits `MMD_PHYSICS_DAMPING_UNSUPPORTED`. Diagnostics identify the
+body path. Reading does not edit the stage or allocate simulation resources.
+Hosts map these values into their installed physics descriptors, choose the
+world-wide contact policy below and recreate properties during world reset.
+Collision category is `1 << group` for groups 0–15; the unsigned low 16 mask
+bits admit groups directly, without inversion. This API does not interpret
+joint springs or replace generic USD scene reading.
+
 The isolated consumer reads the existing constant `float` attributes
 `mmd:physics:friction` and `mmd:physics:restitution` into the shared core's
 neutral `ContactMaterial`. Friction must be finite and non-negative;

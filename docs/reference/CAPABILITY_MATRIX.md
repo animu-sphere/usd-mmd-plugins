@@ -243,10 +243,13 @@ owns package/ABI requirements and option discovery.
 ## Outside the PMX importer
 
 The optional runtime-owned [live usdview host](../reports/2026-10-21-phase8-usdview-live.md)
-now validates a generated skinned pendulum through live Jolt, owner bone feedback
-and final UsdSkel publication. Contacts/body damping are intentionally disabled;
-source filter/contact/damping/spring metadata is reported as unapplied in that
-first host. This bounded visual path does not establish representative PMX/VMD,
+validates a generated skinned pendulum through live Jolt, owner bone feedback
+and final UsdSkel publication. Its
+[body-properties follow-up](../reports/2026-10-21-phase8-live-body-properties.md)
+consumes owner `ReadBodyProperties` for admission masks, contact coefficients
+and finite damping rates, with generated live response/refusal checks. Joint
+spring metadata remains reported as unapplied. This bounded visual path does
+not establish representative PMX/VMD,
 hair/skirt, material/morph or Hydra/direct parity acceptance.
 
 | Capability | Status | Where it belongs |

@@ -2,6 +2,7 @@
 // Generated PMX + VMD -> owner continuation -> coupling -> post append.
 // Caller supplies the body snapshot; no physics step occurs in this smoke.
 #include <mmdPhysicsAdapter/Adapter.h>
+#include <mmdPhysicsAdapter/BodyProperties.h>
 #include <mmdModel/Canonicalize.h>
 #include <mmdPmx/Reader.h>
 #include <motionVmd/Reader.h>
@@ -57,6 +58,18 @@ main(int argc, char** argv)
         if (prim.HasAPI<UsdPhysicsRigidBodyAPI>())
             bodies.push_back(prim);
     const auto skeleton = UsdSkelSkeleton(stage->GetPrimAtPath(SdfPath("/Asset/skel/Skeleton")));
+    for (const auto& body : bodies) {
+        const auto properties = mmd::physics::ReadBodyProperties(body);
+        if (!properties || !properties.value().filter || !properties.value().contact ||
+            !properties.value().damping)
+            return 16;
+        int group = -1, mask = -1;
+        body.GetAttribute(TfToken("mmd:physics:collisionGroup")).Get(&group);
+        body.GetAttribute(TfToken("mmd:physics:collisionMask")).Get(&mask);
+        if (properties.value().filter->category != (uint32_t{1} << group) ||
+            properties.value().filter->mask != uint32_t(mask))
+            return 17;
+    }
     VtTokenArray joints;
     if (!skeleton.GetJointsAttr().Get(&joints) || joints.size() != model.skeleton.bones.size())
         return 7;

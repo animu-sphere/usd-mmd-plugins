@@ -157,7 +157,7 @@ generated VMD to a generated PMX, evaluates it, and builds a shared
 | --- | --- |
 | `find_package` | `find_package(mmdPhysicsAdapter 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdPhysicsAdapter::mmdPhysicsAdapter` (static library) |
-| Headers | `include/mmdPhysicsAdapter/` — `Adapter.h`, `Codes.h` |
+| Headers | `include/mmdPhysicsAdapter/` — `Adapter.h`, `BodyProperties.h`, `Codes.h` |
 | Required packages | `mmdControl` and OpenUSD 26.08 (`usdSkel`, `usdPhysics`, `usdGeom`, `usd`, `sdf`, `vt`, `gf`, `tf`, or the monolith), resolved by the package config |
 | Language | C++20 (`cxx_std_20`) |
 | Version compatibility | `SameMinorVersion` |
@@ -165,7 +165,10 @@ generated VMD to a generated PMX, evaluates it, and builds a shared
 
 This independent optional package has `aggregate_member: false`. It declares no
 physics/runtime/backend dependency and the importer never links it. The
-[lifecycle contract](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle)
+package exports `mmdPhysicsAdapter_BODY_PROPERTIES_VERSION=1` for consumers
+requiring the optional body-property conversion API in
+[PHYSICS §7.1](../design/PHYSICS_INTEGRATION.md#71-contact-coefficients).
+The [lifecycle contract](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle)
 defines ownership and restrictions. The installed-consumer `physics_probe`
 opens a generated PMX, binds a VMD and checks three modes, post append and
 reset/replay through `BeginPhysics` / `ResumePhysics` with a caller-supplied
