@@ -77,8 +77,12 @@ resident resources and rendered/Hydra agreement remain in P1-C.
 The [world-lifetime report](../reports/2026-10-21-phase8-world-lifecycle.md)
 extends that session to own and close an explicit runtime registration before
 instance/Jolt resource teardown, preserving retained CPU and Toon output.
-Automatic stage/world construction and application integration remain in P1-C;
-selective removal from a running shared world is still unimplemented.
+Automatic stage/world construction and application integration remain in P1-C.
+The [selective-unload report](../reports/2026-10-21-phase8-selective-unload.md)
+extends lifecycle evidence to removing one participant and its generated Jolt
+body set while the surviving avatar and non-avatar body continue. Resource
+teardown is explicit host policy; automatic stage/body/constraint teardown and
+cross-avatar constraint handling remain open within P1-C.
 
 Select 1–2 licensed representative PMX models and VMD motions and document
 their acquisition/use terms. Keep local real-model runs separate from
