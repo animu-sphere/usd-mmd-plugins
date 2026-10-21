@@ -1456,6 +1456,36 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
     entries["coupling-modes.pmx"] = opens(
         coupling, "three coupling modes, nonzero rest offsets and a post-physics append")
 
+    # A visible, redistributable live-host fixture: gravity rotates the box
+    # about its offset pivot, and mode 2 feeds that rotation into a skinned bar.
+    pendulum = empty_model(2.0, UTF16LE, "Live physics pendulum")
+    pendulum["bones"] = [
+        bone("anchor", "anchor", (0.0, 20.0, 0.0), -1, flags, (1.0, 0.0, 0.0)),
+        bone("swing", "swing", (0.0, 20.0, 0.0), 0, flags, (15.0, 0.0, 0.0)),
+    ]
+    for x, y in [(0.0, 19.0), (15.0, 19.0), (15.0, 21.0), (0.0, 21.0)]:
+        v = vertex(0.0, deform("BDEF1", [1]), 0)
+        v["position"] = (x, y, 0.0)
+        pendulum["vertices"].append(v)
+    pendulum["faces"] = [0, 1, 2, 0, 2, 3]
+    pendulum["materials"] = [material("bar", "bar", 6, ("shared", 0), flags=0x01)]
+    pendulum["rigidBodies"] = [
+        rigid_body("anchor", "anchor", 0, 0, 0, (1.0, 0.0, 0.0),
+                   (0.0, 20.0, 0.0), (0.0, 0.0, 0.0), 1.0, 0),
+        rigid_body("swing", "swing", 1, 0, 1, (7.5, 1.0, 1.0),
+                   (7.5, 20.0, 0.0), (0.0, 0.0, 0.0), 1.0, 2),
+    ]
+    for body in pendulum["rigidBodies"]:
+        body["nonCollisionMask"] = 0xFFFF
+        body["linearDamping"] = body["angularDamping"] = 0.0
+        body["friction"] = body["restitution"] = 0.0
+    pendulum["joints"] = [joint("pivot", 0, (0, 1), (0.0, 20.0, 0.0), (0.0, 0.0, 0.0),
+        ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
+        ((0.0, 0.0, -3.0), (0.0, 0.0, 3.0)),
+        ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))]
+    entries["live-physics-pendulum.pmx"] = opens(
+        pendulum, "visible skinned pendulum for live runtime/UsdSkel physics publication")
+
     # Recoverable: the model opens, and the stage records why it is not exact.
     bad_utf8 = sample_model(2.0, UTF8, 1, 0)
     bad_utf8["materials"][1]["name"] = b"\xE8\x82"  # a truncated sequence
