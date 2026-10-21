@@ -21,7 +21,7 @@ its outcome is verified; record measurements in a dated report.
 
 | ID | Outcome / exit gate | Owner | State | Evidence / contract |
 | --- | --- | --- | --- | --- |
-| P1-C (Phase 8 / PR-C) | Complete application/stage lifecycle, automatic world binding and resident renderer integration beyond the verified reusable host session, with a physics-free importer | `usd-avatar-runtime` orchestration; MMD adapter here; `usd-stage-runner` host loop | in_progress | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [Host-session report](../reports/2026-10-21-phase8-host-session.md), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) |
+| P1-C (Phase 8 / PR-C) | Complete application/stage lifecycle, automatic world binding and resident renderer integration beyond the verified reusable host session, with a physics-free importer | `usd-avatar-runtime` orchestration; MMD adapter here; `usd-stage-runner` host loop | in_progress | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [World-lifetime report](../reports/2026-10-21-phase8-world-lifecycle.md), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) |
 | P1-2 (Phase 8) | Run the fixed representative scene set with automatic assertions, known limitations and reproducible commands; publish a new acceptance report | `usd-avatar-runtime` + MMD acceptance; `hydra-toon` rendering | planned | [L3 acceptance](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance), [avatar composition](#avatar-runtime-composition) |
 | P1-3 (Phase 8) | Validate runtime material morphs and advanced UV/vertex-color behavior through the composed renderer | Runtime consumer + `hydra-toon`; MMD contracts here | planned | [Material contract](../design/MATERIAL_POLICY.md), [operator evidence boundary](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals) |
 | P2-1 (Phase 10) | Confirm USDZ portability, texture resolution, validation and ASCII archive paths as the release contract; make the installed consumer API and release notes consistent | Export tool and package owners here | planned | [Packaging contract](../design/PACKAGING_POLICY.md), [export guide](../guides/exporting.md), [release procedure](../releases/README.md) |
@@ -73,6 +73,12 @@ installed Stage Runner time and an explicitly configured world. It verifies
 play/pause, reset refusal/recovery, retained display output and zero-elapsed
 simulation retry. Application/stage lifecycle, automatic world construction,
 resident resources and rendered/Hydra agreement remain in P1-C.
+
+The [world-lifetime report](../reports/2026-10-21-phase8-world-lifecycle.md)
+extends that session to own and close an explicit runtime registration before
+instance/Jolt resource teardown, preserving retained CPU and Toon output.
+Automatic stage/world construction and application integration remain in P1-C;
+selective removal from a running shared world is still unimplemented.
 
 Select 1–2 licensed representative PMX models and VMD motions and document
 their acquisition/use terms. Keep local real-model runs separate from
