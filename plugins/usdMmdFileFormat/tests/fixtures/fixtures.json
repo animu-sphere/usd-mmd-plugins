@@ -2019,6 +2019,445 @@
       "skinned": true
     }
   },
+  "live-physics-morph.pmx": {
+    "counts": {
+      "bones": 2,
+      "displayFrames": 0,
+      "faces": 6,
+      "joints": 1,
+      "materials": 1,
+      "morphs": 3,
+      "rigidBodies": 2,
+      "softBodies": 0,
+      "textures": 0,
+      "vertices": 4
+    },
+    "diagnostics": [],
+    "modelName": "Live physics pendulum",
+    "opens": true,
+    "parserDiagnostics": [],
+    "purpose": "live vertex/group morph with physics and an unsupported UV channel",
+    "sourceVersion": "2.0",
+    "stage": {
+      "jointOfSourceBone": [
+        0,
+        1
+      ],
+      "joints": [
+        {
+          "bind": [
+            0.0,
+            1.6,
+            0.0
+          ],
+          "englishName": "anchor",
+          "name": "anchor",
+          "path": "anchor",
+          "sourceIndex": 0
+        },
+        {
+          "bind": [
+            0.0,
+            1.6,
+            0.0
+          ],
+          "englishName": "swing",
+          "name": "swing",
+          "path": "anchor/swing",
+          "sourceIndex": 1
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "englishName": "bar",
+          "faces": [
+            0,
+            2
+          ],
+          "id": "bar",
+          "name": "bar",
+          "sourceIndex": 0,
+          "textures": {}
+        }
+      ],
+      "mesh": {
+        "additionalUv": 0,
+        "blendShapes": [
+          "wide"
+        ],
+        "doubleSided": true,
+        "faces": 2,
+        "familyType": "partition",
+        "influences": 1,
+        "points": 4,
+        "sdef": false,
+        "vertex1": {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "point": [
+            1.2000000476837158,
+            1.5199999809265137,
+            0.0
+          ],
+          "st": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "morphs": [
+        {
+          "englishName": "wide",
+          "id": "wide",
+          "name": "wide",
+          "offsets": [
+            [
+              0.1599999964237213,
+              0.0,
+              0.0
+            ],
+            [
+              0.1599999964237213,
+              0.0,
+              0.0
+            ]
+          ],
+          "panel": "other",
+          "pointIndices": [
+            1,
+            2
+          ],
+          "sourceIndex": 0,
+          "type": "vertex"
+        },
+        {
+          "englishName": "wideGroup",
+          "id": "wideGroup",
+          "members": [
+            "wide"
+          ],
+          "name": "wideGroup",
+          "panel": "other",
+          "sourceIndex": 1,
+          "type": "group",
+          "weights": [
+            0.5
+          ]
+        },
+        {
+          "englishName": "uv",
+          "id": "uv",
+          "name": "uv",
+          "panel": "other",
+          "pointIndices": [
+            0
+          ],
+          "sourceIndex": 2,
+          "type": "uv",
+          "uvOffsets": [
+            [
+              0.10000000149011612,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        }
+      ],
+      "physics": {
+        "joints": [
+          {
+            "body0": "anchor",
+            "body1": "swing",
+            "englishName": "",
+            "id": "joint_0000",
+            "limits": {
+              "rotX": [
+                0.0,
+                0.0
+              ],
+              "rotY": [
+                0.0,
+                0.0
+              ],
+              "rotZ": [
+                -171.88734436035156,
+                171.88734436035156
+              ],
+              "transX": [
+                0.0,
+                0.0
+              ],
+              "transY": [
+                0.0,
+                0.0
+              ],
+              "transZ": [
+                0.0,
+                0.0
+              ]
+            },
+            "localPos0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localPos1": [
+              -0.6000000238418579,
+              0.0,
+              0.0
+            ],
+            "localRot0": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "localRot1": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "name": "pivot",
+            "orientation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "position": [
+              0.0,
+              1.6,
+              0.0
+            ],
+            "rigidBodyA": 0,
+            "rigidBodyB": 1,
+            "rotationLowerLimit": [
+              0.0,
+              0.0,
+              -3.0
+            ],
+            "rotationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotationUpperLimit": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "sourceIndex": 0,
+            "translationLowerLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationSpring": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "translationUpperLimit": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "type": "spring6Dof",
+            "usdPhysics": true
+          }
+        ],
+        "rigidBodies": [
+          {
+            "angularDamping": 0.0,
+            "bone": 0,
+            "collisionGroup": 0,
+            "collisionMask": 65535,
+            "englishName": "anchor",
+            "friction": 0.0,
+            "id": "anchor",
+            "kinematic": true,
+            "linearDamping": 0.0,
+            "mass": 1.0,
+            "mode": "followBone",
+            "name": "anchor",
+            "orientation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "position": [
+              0.0,
+              1.6,
+              0.0
+            ],
+            "restitution": 0.0,
+            "shape": "sphere",
+            "size": [
+              0.08,
+              0.0,
+              0.0
+            ],
+            "sizeFloat": [
+              0.07999999821186066,
+              0.0,
+              0.0
+            ],
+            "sourceIndex": 0
+          },
+          {
+            "angularDamping": 0.0,
+            "bone": 1,
+            "collisionGroup": 0,
+            "collisionMask": 65535,
+            "englishName": "swing",
+            "friction": 0.0,
+            "id": "swing",
+            "kinematic": false,
+            "linearDamping": 0.0,
+            "mass": 1.0,
+            "mode": "dynamicWithBone",
+            "name": "swing",
+            "orientation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "position": [
+              0.6,
+              1.6,
+              0.0
+            ],
+            "restitution": 0.0,
+            "shape": "box",
+            "size": [
+              0.6,
+              0.08,
+              0.08
+            ],
+            "sizeFloat": [
+              0.6000000238418579,
+              0.07999999821186066,
+              0.07999999821186066
+            ],
+            "sourceIndex": 1
+          }
+        ],
+        "sourceRelations": {
+          "joints": [
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "rigidBodies": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      "rig": {
+        "bones": [
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              0.07999999821186066,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": false
+          },
+          {
+            "appendLocal": false,
+            "appendRatio": 0.0,
+            "appendRotation": false,
+            "appendSource": -1,
+            "appendTranslation": false,
+            "deformAfterPhysics": false,
+            "externalParentKey": 0,
+            "fixedAxis": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "hasExternalParent": false,
+            "hasFixedAxis": false,
+            "hasLocalAxes": false,
+            "localAxisX": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localAxisZ": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "operable": false,
+            "rotatable": true,
+            "tailJoint": -1,
+            "tailOffset": [
+              1.2000000476837158,
+              0.0,
+              0.0
+            ],
+            "transformLayer": 0,
+            "translatable": true,
+            "visible": false
+          }
+        ],
+        "ikChains": [],
+        "sourceRelations": {
+          "appends": [],
+          "ikChains": []
+        }
+      },
+      "skinned": true
+    }
+  },
   "live-physics-pendulum.pmx": {
     "counts": {
       "bones": 2,

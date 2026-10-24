@@ -137,6 +137,20 @@ def fixtures() -> dict[str, tuple[Motion | bytes, dict]]:
         pendulum.bones.append(("anchor", frame, (x, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0)))
     out["live-physics-anchor.vmd"] = (
         pendulum, opens(v2, "Live pendulum", 6, [4, 0, 0, 0, 0, 0], [1, 0, 0], []))
+    morph = Motion("Live morph")
+    morph.bones = list(pendulum.bones)
+    for frame, weight in ((0, 0.0), (15, 1.0), (30, 0.0), (60, 0.0)):
+        morph.morphs.append(("wide", frame, weight * .5))
+    out["live-physics-morph.vmd"] = (
+        morph, opens(v2, "Live morph", 6, [4, 4, 0, 0, 0, 0], [1, 1, 0], []))
+    group = Motion("Live group")
+    group.morphs = [("wideGroup", 0, 1.0)]
+    out["live-physics-group.vmd"] = (
+        group, opens(v2, "Live group", 6, [0, 1, 0, 0, 0, 0], [0, 1, 0], []))
+    unsupported = Motion("Live unsupported")
+    unsupported.morphs = [("uv", 0, 1.0)]
+    out["live-physics-uv.vmd"] = (
+        unsupported, opens(v2, "Live unsupported", 6, [0, 1, 0, 0, 0, 0], [0, 1, 0], []))
 
     old = sample()
     old.version = 1
