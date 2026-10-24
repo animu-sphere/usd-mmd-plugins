@@ -182,6 +182,48 @@ TestFailures()
     expect(adapter.ApplyPhysicsToPose(snapshot, f.pose), codes::PhysicsSnapshotInvalid);
 }
 void
+TestInitialBodyTransforms()
+{
+    for (double unit : {1.0, 0.01}) {
+        Fixture f(unit);
+        f.bodies[3].GetAttribute(TfToken("mmd:physics:mode")).Set(TfToken("dynamic"));
+        auto binding = f.Bind().value();
+        f.pose.joints[0].rotation = Rotation(90);
+        const auto before = f.pose;
+        const auto initial = binding.InitialBodyTransforms(before);
+        assert(initial && initial.value().size() == 3);
+        // Caller body order is retained; the unassociated free body is omitted.
+        assert(initial.value()[0].body == f.bodies[0].GetPath());
+        assert(initial.value()[1].body == f.bodies[1].GetPath());
+        assert(initial.value()[2].body == f.bodies[3].GetPath());
+        const Double3 positions[]{{8, -1, 0}, {10, -1, 0}, {9, 0, 0}};
+        for (std::size_t i = 0; i < initial.value().size(); ++i) {
+            for (int axis = 0; axis < 3; ++axis)
+                assert(Close(initial.value()[i].world.translation[axis], positions[i][axis]));
+            EqualRotation(initial.value()[i].world.rotation, Rotation(i == 2 ? 180 : 210));
+        }
+        const auto targets = binding.UpdateKinematicBodies(before);
+        assert(targets && targets.value().size() == 1 && targets.value()[0] == initial.value()[1]);
+        for (int replay = 0; replay < 3; ++replay) {
+            binding.Reset();
+            assert(binding.InitialBodyTransforms(before).value() == initial.value());
+        }
+        auto bad = before;
+        bad.joints.pop_back();
+        assert(!binding.InitialBodyTransforms(bad));
+        bad = before;
+        bad.joints[1].translation[0] = std::numeric_limits<double>::infinity();
+        const auto invalid = binding.InitialBodyTransforms(bad);
+        assert(!invalid && invalid.fatal()->code == codes::PhysicsPoseInvalid.id);
+        assert(f.pose == before);
+        // Returned values and stateless binding are independent of stage lifetime.
+        f.skeleton = UsdSkelSkeleton();
+        f.bodies.clear();
+        f.stage.Reset();
+        assert(binding.InitialBodyTransforms(before).value() == initial.value());
+    }
+}
+void
 TestNonCommutingFeedback()
 {
     Fixture f;
@@ -409,5 +451,6 @@ main()
     TestDeclarations();
     TestNonCommutingFeedback();
     TestDynamicChain();
+    TestInitialBodyTransforms();
     std::cout << "MMD coupling modes, pose spaces, reset and rejection checks passed\n";
 }

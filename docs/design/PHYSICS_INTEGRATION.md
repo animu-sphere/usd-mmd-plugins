@@ -150,6 +150,7 @@ The adapter exposes a thin interface with these conceptual operations:
 | Operation | Responsibility |
 | --- | --- |
 | `Bind(skeleton, worldHandle)` | Resolve canonical bone associations, body handles and rest offsets against a caller-owned world |
+| `InitialBodyTransforms(startPose)` | Derive initial/reset world transforms for every associated body from the evaluated starting pose |
 | `UpdateKinematicBodies(prePhysicsPose)` | Transfer the evaluated bone pose to `followBone` bodies before the shared step |
 | `ApplyPhysicsToPose(simulatedBodies, inoutPose)` | Apply position/rotation for `dynamic` and rotation for `dynamicWithBone` after the shared step |
 | `Reset()` | Clear coupling history and restore a reproducible adapter state for restart/replay |
@@ -169,6 +170,17 @@ immutable body snapshot and the barrier pose and returns sparse joint-local
 `mmdControl::Evaluator::PhysicsFeedback` for `ResumePhysics`, without mutating
 the pose or executing post controls. `Reset` preserves the stateless binding;
 world reset and input replay remain caller responsibilities.
+
+`InitialBodyTransforms` returns the same path-keyed, metre-valued transform
+representation for **all** associated bodies, including both simulated modes.
+It applies the bound bone/body rest offset to the evaluated pre-physics
+starting pose. Unassociated bodies are omitted and retain their authored world
+placement. The caller evaluates the declared starting frame with
+`BeginPhysics`, constructs bodies at these transforms with zero linear/angular
+velocity, then constructs constraints before the first shared Step. Restart
+must use the same sequence together with input/clock reset. Ordinary
+Pause/resume preserves the current solver state. This query never changes a
+world, resets velocity, warms up a solver or advances the motion clock.
 
 Poses must use the bound skeleton's exact canonical joint order and rest space,
 with joint-local translations already in metres. Bind converts stage rest and

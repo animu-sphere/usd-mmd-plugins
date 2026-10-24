@@ -255,6 +255,18 @@ Adapter::Bind(const pxr::UsdSkelSkeleton& skeleton, std::span<const pxr::UsdPrim
 Result<std::vector<BodyTransform>>
 Adapter::UpdateKinematicBodies(const control::Pose& before) const
 {
+    return BodyTransforms(before, true);
+}
+
+Result<std::vector<BodyTransform>>
+Adapter::InitialBodyTransforms(const control::Pose& initial) const
+{
+    return BodyTransforms(initial, false);
+}
+
+Result<std::vector<BodyTransform>>
+Adapter::BodyTransforms(const control::Pose& before, bool kinematicOnly) const
+{
     std::vector<pxr::GfMatrix4d> world;
     if (!PoseWorld(before, _parents, _placement, world))
         return Fail<std::vector<BodyTransform>>(
@@ -262,11 +274,11 @@ Adapter::UpdateKinematicBodies(const control::Pose& before) const
             "Pose must match the skeleton and contain finite rigid transforms");
     std::vector<BodyTransform> result;
     for (const auto& body : _bodies) {
-        if (body.follow && body.joint >= 0) {
+        if (body.joint >= 0 && (!kinematicOnly || body.follow)) {
             const auto m = body.offset * world[body.joint];
             if (!Rigid(m))
                 return Fail<std::vector<BodyTransform>>(
-                    codes::PhysicsPoseInvalid, "Kinematic world transform is not finite and rigid");
+                    codes::PhysicsPoseInvalid, "Bone/body world transform is not finite and rigid");
             result.push_back({body.path, TransformOf(m)});
         }
     }

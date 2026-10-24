@@ -171,11 +171,14 @@ requiring the optional body-property conversion API in
 It also exports `mmdPhysicsAdapter_JOINT_SPRINGS_VERSION=1` for the owned,
 backend-independent spring conversion in
 [PHYSICS §7.3](../design/PHYSICS_INTEGRATION.md#73-joint-spring-metadata-audit).
+`mmdPhysicsAdapter_INITIAL_POSE_VERSION=1` advertises the pure
+`InitialBodyTransforms` query for all associated bodies at a starting pose.
 The [lifecycle contract](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle)
 defines ownership and restrictions. The installed-consumer `physics_probe`
 opens a generated PMX, binds a VMD and checks three modes, post append and
 reset/replay through `BeginPhysics` / `ResumePhysics` with a caller-supplied
-world body snapshot, plus spring conversion from a second generated fixture.
+world body snapshot, initial body transforms, plus spring conversion from a
+second generated fixture.
 
 ## `mmdSchema`
 

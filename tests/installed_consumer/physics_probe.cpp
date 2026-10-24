@@ -128,6 +128,16 @@ main(int argc, char** argv)
         const auto continuation = evaluator.BeginPhysics(bound.value(), 0);
         const auto& before = continuation.BeforePhysics();
         const auto targets = adapter.UpdateKinematicBodies(before);
+        const auto initial = adapter.InitialBodyTransforms(before);
+        if (!initial || initial.value().size() != 3)
+            return 23;
+        for (const auto& row : initial.value()) {
+            const auto rest = cache.GetLocalToWorldTransform(stage->GetPrimAtPath(row.body));
+            const auto t = rest.ExtractTranslation();
+            if (!Near(row.world.translation[0], t[0]) || !Near(row.world.translation[1], t[1]) ||
+                !Near(row.world.translation[2], t[2]) || !Rotation(row.world.rotation, 0))
+                return 24;
+        }
         const auto feedback = adapter.ApplyPhysicsToPose(snapshot, before);
         if (!targets || targets.value().size() != 1 || !feedback || feedback.value().size() != 2 ||
             feedback.value()[0].joint != 0 || feedback.value()[1].joint != 1)
