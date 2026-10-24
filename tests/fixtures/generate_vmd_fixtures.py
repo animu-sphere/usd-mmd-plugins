@@ -129,6 +129,15 @@ def fixtures() -> dict[str, tuple[Motion | bytes, dict]]:
     out["sample.vmd"] = (sample(),
                          opens(v2, "サンプル", 6, [5, 3, 1, 1, 1, 2], [3, 2, 2], []))
 
+    # Paired with live-physics-pendulum.pmx: move the kinematic pivot 10 cm
+    # sideways, return, then hold while the dynamic bar continues swinging.
+    pendulum = Motion("Live pendulum")
+    # STAGE_CONTRACT scale: 0.08 metres per MMD unit.
+    for frame, x in ((0, 0.0), (15, 1.25), (30, 0.0), (60, 0.0)):
+        pendulum.bones.append(("anchor", frame, (x, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0)))
+    out["live-physics-anchor.vmd"] = (
+        pendulum, opens(v2, "Live pendulum", 6, [4, 0, 0, 0, 0, 0], [1, 0, 0], []))
+
     old = sample()
     old.version = 1
     old.model = "古い"
