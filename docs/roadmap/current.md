@@ -34,8 +34,10 @@ The immediate visual priority is live single-avatar usdview playback. The
 generated contact-free skinned pendulum through the actual usdview Qt lifecycle
 and final UsdSkel publication. The
 [body-properties follow-up](../reports/2026-10-21-phase8-live-body-properties.md)
-connects owner filter/contact/damping conversion to that host. Next connect
-owner-side spring semantics and representative PMX/VMD inputs. This does not
+connects owner filter/contact/damping conversion to that host. The
+[spring follow-up](../reports/2026-10-21-phase8-live-springs.md) connects owner
+conversion through independent experimental opt-ins with generated live
+response checks. Next validate representative PMX/VMD inputs. This does not
 close P1-C or L3 acceptance; resident
 Toon binding and Hydra/direct agreement remain separate requirements.
 

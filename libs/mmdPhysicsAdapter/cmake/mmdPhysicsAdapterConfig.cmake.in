@@ -1,5 +1,6 @@
 @PACKAGE_INIT@
 set(mmdPhysicsAdapter_BODY_PROPERTIES_VERSION 1)
+set(mmdPhysicsAdapter_JOINT_SPRINGS_VERSION 1)
 include(CMakeFindDependencyMacro)
 if(NOT TARGET mmdControl::mmdControl)
     find_dependency(mmdControl CONFIG)

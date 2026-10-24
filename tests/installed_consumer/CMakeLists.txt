@@ -67,6 +67,9 @@ endif()
 
 # Optional owner coupling package resolves its own control and USD closure.
 find_package(mmdPhysicsAdapter 0.2 CONFIG REQUIRED)
+if(NOT mmdPhysicsAdapter_JOINT_SPRINGS_VERSION EQUAL 1)
+    message(FATAL_ERROR "Installed owner must supply joint-springs API version 1")
+endif()
 add_executable(physics_probe physics_probe.cpp)
 target_link_libraries(physics_probe PRIVATE mmdPhysicsAdapter::mmdPhysicsAdapter)
 if(MSVC)
