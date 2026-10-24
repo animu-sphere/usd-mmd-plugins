@@ -121,10 +121,16 @@ step. The body does not drive the bone.
 ### 5.2 `dynamic`
 
 ```text
-physics step → rigid-body transform
+physics step → rigid-body transform → bone position and rotation
 ```
 
-The body is controlled by physics. There is no bone feedback for this mode.
+The body is controlled by physics. For an associated bone, the MMD adapter
+removes the rest bone/body offset and converts the simulated world transform
+into joint-local position and rotation using the updated parent pose.
+This position/rotation distinction agrees with the MMD reference consumer's
+[`updateBone` implementation](https://github.com/mrdoob/three.js/blob/r168/examples/jsm/animation/MMDPhysics.js#L815-L839).
+It corrects the earlier no-feedback interpretation; authored mode tokens and
+bone associations are unchanged.
 
 ### 5.3 `dynamicWithBone`
 
@@ -145,7 +151,7 @@ The adapter exposes a thin interface with these conceptual operations:
 | --- | --- |
 | `Bind(skeleton, worldHandle)` | Resolve canonical bone associations, body handles and rest offsets against a caller-owned world |
 | `UpdateKinematicBodies(prePhysicsPose)` | Transfer the evaluated bone pose to `followBone` bodies before the shared step |
-| `ApplyPhysicsToPose(simulatedBodies, inoutPose)` | Apply `dynamicWithBone` feedback after the shared step; `dynamic` has no bone feedback |
+| `ApplyPhysicsToPose(simulatedBodies, inoutPose)` | Apply position/rotation for `dynamic` and rotation for `dynamicWithBone` after the shared step |
 | `Reset()` | Clear coupling history and restore a reproducible adapter state for restart/replay |
 
 These names and signatures illustrate responsibilities; naming, ownership types
@@ -171,16 +177,17 @@ Rebind after layout, rest or placement changes. Only Y-up, static finite rigid
 frames with unit scale are admitted. Scale, shear, reflection and animated
 placement reject explicitly, including body and skeleton rest transforms.
 
-For `dynamicWithBone`, feedback changes local rotation and retains pre-physics
-local translation. Parent feedback is resolved before child conversion,
-including through non-driven intermediate joints. Multiple feedback bodies for
-one joint reject as ambiguous. `dynamic` never writes a bone, even with an
-association. `-1` emits `MMD_PHYSICS_BONE_UNASSOCIATED` and produces no coupling.
+For `dynamic`, feedback changes local translation and rotation. For
+`dynamicWithBone`, feedback changes local rotation and retains pre-physics local
+translation. Parent feedback is resolved before child conversion, including
+through non-driven intermediate joints. Multiple feedback bodies for one joint
+reject as ambiguous across both simulated modes. `-1` emits
+`MMD_PHYSICS_BONE_UNASSOCIATED` and produces no coupling.
 Malformed, out-of-range, varying, time-sampled, blocked or missing declarations
 reject. Mode must agree with standard enabled-body/kinematic flags.
 
 Malformed pose sizes/transforms, unknown or duplicate snapshot paths, and
-missing associated feedback-body rows return fatal diagnostics and no partial
+missing associated simulated-body rows return fatal diagnostics and no partial
 commands or feedback. Other declared body rows are optional and validated when
 supplied. Diagnostic codes are catalogued in
 [DIAGNOSTICS §5.5](../reference/DIAGNOSTICS.md#55-morphs-materials-physics).
@@ -528,8 +535,8 @@ violation caused only by a known Bullet trajectory difference does not.
 The minimum coupling integration must demonstrate:
 
 - One redistributable PMX fixture independently exercises all three modes:
-  pre-step bone → body for `followBone`, no bone feedback for `dynamic`, and
-  post-step body → bone for `dynamicWithBone` under §5.
+  pre-step bone → body for `followBone`, post-step position/rotation feedback for
+  `dynamic`, and rotation feedback for `dynamicWithBone` under §5.
 - Parent/child bones, nonzero rest offsets, non-unit scale and missing bone
   associations have explicit assertions; invalid or unsupported bindings have
   diagnostics, including malformed bone references.

@@ -27,7 +27,7 @@ public:
     /// rigid rest/placement frames and mode/kinematic agreement. Transforms
     /// with scale, shear, reflection or animation reject. -1 associations are
     /// retained with a diagnostic and produce no updates/feedback. Multiple
-    /// dynamicWithBone bodies driving one joint reject as ambiguous.
+    /// simulated bodies driving one joint reject as ambiguous, across modes 1/2.
     static Result<Adapter> Bind(const pxr::UsdSkelSkeleton& skeleton,
                                 std::span<const pxr::UsdPrim> bodies);
 
@@ -36,10 +36,10 @@ public:
     Result<std::vector<BodyTransform>> UpdateKinematicBodies(const control::Pose& before) const;
 
     /// Convert the immutable world snapshot to sparse joint-local feedback for
-    /// Evaluator::ResumePhysics. Dynamic bodies never write bones. For
-    /// dynamicWithBone only rotation changes: local translation is preserved.
+    /// Evaluator::ResumePhysics. Dynamic (mode 1) writes position and rotation;
+    /// dynamicWithBone (mode 2) preserves pre-step local translation.
     /// Parents are resolved before children using the newly computed feedback.
-    /// Every associated dynamicWithBone body requires one snapshot row; other
+    /// Every associated simulated body requires one snapshot row; other
     /// declared bodies may be present. Unknown/duplicate/malformed rows reject.
     Result<std::vector<control::Evaluator::PhysicsFeedback>>
     ApplyPhysicsToPose(std::span<const BodyTransform> simulated, const control::Pose& before) const;
@@ -54,6 +54,7 @@ private:
         int joint = -1;
         bool follow = false;
         bool feedback = false;
+        bool keepTranslation = false;
         pxr::GfMatrix4d offset{1.0};
     };
     pxr::GfMatrix4d _placement{1.0};

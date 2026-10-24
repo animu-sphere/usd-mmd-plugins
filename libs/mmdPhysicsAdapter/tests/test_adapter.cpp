@@ -6,6 +6,7 @@
 #include <pxr/usd/usd/stage.h>
 #include <pxr/usd/usdGeom/metrics.h>
 #include <pxr/usd/usdGeom/xform.h>
+#include <pxr/usd/usdGeom/xformCache.h>
 #include <pxr/usd/usdPhysics/rigidBodyAPI.h>
 #include <cassert>
 #include <cmath>
@@ -61,7 +62,7 @@ struct Fixture {
         // Body order deliberately differs from joint order.
         Body("tipBody", 2, "dynamicWithBone", {2 / unit, 1 / unit, 0}, 30);
         Body("follow", 0, "followBone", {0, 1 / unit, 0}, 30);
-        Body("free", 1, "dynamic", {1 / unit, 0, 0});
+        Body("free", -1, "dynamic", {1 / unit, 0, 0});
         Body("midBody", 1, "dynamicWithBone", {1 / unit, 0, 0});
         pose.joints = {{{0, 0, 0}, control::kIdentity},
                        {{1, 0, 0}, control::kIdentity},
@@ -145,12 +146,16 @@ TestFailures()
     }
     bone.Set(-1);
     auto unbound = f.Bind();
-    assert(unbound && unbound.diagnostics().size() == 1);
+    assert(unbound && unbound.diagnostics().size() == 2);
     assert(unbound.diagnostics()[0].code == codes::PhysicsBoneUnassociated.id);
     bone.Set(2);
     f.bodies[3].GetAttribute(TfToken("mmd:physics:bone")).Set(2);
     expect(f.Bind(), codes::PhysicsBindingInvalid);
     f.bodies[3].GetAttribute(TfToken("mmd:physics:bone")).Set(1);
+    // Modes 1 and 2 are both writers; neither may silently override the other.
+    f.bodies[2].GetAttribute(TfToken("mmd:physics:bone")).Set(1);
+    expect(f.Bind(), codes::PhysicsBindingInvalid);
+    f.bodies[2].GetAttribute(TfToken("mmd:physics:bone")).Set(-1);
     auto scale = UsdGeomXformable(f.stage->GetPrimAtPath(SdfPath("/Asset"))).AddScaleOp();
     for (const auto value : {GfVec3f(2), GfVec3f(1, 2, 1), GfVec3f(-1, 1, 1), GfVec3f(0)}) {
         scale.Set(value);
@@ -198,13 +203,93 @@ TestNonCommutingFeedback()
     assert(feedback && feedback.value().size() == 2);
     EqualRotation(feedback.value()[0].local.rotation, midLocal);
     EqualRotation(feedback.value()[1].local.rotation, tipLocal);
-    f.bodies[3].GetAttribute(TfToken("mmd:physics:mode")).Set(TfToken("dynamic"));
+    f.bodies[3].GetAttribute(TfToken("mmd:physics:mode")).Set(TfToken("followBone"));
+    UsdPhysicsRigidBodyAPI(f.bodies[3]).GetKinematicEnabledAttr().Set(true);
     f.pose.joints[1].rotation = midLocal;
     auto intermediate = f.Bind().value();
     rows.resize(1);
     const auto tip = intermediate.ApplyPhysicsToPose(rows, f.pose);
     assert(tip && tip.value().size() == 1 && tip.value()[0].joint == 2);
     EqualRotation(tip.value()[0].local.rotation, tipLocal);
+}
+void
+TestDynamicChain()
+{
+    const auto matrix = [](const JointTransform& t) {
+        GfMatrix4d m(1);
+        m.SetRotate(GfQuatd(t.rotation[3], t.rotation[0], t.rotation[1], t.rotation[2]));
+        m.SetTranslateOnly({t.translation[0], t.translation[1], t.translation[2]});
+        return m;
+    };
+    const auto transform = [](const GfMatrix4d& m) {
+        const auto q = m.ExtractRotationQuat().GetNormalized();
+        const auto v = q.GetImaginary();
+        const auto t = m.ExtractTranslation();
+        return JointTransform{{t[0], t[1], t[2]}, {v[0], v[1], v[2], q.GetReal()}};
+    };
+    for (double unit : {1.0, 0.01}) {
+        Fixture f(unit);
+        // A mode-2 root of a swinging chain, followed by a mode-1 tip.
+        f.bodies[0].GetAttribute(TfToken("mmd:physics:mode")).Set(TfToken("dynamic"));
+        f.pose.joints[0].rotation = Rotation(20, {1, 0, 0});
+        UsdGeomXformCache cache;
+        auto placement = cache.GetLocalToWorldTransform(f.skeleton.GetPrim());
+        placement.SetTranslateOnly(placement.ExtractTranslation() * unit);
+        auto restMid = matrix(f.pose.joints[1]) * placement;
+        auto restTip = matrix(f.pose.joints[2]) * restMid;
+        // Rest offsets are independent of the animation in f.pose.
+        auto bodyRest = cache.GetLocalToWorldTransform(f.bodies[0]);
+        bodyRest.SetTranslateOnly(bodyRest.ExtractTranslation() * unit);
+        const auto offset = bodyRest * restTip.GetInverse();
+        const JointTransform mid{{1, 0, 0}, Rotation(40, {0, 1, 0})};
+        const JointTransform tip{{.7, -.2, .3}, Rotation(-30, {1, 0, 0})};
+        const auto rootWorld = matrix(f.pose.joints[0]) * placement;
+        const auto midWorld = matrix(mid) * rootWorld;
+        const auto tipWorld = matrix(tip) * midWorld;
+        auto midBody = transform(midWorld);
+        midBody.translation = {100, 200, 300}; // mode 2 keeps the original local position
+        std::vector<BodyTransform> rows{{f.bodies[0].GetPath(), transform(offset * tipWorld)},
+                                        {f.bodies[3].GetPath(), midBody}};
+        const auto before = f.pose;
+        const auto simulated = rows;
+        auto binding = f.Bind().value();
+        std::vector<control::Evaluator::PhysicsFeedback> first;
+        for (int replay = 0; replay < 3; ++replay) {
+            binding.Reset();
+            const auto result = binding.ApplyPhysicsToPose(rows, before);
+            assert(result && result.value().size() == 2);
+            assert(result.value()[0].joint == 1 && result.value()[1].joint == 2);
+            EqualRotation(result.value()[0].local.rotation, mid.rotation);
+            EqualRotation(result.value()[1].local.rotation, tip.rotation);
+            assert(result.value()[0].local.translation == before.joints[1].translation);
+            for (int axis = 0; axis < 3; ++axis)
+                assert(Close(result.value()[1].local.translation[axis], tip.translation[axis]));
+            if (replay)
+                for (std::size_t i = 0; i < first.size(); ++i)
+                    assert(first[i].joint == result.value()[i].joint &&
+                           first[i].local == result.value()[i].local);
+            first = result.value();
+            assert(f.pose == before && rows == simulated);
+        }
+        rows.erase(rows.begin());
+        const auto missing = binding.ApplyPhysicsToPose(rows, before);
+        assert(!missing && missing.fatal()->code == codes::PhysicsSnapshotInvalid.id);
+        // Mode 1 also drives a root joint, removing its rest offset/placement once.
+        f.bodies[2].GetAttribute(TfToken("mmd:physics:bone")).Set(0);
+        auto rootRest = cache.GetLocalToWorldTransform(f.bodies[2]);
+        rootRest.SetTranslateOnly(rootRest.ExtractTranslation() * unit);
+        const auto rootOffset = rootRest * placement.GetInverse();
+        const JointTransform root{{.3, .4, -.2}, Rotation(35, {0, 1, 0})};
+        const std::vector<UsdPrim> rootOnly{f.bodies[2]};
+        const auto rootBinding = Adapter::Bind(f.skeleton, rootOnly).value();
+        const std::vector<BodyTransform> rootRows{
+            {rootOnly[0].GetPath(), transform(rootOffset * matrix(root) * placement)}};
+        const auto result = rootBinding.ApplyPhysicsToPose(rootRows, before);
+        assert(result && result.value().size() == 1 && result.value()[0].joint == 0);
+        EqualRotation(result.value()[0].local.rotation, root.rotation);
+        for (int axis = 0; axis < 3; ++axis)
+            assert(Close(result.value()[0].local.translation[axis], root.translation[axis]));
+    }
 }
 void
 TestDeclarations()
@@ -301,9 +386,11 @@ TestDeclarations()
     }
     {
         Fixture f;
-        // No feedback from any dynamic body, even with a valid association.
+        // Unassociated simulated bodies produce no feedback.
         f.bodies[0].GetAttribute(TfToken("mmd:physics:mode")).Set(TfToken("dynamic"));
         f.bodies[3].GetAttribute(TfToken("mmd:physics:mode")).Set(TfToken("dynamic"));
+        f.bodies[0].GetAttribute(TfToken("mmd:physics:bone")).Set(-1);
+        f.bodies[3].GetAttribute(TfToken("mmd:physics:bone")).Set(-1);
         const auto binding = f.Bind();
         assert(binding && binding.value().ApplyPhysicsToPose({}, f.pose).value().empty());
         // Missing follow association cannot be updated; the limitation is reported.
@@ -321,5 +408,6 @@ main()
     TestFailures();
     TestDeclarations();
     TestNonCommutingFeedback();
+    TestDynamicChain();
     std::cout << "MMD coupling modes, pose spaces, reset and rejection checks passed\n";
 }

@@ -1,7 +1,7 @@
 # Current roadmap
 
 > Scope: active work only. Historical evidence lives in reports.
-> Updated: 2026-10-24
+> Updated: 2026-10-25
 
 ## Focus
 
@@ -30,6 +30,9 @@ its outcome is verified; record measurements in a dated report.
 ## Avatar runtime composition
 
 The immediate visual priority is live single-avatar usdview playback. The
+[mode-1 feedback correction](../reports/2026-10-25-phase8-dynamic-bone-feedback.md)
+repairs missing position/rotation output for associated dynamic bones;
+representative spring/contact acceptance remains open. The
 [first live-host report](../reports/2026-10-21-phase8-usdview-live.md) records a
 generated contact-free skinned pendulum through the actual usdview Qt lifecycle
 and final UsdSkel publication. The

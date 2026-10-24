@@ -60,21 +60,26 @@ main(int argc, char** argv)
             bodies.push_back(prim);
     const auto skeleton = UsdSkelSkeleton(stage->GetPrimAtPath(SdfPath("/Asset/skel/Skeleton")));
     // A second generated fixture supplies a standard spring6Dof declaration.
-    const auto springStage = UsdStage::Open((std::filesystem::path(argv[1]).parent_path() /
-                                            "live-physics-pendulum.pmx").string());
-    if (!springStage) return 20;
+    const auto springStage = UsdStage::Open(
+        (std::filesystem::path(argv[1]).parent_path() / "live-physics-pendulum.pmx").string());
+    if (!springStage)
+        return 20;
     bool springRead = false;
     for (const auto& prim : springStage->Traverse()) {
-        if (!prim.GetAttribute(TfToken("mmd:physics:translationSpring"))) continue;
+        if (!prim.GetAttribute(TfToken("mmd:physics:translationSpring")))
+            continue;
         const auto springs = mmd::physics::ReadJointSprings(prim);
-        if (!springs || !springs.value() || !springs.value()->spring6Dof) return 18;
+        if (!springs || !springs.value() || !springs.value()->spring6Dof)
+            return 18;
         GfVec3f sourceRotation;
         prim.GetAttribute(TfToken("mmd:physics:rotationSpring")).Get(&sourceRotation);
         for (int axis = 0; axis < 3; ++axis)
-            if (!Near(springs.value()->rotation[axis], double(sourceRotation[axis]) * .0064)) return 19;
+            if (!Near(springs.value()->rotation[axis], double(sourceRotation[axis]) * .0064))
+                return 19;
         springRead = true;
     }
-    if (!springRead) return 20;
+    if (!springRead)
+        return 20;
     for (const auto& body : bodies) {
         const auto properties = mmd::physics::ReadBodyProperties(body);
         if (!properties || !properties.value().filter || !properties.value().contact ||
@@ -124,17 +129,18 @@ main(int argc, char** argv)
         const auto& before = continuation.BeforePhysics();
         const auto targets = adapter.UpdateKinematicBodies(before);
         const auto feedback = adapter.ApplyPhysicsToPose(snapshot, before);
-        if (!targets || targets.value().size() != 1 || !feedback || feedback.value().size() != 1 ||
-            feedback.value()[0].joint != 1)
+        if (!targets || targets.value().size() != 1 || !feedback || feedback.value().size() != 2 ||
+            feedback.value()[0].joint != 0 || feedback.value()[1].joint != 1)
             return 11;
         // Frame 0 of sample.vmd drives the root at its rest pose.
         if (!Near(targets.value()[0].world.translation[0], 0.08) ||
             !Near(targets.value()[0].world.translation[1], 0))
             return 12;
         const auto final = evaluator.ResumePhysics(continuation, feedback.value());
-        if (!final || !Rotation(final.value().joints[0].rotation, 0) ||
-            !Rotation(final.value().joints[1].rotation, 60) ||
-            !Rotation(final.value().joints[2].rotation, 30) ||
+        if (!final || !Rotation(final.value().joints[0].rotation, 170) ||
+            !Rotation(final.value().joints[1].rotation, -110) ||
+            !Rotation(final.value().joints[2].rotation, -55) ||
+            final.value().joints[0].translation != mmd::Double3{3, 4, 5} ||
             final.value().joints[1].translation != before.joints[1].translation ||
             final.value().channels != before.channels || final.value().visible != before.visible)
             return 13;
@@ -146,5 +152,5 @@ main(int argc, char** argv)
         if (!repeated || repeated.value() != first)
             return 15;
     }
-    std::cout << "coupling=3 targets=1 feedback=1 postAppend=30 replay=3\n";
+    std::cout << "coupling=3 targets=1 feedback=2 postAppend=-55 replay=3\n";
 }

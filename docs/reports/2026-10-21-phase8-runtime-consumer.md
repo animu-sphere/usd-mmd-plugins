@@ -1,5 +1,7 @@
 # Phase 8 first runtime coupling consumer (2026-10-21)
 
+The mode-1 no-feedback interpretation recorded here is corrected by the [2026-10-25 follow-up](2026-10-25-phase8-dynamic-bone-feedback.md).
+
 ## Scope and ownership
 
 Validates the installed `mmdPhysicsAdapter`/`mmdControl` boundary with the first
