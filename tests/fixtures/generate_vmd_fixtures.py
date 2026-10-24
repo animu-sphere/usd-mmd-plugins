@@ -137,6 +137,19 @@ def fixtures() -> dict[str, tuple[Motion | bytes, dict]]:
         pendulum.bones.append(("anchor", frame, (x, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0)))
     out["live-physics-anchor.vmd"] = (
         pendulum, opens(v2, "Live pendulum", 6, [4, 0, 0, 0, 0, 0], [1, 0, 0], []))
+    # Frame-zero pose admission: 1 m offset, then root/child rotations.
+    for name, root_rotation, child in (
+            ("offset", (0., 0., 0., 1.), False),
+            ("turn", (0., -.7071067811865476, 0., .7071067811865476), False),
+            ("bone", (0., -.7071067811865476, 0., .7071067811865476), True)):
+        initial = Motion("Live start " + name)
+        initial.bones = [("anchor", 0, (12.5, 3.75, 2.5), root_rotation)]
+        if child:
+            initial.bones.append(("swing", 0, (0., 0., 0.),
+                                  (0., 0., .25881904510252074, .9659258262890683)))
+        count = len(initial.bones)
+        out["live-physics-start-" + name + ".vmd"] = (
+            initial, opens(v2, "Live start " + name, 6, [count, 0, 0, 0, 0, 0], [count, 0, 0], []))
     morph = Motion("Live morph")
     morph.bones = list(pendulum.bones)
     for frame, weight in ((0, 0.0), (15, 1.0), (30, 0.0), (60, 0.0)):

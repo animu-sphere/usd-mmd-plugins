@@ -31,7 +31,9 @@ its outcome is verified; record measurements in a dated report.
 
 The immediate visual priority is live single-avatar usdview playback. The
 [mode-1 feedback correction](../reports/2026-10-25-phase8-dynamic-bone-feedback.md)
-repairs missing position/rotation output for associated dynamic bones;
+repairs missing position/rotation output for associated dynamic bones. The
+[start-pose follow-up](../reports/2026-10-25-phase8-start-pose-initialization.md)
+removes the rest-to-motion teleport on initial playback and Reset;
 representative spring/contact acceptance remains open. The
 [first live-host report](../reports/2026-10-21-phase8-usdview-live.md) records a
 generated contact-free skinned pendulum through the actual usdview Qt lifecycle

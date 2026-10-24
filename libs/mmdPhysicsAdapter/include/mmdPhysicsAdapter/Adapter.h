@@ -35,6 +35,12 @@ public:
     /// Joint-local transforms are in metres, including rest translations.
     Result<std::vector<BodyTransform>> UpdateKinematicBodies(const control::Pose& before) const;
 
+    /// Initial/reset placement for ALL associated bodies, including modes 1/2,
+    /// from an evaluated pre-physics starting pose and the bound rest offsets.
+    /// Unassociated bodies are omitted; the host retains their authored placement.
+    /// Pure transform query: no world mutation, velocity reset or simulation.
+    Result<std::vector<BodyTransform>> InitialBodyTransforms(const control::Pose& initial) const;
+
     /// Convert the immutable world snapshot to sparse joint-local feedback for
     /// Evaluator::ResumePhysics. Dynamic (mode 1) writes position and rotation;
     /// dynamicWithBone (mode 2) preserves pre-step local translation.
@@ -49,6 +55,8 @@ public:
     void Reset() noexcept {}
 
 private:
+    Result<std::vector<BodyTransform>> BodyTransforms(const control::Pose& pose,
+                                                     bool kinematicOnly) const;
     struct Body {
         pxr::SdfPath path;
         int joint = -1;
