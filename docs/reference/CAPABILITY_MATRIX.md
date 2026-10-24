@@ -237,6 +237,10 @@ not a uniform four-state per-feature capability API.
 Corpus counts, finite-step results, SDK/hosted evidence and response error
 measurements remain in the linked reports. Accepted reader/finite-state
 tests prove their bounded claims, not native MMD trajectories.
+The [live keyed-input report](../reports/2026-10-24-phase8-live-keyed-input.md)
+adds a generated VMD-driven pendulum with concrete body/final-skinning checks
+and exact reset replay. Anonymous private rest-input smoke and explicit
+morph/damping refusals do not establish representative PMX/VMD acceptance.
 [DEPENDENCIES §7](../architecture/DEPENDENCIES.md#7-usd-physics-plugins)
 owns package/ABI requirements and option discovery.
 

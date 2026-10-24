@@ -1,7 +1,7 @@
 # Current roadmap
 
 > Scope: active work only. Historical evidence lives in reports.
-> Updated: 2026-10-21
+> Updated: 2026-10-24
 
 ## Focus
 
@@ -37,7 +37,11 @@ and final UsdSkel publication. The
 connects owner filter/contact/damping conversion to that host. The
 [spring follow-up](../reports/2026-10-21-phase8-live-springs.md) connects owner
 conversion through independent experimental opt-ins with generated live
-response checks. Next validate representative PMX/VMD inputs. This does not
+response checks. The [keyed-input follow-up](../reports/2026-10-24-phase8-live-keyed-input.md)
+adds generated VMD/physics/reset coverage and anonymous private intake.
+Before representative PMX/VMD acceptance, connect required non-bone morph
+outputs, select owner-admitted damping declarations and complete local asset
+provenance/permission records. This does not
 close P1-C or L3 acceptance; resident
 Toon binding and Hydra/direct agreement remain separate requirements.
 
