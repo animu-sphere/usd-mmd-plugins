@@ -380,15 +380,7 @@ Evaluator::_Sample(const binding::BoundMotion& motion, double frame, State& stat
             pose.channels.push_back(MorphChannel{track.morph, weight});
         }
     }
-    for (const std::int32_t g : _groupOrder) {
-        const double weight = weights[static_cast<std::size_t>(g)];
-        if (weight == 0.0) {
-            continue;
-        }
-        for (const GroupMember& member : _morphs[static_cast<std::size_t>(g)].members) {
-            weights[static_cast<std::size_t>(member.morph)] += weight * member.weight;
-        }
-    }
+    _ExpandGroups(weights);
     for (const std::int32_t m : _boneMorphs) {
         const double weight = weights[static_cast<std::size_t>(m)];
         if (weight == 0.0) {
@@ -416,6 +408,54 @@ Evaluator::_Sample(const binding::BoundMotion& motion, double frame, State& stat
     }
 
     pose.visible = SampleVisibility(motion.visibility, frame);
+}
+
+void
+Evaluator::_ExpandGroups(std::vector<double>& weights, std::vector<bool>* reached) const
+{
+    for (const std::int32_t g : _groupOrder) {
+        const auto index = static_cast<std::size_t>(g);
+        const double weight = weights[index];
+        if (weight == 0.0 && (!reached || !(*reached)[index])) {
+            continue;
+        }
+        for (const GroupMember& member : _morphs[index].members) {
+            const auto child = static_cast<std::size_t>(member.morph);
+            if (reached && (*reached)[index]) {
+                (*reached)[child] = true;
+            }
+            if (weight != 0.0) {
+                weights[child] += weight * member.weight;
+            }
+        }
+    }
+}
+
+std::vector<MorphChannel>
+Evaluator::ResolveMorphChannels(std::span<const MorphChannel> channels) const
+{
+    std::vector<double> weights(_morphs.size(), 0.0);
+    std::vector<bool> reached(_morphs.size(), false);
+    for (const MorphChannel& channel : channels) {
+        if (channel.morph < 0 || static_cast<std::size_t>(channel.morph) >= _morphs.size()) {
+            continue;
+        }
+        const auto index = static_cast<std::size_t>(channel.morph);
+        if (_morphs[index].type == MorphType::Bone) {
+            continue;
+        }
+        weights[index] += channel.weight;
+        reached[index] = true;
+    }
+    _ExpandGroups(weights, &reached);
+    std::vector<MorphChannel> result;
+    for (std::size_t m = 0; m < _morphs.size(); ++m) {
+        if (reached[m] && _morphs[m].type != MorphType::Bone &&
+            _morphs[m].type != MorphType::Group) {
+            result.push_back({static_cast<std::int32_t>(m), weights[m]});
+        }
+    }
+    return result;
 }
 
 void
