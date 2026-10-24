@@ -214,8 +214,9 @@ Adapter::Bind(const pxr::UsdSkelSkeleton& skeleton, std::span<const pxr::UsdPrim
             return Fail<Adapter>(codes::PhysicsBindingInvalid,
                                  path + ": invalid constant bone/mode declaration");
         body.follow = mode == TfToken("followBone");
-        body.feedback = mode == TfToken("dynamicWithBone");
-        if (!body.follow && !body.feedback && mode != TfToken("dynamic"))
+        body.keepTranslation = mode == TfToken("dynamicWithBone");
+        body.feedback = body.keepTranslation || mode == TfToken("dynamic");
+        if (!body.follow && !body.feedback)
             return Fail<Adapter>(codes::PhysicsBindingInvalid, path + ": unknown MMD physics mode");
         bool kinematic = false;
         const UsdPhysicsRigidBodyAPI api(prim);
@@ -240,7 +241,7 @@ Adapter::Bind(const pxr::UsdSkelSkeleton& skeleton, std::span<const pxr::UsdPrim
         } else {
             if (body.feedback && !driven.insert(body.joint).second)
                 return Fail<Adapter>(codes::PhysicsBindingInvalid,
-                                     path + ": multiple dynamicWithBone bodies drive one joint");
+                                     path + ": multiple simulated bodies drive one joint");
             body.offset = Metres(frame, unit) * world[body.joint].GetInverse();
             if (!Rigid(body.offset))
                 return Fail<Adapter>(codes::PhysicsTransformUnsupported,
@@ -313,7 +314,9 @@ Adapter::ApplyPhysicsToPose(std::span<const BodyTransform> simulated,
                 return Fail<std::vector<Feedback>>(
                     codes::PhysicsSnapshotInvalid,
                     body.path.GetString() + ": feedback transform is not finite and rigid");
-            local.rotation = TransformOf(m).rotation;
+            local = TransformOf(m);
+            if (body.keepTranslation)
+                local.translation = before.joints[i].translation;
             result.push_back({static_cast<int>(i), local});
         }
         // Also rebuild intermediate, non-driven ancestors after parent feedback.

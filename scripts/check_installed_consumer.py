@@ -364,7 +364,7 @@ def main() -> int:
             [str(physics_probes[0]), str(fixtures / "coupling-modes.pmx"),
              str(vmd_fixtures / "sample.vmd")], text=True, encoding="utf-8",
             stdout=subprocess.PIPE, env=coupling_env)
-        want = "coupling=3 targets=1 feedback=1 postAppend=30 replay=3"
+        want = "coupling=3 targets=1 feedback=2 postAppend=-55 replay=3"
         if coupling.returncode != 0 or coupling.stdout.splitlines() != [want]:
             print(f"the installed coupling probe returned {coupling.returncode}: "
                   f"{coupling.stdout!r}", file=sys.stderr)
