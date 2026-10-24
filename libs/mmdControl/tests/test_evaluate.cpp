@@ -201,7 +201,63 @@ TestMorphs()
     // Channels: every track but the bone morph's, weights unexpanded.
     const std::vector<MorphChannel> channels{{2, 1.0}, {3, 0.25}};
     assert(pose.channels == channels);
+    assert((evaluator.ResolveMorphChannels(pose.channels) == std::vector<MorphChannel>{{3, 0.25}}));
     std::puts("ok  bone and group morphs, and channels");
+}
+
+void
+TestResolvedMorphChannels()
+{
+    // A diamond reaches the vertex both directly and through an inner group.
+    // All leaf types remain identifiable; flip members must NOT be expanded.
+    CanonicalDocument model;
+    model.morphs.resize(10);
+    const std::vector<MorphType> types{MorphType::Group,
+                                       MorphType::Group,
+                                       MorphType::Vertex,
+                                       MorphType::Bone,
+                                       MorphType::Vertex,
+                                       MorphType::Uv,
+                                       MorphType::Material,
+                                       MorphType::Flip,
+                                       MorphType::Impulse,
+                                       MorphType::AdditionalUv1};
+    for (std::size_t i = 0; i < types.size(); ++i)
+        model.morphs[i].type = types[i];
+    model.morphs[0].members = {{2, 2}, {3, 0.5}};
+    model.morphs[1].members = {{0, 0.5}, {2, 0.25}, {3, 1}, {5, -1}, {6, 1}, {7, 1}, {8, 0}};
+    model.morphs[7].members = {{4, 1}};
+    const Evaluator evaluator = Prepared(model);
+    const std::vector<MorphChannel> raw{{2, -0.5}, {1, 2}, {0, -0.25}};
+    const std::vector<MorphChannel> expected{{2, 1.5}, {5, -2}, {6, 2}, {7, 2}, {8, 0}};
+    assert(evaluator.ResolveMorphChannels(raw) == expected);
+    assert((raw == std::vector<MorphChannel>{{2, -0.5}, {1, 2}, {0, -0.25}}));
+
+    // Zero/cancelled inputs still expose reached unsupported types to consumers.
+    const std::vector<MorphChannel> zero{{1, 1}, {1, -1}};
+    const std::vector<MorphChannel> zeros{{2, 0}, {5, 0}, {6, 0}, {7, 0}, {8, 0}};
+    assert(evaluator.ResolveMorphChannels(zero) == zeros);
+    assert(evaluator.ResolveMorphChannels({}).empty());
+    const std::vector<MorphChannel> ignored{{-1, 1}, {10, 1}, {3, 100}};
+    assert(evaluator.ResolveMorphChannels(ignored).empty());
+    assert(evaluator.ResolveMorphChannels(raw) == expected); // no retained weights
+    const std::vector<MorphChannel> nonfinite{{2, std::numeric_limits<double>::infinity()},
+                                              {5, std::numeric_limits<double>::quiet_NaN()}};
+    const auto invalid = evaluator.ResolveMorphChannels(nonfinite);
+    assert(invalid.size() == 2);
+    assert(std::isinf(invalid[0].weight) && std::isnan(invalid[1].weight));
+
+    binding::BoundMotion motion;
+    motion.morphs = {{0, {{0, -0.25f}}}, {1, {{0, 2}}}, {2, {{0, -0.5f}}}};
+    const Pose pose = evaluator.Evaluate(motion, 0);
+    const auto suspended = evaluator.BeginPhysics(motion, 0);
+    const auto resumed = evaluator.ResumePhysics(suspended);
+    assert(resumed.ok());
+    assert(evaluator.ResolveMorphChannels(pose.channels) == expected);
+    assert(evaluator.ResolveMorphChannels(suspended.BeforePhysics().channels) == expected);
+    assert(evaluator.ResolveMorphChannels(resumed.value().channels) == expected);
+    assert(evaluator.ResumePhysics(suspended).value() == resumed.value());
+    std::puts("ok  resolved non-bone group weights and continuation");
 }
 
 // -- Appends (§11.6) ----------------------------------------------------------
@@ -832,6 +888,7 @@ RunEvaluateTests()
     TestRestAndForwardKinematics();
     TestOrder();
     TestMorphs();
+    TestResolvedMorphChannels();
     TestAppends();
     TestPhysicsBoundaryAppends();
     TestContinuationValidationAndLifetime();

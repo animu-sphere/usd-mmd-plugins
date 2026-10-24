@@ -42,9 +42,12 @@ adds generated VMD/physics/reset coverage and anonymous private intake.
 The [direct vertex follow-up](../reports/2026-10-24-phase8-live-vertex-morph.md)
 adds single-mesh vertex weights alongside physics-driven joints, with generated
 deformation/reset checks and explicit group/UV refusals.
+The [owner group-weight follow-up](../reports/2026-10-24-phase8-resolved-morph-channels.md)
+adds explicit non-bone group resolution while preserving raw channels and
+bone evaluation. Its scalar outputs still need runtime/live-host integration.
 Before representative PMX/VMD acceptance, connect required non-bone morph
-outputs beyond direct vertex tracks (including owner-resolved non-bone group
-weights), select owner-admitted damping declarations and complete local asset
+outputs beyond direct vertex tracks using the owner-resolved non-bone group
+weights, select owner-admitted damping declarations and complete local asset
 provenance/permission records. This does not
 close P1-C or L3 acceptance; resident
 Toon binding and Hydra/direct agreement remain separate requirements.

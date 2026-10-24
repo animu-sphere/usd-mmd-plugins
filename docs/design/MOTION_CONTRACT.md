@@ -663,6 +663,30 @@ pose's **channels** instead — one per bound morph track whose morph is
 morph is a channel too (MOT-O7, §10.7). A consumer that expands a group
 channel skips its bone morphs: they are already in the pose.
 
+`Evaluator::ResolveMorphChannels(channels)` supplies that expansion on the
+MMD owner side. Pass the raw `Pose::channels` from `Evaluate`, `BeginPhysics`
+or `ResumePhysics`. It sums direct and nested group contributions using the
+same groups-first order as bone evaluation, returning one scalar per reached
+non-bone, non-group morph, in ascending canonical morph index. It does not
+modify the input or pose and does not clamp negative or above-one weights.
+Duplicate input channels add; invalid indices and bone inputs are ignored,
+as out-of-model tracks are by `Evaluate`.
+
+Reachability follows group membership even for zero weights, zero member
+coefficients and cancelling contributions. Reached leaves therefore remain
+in the result at zero; unrelated unkeyed leaves are absent. This lets a
+consumer validate every required output binding without silently dropping
+unsupported types at zero-weight frames. Flip members are not traversed:
+flip and impulse remain uninterpreted scalar leaves, as do UV/material
+outputs until their own consumer realizes them. Non-finite arithmetic is
+not repaired; consumers must validate weights before publication.
+
+Consumers use this resolved result in place of the raw channel list for
+non-bone output, never combine both.
+Bone effects remain solely in the evaluated pose. This API does not change
+the raw channel contract, shared-motion channel export, stage authoring or
+claim any renderer/runtime realization.
+
 ### 11.4 A joint's local transform
 
 For joint `j`, with `T_j` its rest translation from its parent and `a_j`,

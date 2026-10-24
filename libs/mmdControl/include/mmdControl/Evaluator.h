@@ -20,6 +20,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace mmd::control {
@@ -34,8 +35,9 @@ struct JointTransform {
     bool operator==(const JointTransform&) const = default;
 };
 
-/// A morph that is not evaluated into the pose, with its sampled weight
-/// (MOTION_CONTRACT.md §11.3): a channel for the shared motion core.
+/// A non-bone morph scalar (MOTION_CONTRACT.md §11.3). Pose::channels
+/// carries raw sampled weights for the shared motion core;
+/// ResolveMorphChannels returns accumulated leaf weights using this type.
 struct MorphChannel {
     std::int32_t morph = kNone; ///< canonical morph index
     double weight = 0.0;
@@ -106,6 +108,15 @@ public:
     /// The same, refilling `pose`, whose storage a caller may reuse from
     /// frame to frame.
     void Evaluate(const binding::BoundMotion& motion, double frame, Pose& pose) const;
+
+    /// Resolve raw Pose::channels through nested groups, summing direct and
+    /// group contributions without clamping. Returns reached non-bone,
+    /// non-group morphs in ascending canonical index, including zero weights.
+    /// Bone effects are already in the pose. Other leaf types (including
+    /// flip/impulse) remain scalar outputs, not evaluated effects; consumers
+    /// must reject types they cannot realize. Do not combine these weights
+    /// with the raw input channels. Invalid indices and bone inputs are ignored.
+    std::vector<MorphChannel> ResolveMorphChannels(std::span<const MorphChannel> channels) const;
 
     /// Sample once and run only pre-physics controls (MOTION §11.10).
     Continuation BeginPhysics(const binding::BoundMotion& motion, double frame) const;
@@ -188,6 +199,7 @@ private:
     void _Sample(const binding::BoundMotion& motion, double frame, State& state, Pose& pose,
                  std::vector<bool>& enabled) const;
     void _WritePose(const State& state, Pose& pose) const;
+    void _ExpandGroups(std::vector<double>& weights, std::vector<bool>* reached = nullptr) const;
     /// Appends then IK, in MMD's order (§11.5); `held` joints take neither.
     void _Pass(State& state, const std::vector<bool>& enabled, const std::vector<bool>* held,
                std::size_t begin, std::size_t end) const;

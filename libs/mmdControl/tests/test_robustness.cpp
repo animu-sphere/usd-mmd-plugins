@@ -325,6 +325,23 @@ main()
                 std::printf("FAIL case %d frame %g: %s\n", i, frame, violation);
                 ++failures;
             }
+            const auto resolved = evaluator.ResolveMorphChannels(first.channels);
+            const auto repeated = evaluator.ResolveMorphChannels(resumed.value().channels);
+            assert(resolved.size() == repeated.size());
+            for (std::size_t c = 0; c < resolved.size(); ++c) {
+                const auto& channel = resolved[c];
+                const auto index = static_cast<std::size_t>(channel.morph);
+                if (index >= model.morphs.size() || model.morphs[index].type == MorphType::Bone ||
+                    model.morphs[index].type == MorphType::Group ||
+                    (c && resolved[c - 1].morph >= channel.morph) ||
+                    channel.morph != repeated[c].morph ||
+                    !SameBits(channel.weight, repeated[c].weight) ||
+                    (tame && !std::isfinite(channel.weight))) {
+                    std::printf(
+                        "FAIL case %d frame %g: invalid resolved morph channel\n", i, frame);
+                    ++failures;
+                }
+            }
             (void)evaluator.World(first);
         }
     }

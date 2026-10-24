@@ -24,6 +24,20 @@ main(int argc, char** argv)
         std::fprintf(stderr, "usage: control_probe <file.vmd> <model.pmx>\n");
         return 2;
     }
+    // Exercise the new owner API through installed headers AND static library.
+    mmd::CanonicalDocument groupModel;
+    groupModel.morphs.resize(3);
+    groupModel.morphs[0].type = mmd::MorphType::Group;
+    groupModel.morphs[0].members = {{1, 0.5f}, {2, 1.0f}};
+    groupModel.morphs[1].type = mmd::MorphType::Vertex;
+    groupModel.morphs[2].type = mmd::MorphType::Bone;
+    const auto groups = mmd::control::Evaluator::Prepare(groupModel).value();
+    const std::vector<mmd::control::MorphChannel> raw{{0, 2}, {1, 0.25}};
+    const std::vector<mmd::control::MorphChannel> expected{{1, 1.25}};
+    if (groups.ResolveMorphChannels(raw) != expected) {
+        std::fprintf(stderr, "installed non-bone group resolution differs\n");
+        return 2;
+    }
     const auto read = motionVmd::ReadFile(std::filesystem::path(argv[1]));
     const auto source = mmd::pmx::ReadFile(std::filesystem::path(argv[2]));
     if (!read.ok() || !source.ok()) {
