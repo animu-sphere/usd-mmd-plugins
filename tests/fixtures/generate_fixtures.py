@@ -1485,6 +1485,16 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
         ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))]
     entries["live-physics-pendulum.pmx"] = opens(
         pendulum, "visible skinned pendulum for live runtime/UsdSkel physics publication")
+    morph_pendulum = {**pendulum, "morphs": [
+        {"name": "wide", "englishName": "wide", "panel": 4, "type": "vertex",
+         "offsets": [(1, (2.0, 0.0, 0.0)), (2, (2.0, 0.0, 0.0))]},
+        {"name": "wideGroup", "englishName": "wideGroup", "panel": 4, "type": "group",
+         "offsets": [(0, 0.5)]},
+        {"name": "uv", "englishName": "uv", "panel": 4, "type": "uv",
+         "offsets": [(0, (0.1, 0.0, 0.0, 0.0))]},
+    ]}
+    entries["live-physics-morph.pmx"] = opens(
+        morph_pendulum, "live vertex/group morph with physics and an unsupported UV channel")
 
     # Recoverable: the model opens, and the stage records why it is not exact.
     bad_utf8 = sample_model(2.0, UTF8, 1, 0)
