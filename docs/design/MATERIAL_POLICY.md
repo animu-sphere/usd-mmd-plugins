@@ -355,7 +355,45 @@ color and size, and the texture, sphere and toon tints. The stage never
 contains a precomputed material per morph, and a morph never edits the
 material prims.
 
-A runtime evaluates the morphs; the importer does not. The runtime applies the
+A runtime schedules owner evaluation; the importer does not evaluate morphs.
+`mmdControl::Evaluator::EvaluateMaterialMorphs` takes raw `Pose::channels`
+and resolves nested group contributions once under
+[MOTION §11.3](MOTION_CONTRACT.md#113-morphs). It returns owned sparse
+`MaterialMorphModulation` rows in ascending canonical material index. Each
+row contains componentwise `multiply` and `add` values for diffuse RGBA,
+specular RGB/power, ambient RGB, edge RGBA/size and texture/sphere/toon RGBA
+tints. For an effective weight `w` and source component `s`:
+
+- Multiplication accumulates factors `1 + w * (s - 1)`, starting at one.
+- Addition accumulates terms `w * s`, starting at zero.
+- Both accumulators follow ascending morph index and source offset order,
+  independently: additive terms are never multiplied by subsequent offsets.
+- An explicit material index addresses that canonical material; `kNone`
+  addresses every material. Overlapping and repeated offsets all contribute.
+
+Apply `base * multiply + add` to immutable canonical material values each
+frame. Texture tints describe separate modulation of each sampled texture
+contribution; they must not be folded into the diffuse input. Do not clamp
+weights, factors or values in owner evaluation. Renderer admission and final
+base-plus-modulation validation belong to the consumer.
+
+Reachability includes zero weights, zero group coefficients and cancellation.
+Reached material targets retain identity rows at zero; unrelated targets are
+absent. Empty input or an all-material offset over an empty material table
+produces no rows. Preparation copies the required offsets and material count;
+results own their values and survive later calls, copies/moves and teardown.
+
+Invalid explicit targets, operations, non-finite effective weights/source
+components or non-finite weighted/accumulated values refuse with fatal
+`MMD_MOTION_MATERIAL_MORPH_INVALID`, without a partial result, even at zero
+weight. All-material declarations are validated even with no materials.
+Invalid input morph indices and bone inputs follow `ResolveMorphChannels`'
+ignore rule. This query ignores other leaf types; consumers must separately
+admit every reached leaf and validate material identities/layout before
+publishing a complete frame. See the
+[capability matrix](../reference/CAPABILITY_MATRIX.md) for integration scope.
+
+The runtime applies the
 result as an override of the Material's varying canonical inputs (§4.1): a
 stronger layer's opinion or time samples, never an edit of the imported layer.
 From stage-contract v2 the connected realizations follow it without being

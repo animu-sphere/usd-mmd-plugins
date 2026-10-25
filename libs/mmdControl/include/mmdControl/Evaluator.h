@@ -58,6 +58,40 @@ struct UvMorphDelta {
     bool operator==(const UvMorphDelta&) const = default;
 };
 
+/// Componentwise material values, in canonical material units. Texture tints
+/// modulate sampled texture contributions, not the diffuse material input.
+struct MaterialMorphValues {
+    std::array<double, 4> diffuseColor{};
+    std::array<double, 3> specularColor{};
+    double specularPower = 0;
+    std::array<double, 3> ambientColor{};
+    std::array<double, 4> edgeColor{};
+    double edgeSize = 0;
+    std::array<double, 4> textureTint{};
+    std::array<double, 4> sphereTint{};
+    std::array<double, 4> toonTint{};
+
+    bool operator==(const MaterialMorphValues&) const = default;
+};
+
+/// One reached material's modulation: final = immutable base * multiply + add.
+/// Multipliers start at one and additions at zero, independently accumulated.
+struct MaterialMorphModulation {
+    std::int32_t material = 0;
+    MaterialMorphValues multiply{{1, 1, 1, 1},
+                                 {1, 1, 1},
+                                 1,
+                                 {1, 1, 1},
+                                 {1, 1, 1, 1},
+                                 1,
+                                 {1, 1, 1, 1},
+                                 {1, 1, 1, 1},
+                                 {1, 1, 1, 1}};
+    MaterialMorphValues add;
+
+    bool operator==(const MaterialMorphModulation&) const = default;
+};
+
 /// The evaluated state of a model at one time.
 struct Pose {
     /// One per canonical joint, in canonical joint order: the rest
@@ -143,6 +177,17 @@ public:
     Result<std::vector<UvMorphDelta>>
     EvaluateUvMorphs(std::span<const MorphChannel> channels) const;
 
+    /// Evaluate material effects from RAW Pose::channels, resolving groups once.
+    /// Returns owned rows in material-index order, including reached identity
+    /// rows at zero weight. kNone offsets address every canonical material.
+    /// Multiply factors use 1 + weight * (source - 1); additions use weight *
+    /// source, in ascending morph/source-offset order. Neither is clamped.
+    /// Invalid targets/operations or nonfinite values/arithmetic refuse with
+    /// MMD_MOTION_MATERIAL_MORPH_INVALID, including at zero weight. Consumers
+    /// validate final values/bindings and separately admit other reached leaves.
+    Result<std::vector<MaterialMorphModulation>>
+    EvaluateMaterialMorphs(std::span<const MorphChannel> channels) const;
+
     /// Sample once and run only pre-physics controls (MOTION §11.10).
     Continuation BeginPhysics(const binding::BoundMotion& motion, double frame) const;
 
@@ -213,9 +258,10 @@ private:
     };
     struct Morph {
         MorphType type = MorphType::Group;
-        std::vector<BoneOffset> boneOffsets;  ///< a bone morph's
-        std::vector<GroupMember> members;     ///< a group morph's
-        std::vector<MorphUvOffset> uvOffsets; ///< a UV morph's raw deltas
+        std::vector<BoneOffset> boneOffsets;              ///< a bone morph's
+        std::vector<GroupMember> members;                 ///< a group morph's
+        std::vector<MorphUvOffset> uvOffsets;             ///< a UV morph's raw deltas
+        std::vector<MorphMaterialOffset> materialOffsets; ///< a material morph's
     };
     struct State;
 
@@ -237,6 +283,7 @@ private:
     std::vector<Chain> _chains;
     std::vector<Morph> _morphs;
     std::size_t _vertexCount = 0;
+    std::size_t _materialCount = 0;
     std::uint8_t _additionalUvCount = 0;
     /// Group morphs, every group before the groups it lists.
     std::vector<std::int32_t> _groupOrder;

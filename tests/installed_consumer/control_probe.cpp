@@ -56,6 +56,30 @@ main(int argc, char** argv)
         std::fprintf(stderr, "installed UV morph evaluation differs\n");
         return 2;
     }
+    mmd::CanonicalDocument materialModel;
+    materialModel.materials.resize(2);
+    materialModel.morphs.resize(3);
+    materialModel.morphs[0].members = {{1, 0.5f}, {2, 1}};
+    materialModel.morphs[1].type = materialModel.morphs[2].type = mmd::MorphType::Material;
+    mmd::MorphMaterialOffset multiply, add;
+    multiply.material = mmd::kNone;
+    multiply.diffuseColor = {3, 2, 1, 0};
+    add.material = 1;
+    add.operation = mmd::MaterialMorphOperation::Add;
+    add.diffuseColor = {1, 2, 3, 4};
+    materialModel.morphs[1].materialOffsets = {multiply};
+    materialModel.morphs[2].materialOffsets = {add};
+    const auto materialEvaluator = mmd::control::Evaluator::Prepare(materialModel).value();
+    const auto materials = materialEvaluator.EvaluateMaterialMorphs(raw);
+    if (!materials.ok() || materials.value().size() != 2 || materials.value()[0].material != 0 ||
+        materials.value()[1].material != 1 ||
+        materials.value()[0].multiply.diffuseColor != std::array<double, 4>{3.5, 2.25, 1, -0.25} ||
+        materials.value()[1].multiply.diffuseColor != materials.value()[0].multiply.diffuseColor ||
+        materials.value()[0].add.diffuseColor != std::array<double, 4>{} ||
+        materials.value()[1].add.diffuseColor != std::array<double, 4>{2, 4, 6, 8}) {
+        std::fprintf(stderr, "installed material morph evaluation differs\n");
+        return 2;
+    }
     const auto read = motionVmd::ReadFile(std::filesystem::path(argv[1]));
     const auto source = mmd::pmx::ReadFile(std::filesystem::path(argv[2]));
     if (!read.ok() || !source.ok()) {

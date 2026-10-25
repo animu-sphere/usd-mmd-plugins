@@ -241,6 +241,7 @@ raises; every other code is reserved.
 | `MMD_MOTION_CONTINUATION_INVALID` *emitted* | fatal | `mmdControl` (`ResumePhysics`) | [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary) |
 | `MMD_MOTION_PHYSICS_FEEDBACK_INVALID` *emitted* | fatal | `mmdControl` (`ResumePhysics`) | [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary) |
 | `MMD_MOTION_UV_MORPH_INVALID` *emitted* | fatal | `mmdControl` (`EvaluateUvMorphs`) | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
+| `MMD_MOTION_MATERIAL_MORPH_INVALID` *emitted* | fatal | `mmdControl` (`EvaluateMaterialMorphs`) | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
 | `MMD_MOTION_INVALID_SAMPLE_RANGE` *emitted* | fatal | `mmdMotionAdapter` (`BuildClip`) | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
 | `MMD_MOTION_NON_FINITE_SAMPLE` *emitted* | fatal | `mmdMotionAdapter` (`BuildClip`) | [MOTION §10.8](../design/MOTION_CONTRACT.md#108-diagnostics) |
 | `MMD_MOTION_MISSING_REQUIRED_JOINT` *emitted* | warning | `mmdMotionAdapter` (`BuildClip`) | [MOTION §12.4](../design/MOTION_CONTRACT.md#124-required-joints) |

@@ -4,6 +4,7 @@
 void RunSampleTests();
 void RunEvaluateTests();
 void RunUvMorphTests();
+void RunMaterialMorphTests();
 
 int
 main()
@@ -11,6 +12,7 @@ main()
     RunSampleTests();
     RunEvaluateTests();
     RunUvMorphTests();
+    RunMaterialMorphTests();
     std::puts("mmdControl_unit: all passed");
     return 0;
 }

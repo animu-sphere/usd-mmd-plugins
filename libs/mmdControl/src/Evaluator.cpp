@@ -274,6 +274,7 @@ Evaluator::Prepare(const CanonicalDocument& model)
 
     const auto morphCount = static_cast<std::int32_t>(model.morphs.size());
     evaluator._vertexCount = model.mesh.points.size();
+    evaluator._materialCount = model.materials.size();
     evaluator._additionalUvCount = model.mesh.additionalUvCount;
     evaluator._morphs.resize(model.morphs.size());
     std::vector<std::int32_t> listedBy(model.morphs.size(), 0);
@@ -281,6 +282,9 @@ Evaluator::Prepare(const CanonicalDocument& model)
         const mmd::Morph& source = model.morphs[m];
         Morph& morph = evaluator._morphs[m];
         morph.type = source.type;
+        if (source.type == MorphType::Material) {
+            morph.materialOffsets = source.materialOffsets;
+        }
         if (source.type >= MorphType::Uv && source.type <= MorphType::AdditionalUv4) {
             morph.uvOffsets = source.uvOffsets;
         }
