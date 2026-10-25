@@ -656,10 +656,10 @@ its motion rotation `ρ` becomes `slerp(1, q, w) · ρ` — a rotation about `q`
 axis by `w` times `q`'s angle, applied after `ρ`. Of what a group reaches,
 only its bone morphs change the pose.
 
-No other morph type changes a joint: vertex, UV and material morphs are a
-renderer's, and flip and impulse morphs are not evaluated. They reach the
-pose's **channels** instead — one per bound morph track whose morph is
-**not** a bone morph, with its sampled weight, never expanded — so a group
+No other morph type changes a joint: vertex, UV and material effects have
+separate geometry/appearance outputs, and flip and impulse morphs are not
+evaluated. They reach the pose's **channels** instead — one per bound morph
+track whose morph is **not** a bone morph, with its sampled weight, never expanded — so a group
 morph is a channel too (MOT-O7, §10.7). A consumer that expands a group
 channel skips its bone morphs: they are already in the pose.
 
@@ -686,6 +686,32 @@ non-bone output, never combine both.
 Bone effects remain solely in the evaluated pose. This API does not change
 the raw channel contract, shared-motion channel export, stage authoring or
 claim any renderer/runtime realization.
+
+`Evaluator::EvaluateUvMorphs(channels)` evaluates the UV subset from **raw**
+`Pose::channels`, resolving groups internally through the same interface.
+It returns owned sparse `UvMorphDelta` rows sorted by `(channel, vertex)`:
+channel 0 is primary `st`, and 1–4 are additional UV vec4 channels. In ascending
+morph index and source offset order, each offset gains its effective weight
+times the source delta. Contributions to the same channel/vertex add, including
+duplicate offsets. Weights and UVs are not clamped. Reached zero rows remain;
+unreached rows are absent, and empty input produces no rows.
+
+Primary deltas negate source V once, matching canonical `st = (u, 1-v)`;
+only their X/Y components apply to `st`. Z/W remain in the returned row for
+inspection. Additional UV deltas keep all four raw components. Apply deltas
+to the immutable base UVs each frame, never to the previous frame's result.
+The evaluator copies required source offsets during preparation; inputs,
+model and poses are unchanged, and results survive later calls and teardown.
+
+A reached UV morph with a channel above the model's `additionalUvCount`, an
+invalid vertex, a non-finite effective weight/offset or non-finite accumulated
+delta refuses with fatal `MMD_MOTION_UV_MORPH_INVALID`, without a partial result,
+including at zero weight. Invalid morph indices and bone inputs follow
+`ResolveMorphChannels`' ignore rule. Non-UV leaves are outside this scoped
+query: a complete consumer must still validate all resolved leaves, its UV
+layout/bindings and final base-plus-delta values before publication. This query
+does not realize GPU buffers, author USD, or implement material/flip/impulse
+effects.
 
 ### 11.4 A joint's local transform
 

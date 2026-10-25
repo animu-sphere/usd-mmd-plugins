@@ -11,7 +11,7 @@ function(_mmd_control_test target)
 endfunction()
 
 # Synthetic rigs with known answers (docs/design/MOTION_CONTRACT.md §11).
-_mmd_control_test(mmdControl_tests test_sample.cpp test_evaluate.cpp test_main.cpp)
+_mmd_control_test(mmdControl_tests test_sample.cpp test_evaluate.cpp test_uv_morph.cpp test_main.cpp)
 add_test(NAME mmdControl_unit COMMAND mmdControl_tests)
 
 # Thousands of generated rigs and motions, each evaluated twice, bit for bit.

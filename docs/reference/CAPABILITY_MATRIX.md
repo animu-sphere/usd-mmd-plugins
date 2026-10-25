@@ -76,15 +76,16 @@ fixtures `tests/fixtures/generate_vmd_fixtures.py` writes.
 
 What evaluating a bound motion at one time gives: a pose of every
 deformation joint, the morph channels, and the visibility. Each claim is
-backed by a synthetic rig with a known answer in `mmdControl_unit`, and every
-rule by `mmdControl_robustness`.
+backed by a synthetic rig with a known answer in `mmdControl_unit`; core pose
+and scalar group evaluation also have generated `mmdControl_robustness` checks.
 
 | Capability | Current | Contract |
 | --- | :---: | --- |
 | Bone tracks sampled on their Bézier curves; morph tracks linearly; IK and visibility as steps | supported | [MOTION §11.2](../design/MOTION_CONTRACT.md#112-sampling-the-tracks) |
 | Bone morphs, directly and through nested group morphs, evaluated into the pose | supported | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
 | Every other bound morph as a channel with its sampled weight | supported | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
-| Owner-side non-bone group weight resolution (`ResolveMorphChannels`), preserving raw channels and excluding bone effects | supported by generated unit/robustness and installed-consumer checks; generated runtime/live vertex-group publication validated in the [consumer report](../reports/2026-10-24-phase8-live-resolved-morph.md); no UV/material/flip/impulse execution | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
+| Owner-side non-bone group weight resolution (`ResolveMorphChannels`), preserving raw channels and excluding bone effects | supported by generated unit/robustness and installed-consumer checks; generated runtime/live vertex-group publication validated in the [consumer report](../reports/2026-10-24-phase8-live-resolved-morph.md); scalar resolution alone does not realize leaf effects | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
+| Owner-side primary/additional UV deltas (`EvaluateUvMorphs`), including nested groups and primary-V conversion | generated numeric unit and installed-consumer checks; live output/renderer integration remains open | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
 | MMD's evaluation order: after-physics flag, transform layer, source index | supported | [MOTION §11.5](../design/MOTION_CONTRACT.md#115-evaluation-order) |
 | Rotation and translation appends, negative ratios, chains of appends, appends from IK links | supported | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
 | Local appends | approximated (evaluated as global, reported) | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
