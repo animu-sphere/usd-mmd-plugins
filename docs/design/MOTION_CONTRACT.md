@@ -713,6 +713,13 @@ layout/bindings and final base-plus-delta values before publication. This query
 does not realize GPU buffers, author USD, or implement material/flip/impulse
 effects.
 
+`Evaluator::EvaluateMaterialMorphs(channels)` likewise takes **raw** pose
+channels and resolves groups internally. Owned per-material multiplication
+and addition outputs, ordering, application and fatal validation are defined
+once in [MATERIAL §11](MATERIAL_POLICY.md#11-material-morphs). It leaves pose
+and raw channel transport unchanged; owner evaluation alone does not establish
+runtime output or renderer realization.
+
 ### 11.4 A joint's local transform
 
 For joint `j`, with `T_j` its rest translation from its parent and `a_j`,

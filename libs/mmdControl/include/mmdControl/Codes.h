@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// The diagnostic codes mmdControl raises during preparation and continuation
-// validation. Same rules as mmdPmx/Codes.h: a code is never renamed,
+// The diagnostic codes mmdControl raises during preparation, continuation
+// and non-bone morph validation. Same rules as mmdPmx/Codes.h: a code is never renamed,
 // reused, or given another severity, and scripts/check_docs.py fails when this
 // list and docs/reference/DIAGNOSTICS.md §5 disagree.
 #pragma once
@@ -20,5 +20,7 @@ inline constexpr Code MotionContinuationInvalid{"MMD_MOTION_CONTINUATION_INVALID
 inline constexpr Code MotionPhysicsFeedbackInvalid{"MMD_MOTION_PHYSICS_FEEDBACK_INVALID",
                                                    Severity::Fatal};
 inline constexpr Code MotionUvMorphInvalid{"MMD_MOTION_UV_MORPH_INVALID", Severity::Fatal};
+inline constexpr Code MotionMaterialMorphInvalid{"MMD_MOTION_MATERIAL_MORPH_INVALID",
+                                                 Severity::Fatal};
 
 } // namespace mmd::codes

@@ -34,6 +34,7 @@ endif()
 
 add_library(mmdControl STATIC
     src/Evaluator.cpp
+    src/MaterialMorph.cpp
     src/Sample.cpp)
 add_library(mmdControl::mmdControl ALIAS mmdControl)
 set_target_properties(mmdControl PROPERTIES
