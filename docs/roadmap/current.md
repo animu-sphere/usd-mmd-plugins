@@ -40,11 +40,13 @@ retain the generated consumer and lifecycle history.
 
 ### Next integration work
 
-1. **UV output (runtime consumer + renderer):** connect the installed owner
-   query to runtime snapshots, live UV publication and renderer bindings.
+1. **UV rendering (runtime consumer + renderer):** validate primary UVs through
+   resident renderer bindings and rendered output, then extend typed output
+   admission to additional UV channels. Primary runtime snapshots and live USD
+   `st` publication have generated numeric checks in the
+   [live primary UV report](../reports/2026-10-25-phase8-live-primary-uv.md).
    Follow [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) for immutable
    base-plus-delta application and admission of other reached leaf types.
-   Start from the [owner UV report](../reports/2026-10-25-phase8-uv-morph-evaluation.md).
 2. **Material output (runtime consumer + hydra-toon):** connect owner modulation
    to runtime appearance publication and renderer bindings, including sampled
    texture/sphere/toon contributions. Follow

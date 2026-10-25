@@ -2026,7 +2026,7 @@
       "faces": 6,
       "joints": 1,
       "materials": 1,
-      "morphs": 3,
+      "morphs": 5,
       "rigidBodies": 2,
       "softBodies": 0,
       "textures": 0,
@@ -2036,7 +2036,7 @@
     "modelName": "Live physics pendulum",
     "opens": true,
     "parserDiagnostics": [],
-    "purpose": "live vertex/group morph with physics and an unsupported UV channel",
+    "purpose": "live vertex/group/primary UV morphs with physics and an unsupported material channel",
     "sourceVersion": "2.0",
     "stage": {
       "jointOfSourceBone": [
@@ -2160,12 +2160,39 @@
           "type": "uv",
           "uvOffsets": [
             [
-              0.10000000149011612,
-              0.0,
-              0.0,
-              0.0
+              0.25,
+              0.5,
+              4.0,
+              8.0
             ]
           ]
+        },
+        {
+          "englishName": "uvGroup",
+          "id": "uvGroup",
+          "members": [
+            "uv",
+            "wide"
+          ],
+          "name": "uvGroup",
+          "panel": "other",
+          "sourceIndex": 3,
+          "type": "group",
+          "weights": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "diffuseColors": [],
+          "englishName": "material",
+          "id": "material",
+          "materialIndices": [],
+          "materialOperations": [],
+          "name": "material",
+          "panel": "other",
+          "sourceIndex": 4,
+          "type": "material"
         }
       ],
       "physics": {
