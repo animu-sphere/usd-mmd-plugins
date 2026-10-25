@@ -11,7 +11,7 @@ preserve evidence, and release records describe shipped versions.
 | [guides/](guides/) | Reproducible user tasks | [building.md](guides/building.md) · [opening.md](guides/opening.md) · [inspecting.md](guides/inspecting.md) · [exporting.md](guides/exporting.md) |
 | [reference/](reference/) | Current feature support, diagnostics and source mapping | [CAPABILITY_MATRIX.md](reference/CAPABILITY_MATRIX.md) · [DIAGNOSTICS.md](reference/DIAGNOSTICS.md) · [SOURCE_MAPPING.md](reference/SOURCE_MAPPING.md) |
 | [roadmap/](roadmap/) | Active priorities, owners, external blockers and exit gates | [current.md](roadmap/current.md) |
-| [reports/](reports/) | Dated experiments and decision evidence | [Ownership audit](reports/2026-10-18-docs-ownership-audit.md) · [Start-pose initialization](reports/2026-10-25-phase8-start-pose-initialization.md) · [OpenStrata reports](reports/ost/README.md) |
+| [reports/](reports/) | Dated experiments and decision evidence | [Report index](reports/README.md) · [Ownership audit](reports/2026-10-18-docs-ownership-audit.md) |
 | [releases/](releases/) | Per-version shipped scope and release procedure | [README.md](releases/README.md) |
 | [contributing/](contributing/) | Maintenance rules | [documentation.md](contributing/documentation.md) · [release note template](contributing/RELEASE_NOTES_TEMPLATE.md) |
 

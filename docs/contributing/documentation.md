@@ -95,5 +95,7 @@ file size and line count are not blocking checks. Physics lane policy is
 - Number design/architecture sections stably; append sections or subsections
   instead of changing existing numbers. Keep decision IDs such as MOT-O11.
 - Keep indexes and owning links in sync.
+- Add new evidence reports to the [report index](../reports/README.md) under
+  their subject; link from the roadmap only where needed for an active gate.
 - Never commit machine-local paths or third-party MMD assets/screenshots
   without explicit redistribution permission.
