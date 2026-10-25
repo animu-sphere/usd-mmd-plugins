@@ -51,6 +51,9 @@ The [owner group-weight follow-up](../reports/2026-10-24-phase8-resolved-morph-c
 adds explicit non-bone group resolution while preserving raw channels and
 bone evaluation. The [runtime integration follow-up](../reports/2026-10-24-phase8-live-resolved-morph.md)
 connects resolved vertex weights to final runtime snapshots and live UsdSkel output.
+The [owner UV follow-up](../reports/2026-10-25-phase8-uv-morph-evaluation.md)
+adds sparse primary/additional UV deltas with group resolution and primary-V
+conversion; runtime snapshot, live UV output and renderer binding remain open.
 Before representative PMX/VMD acceptance, connect required non-bone morph
 outputs beyond resolved vertex/group weights, including UV/material effects,
 select owner-admitted damping declarations and complete local asset

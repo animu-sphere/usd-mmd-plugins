@@ -10,6 +10,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <map>
 #include <numbers>
 #include <queue>
 #include <string>
@@ -272,12 +273,17 @@ Evaluator::Prepare(const CanonicalDocument& model)
                                  evaluator._order.begin());
 
     const auto morphCount = static_cast<std::int32_t>(model.morphs.size());
+    evaluator._vertexCount = model.mesh.points.size();
+    evaluator._additionalUvCount = model.mesh.additionalUvCount;
     evaluator._morphs.resize(model.morphs.size());
     std::vector<std::int32_t> listedBy(model.morphs.size(), 0);
     for (std::size_t m = 0; m < model.morphs.size(); ++m) {
         const mmd::Morph& source = model.morphs[m];
         Morph& morph = evaluator._morphs[m];
         morph.type = source.type;
+        if (source.type >= MorphType::Uv && source.type <= MorphType::AdditionalUv4) {
+            morph.uvOffsets = source.uvOffsets;
+        }
         if (source.type == MorphType::Bone) {
             evaluator._boneMorphs.push_back(static_cast<std::int32_t>(m));
             for (const MorphBoneOffset& offset : source.boneOffsets) {
@@ -456,6 +462,53 @@ Evaluator::ResolveMorphChannels(std::span<const MorphChannel> channels) const
         }
     }
     return result;
+}
+
+Result<std::vector<UvMorphDelta>>
+Evaluator::EvaluateUvMorphs(std::span<const MorphChannel> channels) const
+{
+    using Key = std::pair<std::uint8_t, std::int32_t>;
+    std::map<Key, std::array<double, 4>> deltas;
+    for (const MorphChannel& resolved : ResolveMorphChannels(channels)) {
+        const Morph& morph = _morphs[static_cast<std::size_t>(resolved.morph)];
+        if (morph.type < MorphType::Uv || morph.type > MorphType::AdditionalUv4) {
+            continue;
+        }
+        const auto channel = static_cast<std::uint8_t>(static_cast<std::uint8_t>(morph.type) -
+                                                       static_cast<std::uint8_t>(MorphType::Uv));
+        const auto fail = [&](const std::string& reason) {
+            return Result<std::vector<UvMorphDelta>>::Failure(
+                MakeDiagnostic(codes::MotionUvMorphInvalid,
+                               "UV morph " + std::to_string(resolved.morph) + ": " + reason));
+        };
+        if (channel > _additionalUvCount || !std::isfinite(resolved.weight)) {
+            return fail("channel is absent or effective weight is nonfinite");
+        }
+        for (const MorphUvOffset& offset : morph.uvOffsets) {
+            if (offset.vertex < 0 || static_cast<std::size_t>(offset.vertex) >= _vertexCount ||
+                !std::all_of(
+                    offset.delta.begin(),
+                    offset.delta.end(),
+                    [](float v) { return std::isfinite(v); })) {
+                return fail("offset must name a vertex and contain finite values");
+            }
+            auto& delta = deltas[{channel, offset.vertex}];
+            for (std::size_t c = 0; c < delta.size(); ++c) {
+                // Canonical primary st is (u, 1-v); additional vec4s are raw.
+                const double sign = channel == 0 && c == 1 ? -1.0 : 1.0;
+                delta[c] += sign * resolved.weight * offset.delta[c];
+                if (!std::isfinite(delta[c])) {
+                    return fail("accumulated delta is nonfinite");
+                }
+            }
+        }
+    }
+    std::vector<UvMorphDelta> result;
+    result.reserve(deltas.size());
+    for (const auto& [key, delta] : deltas) {
+        result.push_back({key.first, key.second, delta});
+    }
+    return Result<std::vector<UvMorphDelta>>::Success(std::move(result));
 }
 
 void

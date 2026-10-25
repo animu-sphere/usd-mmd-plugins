@@ -19,5 +19,6 @@ inline constexpr Code MotionIkLoopClamped{"MMD_MOTION_IK_LOOP_CLAMPED", Severity
 inline constexpr Code MotionContinuationInvalid{"MMD_MOTION_CONTINUATION_INVALID", Severity::Fatal};
 inline constexpr Code MotionPhysicsFeedbackInvalid{"MMD_MOTION_PHYSICS_FEEDBACK_INVALID",
                                                    Severity::Fatal};
+inline constexpr Code MotionUvMorphInvalid{"MMD_MOTION_UV_MORPH_INVALID", Severity::Fatal};
 
 } // namespace mmd::codes

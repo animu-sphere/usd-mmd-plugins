@@ -3,7 +3,7 @@
 // MMD control evaluation (docs/design/MOTION_CONTRACT.md §11): a motion bound
 // to a model, evaluated at an explicit time over the model's control rig --
 // bone morphs, appends and IK, in MMD's evaluation order -- into the local
-// transform of every deformation joint.
+// transform of every deformation joint, with separate non-bone output queries.
 //
 // This is the one place in the ecosystem that implements MMD IK and append
 // semantics (docs/design/DESIGN_POLICY.md §5.6). A runtime schedules it; it
@@ -18,6 +18,7 @@
 #include <mmdMotionBinding/Bind.h>
 #include <mmdPmx/Result.h>
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -43,6 +44,18 @@ struct MorphChannel {
     double weight = 0.0;
 
     bool operator==(const MorphChannel&) const = default;
+};
+
+/// One accumulated UV delta in canonical vertex order (MOTION §11.3).
+/// Channel 0 addresses st: add delta.xy, with source V already negated.
+/// Channels 1-4 address raw additional UV vec4s. Primary Z/W are preserved
+/// for inspection but have no st component. Values are not clamped.
+struct UvMorphDelta {
+    std::uint8_t channel = 0;
+    std::int32_t vertex = 0;
+    std::array<double, 4> delta{};
+
+    bool operator==(const UvMorphDelta&) const = default;
 };
 
 /// The evaluated state of a model at one time.
@@ -118,6 +131,18 @@ public:
     /// with the raw input channels. Invalid indices and bone inputs are ignored.
     std::vector<MorphChannel> ResolveMorphChannels(std::span<const MorphChannel> channels) const;
 
+    /// Evaluate only UV effects from RAW Pose::channels, resolving groups once.
+    /// Sums offsets in morph/offset order; output ascends by (channel, vertex),
+    /// including reached zero deltas. Add to immutable base UVs each frame,
+    /// never to the previous result. Empty input returns no deltas.
+    /// Other leaf types are ignored here; consumers must separately validate
+    /// all ResolveMorphChannels outputs before publishing a complete frame.
+    /// Reached UVs with absent channels, invalid vertices, nonfinite weights,
+    /// offsets or arithmetic refuse with MMD_MOTION_UV_MORPH_INVALID, even at
+    /// zero weight. Owns its result and never changes the model or channels.
+    Result<std::vector<UvMorphDelta>>
+    EvaluateUvMorphs(std::span<const MorphChannel> channels) const;
+
     /// Sample once and run only pre-physics controls (MOTION §11.10).
     Continuation BeginPhysics(const binding::BoundMotion& motion, double frame) const;
 
@@ -188,8 +213,9 @@ private:
     };
     struct Morph {
         MorphType type = MorphType::Group;
-        std::vector<BoneOffset> boneOffsets; ///< a bone morph's
-        std::vector<GroupMember> members;    ///< a group morph's
+        std::vector<BoneOffset> boneOffsets;  ///< a bone morph's
+        std::vector<GroupMember> members;     ///< a group morph's
+        std::vector<MorphUvOffset> uvOffsets; ///< a UV morph's raw deltas
     };
     struct State;
 
@@ -210,6 +236,8 @@ private:
     std::vector<std::int32_t> _order;
     std::vector<Chain> _chains;
     std::vector<Morph> _morphs;
+    std::size_t _vertexCount = 0;
+    std::uint8_t _additionalUvCount = 0;
     /// Group morphs, every group before the groups it lists.
     std::vector<std::int32_t> _groupOrder;
     /// Bone morphs, ascending.

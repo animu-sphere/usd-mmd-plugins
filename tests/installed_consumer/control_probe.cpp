@@ -38,6 +38,24 @@ main(int argc, char** argv)
         std::fprintf(stderr, "installed non-bone group resolution differs\n");
         return 2;
     }
+    mmd::CanonicalDocument uvModel;
+    uvModel.mesh.points.resize(1);
+    uvModel.mesh.additionalUvCount = 1;
+    uvModel.morphs.resize(3);
+    uvModel.morphs[0].members = {{1, 0.5f}, {2, 1}};
+    uvModel.morphs[1].type = mmd::MorphType::Uv;
+    uvModel.morphs[2].type = mmd::MorphType::AdditionalUv1;
+    for (std::size_t m = 1; m < 3; ++m) {
+        uvModel.morphs[m].uvOffsets = {{0, {1, 2, 3, 4}}};
+    }
+    const auto uvEvaluator = mmd::control::Evaluator::Prepare(uvModel).value();
+    const auto uv = uvEvaluator.EvaluateUvMorphs(raw);
+    const std::vector<mmd::control::UvMorphDelta> expectedUv{{0, 0, {1.25, -2.5, 3.75, 5}},
+                                                             {1, 0, {2, 4, 6, 8}}};
+    if (!uv.ok() || uv.value() != expectedUv) {
+        std::fprintf(stderr, "installed UV morph evaluation differs\n");
+        return 2;
+    }
     const auto read = motionVmd::ReadFile(std::filesystem::path(argv[1]));
     const auto source = mmd::pmx::ReadFile(std::filesystem::path(argv[2]));
     if (!read.ok() || !source.ok()) {

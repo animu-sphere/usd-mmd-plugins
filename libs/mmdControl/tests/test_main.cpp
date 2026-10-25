@@ -3,12 +3,14 @@
 
 void RunSampleTests();
 void RunEvaluateTests();
+void RunUvMorphTests();
 
 int
 main()
 {
     RunSampleTests();
     RunEvaluateTests();
+    RunUvMorphTests();
     std::puts("mmdControl_unit: all passed");
     return 0;
 }

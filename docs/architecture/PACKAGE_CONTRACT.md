@@ -116,6 +116,13 @@ feedback. `Evaluator.h` also exposes the owned `Evaluator::Continuation` and
 sparse joint-local `Evaluator::PhysicsFeedback`; their lifecycle and validation
 are defined in [MOTION §11.10](../design/MOTION_CONTRACT.md#1110-intended-physics-continuation-boundary).
 
+`Evaluator::EvaluateUvMorphs` and `UvMorphDelta` expose owned sparse UV deltas
+from raw pose channels, with owner-side group resolution and primary-V
+conversion ([MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs)).
+`control_probe` checks this symbol through installed headers and the archive.
+Rebuild/reinstall this static library and rebuild consumers together when
+adopting the API; the declared package version does not prove its presence.
+
 ## `mmdSkeletonAdapter`
 
 | | |
