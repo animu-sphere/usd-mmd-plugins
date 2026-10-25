@@ -167,9 +167,20 @@ def fixtures() -> dict[str, tuple[Motion | bytes, dict]]:
                              ("wide", frame, -.5 * weight)))
     out["live-physics-mixed.vmd"] = (
         mixed, opens(v2, "Live mixed morph", 6, [4, 8, 0, 0, 0, 0], [1, 2, 0], []))
-    unsupported = Motion("Live unsupported")
-    unsupported.morphs = [("uv", 0, 1.0)]
+    uv = Motion("Live UV")
+    uv.bones = list(pendulum.bones)
+    uv_mixed = Motion("Live mixed UV")
+    uv_mixed.bones = list(pendulum.bones)
+    for frame, weight in ((0, 0.0), (15, 1.5), (30, -0.5), (60, 0.0)):
+        uv.morphs.append(("uv", frame, weight))
+        uv_mixed.morphs.extend((("uvGroup", frame, 2 * weight), ("uv", frame, -.5 * weight)))
     out["live-physics-uv.vmd"] = (
+        uv, opens(v2, "Live UV", 6, [4, 4, 0, 0, 0, 0], [1, 1, 0], []))
+    out["live-physics-uv-mixed.vmd"] = (
+        uv_mixed, opens(v2, "Live mixed UV", 6, [4, 8, 0, 0, 0, 0], [1, 2, 0], []))
+    unsupported = Motion("Live unsupported")
+    unsupported.morphs = [("material", 0, 0.0)]
+    out["live-physics-material.vmd"] = (
         unsupported, opens(v2, "Live unsupported", 6, [0, 1, 0, 0, 0, 0], [0, 1, 0], []))
 
     old = sample()

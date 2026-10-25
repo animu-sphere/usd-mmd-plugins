@@ -1491,10 +1491,14 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
         {"name": "wideGroup", "englishName": "wideGroup", "panel": 4, "type": "group",
          "offsets": [(0, 0.5)]},
         {"name": "uv", "englishName": "uv", "panel": 4, "type": "uv",
-         "offsets": [(0, (0.1, 0.0, 0.0, 0.0))]},
+         "offsets": [(0, (0.25, 0.5, 4.0, 8.0))]},
+        {"name": "uvGroup", "englishName": "uvGroup", "panel": 4, "type": "group",
+         "offsets": [(2, 0.5), (0, 0.5)]},
+        {"name": "material", "englishName": "material", "panel": 4, "type": "material",
+         "offsets": []},
     ]}
     entries["live-physics-morph.pmx"] = opens(
-        morph_pendulum, "live vertex/group morph with physics and an unsupported UV channel")
+        morph_pendulum, "live vertex/group/primary UV morphs with physics and an unsupported material channel")
 
     # Recoverable: the model opens, and the stage records why it is not exact.
     bad_utf8 = sample_model(2.0, UTF8, 1, 0)
