@@ -40,9 +40,14 @@ retain the generated consumer and lifecycle history.
 
 ### Next integration work
 
-1. **UV rendering (runtime consumer + renderer):** extend the generated UV-only
-   owner/runtime resident check to full-avatar playback and extend typed
-   admission to additional UV channels. The
+1. **UV rendering (runtime consumer + renderer):** extend generated composed
+   deformation/physics/UV checks to PMX/VMD intake and full-avatar playback,
+   and extend typed admission to additional UV channels. The
+   [composed avatar UV report](../reports/2026-10-26-phase8-composed-avatar-uv.md)
+   records a generated two-joint MMD/Jolt mesh with vertex morphs and UVs in
+   one retained snapshot, automatic resident bindings and USD/Hydra stream/pixel
+   agreement across world resets. It does not read PMX/VMD or bind an application.
+   The earlier
    [composed UV report](../reports/2026-10-26-phase8-composed-resident-uv.md)
    records automatic binding and USD/Hydra stream/pixel agreement through the
    MMD owner and real runtime snapshots; it uses no bones or simulated bodies.

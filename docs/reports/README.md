@@ -14,6 +14,7 @@ work, and [release records](../releases/README.md) own shipped scope.
 - 2026-10-26: [Resident primary UV mapping](2026-10-26-phase8-resident-uv-mapping.md).
 - 2026-10-26: [Toon primary UV consumer](2026-10-26-phase8-toon-primary-uv.md).
 - 2026-10-26: [Generated composed resident UV](2026-10-26-phase8-composed-resident-uv.md).
+- 2026-10-26: [Generated composed avatar deformation and UV](2026-10-26-phase8-composed-avatar-uv.md).
 - 2026-10-25: [Live primary UV transport](2026-10-25-phase8-live-primary-uv.md).
 - 2026-10-25: [Owner material morph evaluation](2026-10-25-phase8-material-morph-evaluation.md).
 - 2026-10-25: [Owner UV morph evaluation](2026-10-25-phase8-uv-morph-evaluation.md).
