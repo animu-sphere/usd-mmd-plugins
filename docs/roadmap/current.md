@@ -40,9 +40,13 @@ retain the generated consumer and lifecycle history.
 
 ### Next integration work
 
-1. **UV rendering (runtime consumer + renderer):** complete composed resident
-   binding, then compare composed MMD runtime/Hydra output and extend typed
-   admission to additional UV channels. Generated renderer tangent regeneration
+1. **UV rendering (runtime consumer + renderer):** extend the generated UV-only
+   owner/runtime resident check to full-avatar playback and extend typed
+   admission to additional UV channels. The
+   [composed UV report](../reports/2026-10-26-phase8-composed-resident-uv.md)
+   records automatic binding and USD/Hydra stream/pixel agreement through the
+   MMD owner and real runtime snapshots; it uses no bones or simulated bodies.
+   Generated renderer tangent regeneration
    and runtime/USD-Hydra parity are recorded in the
    [tangent report](../reports/2026-10-26-phase8-uv-tangents.md).
    Generated point-domain automatic Hydra mapping is recorded in the
