@@ -24,7 +24,7 @@ its outcome is verified; record measurements in a dated report.
 | --- | --- | --- | --- | --- |
 | P1-C (Phase 8 / PR-C) | Complete application/stage lifecycle, automatic participant binding and resident renderer integration beyond the scoped live usdview host, with a physics-free importer | `usd-avatar-runtime` orchestration; MMD adapter here; `usd-stage-runner` host loop | in_progress | [Runtime contract](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [Live-host report](../reports/2026-10-21-phase8-usdview-live.md), [MVP gate](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) |
 | P1-2 (Phase 8) | Run the fixed representative scene set with automatic assertions, known limitations and reproducible commands; publish a new acceptance report | `usd-avatar-runtime` + MMD acceptance; `hydra-toon` rendering | planned | [L3 acceptance](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance), [avatar composition](#avatar-runtime-composition) |
-| P1-3 (Phase 8) | Validate runtime material morphs and advanced UV/vertex-color behavior through the composed renderer | Runtime consumer + `hydra-toon`; MMD contracts here | planned | [Material contract](../design/MATERIAL_POLICY.md#11-material-morphs), [next integration work](#next-integration-work) |
+| P1-3 (Phase 8) | Validate runtime material morphs and advanced UV/vertex-color behavior through the composed renderer | Runtime consumer + `hydra-toon`; MMD contracts here | in_progress | [Material contract](../design/MATERIAL_POLICY.md#11-material-morphs), [next integration work](#next-integration-work) |
 | P2-1 (Phase 10) | Confirm USDZ portability, texture resolution, validation and ASCII archive paths as the release contract; make the installed consumer API and release notes consistent | Export tool and package owners here | planned | [Packaging contract](../design/PACKAGING_POLICY.md), [export guide](../guides/exporting.md), [release procedure](../releases/README.md) |
 | P2-2 (Phase 9) | Adopt expression interoperability only after a shared semantic exists; preserve source morph channels meanwhile | `usd-motion-plugins` semantic; MMD mapping here | blocked | [MOTION §10.7](../design/MOTION_CONTRACT.md#107-morphs-as-channels) |
 
@@ -73,9 +73,10 @@ retain the generated consumer and lifecycle history.
    [live primary UV report](../reports/2026-10-25-phase8-live-primary-uv.md).
    Follow [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) for immutable
    base-plus-delta application and admission of other reached leaf types.
-2. **Material output (runtime consumer + hydra-toon):** connect owner modulation
-   to runtime appearance publication and renderer bindings, including sampled
-   texture/sphere/toon contributions. Follow
+2. **Material output (runtime consumer + hydra-toon):** extend the generated
+   [typed snapshot publication](../reports/2026-10-27-phase8-material-snapshots.md)
+   to automatic material binding, live USD appearance and renderer bindings,
+   including sampled texture/sphere/toon contributions. Follow
    [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) and the
    [owner material report](../reports/2026-10-25-phase8-material-morph-evaluation.md).
    Validate final values and bindings before publication; include reset to
