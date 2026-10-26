@@ -1,7 +1,7 @@
 # Current roadmap
 
 > Scope: active work only. Historical evidence lives in reports.
-> Updated: 2026-10-25
+> Updated: 2026-10-26
 
 ## Focus
 
@@ -40,9 +40,13 @@ retain the generated consumer and lifecycle history.
 
 ### Next integration work
 
-1. **UV rendering (runtime consumer + renderer):** validate primary UVs through
-   resident renderer bindings and rendered output, then extend typed output
-   admission to additional UV channels. Primary runtime snapshots and live USD
+1. **UV rendering (runtime consumer + renderer):** complete automatic resident
+   vertex mapping and coherent tangent regeneration, then compare composed
+   runtime/Hydra output and extend typed admission to additional UV channels.
+   Explicit direct-consumer UV bindings and generated textured renderer checks
+   are recorded in the [Toon UV report](../reports/2026-10-26-phase8-toon-primary-uv.md);
+   they do not establish composed MMD-to-GPU or resident Hydra parity.
+   Primary runtime snapshots and live USD
    `st` publication have generated numeric checks in the
    [live primary UV report](../reports/2026-10-25-phase8-live-primary-uv.md).
    Follow [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) for immutable
