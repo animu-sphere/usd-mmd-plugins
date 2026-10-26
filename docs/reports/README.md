@@ -10,6 +10,7 @@ work, and [release records](../releases/README.md) own shipped scope.
 
 ## Live input, morphs and pose feedback
 
+- 2026-10-26: [Renderer UV tangent regeneration](2026-10-26-phase8-uv-tangents.md).
 - 2026-10-26: [Resident primary UV mapping](2026-10-26-phase8-resident-uv-mapping.md).
 - 2026-10-26: [Toon primary UV consumer](2026-10-26-phase8-toon-primary-uv.md).
 - 2026-10-25: [Live primary UV transport](2026-10-25-phase8-live-primary-uv.md).
