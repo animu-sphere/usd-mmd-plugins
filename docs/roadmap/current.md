@@ -1,7 +1,7 @@
 # Current roadmap
 
 > Scope: active work only. Historical evidence lives in reports.
-> Updated: 2026-10-26
+> Updated: 2026-10-27
 
 ## Focus
 
@@ -30,7 +30,12 @@ its outcome is verified; record measurements in a dated report.
 
 ## Avatar runtime composition
 
-The immediate visual priority is live single-avatar usdview playback. Use the
+The final interactive acceptance step is live physics-host confirmation in
+the dedicated `hydra-toon` viewport. The scoped private-avatar Hydra2 visual
+review is complete; its [acceptance report](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md)
+distinguishes live usdview output from recorded native-viewport playback.
+Keep this completed visual review separate from the remaining automated L3
+and application-lifecycle gates. Use the
 [capability matrix](../reference/CAPABILITY_MATRIX.md#control-evaluation-mmdcontrol)
 for the owner/runtime support boundary. The
 [report index](../reports/README.md#live-input-morphs-and-pose-feedback)
@@ -41,8 +46,11 @@ retain the generated consumer and lifecycle history.
 ### Next integration work
 
 1. **UV rendering (runtime consumer + renderer):** extend generated composed
-   deformation/physics/UV checks to PMX/VMD intake and full-avatar playback,
-   and extend typed admission to additional UV channels. The
+   deformation/physics/UV checks to private PMX/VMD direct-snapshot bindings
+   and automatic assertions, and extend typed admission to additional UV
+   channels. Composed-USD Hydra2 visual review has separate
+   [private-input acceptance](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md);
+   it does not prove private-avatar Hydra/direct numerical or pixel parity. The
    [composed avatar UV report](../reports/2026-10-26-phase8-composed-avatar-uv.md)
    records a generated two-joint MMD/Jolt mesh with vertex morphs and UVs in
    one retained snapshot, automatic resident bindings and USD/Hydra stream/pixel
@@ -92,6 +100,14 @@ retain the generated consumer and lifecycle history.
    limitations. The scene set and required assertions are defined once in
    [PHYSICS_INTEGRATION §12.3](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance).
    Generated live checks alone do not close this gate.
+7. **Final interactive physics-host acceptance (runtime host + hydra-toon):**
+   after the preceding integration work, run the private PMX/VMD through a live
+   runtime-owned physics session in the dedicated viewport. Verify final joint,
+   vertex-morph and primary-UV output together, one world Step per physics tick,
+   Play/Pause/Reset/Stop, declared loop/seek behavior and world/resource teardown.
+   Present the result for the user's visual decision. Recorded USD playback
+   cannot close this gate; host orchestration belongs to `usd-avatar-runtime`
+   and `usd-stage-runner`, with resident consumption in `hydra-toon`.
 
 ### Integration constraints
 
