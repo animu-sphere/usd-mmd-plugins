@@ -40,12 +40,14 @@ retain the generated consumer and lifecycle history.
 
 ### Next integration work
 
-1. **UV rendering (runtime consumer + renderer):** complete coherent tangent
-   regeneration and composed resident binding, then compare composed
-   runtime/Hydra output and extend typed admission to additional UV channels.
+1. **UV rendering (runtime consumer + renderer):** complete composed resident
+   binding, then compare composed MMD runtime/Hydra output and extend typed
+   admission to additional UV channels. Generated renderer tangent regeneration
+   and runtime/USD-Hydra parity are recorded in the
+   [tangent report](../reports/2026-10-26-phase8-uv-tangents.md).
    Generated point-domain automatic Hydra mapping is recorded in the
    [resident UV report](../reports/2026-10-26-phase8-resident-uv-mapping.md);
-   tangent-bearing bindings still refuse pending coherent regeneration.
+   tangent-bearing consumption is covered by the later tangent report.
    Explicit direct-consumer UV bindings and generated textured renderer checks
    are recorded in the [Toon UV report](../reports/2026-10-26-phase8-toon-primary-uv.md);
    they do not establish composed MMD-to-GPU or resident Hydra parity.
