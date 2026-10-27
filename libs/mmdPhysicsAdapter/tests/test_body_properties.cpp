@@ -5,6 +5,7 @@
 #include <pxr/usd/usd/attribute.h>
 #include <pxr/usd/usd/stage.h>
 #include <cassert>
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -47,6 +48,27 @@ struct Fixture {
 int
 main()
 {
+    // The source-policy resolver is separate from the existing strict
+    // finite-rate stage reader. Endpoints must never become a 0.99 fallback.
+    for (float source : {-2.f, 0.f, .25f, .5f, .99f, std::nextafter(1.f, 0.f), 1.f, 2.f}) {
+        const auto resolved = physics::ResolveSourceDamping(source);
+        assert(resolved);
+        const auto& value = resolved.value();
+        const double effective = std::max(0., std::min(1., double(source)));
+        assert(value.coefficient == effective);
+        assert(value.clamped == (source < 0 || source > 1));
+        if (effective == 1) {
+            assert(value.mode == physics::SourceDampingMode::ClearPriorVelocity);
+            assert(value.rate == 0);
+        } else {
+            assert(value.mode == physics::SourceDampingMode::FiniteRate && std::isfinite(value.rate));
+            for (double dt : {1./60, 1./120, 1./240})
+                assert(std::abs(std::exp(-value.rate*dt) - std::pow(1-effective, dt)) < 1e-12);
+        }
+    }
+    for (float source : {std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(),
+                        std::numeric_limits<float>::quiet_NaN()})
+        assert(!physics::ResolveSourceDamping(source));
     assert(!physics::ReadBodyProperties({}));
     Fixture empty;
     auto conventional = physics::ReadBodyProperties(empty.body);

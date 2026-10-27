@@ -8,6 +8,23 @@
 
 namespace mmd::physics {
 
+enum class SourceDampingMode {
+    FiniteRate,
+    ClearPriorVelocity,
+};
+
+/// Source policy, matching Bullet's default setDamping coefficient clamp.
+/// A unit effective coefficient clears prior velocity before force/constraint
+/// integration; it is not a large finite rate or a permanent velocity lock.
+/// The caller must explicitly support this mode before applying the result.
+struct SourceDampingResponse {
+    SourceDampingMode mode = SourceDampingMode::FiniteRate;
+    double rate = 0; // inverse seconds; zero for ClearPriorVelocity
+    float coefficient = 0; // effective clamped coefficient
+    bool clamped = false;
+};
+Result<SourceDampingResponse> ResolveSourceDamping(float coefficient);
+
 /// Owned MMD conversions, without a dependency on a solver or world package.
 /// Missing pairs leave the caller's conventional USD body defaults untouched.
 struct BodyProperties {

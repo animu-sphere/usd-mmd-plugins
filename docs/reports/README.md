@@ -50,6 +50,8 @@ acceptance or resident-renderer agreement.
 
 ## Physics preservation, readers and execution probes
 
+- 2026-10-27: [Source damping response and unit endpoint](2026-10-27-phase8-source-damping-response.md).
+
 The [physics contract](../design/PHYSICS_INTEGRATION.md) defines conversion
 and acceptance policy. These measurements retain their original package and
 backend scope; consult the matrix for execution limits.
