@@ -266,9 +266,14 @@ hair/skirt, material/morph or Hydra/direct parity acceptance.
 The later [private-avatar visual review](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md)
 adds user-accepted Hydra2 display of original PMX/VMD input through the live
 usdview host and current `hdToon` renderer. The dedicated viewport separately
-played recorded final USD output. This is scoped manual visual evidence;
-private-avatar direct-snapshot parity, dedicated-viewport live physics hosting,
-broader asset admission and representative L3 acceptance remain unverified.
+played recorded final USD output. A subsequent scoped
+[native-viewport host](https://github.com/animu-sphere/hydra-toon/blob/main/docs/reports/renderer/107-2026-10-27-live-mmd-viewport.md)
+now consumes original PMX/VMD through the runtime's reusable MMD/Jolt session,
+with final joint/morph/primary-UV resident bindings, Play/Pause/Reset/Stop and
+whole-world teardown. Private-model performance is below real time.
+Private-avatar Hydra/direct numerical or pixel parity, material output,
+broader asset admission, final user visual acceptance and representative L3
+acceptance remain open.
 
 | Capability | Status | Where it belongs |
 | --- | --- | --- |

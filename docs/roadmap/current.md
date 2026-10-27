@@ -17,6 +17,13 @@ earlier documentation consolidation.
 
 ## Active gates
 
+Source damping endpoint integration is in progress: the owner-side typed
+[resolver](../reports/2026-10-27-phase8-source-damping-response.md) now distinguishes
+finite decay from clearing prior velocity. Next are neutral backend semantics,
+runtime selection/normalization diagnostics, force/constraint/reset tests and
+private intake without the temporary damping approximation. The current live
+reader remains strict; the 0.99 preview does not close this work.
+
 States: `planned`, `in_progress`, `blocked`. A gate leaves this table when
 its outcome is verified; record measurements in a dated report.
 
@@ -44,6 +51,16 @@ UV/material evidence; [runtime composition reports](../reports/README.md#runtime
 retain the generated consumer and lifecycle history.
 
 ### Next integration work
+
+A scoped single-avatar
+[live native viewport](https://github.com/animu-sphere/hydra-toon/blob/main/docs/reports/renderer/107-2026-10-27-live-mmd-viewport.md)
+now consumes runtime-owned MMD/Jolt snapshots, including original PMX/VMD,
+resident joint/morph/UV binding and Play/Pause/Reset/Stop. This provides an
+interactive preview before the full final acceptance gate below. Continue
+separate CPU runtime/conversion and GPU measurements: the private model is
+below real time. Material/additional-UV integration, private Hydra/direct
+parity, broader lifecycle, representative L3 and final visual acceptance
+remain open; this scoped preview does not close P1-C/P1-2/P1-3.
 
 1. **UV rendering (runtime consumer + renderer):** extend generated composed
    deformation/physics/UV checks to private PMX/VMD direct-snapshot bindings

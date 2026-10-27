@@ -372,6 +372,13 @@ integration. Force ordering and finite steps limit equivalence; response
 measurements belong in the [damping report](../reports/2026-10-18-phase8-body-damping.md).
 The importer and generic USD reader do not change.
 
+The separate owner-side `ResolveSourceDamping` now exposes a typed source-policy
+response, including coefficient normalization and the unit endpoint as
+`ClearPriorVelocity`. It does not change the strict reader above. Backend and
+runtime adoption require explicit component-wise pre-force velocity clearing;
+they remain pending. The [source damping report](../reports/2026-10-27-phase8-source-damping-response.md)
+records pinned references, unit evidence and the remaining integration gate.
+
 ### 7.3 Joint spring metadata audit
 
 The optional owner package exposes `ReadJointSprings` in `JointSprings.h`.

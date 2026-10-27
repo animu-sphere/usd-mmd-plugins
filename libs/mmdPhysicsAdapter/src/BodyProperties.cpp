@@ -4,6 +4,7 @@
 #include <pxr/usd/sdf/types.h>
 #include <pxr/usd/usd/attribute.h>
 #include <cmath>
+#include <algorithm>
 
 namespace mmd::physics {
 namespace {
@@ -15,6 +16,22 @@ Constant(const UsdAttribute& attr, const SdfValueTypeName& type)
            attr.GetNumTimeSamples() == 0;
 }
 } // namespace
+
+Result<SourceDampingResponse>
+ResolveSourceDamping(float coefficient)
+{
+    if (!std::isfinite(coefficient))
+        return Result<SourceDampingResponse>::Failure(MakeDiagnostic(
+            codes::PhysicsMetadataInvalid, "MMD source damping must be finite"));
+    SourceDampingResponse response;
+    response.coefficient = std::clamp(coefficient, 0.f, 1.f);
+    response.clamped = response.coefficient != coefficient;
+    if (response.coefficient == 1.f)
+        response.mode = SourceDampingMode::ClearPriorVelocity;
+    else
+        response.rate = -std::log1p(-double(response.coefficient));
+    return Result<SourceDampingResponse>::Success(response);
+}
 
 Result<BodyProperties>
 ReadBodyProperties(const pxr::UsdPrim& body)
