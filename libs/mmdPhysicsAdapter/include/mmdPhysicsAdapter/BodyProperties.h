@@ -19,7 +19,7 @@ enum class SourceDampingMode {
 /// The caller must explicitly support this mode before applying the result.
 struct SourceDampingResponse {
     SourceDampingMode mode = SourceDampingMode::FiniteRate;
-    double rate = 0; // inverse seconds; zero for ClearPriorVelocity
+    double rate = 0;       // inverse seconds; zero for ClearPriorVelocity
     float coefficient = 0; // effective clamped coefficient
     bool clamped = false;
 };
@@ -50,5 +50,19 @@ struct BodyProperties {
 /// at 10 (PHYSICS_INTEGRATION section 7.1), and applies the returned values to
 /// its own descriptors. Backend finite-step behavior remains an approximation.
 Result<BodyProperties> ReadBodyProperties(const pxr::UsdPrim& body);
+
+/// Explicit source-policy admission. Filtering/contact retain the strict reader
+/// rules; damping declarations retain structural validation but finite source
+/// coefficients use ResolveSourceDamping, including normalization and endpoints.
+/// properties.damping is empty: hosts must map the typed response explicitly.
+struct SourceBodyProperties {
+    struct Damping {
+        float originalLinear, originalAngular;
+        SourceDampingResponse linear, angular;
+    };
+    BodyProperties properties;
+    std::optional<Damping> damping;
+};
+Result<SourceBodyProperties> ReadSourceBodyProperties(const pxr::UsdPrim& body);
 
 } // namespace mmd::physics

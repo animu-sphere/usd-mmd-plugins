@@ -382,6 +382,19 @@ records pinned references and unit evidence; the later
 [backend checkpoint](../reports/2026-10-31-phase8-damping-backend-boundary.md)
 links the neutral implementation and remaining consumer admission work.
 
+`ReadSourceBodyProperties` is a separate explicit source-policy entry point.
+It preserves the strict filter/contact validation and damping declaration
+shape checks above, then calls `ResolveSourceDamping` independently for both
+finite coefficients. Its owned result retains each original coefficient and
+typed response. `properties.damping` is empty; hosts must map the separate
+typed damping pair explicitly. Conventional bodies with neither declaration
+retain host defaults. No stage is edited. Normalization records must retain
+the original attribute path/value and effective coefficient and be refreshed
+on successful world reconstruction. The
+[runtime admission report](../reports/2026-10-31-phase8-source-damping-runtime.md)
+records installed-package execution; strict `ReadBodyProperties` keeps its
+existing endpoint/out-of-domain refusal behavior.
+
 ### 7.3 Joint spring metadata audit
 
 The optional owner package exposes `ReadJointSprings` in `JointSprings.h`.

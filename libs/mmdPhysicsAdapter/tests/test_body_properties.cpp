@@ -61,19 +61,58 @@ main()
             assert(value.mode == physics::SourceDampingMode::ClearPriorVelocity);
             assert(value.rate == 0);
         } else {
-            assert(value.mode == physics::SourceDampingMode::FiniteRate && std::isfinite(value.rate));
-            for (double dt : {1./60, 1./120, 1./240})
-                assert(std::abs(std::exp(-value.rate*dt) - std::pow(1-effective, dt)) < 1e-12);
+            assert(value.mode == physics::SourceDampingMode::FiniteRate &&
+                   std::isfinite(value.rate));
+            for (double dt : {1. / 60, 1. / 120, 1. / 240})
+                assert(std::abs(std::exp(-value.rate * dt) - std::pow(1 - effective, dt)) < 1e-12);
         }
     }
-    for (float source : {std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(),
-                        std::numeric_limits<float>::quiet_NaN()})
+    for (float source : {std::numeric_limits<float>::infinity(),
+                         -std::numeric_limits<float>::infinity(),
+                         std::numeric_limits<float>::quiet_NaN()})
         assert(!physics::ResolveSourceDamping(source));
+    for (float linear : {-2.f, 0.f, .5f, 1.f, 2.f})
+        for (float angular : {-2.f, 0.f, .75f, 1.f, 2.f}) {
+            Fixture f;
+            f.Filter();
+            f.Contact();
+            f.Damping(linear, angular);
+            std::string before, after;
+            f.stage->GetRootLayer()->ExportToString(&before);
+            auto r = physics::ReadSourceBodyProperties(f.body);
+            assert(r && r.value().properties.filter && r.value().properties.contact);
+            assert(!r.value().properties.damping && r.value().damping);
+            const auto& d = *r.value().damping;
+            assert(d.originalLinear == linear && d.originalAngular == angular);
+            assert(d.linear.coefficient == std::clamp(linear, 0.f, 1.f));
+            assert(d.angular.coefficient == std::clamp(angular, 0.f, 1.f));
+            assert(d.linear.clamped == (linear < 0 || linear > 1));
+            assert(d.angular.clamped == (angular < 0 || angular > 1));
+            assert((d.linear.mode == physics::SourceDampingMode::ClearPriorVelocity) ==
+                   (linear >= 1));
+            assert((d.angular.mode == physics::SourceDampingMode::ClearPriorVelocity) ==
+                   (angular >= 1));
+            f.stage->GetRootLayer()->ExportToString(&after);
+            assert(before == after);
+        }
     assert(!physics::ReadBodyProperties({}));
+    assert(!physics::ReadSourceBodyProperties({}));
     Fixture empty;
     auto conventional = physics::ReadBodyProperties(empty.body);
     assert(conventional && !conventional.value().filter && !conventional.value().contact &&
            !conventional.value().damping);
+    auto sourceConventional = physics::ReadSourceBodyProperties(empty.body);
+    assert(sourceConventional && !sourceConventional.value().damping &&
+           !sourceConventional.value().properties.filter &&
+           !sourceConventional.value().properties.contact);
+    for (float bad : {std::numeric_limits<float>::infinity(),
+                      -std::numeric_limits<float>::infinity(),
+                      std::numeric_limits<float>::quiet_NaN()})
+        for (bool angular : {false, true}) {
+            Fixture f;
+            f.Damping(angular ? 0.f : bad, angular ? bad : 0.f);
+            assert(!physics::ReadSourceBodyProperties(f.body));
+        }
     for (int group = 0; group < 16; ++group)
         for (int mask : {0, 1, 32768, 65535}) {
             Fixture f;
@@ -177,6 +216,9 @@ main()
             if (mode == 5)
                 a.SetVariability(SdfVariabilityVarying);
             f.Refused();
+            auto source = physics::ReadSourceBodyProperties(f.body);
+            assert(!source && source.fatal()->code == codes::PhysicsMetadataInvalid.id);
+            assert(source.fatal()->message.find("/Body") != std::string::npos);
         }
     }
     // Pairs are independently optional; no owner defaults leak into conventional bodies.

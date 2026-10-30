@@ -17,15 +17,12 @@ earlier documentation consolidation.
 
 ## Active gates
 
-Source damping endpoint integration is in progress: the owner-side typed
-[resolver](../reports/2026-10-27-phase8-source-damping-response.md) now distinguishes
-finite decay from clearing prior velocity. The neutral
-[backend prerequisite](../reports/2026-10-31-phase8-damping-backend-boundary.md)
-has generated force/contact/constraint and rebuild checks. Next are runtime
-selection/normalization diagnostics through rebuilt installed packages,
-composed force/constraint/Reset tests and private intake without the temporary
-damping approximation. The current live reader remains strict; the 0.99 preview
-does not close this work.
+Continue representative scene and application/renderer acceptance from the
+[source-policy runtime checkpoint](../reports/2026-10-31-phase8-source-damping-runtime.md).
+Unmodified private intake still refuses joints with no dynamic endpoint;
+the scoped damping rerun disables those inert joints explicitly. Determine
+their owner admission policy before claiming direct representative intake.
+The fixed L3 scene set and final interactive physics-host decision remain open.
 
 States: `planned`, `in_progress`, `blocked`. A gate leaves this table when
 its outcome is verified; record measurements in a dated report.
