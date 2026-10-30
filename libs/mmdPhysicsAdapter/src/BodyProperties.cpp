@@ -21,8 +21,8 @@ Result<SourceDampingResponse>
 ResolveSourceDamping(float coefficient)
 {
     if (!std::isfinite(coefficient))
-        return Result<SourceDampingResponse>::Failure(MakeDiagnostic(
-            codes::PhysicsMetadataInvalid, "MMD source damping must be finite"));
+        return Result<SourceDampingResponse>::Failure(
+            MakeDiagnostic(codes::PhysicsMetadataInvalid, "MMD source damping must be finite"));
     SourceDampingResponse response;
     response.coefficient = std::clamp(coefficient, 0.f, 1.f);
     response.clamped = response.coefficient != coefficient;
@@ -33,8 +33,9 @@ ResolveSourceDamping(float coefficient)
     return Result<SourceDampingResponse>::Success(response);
 }
 
+namespace {
 Result<BodyProperties>
-ReadBodyProperties(const pxr::UsdPrim& body)
+ReadProperties(const pxr::UsdPrim& body, std::optional<SourceBodyProperties::Damping>* source)
 {
     const auto fail = [&](const Code& code, const char* message) {
         return Result<BodyProperties>::Failure(MakeDiagnostic(
@@ -72,7 +73,15 @@ ReadBodyProperties(const pxr::UsdPrim& body)
         float l = 0, a = 0;
         if (!Constant(linear, SdfValueTypeNames->Float) ||
             !Constant(angular, SdfValueTypeNames->Float) || !linear.Get(&l) || !angular.Get(&a) ||
-            !std::isfinite(l) || !std::isfinite(a) || l < 0 || a < 0 || l > 1 || a > 1)
+            !std::isfinite(l) || !std::isfinite(a))
+            return fail(codes::PhysicsMetadataInvalid,
+                        "MMD damping requires uniform finite float coefficients");
+        if (source) {
+            *source = SourceBodyProperties::Damping{
+                l, a, ResolveSourceDamping(l).value(), ResolveSourceDamping(a).value()};
+            return Result<BodyProperties>::Success(std::move(properties));
+        }
+        if (l < 0 || a < 0 || l > 1 || a > 1)
             return fail(codes::PhysicsMetadataInvalid,
                         "MMD damping requires uniform finite float coefficients in [0,1]");
         if (l == 1 || a == 1)
@@ -82,5 +91,23 @@ ReadBodyProperties(const pxr::UsdPrim& body)
             BodyProperties::Damping{-std::log1p(-double(l)), -std::log1p(-double(a))};
     }
     return Result<BodyProperties>::Success(std::move(properties));
+}
+} // namespace
+
+Result<BodyProperties>
+ReadBodyProperties(const pxr::UsdPrim& body)
+{
+    return ReadProperties(body, nullptr);
+}
+
+Result<SourceBodyProperties>
+ReadSourceBodyProperties(const pxr::UsdPrim& body)
+{
+    SourceBodyProperties result;
+    auto properties = ReadProperties(body, &result.damping);
+    if (!properties)
+        return Result<SourceBodyProperties>::Failure(*properties.fatal());
+    result.properties = std::move(properties).value();
+    return Result<SourceBodyProperties>::Success(std::move(result));
 }
 } // namespace mmd::physics

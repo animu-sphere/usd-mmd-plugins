@@ -1,6 +1,7 @@
 @PACKAGE_INIT@
 set(mmdPhysicsAdapter_BODY_PROPERTIES_VERSION 1)
 set(mmdPhysicsAdapter_SOURCE_DAMPING_VERSION 1)
+set(mmdPhysicsAdapter_SOURCE_BODY_PROPERTIES_VERSION 1)
 set(mmdPhysicsAdapter_JOINT_SPRINGS_VERSION 1)
 set(mmdPhysicsAdapter_INITIAL_POSE_VERSION 1)
 include(CMakeFindDependencyMacro)

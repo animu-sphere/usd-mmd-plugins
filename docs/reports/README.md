@@ -50,6 +50,7 @@ acceptance or resident-renderer agreement.
 
 ## Physics preservation, readers and execution probes
 
+- 2026-10-31: [Source damping runtime admission](2026-10-31-phase8-source-damping-runtime.md).
 - 2026-10-31: [Damping backend boundary](2026-10-31-phase8-damping-backend-boundary.md).
 - 2026-10-27: [Source damping response and unit endpoint](2026-10-27-phase8-source-damping-response.md).
 

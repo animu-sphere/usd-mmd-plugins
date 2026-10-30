@@ -175,6 +175,10 @@ physics/runtime/backend dependency and the importer never links it. The
 package exports `mmdPhysicsAdapter_BODY_PROPERTIES_VERSION=1` for consumers
 requiring the optional body-property conversion API in
 [PHYSICS §7.1](../design/PHYSICS_INTEGRATION.md#71-contact-coefficients).
+`mmdPhysicsAdapter_SOURCE_DAMPING_VERSION=1` advertises `ResolveSourceDamping`;
+`mmdPhysicsAdapter_SOURCE_BODY_PROPERTIES_VERSION=1` advertises the separate
+`ReadSourceBodyProperties` entry point and owned original/typed response pair.
+Its semantics are owned by [PHYSICS §7.2](../design/PHYSICS_INTEGRATION.md#72-body-damping).
 It also exports `mmdPhysicsAdapter_JOINT_SPRINGS_VERSION=1` for the owned,
 backend-independent spring conversion in
 [PHYSICS §7.3](../design/PHYSICS_INTEGRATION.md#73-joint-spring-metadata-audit).

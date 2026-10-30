@@ -223,7 +223,7 @@ resident rendering or representative L3 acceptance.
 | Standard 6-DOF endpoints, frames and limits | Supported stage authoring | Approximated experimental six-DOF stepping, opt-in; backend angular limits differ from source conventions | [Execution report](../reports/2026-10-18-phase8-six-dof-execution.md) |
 | Collision groups/masks | Preserved | Experimental neutral filter mapping; mixed-format category allocation has no runtime contract | [§7](../design/PHYSICS_INTEGRATION.md#7-collision-filtering-and-joints), [filter report](../reports/2026-10-18-phase8-collision-filter.md) |
 | Friction/restitution and pair mixing | Preserved | Experimental coefficient execution and selected product policy; no trajectory-equivalence claim | [§7.1](../design/PHYSICS_INTEGRATION.md#71-contact-coefficients), [mixing report](../reports/2026-10-18-phase8-contact-mixing.md) |
-| Linear/angular damping | Preserved | Approximated finite-rate execution for accepted coefficients; live/probe admission still refuses d=1. The source resolver and neutral clearing backend are separate prerequisites, not enabled live endpoint support | [§7.2](../design/PHYSICS_INTEGRATION.md#72-body-damping), [finite-rate report](../reports/2026-10-18-phase8-body-damping.md), [backend checkpoint](../reports/2026-10-31-phase8-damping-backend-boundary.md) |
+| Linear/angular damping | Preserved | Experimental live source-policy execution: independent finite rates or pre-force prior-velocity clearing; normalization retains original path/value. Strict reader/probe still refuses d=1 and out-of-domain coefficients. Generated gravity/constraint/Reset checks and bounded private intake, without source-trajectory or L3 equivalence | [§7.2](../design/PHYSICS_INTEGRATION.md#72-body-damping), [runtime report](../reports/2026-10-31-phase8-source-damping-runtime.md) |
 | Joint spring metadata audit | Preserved source vectors | Supported local audit only; source-gap counts remain even for approximated execution | [§7.3](../design/PHYSICS_INTEGRATION.md#73-joint-spring-metadata-audit), [audit report](../reports/2026-10-18-phase8-joint-spring-audit.md) |
 | Positive translation springs on free/limited standard spring6Dof axes | Preserved | Approximated experimental Hookean execution, independently default OFF; numerical damping and timestep dependence | [§7.4](../design/PHYSICS_INTEGRATION.md#74-experimental-translation-spring-approximation), [response report](../reports/2026-10-18-phase8-translation-springs.md) |
 | Positive rotation springs on free/limited standard spring6Dof axes | Preserved | Approximated experimental small-angle execution, independently default OFF; finite-angle/multi-axis equivalence unverified | [§7.5](../design/PHYSICS_INTEGRATION.md#75-experimental-rotation-spring-approximation), [response report](../reports/2026-10-18-phase8-rotation-springs.md) |
@@ -253,8 +253,11 @@ The optional runtime-owned [live usdview host](../reports/2026-10-21-phase8-usdv
 validates a generated skinned pendulum through live Jolt, owner bone feedback
 and final UsdSkel publication. Its
 [body-properties follow-up](../reports/2026-10-21-phase8-live-body-properties.md)
-consumes owner `ReadBodyProperties` for admission masks, contact coefficients
-and finite damping rates, with generated live response/refusal checks. The
+originally consumed owner `ReadBodyProperties` for admission masks, contact
+coefficients and finite damping rates. The
+[source-policy follow-up](../reports/2026-10-31-phase8-source-damping-runtime.md)
+selects `ReadSourceBodyProperties`, including endpoint clearing and normalization
+diagnostics, through rebuilt installed packages. The
 [spring follow-up](../reports/2026-10-21-phase8-live-springs.md) consumes owner
 `ReadJointSprings` with independent default-OFF Hookean translation and
 small-angle rotation opt-ins. Generated response, activation, reset/replay,
