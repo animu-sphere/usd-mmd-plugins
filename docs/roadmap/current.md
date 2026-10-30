@@ -18,10 +18,10 @@ earlier documentation consolidation.
 ## Active gates
 
 Continue representative scene and application/renderer acceptance from the
-[source-policy runtime checkpoint](../reports/2026-10-31-phase8-source-damping-runtime.md).
-Unmodified private intake still refuses joints with no dynamic endpoint;
-the scoped damping rerun disables those inert joints explicitly. Determine
-their owner admission policy before claiming direct representative intake.
+[inert-joint admission checkpoint](../reports/2026-10-31-phase8-inert-joint-admission.md).
+The scoped private pair now enters directly through owner source-damping and
+inert-joint policies, without anonymous damping/joint overrides. Broaden that
+bounded headless evidence to the licensed representative scene set and rendering.
 The fixed L3 scene set and final interactive physics-host decision remain open.
 
 States: `planned`, `in_progress`, `blocked`. A gate leaves this table when

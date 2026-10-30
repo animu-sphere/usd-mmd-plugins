@@ -484,6 +484,29 @@ source-fidelity meanings. Finite-angle/multi-axis and source-trajectory
 equivalence are outside this approximation's claim; §12 governs whether
 further work is needed for representative avatar behavior.
 
+### 7.6 Inert joint admission
+
+`ReadJointAdmission` in the optional owner's `JointAdmission.h` classifies
+enabled standard `spring6Dof` MMD joints. Both relationships must resolve to
+one enabled MMD rigid body each, with uniform unsampled mode tokens and
+constant standard enablement/kinematic values consistent with §5. Unknown,
+blocked, sampled, missing or inconsistent declarations refuse with
+`MMD_PHYSICS_BINDING_INVALID` and the joint/endpoint path. World endpoints
+and non-MMD bodies are outside this scoped API.
+
+Two `followBone` endpoints return `Inert`: neither endpoint receives solver
+feedback, so the runtime preserves the source joint but allocates no solver
+constraint. A `dynamic` or `dynamicWithBone` endpoint returns `Execute`.
+This decision never changes the authored `physics:jointEnabled` value or
+source metadata. Missing/other well-formed type metadata retains `Execute`
+without opting into inert omission or establishing support for that type.
+Generic USD conversion/descriptor checks and owner spring
+validation still apply before omission; an inert joint cannot hide malformed
+frames, limits or metadata. Hosts expose omitted source paths and reread
+admission on Reset. Disabled joints remain disabled under standard USD rules.
+Generic physics keeps its dynamic-endpoint requirement and knows no PMX modes.
+This policy establishes neither source-solver equivalence nor L3 acceptance.
+
 ## 8. Dependency policy
 
 The static path remains lightweight:
