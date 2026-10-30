@@ -363,7 +363,7 @@ which passes both coefficients to Bullet's `setDamping()`.
 multiplies velocity by `(1-d)^dt`. The consumer accepts `0 <= d < 1` and
 converts each independently to the neutral inverse-second rate `-log1p(-d)`.
 It rejects out-of-domain values without clamping. The valid source endpoint
-`d=1` requires instantaneous stopping and rejects explicitly as unsupported
+`d=1` requires clearing prior velocity and rejects explicitly as unsupported
 by finite rates. This bounded conversion does not claim native MMD equivalence.
 
 [Jolt 5.5.0](https://github.com/jrouwe/JoltPhysics/blob/v5.5.0/Jolt/Physics/Body/MotionProperties.inl)
@@ -374,10 +374,13 @@ The importer and generic USD reader do not change.
 
 The separate owner-side `ResolveSourceDamping` now exposes a typed source-policy
 response, including coefficient normalization and the unit endpoint as
-`ClearPriorVelocity`. It does not change the strict reader above. Backend and
-runtime adoption require explicit component-wise pre-force velocity clearing;
-they remain pending. The [source damping report](../reports/2026-10-27-phase8-source-damping-response.md)
-records pinned references, unit evidence and the remaining integration gate.
+`ClearPriorVelocity`. It does not change the strict reader above. Runtime
+adoption must explicitly select component-wise pre-force velocity clearing
+without suppressing new force or constraint response, and report source
+normalization. The [source damping report](../reports/2026-10-27-phase8-source-damping-response.md)
+records pinned references and unit evidence; the later
+[backend checkpoint](../reports/2026-10-31-phase8-damping-backend-boundary.md)
+links the neutral implementation and remaining consumer admission work.
 
 ### 7.3 Joint spring metadata audit
 
