@@ -1,7 +1,7 @@
 # Current roadmap
 
 > Scope: active work only. Historical evidence lives in reports.
-> Updated: 2026-10-27
+> Updated: 2026-10-31
 
 ## Focus
 
@@ -19,10 +19,13 @@ earlier documentation consolidation.
 
 Source damping endpoint integration is in progress: the owner-side typed
 [resolver](../reports/2026-10-27-phase8-source-damping-response.md) now distinguishes
-finite decay from clearing prior velocity. Next are neutral backend semantics,
-runtime selection/normalization diagnostics, force/constraint/reset tests and
-private intake without the temporary damping approximation. The current live
-reader remains strict; the 0.99 preview does not close this work.
+finite decay from clearing prior velocity. The neutral
+[backend prerequisite](../reports/2026-10-31-phase8-damping-backend-boundary.md)
+has generated force/contact/constraint and rebuild checks. Next are runtime
+selection/normalization diagnostics through rebuilt installed packages,
+composed force/constraint/Reset tests and private intake without the temporary
+damping approximation. The current live reader remains strict; the 0.99 preview
+does not close this work.
 
 States: `planned`, `in_progress`, `blocked`. A gate leaves this table when
 its outcome is verified; record measurements in a dated report.
