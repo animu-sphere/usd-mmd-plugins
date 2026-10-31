@@ -16,18 +16,41 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
+Candidate scope and outstanding release verification are recorded in
+[the v0.3.0 draft](docs/releases/v0.3.0.md); no release date is asserted here.
+
 ### Added
 
-- The opt-in physics consumer audits preserved joint spring vectors and
-  explicitly reports approximation when springs or format-only joints are
-  omitted. Reader and CLI regression controls cover malformed metadata and
-  per-input rejection; spring forces remain unimplemented
-  ([evidence](docs/reports/2026-10-18-phase8-joint-spring-audit.md)).
-- The release workflow pushes every bundle and tool package, on every target,
-  to `ghcr.io/animu-sphere/usd-mmd-plugins` as `<name>-<version>-<target>`,
-  and the release carries their pin table (`package-pins.json`, and in the
-  notes). v0.2.0's packages were pushed from its release assets after the
-  fact ([docs/releases/README.md](docs/releases/README.md)).
+- Owner pre/post-physics control continuation, non-bone group resolution,
+  UV deltas and material modulation, with generated unit/installed-consumer
+  checks ([control contract](docs/design/MOTION_CONTRACT.md#11-evaluating-the-control-rig)).
+- Optional `mmdPhysicsAdapter` for bone/body coupling, source-damping policy,
+  body/joint readers and inert-joint classification. The opt-in physics probe
+  audits omitted spring/format-only meaning; independent translation/rotation
+  spring execution remains experimental
+  ([physics capabilities](docs/reference/CAPABILITY_MATRIX.md#physics-preservation-and-execution)).
+- Bounded owner/runtime/renderer integration evidence for generated combined
+  skin, vertex morph, primary UV, physics and canonical material parity
+  (sampled tint OFF), separate sampled-tint GPU checks and scoped private
+  native-viewport output ([evidence index](docs/reports/README.md)). These are
+  integration checkpoints with external consumers, not bundled applications.
+
+### Changed
+
+- The release workflow publishes each platform's bundle/tool packages to GHCR
+  and emits archive/OCI digest pins. v0.2.0's packages were already backfilled
+  from its unchanged published assets; candidate artifacts still require a
+  verified dry run and tag release ([release procedure](docs/releases/README.md)).
+- Documentation separates active gates, contingent backlog, support claims
+  and dated evidence; completed integration narratives leave the roadmap.
+
+### Known limitations
+
+- P1-C/P1-2/P1-3 remain open: representative L3, broader lifecycle, additional
+  runtime UV output and private Hydra/direct parity are not accepted.
+- Opt-in physics remains bounded; no Bullet equivalence or production realtime
+  performance is claimed. Canonical material parity and sampled-tint GPU
+  verification retain separate scopes.
 
 ## [0.2.0] - 2026-10-05
 
@@ -576,5 +599,6 @@ and VMD motion is read and bound to a model — Phases 0–7.
   floating-point expression is fused into an FMA and the same bytes author
   the same stage on every platform.
 
-[Unreleased]: https://github.com/animu-sphere/usd-mmd-plugins/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/animu-sphere/usd-mmd-plugins/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/animu-sphere/usd-mmd-plugins/releases/tag/v0.2.0
 [0.1.0]: https://github.com/animu-sphere/usd-mmd-plugins/releases/tag/v0.1.0

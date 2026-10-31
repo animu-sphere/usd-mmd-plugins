@@ -296,6 +296,7 @@ DOC_OWNERS = (
     "docs/architecture/PACKAGE_CONTRACT.md",
     "docs/reference/CAPABILITY_MATRIX.md", "docs/reference/DIAGNOSTICS.md",
     "docs/reference/SOURCE_MAPPING.md", "docs/roadmap/current.md",
+    "docs/roadmap/backlog.md",
     "docs/contributing/documentation.md", "docs/releases/README.md",
 )
 

@@ -5,6 +5,10 @@ owners, blockers and completion gates. Completed work leaves the roadmap;
 evidence lives in dated [reports](../reports/) and shipped scope in
 [release records](../releases/README.md).
 
+[backlog.md](backlog.md) holds optional or externally blocked ideas with
+promotion triggers. It assigns no dates or promised versions; an item enters
+current only with an owner, actionable outcome and exit evidence.
+
 [DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases) defines the stable
 Phase 0–10 scope identifiers. Active priorities use P0/P1/P2 in
 [current.md](current.md); Phase numbers do not prescribe scheduling.

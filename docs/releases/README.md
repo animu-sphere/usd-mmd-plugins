@@ -49,3 +49,17 @@ OCI digest to pull it from (`scripts/make_package_pins.py`). The aggregate
 product is a release asset only. v0.2.0's packages were pushed after its
 release, from its published assets unchanged, and its pin table was added to
 the release then.
+
+## Candidate preparation
+
+[v0.3.0](v0.3.0.md) defines the proposed integration checkpoint and its
+verification gaps. It is a candidate, not an entry in the shipped-version
+table. Keep its changelog changes in `[Unreleased]` until the package version
+and mirrors are advanced together and the actual release date is known.
+Passing bounded release checks does not close the representative avatar gates.
+
+Use the candidate's [verification matrix](v0.3.0.md#verification-matrix)
+for required source/package lanes, installed-user proof and artifact checks.
+After the version/changelog preparation is merged, run the dry run on that
+exact main commit, investigate required-lane failures, and tag only the
+verified commit. Add its shipped index row and freeze the record when released.

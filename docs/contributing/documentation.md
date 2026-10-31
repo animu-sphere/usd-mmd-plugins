@@ -12,13 +12,15 @@ do not copy status, measurements or dependency pin values.
 | `design/` | Semantics, public contracts, conversion rules and acceptance policy | Current task status, running test results and completion diaries |
 | `reference/` | One capability matrix, diagnostics and source mapping | Parallel current-status summaries or task plans |
 | `roadmap/current.md` | Active priorities, owners, external dependencies and exit gates | Long completion history, design text and benchmark tables |
+| `roadmap/backlog.md` | Contingent ideas, promotion triggers and prospective owners/dependencies | Active status, speculative priorities, dates and promised versions |
 | `guides/` | Reproducible tasks with commands that have been run | Untested command recipes |
-| `releases/` | Shipped support, breaking changes and user impact per version | Future plans as a substitute for the roadmap |
+| `releases/` | Per-version shipped scope and explicitly unreleased candidate verification | Future task plans as a substitute for the roadmap |
 | `reports/` | Dated evidence, environment, SHA, measurements, comparisons and decisions | A rolling latest-status summary |
 | `contributing/` | Maintenance rules and templates | End-user tasks |
 
-The [ownership audit](../reports/2026-10-18-docs-ownership-audit.md) classifies
-the existing tree and records the consolidation's evidence links.
+The [ownership audit](../reports/2026-10-18-docs-ownership-audit.md) records
+the earlier consolidation's snapshot and evidence links; these guidelines
+own the maintenance rules.
 
 ## One source of truth per fact
 
@@ -33,6 +35,7 @@ the existing tree and records the consolidation's evidence links.
 - Implemented support and limitations:
   [CAPABILITY_MATRIX](../reference/CAPABILITY_MATRIX.md).
 - Current work status: [current.md](../roadmap/current.md) only.
+- Contingent work and promotion triggers: [backlog.md](../roadmap/backlog.md).
 - Shipped Phase/release mapping: [release records](../releases/README.md).
 
 Code and fixtures establish implemented behavior. Contracts may define
@@ -47,8 +50,13 @@ remain binding after their completion history leaves the page.
 
 Roadmap gates use `planned`, `in_progress` or `blocked`. Remove completed
 gates; retain their contract in design, measurements in a dated report and
-shipped scope in release notes. Aim for roughly 100–180 lines in current.md
+shipped scope in release notes. Aim for roughly 60–120 lines in current.md
 without making line count or file size a CI failure.
+
+A blocked gate stays in current only with an owned unblock action. Otherwise
+move it to backlog, retaining its ID and stating the promotion trigger and
+owner/dependency. Promote it only with an actionable outcome and exit evidence;
+remove or mark the backlog entry as promoted in the same change.
 
 The matrix distinguishes preservation from execution and labels approximations,
 unsupported features, experimental scope and unverified claims. Never say
@@ -59,13 +67,17 @@ vocabulary must not be described as an already emitted enum.
 Release records and dated reports are not rewritten. A later finding gets a
 new report; a one-line forward-note may link to it from an older report.
 Preserve synthetic fixtures and dated evidence during reorganization.
+An unreleased candidate must be labeled as such, separate existing evidence
+from pending release checks, and carry no invented release date. Finalize it
+for the verified release commit; freeze it once released.
 
 ## Change destination matrix
 
 | Change | Required destination |
 | --- | --- |
 | Semantics / public API | Owning design contract plus code/tests |
-| Current priority / gate / blocker | `roadmap/current.md` |
+| Active priority / gate / owned unblock action | `roadmap/current.md` |
+| Optional idea / external blocker without an unblock action | `roadmap/backlog.md`, with trigger and owner/dependency |
 | Experiment / new measurements | New dated report, linked from current only as needed |
 | Support / limitation | Capability matrix plus tests and any necessary contract change |
 | Shipped behavior | Per-version release record; README links when useful |
@@ -83,6 +95,13 @@ links/anchors, required owning entries, version mirrors and diagnostics.
 Ownership lint warns about additional capability/current-status tables and
 progress markers in README/design; warnings are advisory during cleanup.
 Binding contract labels are allowed. No new heavyweight docs lane is needed.
+
+Before deleting or moving a section, check inbound links/anchors and record
+its disposition in a temporary review checklist: keep, shorten, move, shipped,
+backlog, drop or blocked. Keep binding semantics, diagnostics, licensing,
+source mappings, acceptance criteria and dated evidence. Remove a redundant
+description only after locating its canonical owner; retain decision IDs and
+explicit approximations and unverified/private-fixture qualifiers.
 
 Reviewers check semantic drift, unsupported support claims, copied numbers,
 and large historical additions to current.md. Meaning is reviewed by people;

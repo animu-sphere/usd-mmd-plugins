@@ -291,7 +291,9 @@ Resolved:
 Binding: this section is Phase 9
 ([DESIGN_POLICY.md §14](DESIGN_POLICY.md#14-phases)). `mmdControl` evaluates
 as §11 says; `mmdMotionAdapter` and `mmdSkeletonAdapter` consume the two
-packages released by `usd-motion-plugins`, at v0.5.3 since MOT-O13:
+packages released by `usd-motion-plugins` (the
+[adapter manifests](../architecture/DEPENDENCIES.md#6-usd-motion-plugins)
+own compatible versions and artifact pins):
 `motionCore` (`HumanJoint`, `MotionPose`, `RootMotion`, `MotionChannelSet`,
 `MotionClip`), `motionRetarget` (`SkeletonDescriptor`, `RetargetMap`,
 `SourceRestPose`, `TargetRestPose`) and, for the T-pose directions alone,

@@ -107,7 +107,7 @@ IK and source interpretation remain here.
 Package manifests own the artifact closure for workspace and standalone
 builds. They and generated package configs own compatible ranges; do not
 duplicate the version history or digest tables here. Measured adapter changes
-are linked from the [evidence map](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals).
+are linked from the [motion report index](../reports/README.md#motion-reference-rests-and-retargeting).
 
 ## 7. usd-physics-plugins
 

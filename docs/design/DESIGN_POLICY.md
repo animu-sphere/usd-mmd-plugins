@@ -142,8 +142,8 @@ What deliberately does **not** carry over:
   standard `ArResolver` behavior is sufficient
   ([TEXT_ENCODING_POLICY.md §7](TEXT_ENCODING_POLICY.md#7-texture-paths)).
 - **No catch-all schema bundle.** `vrmSchema` exists because VRM has typed
-  semantics consumers read. `MmdMaterialAPI` has now passed this repository's
-  admission test for `hydra-toon`; that admits only the narrow material API,
+  semantics consumers read. `MmdMaterialAPI` is admitted by this repository's
+  schema test for `hydra-toon`; that admits only the narrow material API,
   not a schema mirror of PMX (§6).
 - **No humanoid assumption.** MMD bone names are a community convention, not a
   humanoid specification, so the importer authors no humanoid semantics.
