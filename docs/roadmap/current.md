@@ -103,6 +103,11 @@ visual acceptance remain open; this scoped preview does not close P1-C/P1-2/P1-3
    Generated canonical material path values and material-only 1x/4x pixels now
    have a [comparison checkpoint](../reports/2026-10-31-phase8-canonical-material-parity.md);
    its sampled tint realization is OFF and geometry is held at the baseline.
+   A separate [combined checkpoint](../reports/2026-10-31-phase8-combined-render-parity.md)
+   now compares generated direct-PMX final skin, vertex morph, primary UV,
+   physics feedback and canonical materials together through both paths.
+   It retains sampled tint realization OFF and leaves representative/private
+   comparisons and the final interactive gate open.
    Direct-PMX automatic binding, canonical USD input publication, independent
    sampled texture/sphere/toon coefficients, resident matching and GPU
    realization already have generated checks, including immutable-base reset.
