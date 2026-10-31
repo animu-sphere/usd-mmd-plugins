@@ -11,6 +11,7 @@ shipped Phase scope; the roadmap does not maintain a parallel release table.
 | --- | --- | --- |
 | v0.1.0 | [v0.1.0.md](v0.1.0.md) | The first release: PMX import as the canonical stage, with morphs, rig and physics preserved, and VMD motion read and bound — Phases 0–7 |
 | v0.2.0 | [v0.2.0.md](v0.2.0.md) | `MmdMaterialAPI` and its Hydra view (stage-contract 2), MMD motion evaluated and handed to the shared motion core, and USDZ export — this repository's part of Phases 8, 9 and 10 |
+| v0.3.0 | [v0.3.0.md](v0.3.0.md) | Owner control/coupling and bounded runtime/renderer integration evidence; three-platform installed-user and USDZ portability verification |
 
 ## How a release is cut
 
@@ -50,16 +51,11 @@ product is a release asset only. v0.2.0's packages were pushed after its
 release, from its published assets unchanged, and its pin table was added to
 the release then.
 
-## Candidate preparation
+## v0.3.0 verification
 
-[v0.3.0](v0.3.0.md) defines the proposed integration checkpoint and its
-verification gaps. It is a candidate, not an entry in the shipped-version
-table. Its version, mirrors and dated changelog are advanced together in the
-release-preparation change; publication still requires the checks below.
+The [verification matrix](v0.3.0.md#verification-matrix) and
+[dated report](../reports/2026-10-31-v030-release-verification.md) distinguish
+preparation evidence from the final main/tag runs linked in the Release notes.
 Passing bounded release checks does not close the representative avatar gates.
-
-Use the candidate's [verification matrix](v0.3.0.md#verification-matrix)
-for required source/package lanes, installed-user proof and artifact checks.
-After the version/changelog preparation is merged, run the dry run on that
-exact main commit, investigate required-lane failures, and tag only the
-verified commit. Add its shipped index row and freeze the record when released.
+Tag only the exact main commit whose dry run passed; inspect the draft and
+published package pins before publication, then freeze its release record.
