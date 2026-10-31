@@ -15,43 +15,16 @@
 name: parser-sanitizers
 
 on:
-  pull_request:
-    paths:
-      - "libs/mmdPmx/**"
-      - "libs/mmdModel/**"
-      - "libs/motionVmd/**"
-      - "libs/mmdMotionBinding/**"
-      - "libs/mmdControl/**"
-      - "tests/fixtures/generate_fixtures.py"
-      - "tests/fixtures/generate_vmd_fixtures.py"
-      - "cmake/UsdMmdProject.cmake"
-      - "cmake/UsdMmdTargets.cmake"
-      - "cmake/UsdMmdSanitizers.cmake"
-      - "cmake/UsdMmdPackage.cmake"
-      - "cmake/UsdMmdTesting.cmake"
-      - "scripts/check_library_boundaries.py"
-      - ".github/workflows/parser-sanitizers.yml"
-  push:
-    branches: [main]
-    paths:
-      - "libs/mmdPmx/**"
-      - "libs/mmdModel/**"
-      - "libs/motionVmd/**"
-      - "libs/mmdMotionBinding/**"
-      - "libs/mmdControl/**"
-      - "tests/fixtures/generate_fixtures.py"
-      - "tests/fixtures/generate_vmd_fixtures.py"
-      - "cmake/UsdMmdProject.cmake"
-      - "cmake/UsdMmdTargets.cmake"
-      - "cmake/UsdMmdSanitizers.cmake"
-      - "cmake/UsdMmdPackage.cmake"
-      - "cmake/UsdMmdTesting.cmake"
-      - "scripts/check_library_boundaries.py"
-      - ".github/workflows/parser-sanitizers.yml"
+  workflow_call:
+    inputs:
+      fuzz_seconds:
+        type: string
+        default: "120"
   workflow_dispatch:
     inputs:
       fuzz_seconds:
         description: "How long the fuzzer runs"
+        type: string
         default: "120"
 
 permissions:
@@ -67,7 +40,9 @@ jobs:
       ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
       UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Install Clang 18 with its sanitizer and libFuzzer runtimes
         run: |

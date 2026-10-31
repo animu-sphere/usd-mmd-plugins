@@ -22,6 +22,7 @@ Keep the existing owner instead of creating a synonymous contract.
 
 | Area | Owner |
 | --- | --- |
+| CI execution, change classification and required checks | [CI_POLICY.md](architecture/CI_POLICY.md) |
 | Authored stage, coordinates, skeleton and metadata | [STAGE_CONTRACT.md](design/STAGE_CONTRACT.md) |
 | PMX bytes and canonical semantics | [PMX_CONTRACT.md](design/PMX_CONTRACT.md) |
 | Material schema, fallbacks and rendering interface | [MATERIAL_POLICY.md](design/MATERIAL_POLICY.md) |

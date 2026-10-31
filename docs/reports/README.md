@@ -8,6 +8,10 @@ This index groups evidence by subject. The [capability matrix](../reference/CAPA
 owns current support claims, [current.md](../roadmap/current.md) owns active
 work, and [release records](../releases/README.md) own shipped scope.
 
+## CI cost
+
+- 2026-10-31: [Pre-change CI cost baseline](2026-10-31-ci-baseline.md).
+
 ## Live input, morphs and pose feedback
 
 - 2026-10-31: [Generated combined MMD Hydra/direct parity](2026-10-31-phase8-combined-render-parity.md).

@@ -271,7 +271,7 @@ installed physics edge must be declared by its consuming component under
 ```text
 usd-mmd-plugins/
 ├─ .github/workflows/          ost-source-ci.yml (generated from openstrata.ci.yaml); hand-written:
-│                              docs-check.yml, parser-sanitizers.yml, physics-installed.yml, release.yml
+│                              ci-gate.yml, docs-check.yml, parser-sanitizers.yml, physics-installed.yml, release.yml
 ├─ cmake/                      UsdMmdProject, UsdMmdTargets, UsdMmdSanitizers, UsdMmdPackage,
 │                              UsdMmdTesting, UsdMmdOpenUsd (.cmake: §5), utf8-code-page.manifest
 ├─ docs/                       see docs/README.md
@@ -343,8 +343,9 @@ bundle's copies.
   git tag (`vX.Y.Z`), `CHANGELOG.md`, and any manifest that must carry a
   version for a standalone build mirror it; nothing else defines one.
 - **`openstrata.toml`** declares the workspace; **`openstrata.ci.yaml`** is
-  the CI support matrix from which workflows are generated
-  (`ost ci generate github`). Generated workflows are not hand-edited.
+  the CI support matrix. The [CI policy](CI_POLICY.md#generated-source-ci)
+  defines its renderer adapter and regeneration entry point. Generated
+  workflows are not hand-edited.
 - Each component carries its manifest beside it: `openstrata.plugin.yaml` for
   a bundle, `openstrata.library.yaml` for a library, `openstrata.tool.yaml` for
   an executable.
