@@ -86,7 +86,7 @@ and scalar group evaluation also have generated `mmdControl_robustness` checks.
 | Every other bound morph as a channel with its sampled weight | supported | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
 | Owner-side non-bone group weight resolution (`ResolveMorphChannels`), preserving raw channels and excluding bone effects | supported by generated unit/robustness and installed-consumer checks; generated runtime/live vertex-group publication validated in the [consumer report](../reports/2026-10-24-phase8-live-resolved-morph.md); scalar resolution alone does not realize leaf effects | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
 | Owner-side primary/additional UV deltas (`EvaluateUvMorphs`), including nested groups and primary-V conversion | generated numeric unit and installed-consumer checks; primary snapshot/live USD publication in the [live report](../reports/2026-10-25-phase8-live-primary-uv.md), explicit Toon UV transport in the [direct-consumer report](../reports/2026-10-26-phase8-toon-primary-uv.md), automatic renderer mapping in the [resident UV report](../reports/2026-10-26-phase8-resident-uv-mapping.md) and tangent regeneration in the [tangent report](../reports/2026-10-26-phase8-uv-tangents.md). The [composed UV report](../reports/2026-10-26-phase8-composed-resident-uv.md) adds generated UV-only MMD owner/runtime snapshots through automatic bindings with USD/Hydra stream and textured GPU parity. The [composed avatar report](../reports/2026-10-26-phase8-composed-avatar-uv.md) combines final joints, vertex morphs, Jolt feedback and UVs through the same resident paths with stream/pixel parity across resets. The [private-input review](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md) adds manually accepted original PMX/VMD playback through composed USD and Hydra2. Private-avatar direct-snapshot parity, additional runtime UV output and representative acceptance remain open | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
-| Owner-side material modulation (`EvaluateMaterialMorphs`), including nested groups, multiply/add and all-material targets | generated numeric owner unit and installed-consumer checks; explicit typed runtime snapshot publication has generated 28-component, reset, lifetime and refusal checks in the [consumer report](../reports/2026-10-27-phase8-material-snapshots.md). Automatic material binding, live USD appearance and renderer sampled-contribution integration remain open | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
+| Owner-side material modulation (`EvaluateMaterialMorphs`), including nested groups, multiply/add and all-material targets | generated numeric owner unit and installed-consumer checks; explicit typed runtime snapshots have generated 28-component checks in the [consumer report](../reports/2026-10-27-phase8-material-snapshots.md). The [live material checkpoint](../reports/2026-10-31-phase8-live-material-integration.md) adds generated direct-PMX automatic binding, 40-component owner parity per material, six canonical USD inputs, independent sampled-tint coefficients, resident renderer matching, GPU reference pixels and reset/lifetime checks. Representative material correctness, broader discovery and composed Hydra/direct parity remain open | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
 | MMD's evaluation order: after-physics flag, transform layer, source index | supported | [MOTION §11.5](../design/MOTION_CONTRACT.md#115-evaluation-order) |
 | Rotation and translation appends, negative ratios, chains of appends, appends from IK links | supported | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
 | Local appends | approximated (evaluated as global, reported) | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
@@ -275,9 +275,13 @@ played recorded final USD output. A subsequent scoped
 now consumes original PMX/VMD through the runtime's reusable MMD/Jolt session,
 with final joint/morph/primary-UV resident bindings, Play/Pause/Reset/Stop and
 whole-world teardown. Private-model performance is below real time.
-Private-avatar Hydra/direct numerical or pixel parity, material output,
-broader asset admission, final user visual acceptance and representative L3
-acceptance remain open.
+The [unmodified-input native review](../reports/2026-10-31-phase8-native-viewport-admission.md)
+adds user confirmation of that scoped live result with owner admission policies.
+The [live material checkpoint](../reports/2026-10-31-phase8-live-material-integration.md)
+separately verifies generated automatic material binding, canonical USD values
+and resident/GPU delivery. Private-avatar Hydra/direct numerical or pixel parity,
+representative material correctness, broader asset admission, the full combined
+interactive gate and representative L3 acceptance remain open.
 
 | Capability | Status | Where it belongs |
 | --- | --- | --- |

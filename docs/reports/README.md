@@ -10,6 +10,7 @@ work, and [release records](../releases/README.md) own shipped scope.
 
 ## Live input, morphs and pose feedback
 
+- 2026-10-31: [Generated live material integration](2026-10-31-phase8-live-material-integration.md).
 - 2026-10-27: [Typed runtime material snapshots](2026-10-27-phase8-material-snapshots.md).
 - 2026-10-27: [Private-avatar Hydra2 visual acceptance](2026-10-27-phase8-hydra2-visual-acceptance.md).
 - 2026-10-26: [Renderer UV tangent regeneration](2026-10-26-phase8-uv-tangents.md).
