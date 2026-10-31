@@ -442,9 +442,7 @@ working concrete adapters, not designed ahead of them.
 
 ### 12.1 The Hydra view (`mmdImaging`)
 
-> Status: **binding** since 2026-10-04, when `mmdImaging` (§14 step 5)
-> landed and its suites pinned every item below. It takes the shape `usd-vrm-plugins`
-> froze for `vrmImaging`
+> Status: **binding**. The interface follows `usd-vrm-plugins`' `vrmImaging`
 > ([VRM imaging policy §28](https://github.com/animu-sphere/usd-vrm-plugins/blob/main/docs/design/VRM_IMAGING_POLICY.md#28-frozen-in-step-i1)),
 > so that `hydra-toon` reads both models by one path (its MAT-Q1).
 
@@ -532,23 +530,23 @@ as `hydra-toon` does for `vrm`.
 
 The policy is implemented in the following order:
 
-1. **Inventory — complete in this document.** §4.1 fixes names, types,
+1. **Inventory.** §4.1 fixes names, types,
    variability, required/conditional authoring and PMX mapping; §4.3 fixes
    fallbacks.
 2. **Schema bundle.** Add `mmdSchema` with the single-apply
    `MmdMaterialAPI`, generated C++ accessors and token declarations (§4.3).
-3. **Importer migration — stage-contract v2. Complete 2026-09-25.** Apply
+3. **Importer migration — stage-contract v2.** Apply
    the API and author the canonical inputs through its accessors, with the same values stage-contract
    v1 authored under `mmd:material:*`. Stamp version 2
    ([STAGE_CONTRACT.md §2](STAGE_CONTRACT.md#2-contract-version)), and author
    no v1 name beside the v2 one: two authoritative copies of a value are what
    §2 forbids.
-4. **Realizations connect. Complete 2026-09-25.** `/preview` and `/mtlx`
+4. **Realizations connect.** `/preview` and `/mtlx`
    read the canonical inputs through their graph interface inputs (§5, §6).
    Their boundaries and their
    static appearance stay as they are; the golden baselines change by the
    property renames and the new connections, reviewed as such.
-5. **Hydra bridge. Complete 2026-10-04.** `mmdImaging` implements the Hydra
+5. **Hydra bridge.** `mmdImaging` implements the Hydra
    view of §12.1 and is tested independently of the renderer's GPU
    representation: over a hand-authored stage, with and without the schema
    registered, and over every importer fixture with materials.
@@ -558,6 +556,11 @@ The policy is implemented in the following order:
 7. **Common-runtime review.** Compare the completed MMD and VRM adapters and
    extract only proven renderer-private common code. Revisit a USD-level
    `ToonMaterialAPI` only with evidence from both.
+
+This sequence defines migration dependencies, not current task status.
+The [v0.2.0 record](../releases/v0.2.0.md) retains the shipped schema/importer/
+imaging scope; the [capability matrix](../reference/CAPABILITY_MATRIX.md)
+owns current coverage and [current.md](../roadmap/current.md) owns active gates.
 
 Compatibility follows the stamp. A reader that supports both versions reads
 `/Asset.customData["mmd:stageContractVersion"]`: at 2 it reads

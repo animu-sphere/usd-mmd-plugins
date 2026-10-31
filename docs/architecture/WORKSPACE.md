@@ -7,27 +7,11 @@ and the invariants every change preserves. **A structural change that
 contradicts this document changes this document first, in its own pull
 request** — never through a README, a roadmap entry, or code.
 
-Status (2026-10-04): contract adopted. `mmdPmx` (the PMX structural parser:
-every table of 2.0 and 2.1), `mmdModel` (the canonical model), `mmd_inspect`
-(which reports on a PMX through the parser) and `usdMmdFileFormat` (which
-registers `.pmx` and authors the canonical stage) exist since Phases 0–2;
-`motionVmd` (the VMD reader), `mmdMotionBinding` (which binds a motion to a
-model) and `vmd_inspect` (which reports on a VMD) since Phase 7; `mmdControl`,
-`mmdSkeletonAdapter` and `mmdMotionAdapter` since Phase 9; `mmdSchema` (which
-registers `MmdMaterialAPI`) and `mmdImaging` (which exposes it to Hydra) since
-Phase 8; `mmd_export` (which writes the
-imported stage out as a USDZ) since Phase 10. All are built by `ost` and by
-plain CMake. Every other identity below is *reserved*
-until the Phase that creates it lands (Phases are
-[DESIGN_POLICY.md §14](../design/DESIGN_POLICY.md#14-phases)), and its row then
-records that. `mmdControl`, `mmdMotionAdapter` and the edge into
-`usd-motion-plugins` were reserved on 2026-09-17, when the motion architecture
-was settled; `mmdSkeletonAdapter` split the skeleton side into its own narrow
-edge on 2026-09-21 (§2.4,
-[DESIGN_POLICY.md §20](../design/DESIGN_POLICY.md#20-alignment-with-the-usd-motion-plugins-design-policy)).
-`mmd_export` replaced the reserved `mmd_usdz` and `mmd_convert` on
-2026-09-26: one tool writes the imported stage out in every format, as
-`usd-vrm-plugins`' `vrm_export` does, and USDZ is its first.
+Component identities and architectural reservations are defined in §1;
+build modes in §5. The [capability matrix](../reference/CAPABILITY_MATRIX.md)
+owns implemented support, [release records](../releases/README.md) own
+shipped Phase scope, and [current.md](../roadmap/current.md) owns active work.
+Reserved identities are created only when their stated condition is met.
 
 The shape follows `usd-vrm-plugins`' workspace contract on purpose — the same
 plugin/library split, the same manifests, the same build modes — so that a
@@ -97,7 +81,8 @@ The runtime resolves returned body paths to its world handles. The adapter owns
 no world or backend and links only `mmdControl` and OpenUSD (`usdSkel`,
 `usdPhysics`, `usdGeom`, `usd`, `sdf`, `tf`, `vt`, `gf`). It is an independent
 package (`aggregate_member: false`); the importer never links it. Runtime
-callbacks and an installed physics-package dependency remain separate work.
+callbacks and an installed physics-package dependency belong to the consumer,
+under [PHYSICS_INTEGRATION §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy).
 
 ### 1.2 Later, only when their responsibility is real
 
@@ -270,18 +255,16 @@ usd-stage-runner ────→ usd-physics-plugins
 | Never the reverse | `usd-motion-plugins` never depends on any component here, and nothing here is designed to be moved there: VMD is MMD's format (the motion policy's §26). |
 | Same OpenUSD | `motionCore`, `motionRetarget` and test-only `motionUsd` are built against the OpenUSD release this repository pins ([DEPENDENCIES.md §1](DEPENDENCIES.md#1-openusd)); a mismatch is a configure error, not a warning. |
 
-The two adapter edges are active since `usd-motion-plugins` v0.5.0, and pinned
-to v0.5.3 since MOT-O13: their manifests pin `motionCore`, `motionRetarget`
-and `motionSource` artifacts by target and digest; the skeleton adapter
-states the `motionCore` artifact closure of the other two explicitly so it
+The [adapter manifests](DEPENDENCIES.md#6-usd-motion-plugins) pin `motionCore`,
+`motionRetarget` and `motionSource` artifacts by target and digest; the skeleton
+adapter states the `motionCore` artifact closure of the other two explicitly so it
 can build in isolation.
 The `mmdMotionAdapter` and `mmdSkeletonAdapter` manifests additionally pin
 `motionUsd` for their test-only edges, the Phase 9 acceptance test and the
 Phase 8 generic-clip test; neither adapter's link interface changes.
-A future MMD-specific physics adapter may similarly consume
-`usd-physics-plugins`; its identity and edge are added here only when the first
-runtime consumer makes them concrete
-([PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy)).
+`mmdPhysicsAdapter` declares no normal physics-package dependency. Any new
+installed physics edge must be declared by its consuming component under
+[PHYSICS_INTEGRATION.md §8](../design/PHYSICS_INTEGRATION.md#8-dependency-policy).
 
 ## 3. Directory layout
 
@@ -452,7 +435,7 @@ The shared CMake lives in `cmake/`, one module per concern, and hides no
 - **Staging:** the build writes the plugin library into the bundle's own
   `lib/`, its `plugInfo.json` and `buildInfo.json` into
   `plugin/resources/usdMmdFileFormat/`, and each tool into its `bin/` — inside
-  the source tree, and ignored by git. `ost` 0.23.3 reads a bundle's
+  the source tree, and ignored by git. The pinned `ost` reads a bundle's
   registration and library, and a tool's declared directories, from the
   component directory itself, so staging into the build tree waits on
   OpenStrata ([ost report 01](../reports/ost/01-2026-09-24-v0.23.3-a-bundle-is-staged-in-its-source-tree.md)).

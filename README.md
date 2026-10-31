@@ -54,6 +54,7 @@ OpenStrata users can run `ost build` and `ost test`. Follow the
 | [Documentation index](docs/README.md) | Document owners and navigation |
 | [Capabilities](docs/reference/CAPABILITY_MATRIX.md) | Current support, approximations and limitations |
 | [Current roadmap](docs/roadmap/current.md) | Active priorities, owners and exit gates |
+| [Contingent backlog](docs/roadmap/backlog.md) | Optional ideas and triggers for taking them up |
 | [Stage contract](docs/design/STAGE_CONTRACT.md) | Authored hierarchy, coordinates and metadata |
 | [Design policy](docs/design/DESIGN_POLICY.md) | Principles and scope definitions |
 | [Workspace](docs/architecture/WORKSPACE.md) | Component identities and dependency directions |

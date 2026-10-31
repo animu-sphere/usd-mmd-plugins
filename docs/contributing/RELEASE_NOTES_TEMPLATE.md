@@ -5,7 +5,8 @@ models as USD stages, `mmdSchema` registers `MmdMaterialAPI`, and `mmdImaging`
 shows it to Hydra; `mmd_inspect` and `vmd_inspect` report what a PMX or VMD
 file contains, without USD, and `mmd_export` packages a `.pmx` as a USDZ. The
 plain libraries — `mmdPmx`, `mmdModel`, `motionVmd`, `mmdMotionBinding`,
-`mmdControl`, `mmdMotionAdapter`, `mmdSkeletonAdapter` — build from the
+`mmdControl`, `mmdMotionAdapter`, `mmdSkeletonAdapter`, and the optional
+`mmdPhysicsAdapter` — build from the
 source archive as installable CMake packages, and the bundles and tools link
 the ones they use statically.
 
@@ -34,9 +35,9 @@ or `cy2026-linux-x86_64-py313-usd`.
 
 Install the product with `ost plugin product install --prefix <new directory>
 <product archive>`, then source the prefix's `activate.sh` or `activate.ps1`.
-On each target, before this draft was assembled, each bundle's verification
-pyramid passed against its package, the product was installed into a fresh
-prefix and used from it alone, and packaging was repeated to the same digests.
+Before publication, the release workflow requires each target's bundle
+verification pyramid to pass against its package, the product to work from
+a fresh install prefix alone, and repeated packaging to produce equal digests.
 
 ## SHA-256 checksums
 

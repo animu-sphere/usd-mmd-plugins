@@ -6,8 +6,8 @@ the fixture proving it.
 
 This is the only current feature-support summary. Contracts own semantics,
 [current.md](../roadmap/current.md) owns task status, and dated reports own
-measurements. The PMX import table's Intended column states a contract target,
-not an execution claim.
+measurements. Contract targets belong to the linked design sections; release
+records retain historical Phase provenance.
 
 The fixtures behind the current claims are in
 [plugins/usdMmdFileFormat/tests/fixtures/](../../plugins/usdMmdFileFormat/tests/fixtures/);
@@ -85,8 +85,8 @@ and scalar group evaluation also have generated `mmdControl_robustness` checks.
 | Bone morphs, directly and through nested group morphs, evaluated into the pose | supported | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
 | Every other bound morph as a channel with its sampled weight | supported | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
 | Owner-side non-bone group weight resolution (`ResolveMorphChannels`), preserving raw channels and excluding bone effects | supported by generated unit/robustness and installed-consumer checks; generated runtime/live vertex-group publication validated in the [consumer report](../reports/2026-10-24-phase8-live-resolved-morph.md); scalar resolution alone does not realize leaf effects | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
-| Owner-side primary/additional UV deltas (`EvaluateUvMorphs`), including nested groups and primary-V conversion | generated numeric unit and installed-consumer checks; primary snapshot/live USD publication in the [live report](../reports/2026-10-25-phase8-live-primary-uv.md), explicit Toon UV transport in the [direct-consumer report](../reports/2026-10-26-phase8-toon-primary-uv.md), automatic renderer mapping in the [resident UV report](../reports/2026-10-26-phase8-resident-uv-mapping.md) and tangent regeneration in the [tangent report](../reports/2026-10-26-phase8-uv-tangents.md). The [composed UV report](../reports/2026-10-26-phase8-composed-resident-uv.md) adds generated UV-only MMD owner/runtime snapshots through automatic bindings with USD/Hydra stream and textured GPU parity. The [composed avatar report](../reports/2026-10-26-phase8-composed-avatar-uv.md) combines final joints, vertex morphs, Jolt feedback and UVs through the same resident paths with stream/pixel parity across resets. The [private-input review](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md) adds manually accepted original PMX/VMD playback through composed USD and Hydra2. Private-avatar direct-snapshot parity, additional runtime UV output and representative acceptance remain open | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) |
-| Owner-side material modulation (`EvaluateMaterialMorphs`), including nested groups, multiply/add and all-material targets | generated numeric owner unit and installed-consumer checks; explicit typed runtime snapshots have generated 28-component checks in the [consumer report](../reports/2026-10-27-phase8-material-snapshots.md). The [live material checkpoint](../reports/2026-10-31-phase8-live-material-integration.md) adds generated direct-PMX automatic binding, 40-component owner parity per material, six canonical USD inputs, independent sampled-tint coefficients, resident renderer matching, GPU reference pixels and reset/lifetime checks. The [canonical material parity checkpoint](../reports/2026-10-31-phase8-canonical-material-parity.md) adds generated snapshot/USD-Hydra value and material-only 1x/4x pixel agreement with sampled tint realization OFF. The [combined checkpoint](../reports/2026-10-31-phase8-combined-render-parity.md) adds generated direct-PMX simultaneous final skin, vertex morph, primary UV, physics feedback and canonical material stream/pixel agreement across resets. Representative material correctness, broader discovery, sampled-tint and private Hydra/direct parity remain open | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
+| Owner-side primary/additional UV deltas (`EvaluateUvMorphs`), including nested groups and primary-V conversion | generated numeric owner/installed-consumer checks and composed primary-UV stream/pixel parity with skin, vertex morphs and physics feedback across resets; private composed-USD/Hydra2 playback has manual visual acceptance. Private direct-snapshot parity, additional runtime UV output and representative acceptance remain open | [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs), [combined evidence](../reports/2026-10-31-phase8-combined-render-parity.md), [private visual review](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md) |
+| Owner-side material modulation (`EvaluateMaterialMorphs`), including nested groups, multiply/add and all-material targets | generated owner/installed-consumer checks, automatic direct-PMX binding and combined canonical material/skin/vertex/primary-UV/physics stream/pixel parity across resets; parity uses sampled tint OFF. Independent sampled-tint GPU reference checks are separate. Representative correctness, broader discovery, sampled-tint Hydra/direct parity and private parity remain open | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs), [combined evidence](../reports/2026-10-31-phase8-combined-render-parity.md), [sampled-tint evidence](../reports/2026-10-31-phase8-live-material-integration.md) |
 | MMD's evaluation order: after-physics flag, transform layer, source index | supported | [MOTION §11.5](../design/MOTION_CONTRACT.md#115-evaluation-order) |
 | Rotation and translation appends, negative ratios, chains of appends, appends from IK links | supported | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
 | Local appends | approximated (evaluated as global, reported) | [MOTION §11.6](../design/MOTION_CONTRACT.md#116-appends) |
@@ -101,7 +101,8 @@ and scalar group evaluation also have generated `mmdControl_robustness` checks.
 ## Shared-motion adapters (`mmdSkeletonAdapter`, `mmdMotionAdapter`)
 
 Each claim is covered by synthetic adapter tests and by the installed-consumer
-lane against digest-pinned `usd-motion-plugins` v0.5.3 packages.
+lane against the digest-pinned `usd-motion-plugins` packages declared in the
+[adapter manifests](../architecture/DEPENDENCIES.md#6-usd-motion-plugins).
 
 | Capability | Current | Contract |
 | --- | :---: | --- |
@@ -122,61 +123,61 @@ lane against digest-pinned `usd-motion-plugins` v0.5.3 packages.
 
 ## PMX model import
 
-| Capability | Current | Intended | Phase | Contract |
-| --- | :---: | --- | :---: | --- |
-| `.pmx` registration, `Usd.Stage.Open` | supported | supported | 0 | [STAGE §1](../design/STAGE_CONTRACT.md#1-scope) |
-| Non-ASCII file paths (read through `Ar`) | supported | supported | 0 | [TEXT §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere) |
-| PMX 2.0 and 2.1 open; a malformed file fails with its fatal code | supported | supported | 0, 1 | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
-| Recoverable parser diagnostics recorded on the stage | supported | supported | 1 | [DIAGNOSTICS §4](DIAGNOSTICS.md#4-surfacing) |
-| Stage metadata (`/Asset`, Y-up, meters, contract version, model names and comments) | supported | supported | 0, 2 | [STAGE §2](../design/STAGE_CONTRACT.md#2-contract-version), [§4](../design/STAGE_CONTRACT.md#4-prim-hierarchy), [§5](../design/STAGE_CONTRACT.md#5-model-metadata-and-provenance) |
-| Coordinate conversion (right-handed, facing +Z, 0.08 m per MMD unit) | supported | supported | 2 | [STAGE §6](../design/STAGE_CONTRACT.md#6-coordinate-conversion) |
-| Mesh: points, faces, normals | supported | supported | 2 | [STAGE §8](../design/STAGE_CONTRACT.md#8-geometry) |
-| Primary UV (`primvars:st`) | supported | supported | 2 | [STAGE §8.3](../design/STAGE_CONTRACT.md#83-uvs) |
-| Additional UV 1–4 | preserved | preserved | 2 | [STAGE §8.3](../design/STAGE_CONTRACT.md#83-uvs) |
-| Per-vertex edge scale | preserved | preserved | 2 | [STAGE §8.4](../design/STAGE_CONTRACT.md#84-other-per-vertex-data) |
-| Material face ranges (`GeomSubset`) | supported | supported | 2 | [STAGE §8.1](../design/STAGE_CONTRACT.md#81-one-mesh-material-subsets) |
-| Material prims: identity, provenance, texture slots | supported | supported | 2 | [STAGE §10](../design/STAGE_CONTRACT.md#10-materials), [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
-| Per-material culling | approximated + preserved | approximated + preserved | 2 | [STAGE §8.5](../design/STAGE_CONTRACT.md#85-double-sidedness) |
-| Skeleton (`UsdSkelSkeleton`) | supported | supported | 2 | [STAGE §9](../design/STAGE_CONTRACT.md#9-skeleton-and-skinning) |
-| Canonical joint order: reordering, invalid parents, parent cycles | supported | supported | 2 | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
-| BDEF1 / BDEF2 / BDEF4 | supported | supported | 2 | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
-| Weight normalization, zero-weight vertices | supported | supported | 2 | [STAGE §9.5](../design/STAGE_CONTRACT.md#95-weight-normalization) |
-| SDEF | approximated + preserved | approximated + preserved | 2 | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
-| QDEF | unverified | unverified | 2 | [PMX §5](../design/PMX_CONTRACT.md#5-vertices-and-deform) |
-| A model without bones (`Xform` root, unskinned mesh) | supported | supported | 2 | [STAGE §4.1](../design/STAGE_CONTRACT.md#41-why-asset-is-the-skelroot) |
-| Japanese names preserved (model, material, bone) | supported | supported | 2 | [TEXT §5](../design/TEXT_ENCODING_POLICY.md#5-identity-versus-display) |
-| Stable ASCII identifiers | supported | supported | 2 | [TEXT §6](../design/TEXT_ENCODING_POLICY.md#6-stable-identifiers) |
-| Japanese texture filenames | supported | supported | 2 | [TEXT §7](../design/TEXT_ENCODING_POLICY.md#7-texture-paths) |
-| Unsafe texture paths | unsupported (refused, preserved) | unsupported (refused, preserved) | 2 | [TEXT §7.2](../design/TEXT_ENCODING_POLICY.md#72-unsafe-paths) |
-| `UsdPreviewSurface` | approximated | approximated | 3 | [MATERIAL §5](../design/MATERIAL_POLICY.md#5-usdpreviewsurface-realization) |
-| MaterialX `gltf_pbr` | approximated | approximated | 3 | [MATERIAL §6](../design/MATERIAL_POLICY.md#6-materialx-gltf_pbr-realization) |
-| Native MMD material semantics | preserved | preserved | 3 | [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
-| `MmdMaterialAPI` application | preserved (stage-contract v2) | preserved (stage-contract v2) | 8 | [MATERIAL §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi), [§14](../design/MATERIAL_POLICY.md#14-migration-and-implementation-order) |
-| Sphere textures | preserved | preserved | 3 | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
-| Toon ramps (individual and shared) | preserved | preserved | 3 | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
-| Edge / outline | preserved | preserved | 3 | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
-| Vertex morph (`UsdSkelBlendShape`) | supported | supported | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| Group, flip morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| Bone morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| UV and additional-UV morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| Material morph | preserved | preserved | 4 | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
-| Impulse morph | preserved | preserved | 4 | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
-| A vertex morph nothing can drive: no bones, or no mesh (preserved, no blend shape) | supported | supported | 4 | [STAGE §11.1](../design/STAGE_CONTRACT.md#111-vertex-morphs) |
-| Group and flip morph cycles | supported | supported | 4 | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
-| Japanese morph names preserved | supported | supported | 4 | [TEXT §5](../design/TEXT_ENCODING_POLICY.md#5-identity-versus-display) |
-| IK chains (effector, links, loop count, limit angle, link limits) | preserved | preserved | 5 | [STAGE §12.2](../design/STAGE_CONTRACT.md#122-ik-chains) |
-| Append rotation and translation, local append | preserved | preserved | 5 | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
-| Fixed axis, local axes, external parent key | preserved | preserved | 5 | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
-| Transform layer, deform after physics, tail, rotatable / translatable / visible / operable | preserved | preserved | 5 | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
-| A control relation that names no bone (dropped, the rest kept) | supported | supported | 5 | [STAGE §12.3](../design/STAGE_CONTRACT.md#123-repairs) |
-| Display frames | — (parsed; no contract version authors them) | unsupported (parsed, not authored) | 1 | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |
-| Rigid bodies: shape, size, rest frame, mass, kinematic mode (`UsdPhysics`) | supported | supported | 6 | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
-| Rigid bodies: bone, collision group and mask, damping, restitution, friction, physics mode | preserved | preserved | 6 | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
-| Spring 6-DOF and 6-DOF joints: bodies, frames, limits (`UsdPhysics`) | supported | supported | 6 | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
-| Joint springs, free axes, every joint value | preserved | preserved | 6 | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
-| PMX 2.1 point-to-point, cone-twist, slider, hinge joints (no `UsdPhysics` joint) | preserved | preserved | 6 | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
-| Undefined shape, mode or joint type; a joint whose body is missing | supported | supported | 6 | [STAGE §13.3](../design/STAGE_CONTRACT.md#133-repairs) |
-| Soft bodies (2.1) | unsupported (parsed, not authored) | unsupported (parsed, not authored) | 1 | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
+| Capability | Current | Contract |
+| --- | :---: | --- |
+| `.pmx` registration, `Usd.Stage.Open` | supported | [STAGE §1](../design/STAGE_CONTRACT.md#1-scope) |
+| Non-ASCII file paths (read through `Ar`) | supported | [TEXT §4](../design/TEXT_ENCODING_POLICY.md#4-no-locale-anywhere) |
+| PMX 2.0 and 2.1 open; a malformed file fails with its fatal code | supported | [PMX §15](../design/PMX_CONTRACT.md#15-fatal-versus-recoverable) |
+| Recoverable parser diagnostics recorded on the stage | supported | [DIAGNOSTICS §4](DIAGNOSTICS.md#4-surfacing) |
+| Stage metadata (`/Asset`, Y-up, meters, contract version, model names and comments) | supported | [STAGE §2](../design/STAGE_CONTRACT.md#2-contract-version), [§4](../design/STAGE_CONTRACT.md#4-prim-hierarchy), [§5](../design/STAGE_CONTRACT.md#5-model-metadata-and-provenance) |
+| Coordinate conversion (right-handed, facing +Z, 0.08 m per MMD unit) | supported | [STAGE §6](../design/STAGE_CONTRACT.md#6-coordinate-conversion) |
+| Mesh: points, faces, normals | supported | [STAGE §8](../design/STAGE_CONTRACT.md#8-geometry) |
+| Primary UV (`primvars:st`) | supported | [STAGE §8.3](../design/STAGE_CONTRACT.md#83-uvs) |
+| Additional UV 1–4 | preserved | [STAGE §8.3](../design/STAGE_CONTRACT.md#83-uvs) |
+| Per-vertex edge scale | preserved | [STAGE §8.4](../design/STAGE_CONTRACT.md#84-other-per-vertex-data) |
+| Material face ranges (`GeomSubset`) | supported | [STAGE §8.1](../design/STAGE_CONTRACT.md#81-one-mesh-material-subsets) |
+| Material prims: identity, provenance, texture slots | supported | [STAGE §10](../design/STAGE_CONTRACT.md#10-materials), [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
+| Per-material culling | approximated + preserved | [STAGE §8.5](../design/STAGE_CONTRACT.md#85-double-sidedness) |
+| Skeleton (`UsdSkelSkeleton`) | supported | [STAGE §9](../design/STAGE_CONTRACT.md#9-skeleton-and-skinning) |
+| Canonical joint order: reordering, invalid parents, parent cycles | supported | [STAGE §9.1](../design/STAGE_CONTRACT.md#91-canonical-joint-order) |
+| BDEF1 / BDEF2 / BDEF4 | supported | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
+| Weight normalization, zero-weight vertices | supported | [STAGE §9.5](../design/STAGE_CONTRACT.md#95-weight-normalization) |
+| SDEF | approximated + preserved | [STAGE §9.4](../design/STAGE_CONTRACT.md#94-skinning) |
+| QDEF | unverified | [PMX §5](../design/PMX_CONTRACT.md#5-vertices-and-deform) |
+| A model without bones (`Xform` root, unskinned mesh) | supported | [STAGE §4.1](../design/STAGE_CONTRACT.md#41-why-asset-is-the-skelroot) |
+| Japanese names preserved (model, material, bone) | supported | [TEXT §5](../design/TEXT_ENCODING_POLICY.md#5-identity-versus-display) |
+| Stable ASCII identifiers | supported | [TEXT §6](../design/TEXT_ENCODING_POLICY.md#6-stable-identifiers) |
+| Japanese texture filenames | supported | [TEXT §7](../design/TEXT_ENCODING_POLICY.md#7-texture-paths) |
+| Unsafe texture paths | unsupported (refused, preserved) | [TEXT §7.2](../design/TEXT_ENCODING_POLICY.md#72-unsafe-paths) |
+| `UsdPreviewSurface` | approximated | [MATERIAL §5](../design/MATERIAL_POLICY.md#5-usdpreviewsurface-realization) |
+| MaterialX `gltf_pbr` | approximated | [MATERIAL §6](../design/MATERIAL_POLICY.md#6-materialx-gltf_pbr-realization) |
+| Native MMD material semantics | preserved | [MATERIAL §4](../design/MATERIAL_POLICY.md#4-canonical-material-semantics) |
+| `MmdMaterialAPI` application | preserved (stage-contract v2) | [MATERIAL §4.3](../design/MATERIAL_POLICY.md#43-mmdmaterialapi), [§14](../design/MATERIAL_POLICY.md#14-migration-and-implementation-order) |
+| Sphere textures | preserved | [MATERIAL §8](../design/MATERIAL_POLICY.md#8-sphere-textures) |
+| Toon ramps (individual and shared) | preserved | [MATERIAL §7](../design/MATERIAL_POLICY.md#7-toon-ramps) |
+| Edge / outline | preserved | [MATERIAL §9](../design/MATERIAL_POLICY.md#9-edges) |
+| Vertex morph (`UsdSkelBlendShape`) | supported | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| Group, flip morph | preserved | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| Bone morph | preserved | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| UV and additional-UV morph | preserved | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| Material morph | preserved | [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) |
+| Impulse morph | preserved | [STAGE §11](../design/STAGE_CONTRACT.md#11-morphs) |
+| A vertex morph nothing can drive: no bones, or no mesh (preserved, no blend shape) | supported | [STAGE §11.1](../design/STAGE_CONTRACT.md#111-vertex-morphs) |
+| Group and flip morph cycles | supported | [PMX §10](../design/PMX_CONTRACT.md#10-morphs) |
+| Japanese morph names preserved | supported | [TEXT §5](../design/TEXT_ENCODING_POLICY.md#5-identity-versus-display) |
+| IK chains (effector, links, loop count, limit angle, link limits) | preserved | [STAGE §12.2](../design/STAGE_CONTRACT.md#122-ik-chains) |
+| Append rotation and translation, local append | preserved | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
+| Fixed axis, local axes, external parent key | preserved | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
+| Transform layer, deform after physics, tail, rotatable / translatable / visible / operable | preserved | [STAGE §12.1](../design/STAGE_CONTRACT.md#121-per-joint-control-semantics) |
+| A control relation that names no bone (dropped, the rest kept) | supported | [STAGE §12.3](../design/STAGE_CONTRACT.md#123-repairs) |
+| Display frames | — (parsed; no contract version authors them) | [PMX §11](../design/PMX_CONTRACT.md#11-display-frames) |
+| Rigid bodies: shape, size, rest frame, mass, kinematic mode (`UsdPhysics`) | supported | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
+| Rigid bodies: bone, collision group and mask, damping, restitution, friction, physics mode | preserved | [STAGE §13.1](../design/STAGE_CONTRACT.md#131-rigid-bodies) |
+| Spring 6-DOF and 6-DOF joints: bodies, frames, limits (`UsdPhysics`) | supported | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
+| Joint springs, free axes, every joint value | preserved | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
+| PMX 2.1 point-to-point, cone-twist, slider, hinge joints (no `UsdPhysics` joint) | preserved | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
+| Undefined shape, mode or joint type; a joint whose body is missing | supported | [STAGE §13.3](../design/STAGE_CONTRACT.md#133-repairs) |
+| Soft bodies (2.1) | unsupported (parsed, not authored) | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
 
 ## Export (`mmd_export`)
 
@@ -211,11 +212,10 @@ is checked at configure time; packages without compatibility metadata reject.
 owns conversion rules; [§12](../design/PHYSICS_INTEGRATION.md#12-fidelity-and-acceptance-policy)
 owns adoption criteria.
 
-The [scene-resource consumer report](../reports/2026-10-21-phase8-scene-resources.md)
-extends generated lifecycle evidence to reusable host-owned body/joint resource
-sets, construction rollback and constrained selective unload. It does not
-establish automatic application/world binding, cross-avatar constraint policy,
-resident rendering or representative L3 acceptance.
+Generated resource/lifecycle checks cover host-owned body/joint sets,
+construction rollback and constrained selective unload. Broader application
+binding, cross-avatar constraint policy and representative L3 remain unaccepted;
+see the [runtime evidence index](../reports/README.md#runtime-composition-and-lifecycle).
 
 | Feature | Source / static preservation | Execution claim and limits | Contract / evidence |
 | --- | --- | --- | --- |
@@ -238,50 +238,26 @@ well-formed feature is distinct from invalid input. Existing probe output
 uses `jointFidelity=approximate/unverified` and approximation counters,
 not a uniform four-state per-feature capability API.
 
-Corpus counts, finite-step results, SDK/hosted evidence and response error
-measurements remain in the linked reports. Accepted reader/finite-state
-tests prove their bounded claims, not native MMD trajectories.
-The [live keyed-input report](../reports/2026-10-24-phase8-live-keyed-input.md)
-adds a generated VMD-driven pendulum with concrete body/final-skinning checks
-and exact reset replay. Anonymous private rest-input smoke and explicit
-morph/damping refusals do not establish representative PMX/VMD acceptance.
+Corpus counts, finite-step results, SDK/hosted evidence and response errors
+remain in the [physics reports](../reports/README.md#physics-preservation-readers-and-execution-probes).
+Generated keyed-input/reset checks and scoped private intake prove bounded
+behavior, not representative PMX/VMD L3 or native MMD trajectories.
 [DEPENDENCIES §7](../architecture/DEPENDENCIES.md#7-usd-physics-plugins)
 owns package/ABI requirements and option discovery.
 
 ## Outside the PMX importer
 
-The optional runtime-owned [live usdview host](../reports/2026-10-21-phase8-usdview-live.md)
-validates a generated skinned pendulum through live Jolt, owner bone feedback
-and final UsdSkel publication. Its
-[body-properties follow-up](../reports/2026-10-21-phase8-live-body-properties.md)
-originally consumed owner `ReadBodyProperties` for admission masks, contact
-coefficients and finite damping rates. The
-[source-policy follow-up](../reports/2026-10-31-phase8-source-damping-runtime.md)
-selects `ReadSourceBodyProperties`, including endpoint clearing and normalization
-diagnostics, through rebuilt installed packages. The
-[spring follow-up](../reports/2026-10-21-phase8-live-springs.md) consumes owner
-`ReadJointSprings` with independent default-OFF Hookean translation and
-small-angle rotation opt-ins. Generated response, activation, reset/replay,
-refusal and actual-window checks validate that bounded approximation;
-negative/locked/format-only meaning remains unsupported. This visual path does
-not establish representative PMX/VMD,
-hair/skirt, material/morph or Hydra/direct parity acceptance.
-
-The later [private-avatar visual review](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md)
-adds user-accepted Hydra2 display of original PMX/VMD input through the live
-usdview host and current `hdToon` renderer. The dedicated viewport separately
-played recorded final USD output. A subsequent scoped
-[native-viewport host](https://github.com/animu-sphere/hydra-toon/blob/main/docs/reports/renderer/107-2026-10-27-live-mmd-viewport.md)
-now consumes original PMX/VMD through the runtime's reusable MMD/Jolt session,
-with final joint/morph/primary-UV resident bindings, Play/Pause/Reset/Stop and
-whole-world teardown. Private-model performance is below real time.
+The optional runtime-owned host and resident renderer have generated
+skin/morph/primary-UV/material/physics checks, summarized in
+[Control evaluation](#control-evaluation-mmdcontrol) and
+[Physics preservation and execution](#physics-preservation-and-execution).
 The [unmodified-input native review](../reports/2026-10-31-phase8-native-viewport-admission.md)
-adds user confirmation of that scoped live result with owner admission policies.
-The [live material checkpoint](../reports/2026-10-31-phase8-live-material-integration.md)
-separately verifies generated automatic material binding, canonical USD values
-and resident/GPU delivery. Private-avatar Hydra/direct numerical or pixel parity,
-representative material correctness, broader asset admission, the full combined
-interactive gate and representative L3 acceptance remain open.
+records user-confirmed visible output for one scoped private PMX/VMD pair
+with owner damping/inert-joint admission, resident bindings and playback
+controls. Private-model performance is below real time. This does not establish
+private Hydra/direct numerical or pixel parity, representative material/L3
+acceptance, broader asset/lifecycle admission or final combined interactive
+acceptance. The [report index](../reports/README.md) retains earlier checkpoints.
 
 | Capability | Status | Where it belongs |
 | --- | --- | --- |

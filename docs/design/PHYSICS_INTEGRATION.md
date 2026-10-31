@@ -372,15 +372,13 @@ integration. Force ordering and finite steps limit equivalence; response
 measurements belong in the [damping report](../reports/2026-10-18-phase8-body-damping.md).
 The importer and generic USD reader do not change.
 
-The separate owner-side `ResolveSourceDamping` now exposes a typed source-policy
+The separate owner-side `ResolveSourceDamping` exposes a typed source-policy
 response, including coefficient normalization and the unit endpoint as
 `ClearPriorVelocity`. It does not change the strict reader above. Runtime
 adoption must explicitly select component-wise pre-force velocity clearing
 without suppressing new force or constraint response, and report source
-normalization. The [source damping report](../reports/2026-10-27-phase8-source-damping-response.md)
-records pinned references and unit evidence; the later
-[backend checkpoint](../reports/2026-10-31-phase8-damping-backend-boundary.md)
-links the neutral implementation and remaining consumer admission work.
+normalization. Source references and bounded implementation evidence are
+indexed under [physics reports](../reports/README.md#physics-preservation-readers-and-execution-probes).
 
 `ReadSourceBodyProperties` is a separate explicit source-policy entry point.
 It preserves the strict filter/contact validation and damping declaration
@@ -550,7 +548,7 @@ Static preservation was completed in Phase 6. These runtime steps belong to
 Phase 8 composition and its external collaborators; they do not reopen Phase
 6 unless the authored contract itself is wrong.
 
-The [dated evidence map](../reports/2026-10-18-docs-ownership-audit.md#retained-evidence-and-unverified-signals)
+The [physics report index](../reports/README.md#physics-preservation-readers-and-execution-probes)
 links reader, SDK, contact, damping and spring experiments.
 Current work is tracked only in [current.md](../roadmap/current.md).
 Further joint refinement is justified by §12's acceptance criteria, not by
@@ -710,3 +708,20 @@ rendering. Screenshots or visual review may supplement these assertions;
 they cannot alone close L3. Publish failures and known limitations beside the
 commands. This contract defines acceptance; only a measured report can claim
 that a selected scene set passes.
+
+### 12.4 Interactive host acceptance
+
+For the final combined interactive gate, run the selected private PMX/VMD input
+through a live runtime-owned physics session in the dedicated viewport.
+Verify final joint, vertex-morph and primary-UV output together, one world
+Step per physics tick, Play/Pause/Reset/Stop, declared loop/seek behavior and
+world/resource teardown. Present the result for the user's visual decision.
+Recorded USD playback cannot close this gate, and a scoped single-avatar
+preview does not establish broader application lifecycle or representative L3.
+The automatic assertions in §12.3 remain required for L3.
+
+`usd-avatar-runtime` owns orchestration and world barriers,
+`usd-stage-runner` supplies host ticks, and `hydra-toon` consumes resident
+render data. These owners provide the cross-repository evidence; MMD-local
+participant/adapter behavior remains subject to §5–§6. Active deliverables
+are tracked only in [current.md](../roadmap/current.md).
