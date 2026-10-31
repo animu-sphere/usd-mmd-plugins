@@ -18,11 +18,12 @@ earlier documentation consolidation.
 ## Active gates
 
 Continue representative scene and application/renderer acceptance from the
-[inert-joint admission checkpoint](../reports/2026-10-31-phase8-inert-joint-admission.md).
-The scoped private pair now enters directly through owner source-damping and
-inert-joint policies, without anonymous damping/joint overrides. Broaden that
-bounded headless evidence to the licensed representative scene set and rendering.
-The fixed L3 scene set and final interactive physics-host decision remain open.
+[native viewport admission checkpoint](../reports/2026-10-31-phase8-native-viewport-admission.md).
+The scoped private pair renders directly through owner source-damping and
+inert-joint policies, without anonymous damping/joint overrides or filtered
+motion; the user confirmed this scoped visible result. Extend that bounded
+evidence to the licensed fixed L3 scene set, private Hydra/direct parity and
+broader lifecycle. The full combined interactive gate remains open.
 
 States: `planned`, `in_progress`, `blocked`. A gate leaves this table when
 its outcome is verified; record measurements in a dated report.
@@ -41,6 +42,9 @@ The final interactive acceptance step is live physics-host confirmation in
 the dedicated `hydra-toon` viewport. The scoped private-avatar Hydra2 visual
 review is complete; its [acceptance report](../reports/2026-10-27-phase8-hydra2-visual-acceptance.md)
 distinguishes live usdview output from recorded native-viewport playback.
+The separate [unmodified-input native review](../reports/2026-10-31-phase8-native-viewport-admission.md)
+records user-confirmed live runtime-owned physics in that viewport. It does
+not close the full combined gate after the prerequisites below.
 Keep this completed visual review separate from the remaining automated L3
 and application-lifecycle gates. Use the
 [capability matrix](../reference/CAPABILITY_MATRIX.md#control-evaluation-mmdcontrol)
