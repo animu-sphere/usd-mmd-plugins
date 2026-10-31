@@ -164,7 +164,7 @@ generated VMD to a generated PMX, evaluates it, and builds a shared
 | --- | --- |
 | `find_package` | `find_package(mmdPhysicsAdapter 0.2 CONFIG REQUIRED)` |
 | Imported target | `mmdPhysicsAdapter::mmdPhysicsAdapter` (static library) |
-| Headers | `include/mmdPhysicsAdapter/` — `Adapter.h`, `BodyProperties.h`, `JointSprings.h`, `Codes.h` |
+| Headers | `include/mmdPhysicsAdapter/` — `Adapter.h`, `BodyProperties.h`, `JointSprings.h`, `JointAdmission.h`, `Codes.h` |
 | Required packages | `mmdControl` and OpenUSD 26.08 (`usdSkel`, `usdPhysics`, `usdGeom`, `usd`, `sdf`, `vt`, `gf`, `tf`, or the monolith), resolved by the package config |
 | Language | C++20 (`cxx_std_20`) |
 | Version compatibility | `SameMinorVersion` |
@@ -190,6 +190,12 @@ opens a generated PMX, binds a VMD and checks three modes, post append and
 reset/replay through `BeginPhysics` / `ResumePhysics` with a caller-supplied
 world body snapshot, initial body transforms, plus spring conversion from a
 second generated fixture.
+
+`mmdPhysicsAdapter_JOINT_ADMISSION_VERSION=1` advertises `ReadJointAdmission`
+and its owned `Execute`/`Inert` result, under
+[PHYSICS §7.6](../design/PHYSICS_INTEGRATION.md#76-inert-joint-admission).
+Consumers requiring this policy check the feature version and rebuild against
+the installed owner; the product version alone does not advertise the API.
 
 ## `mmdSchema`
 
