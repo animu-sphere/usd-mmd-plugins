@@ -54,8 +54,8 @@ the release then.
 
 [v0.3.0](v0.3.0.md) defines the proposed integration checkpoint and its
 verification gaps. It is a candidate, not an entry in the shipped-version
-table. Keep its changelog changes in `[Unreleased]` until the package version
-and mirrors are advanced together and the actual release date is known.
+table. Its version, mirrors and dated changelog are advanced together in the
+release-preparation change; publication still requires the checks below.
 Passing bounded release checks does not close the representative avatar gates.
 
 Use the candidate's [verification matrix](v0.3.0.md#verification-matrix)

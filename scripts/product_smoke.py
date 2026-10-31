@@ -14,6 +14,7 @@ aggregate, into a fresh prefix outside the repository:
       --plugin-path <prefix>/bundles/usdMmdFileFormat \\
       --plugin-path <prefix>/bundles/mmdImaging -- python <stage check>
   ost plugin run ... -- <prefix>/tools/mmd_export/bin/mmd_export <fixture> <out.usdz>
+  ost plugin run ... --no-inject -- python <plugin-free USDZ check>
 
 `--no-inject` leaves only the runtime and the installed bundle on the
 discovery path, and the stage check opens the fixture at `/Asset`, asserts
@@ -24,6 +25,8 @@ apply `MmdMaterialAPI` from the installed `mmdSchema`, and that the installed
 it: no Python binding reaches UsdImaging's registry, so loading the library
 from the installed layout is what this lane can prove. The fixtures are copied under a
 non-ASCII directory first (TEXT_ENCODING_POLICY.md).
+Both default and portable-path exports are reopened without MMD plugins;
+the package probe checks texture resolution, and portable ZIP names are ASCII.
 
   product_smoke.py --product dist/products/usd-mmd-plugins/<version>/<target>
 """
@@ -38,6 +41,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 FIXTURE = REPO / "plugins" / "usdMmdFileFormat" / "tests" / "fixtures" / "sample-2.1-utf8.pmx"
@@ -164,11 +168,32 @@ def main() -> int:
         # textures it names (PACKAGING_POLICY.md §10).
         for folder in ("tex", "sph", "toon"):
             shutil.copytree(FIXTURE.parent / folder, inputs / folder)
-        usdz = inputs / "サンプル.usdz"
-        result = run(session + [str(tool(prefix, "mmd_export")), str(pmx), str(usdz)])
-        if result.returncode != 0 or not usdz.is_file():
-            raise SystemExit(f"FAIL: mmd_export exited {result.returncode}")
-        print(f"mmd_export: packaged {pmx.name} as {usdz.name}")
+        # Reuse the packaging contract's independent probe in a new process
+        # with only the runtime: no installed MMD bundle is registered there.
+        probe = scratch / "stage_probe.py"
+        shutil.copyfile(REPO / "tools" / "mmdExport" / "tests" / "stage_probe.py", probe)
+        portable_session = [args.ost, "plugin", "run",
+                            str(REPO / "plugins" / "usdMmdFileFormat"),
+                            "--no-inject", "--"]
+        for portable in (False, True):
+            stem = "ポータブル" if portable else "サンプル"
+            usdz = inputs / f"{stem}.usdz"
+            options = ["--portable-paths"] if portable else []
+            result = run(session + [str(tool(prefix, "mmd_export")),
+                                    *options, str(pmx), str(usdz)])
+            if result.returncode != 0 or not usdz.is_file():
+                raise SystemExit(f"FAIL: mmd_export exited {result.returncode}")
+            if portable:
+                with zipfile.ZipFile(usdz) as archive:
+                    names = archive.namelist()
+                    if names[0] != "model.usdc" or not all(n.isascii() for n in names):
+                        raise SystemExit(f"FAIL: portable archive names: {names}")
+            result = run(portable_session + [args.python, str(probe), str(usdz),
+                                            "--out", str(scratch / f"{stem}.json"),
+                                            "--package"])
+            if result.returncode != 0:
+                raise SystemExit(f"FAIL: plugin-free package check exited {result.returncode}")
+            print(f"mmd_export: {usdz.name} reopened without MMD plugins; textures resolve inside")
     finally:
         if args.keep:
             print(f"kept {scratch}")
