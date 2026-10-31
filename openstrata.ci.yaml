@@ -1,9 +1,11 @@
 # OpenStrata CI support matrix for usd-mmd-plugins.
 #
 # Policy: this file is the CI contract; .github/workflows/ost-*.yml are
-# renderer output from `ost ci generate github`. Do not hand-edit CI semantics
-# in the generated workflow YAML -- change this file and regenerate. Four
-# workflows are hand-written, each for what this matrix cannot express:
+# renderer output from `ost ci generate github`, adapted to workflow_call by
+# scripts/generate_source_ci.py. Regenerate with that script; do not hand-edit
+# generated jobs. The hand-written ci-gate.yml owns change classification and
+# orchestration (docs/architecture/CI_POLICY.md). Its reusable workflows cover
+# what this matrix cannot express:
 # docs-check.yml checks documentation and builds nothing;
 # parser-sanitizers.yml builds mmdPmx, mmdModel, motionVmd,
 # mmdMotionBinding and mmdControl on their own -- no runtime, since none links
@@ -17,7 +19,8 @@
 # runtime digests, OpenUSD requirement, host packages and pyramid depths --
 # re-pin it with them (docs/releases/README.md).
 #
-# Lanes: one, `pull_request`, on GitHub-hosted runners. Each runner bootstraps
+# Lanes: one, `pull_request`, on GitHub-hosted runners, called for non-document
+# PRs and explicit full dispatch. Each runner bootstraps
 # the pinned `ost` below and pulls the runtime SDK from its OCI reference.
 #
 # Runtimes: the OpenUSD 26.08 leaves of OpenStrata's canonical runtime matrix,

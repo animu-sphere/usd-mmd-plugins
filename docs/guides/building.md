@@ -10,6 +10,22 @@ exist but have not been run by hand, so they are not documented here yet.
 
 Commands are PowerShell, run from the repository root.
 
+## Checking CI configuration locally
+
+The [CI policy](../architecture/CI_POLICY.md) owns lane selection and required
+checks. To validate or regenerate its source workflow without an OpenUSD SDK:
+
+```powershell
+python -m pip install PyYAML==6.0.2
+python -m unittest discover -s scripts -p test_ci_policy.py -v
+python scripts/generate_source_ci.py --bootstrap --check
+# After editing the matrix or adapter:
+python scripts/generate_source_ci.py --bootstrap
+```
+
+`--bootstrap` downloads the checksum-verified OST version from the CI manifest.
+With that version already installed, omit `--bootstrap` or pass `--ost path/to/ost`.
+
 ## Requirements
 
 - **OpenUSD 26.08, exactly.** Configuring against any other release fails in

@@ -4,17 +4,11 @@
 name: installed physics
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: physics-installed-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 jobs:
   windows:

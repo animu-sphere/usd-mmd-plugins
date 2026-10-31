@@ -39,6 +39,10 @@ the pull request:
 clang-format -i --style=file path/to/changed.cpp
 ```
 
+Every PR receives cheap checks and a stable `required-ci` result. Documentation
+changes skip builds; other changes select the relevant validation described in
+the [CI policy](docs/architecture/CI_POLICY.md).
+
 ## Pull requests
 
 Keep each pull request focused on one understandable change. The pull request
