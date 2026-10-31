@@ -23,7 +23,6 @@ and recording results in a dated report and the relevant release record.
 | P1-C (Phase 8 / PR-C) | Application/stage lifecycle, automatic binding, selective unload, teardown and resident rendering beyond a scoped host | Participant adapter/contract and lifecycle tests; keep the importer physics-free | `usd-avatar-runtime` orchestration, `usd-stage-runner` host loop, `hydra-toon` resident consumption | in_progress | [Runtime order](../design/PHYSICS_INTEGRATION.md#6-runtime-order), [MVP](../design/PHYSICS_INTEGRATION.md#101-coupling-mvp-acceptance) and [interactive acceptance](../design/PHYSICS_INTEGRATION.md#124-interactive-host-acceptance); reproducible lifecycle/host report |
 | P1-2 (Phase 8) | Licensed fixed PMX/VMD scene set, automatic L3 assertions and reproducible acceptance report | Fixture admission/licensing, MMD assertions and evidence; distinguish private inputs from redistributable CI assets | Runtime/physics integration and `hydra-toon` rendering | planned | [Representative scene policy](../design/PHYSICS_INTEGRATION.md#123-representative-scene-acceptance); measured bounds and final-render consumption for the selected corpus |
 | P1-3 (Phase 8) | Representative material morph and combined renderer parity, advanced UV and vertex-color acceptance | Semantic correctness, immutable snapshots and canonical material/geometry checks | `usd-avatar-runtime` consumers and `hydra-toon` renderer | in_progress | [Material morphs](../design/MATERIAL_POLICY.md#11-material-morphs), [renderer boundary](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere); representative Hydra/direct evidence with sampled-tint scope stated separately |
-| P2-1 (Phase 10) | Packaged USDZ portability and installed-user workflow accepted as a release contract | Verify installed export/reopen, texture resolution, validation and ASCII archive paths; align consumer API and release notes | None unless verification discovers a dependency | planned | [Packaging contract](../design/PACKAGING_POLICY.md), [export guide](../guides/exporting.md) and [release verification](../releases/v0.3.0.md#verification-matrix); remove this gate if release verification closes it |
 
 ## Avatar runtime composition
 
@@ -51,7 +50,7 @@ retain existing report links without a second progress narrative.
 
 ## Release boundary
 
-The [v0.3.0 candidate](../releases/v0.3.0.md) is an integration checkpoint.
+The [v0.3.0 release](../releases/v0.3.0.md) is an integration checkpoint.
 Passing its bounded release checks does not complete P1-C/P1-2/P1-3 or claim
 arbitrary-model parity, all UV channels, unrestricted lifecycle, Bullet
 trajectory equivalence or production realtime performance. Package versions

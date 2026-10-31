@@ -8,6 +8,10 @@ This index groups evidence by subject. The [capability matrix](../reference/CAPA
 owns current support claims, [current.md](../roadmap/current.md) owns active
 work, and [release records](../releases/README.md) own shipped scope.
 
+## Release verification
+
+- 2026-10-31: [v0.3.0 installed-product and release verification](2026-10-31-v030-release-verification.md).
+
 ## CI cost
 
 - 2026-10-31: [Pre-change CI cost baseline](2026-10-31-ci-baseline.md).
