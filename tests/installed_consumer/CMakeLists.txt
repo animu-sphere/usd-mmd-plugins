@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # mmdModel alone: its package config must find mmdPmx, its one edge, by
 # itself (PACKAGE_CONTRACT.md).
-find_package(mmdModel 0.2 CONFIG REQUIRED)
+find_package(mmdModel 0.3 CONFIG REQUIRED)
 
 add_executable(pmx_header_probe main.cpp)
 target_link_libraries(pmx_header_probe PRIVATE mmdModel::mmdModel)
@@ -25,7 +25,7 @@ endif()
 
 # mmdMotionBinding alone: its package config must find both of its edges,
 # mmdModel and motionVmd, by itself.
-find_package(mmdMotionBinding 0.2 CONFIG REQUIRED)
+find_package(mmdMotionBinding 0.3 CONFIG REQUIRED)
 
 add_executable(vmd_probe vmd_probe.cpp)
 target_link_libraries(vmd_probe PRIVATE mmdMotionBinding::mmdMotionBinding)
@@ -35,7 +35,7 @@ endif()
 
 # mmdControl alone: its package config must find mmdMotionBinding and
 # mmdModel, and through them motionVmd and mmdPmx, by itself.
-find_package(mmdControl 0.2 CONFIG REQUIRED)
+find_package(mmdControl 0.3 CONFIG REQUIRED)
 
 add_executable(control_probe control_probe.cpp)
 target_link_libraries(control_probe PRIVATE mmdControl::mmdControl)
@@ -45,8 +45,8 @@ endif()
 
 # The Phase 9 edge: both adapters must resolve their digest-pinned shared
 # motion dependencies from installed packages, never sibling source trees.
-find_package(mmdSkeletonAdapter 0.2 CONFIG REQUIRED)
-find_package(mmdMotionAdapter 0.2 CONFIG REQUIRED)
+find_package(mmdSkeletonAdapter 0.3 CONFIG REQUIRED)
+find_package(mmdMotionAdapter 0.3 CONFIG REQUIRED)
 
 add_executable(adapter_probe adapter_probe.cpp)
 target_link_libraries(adapter_probe PRIVATE mmdMotionAdapter::mmdMotionAdapter)
@@ -56,7 +56,7 @@ endif()
 
 # The Phase 8 schema bundle: its package config must find OpenUSD by itself,
 # and its generated headers must compile from the prefix alone.
-find_package(mmdSchema 0.2 CONFIG REQUIRED)
+find_package(mmdSchema 0.3 CONFIG REQUIRED)
 
 add_executable(schema_probe schema_probe.cpp)
 target_link_libraries(schema_probe PRIVATE mmdSchema::mmdSchema)
@@ -66,7 +66,7 @@ if(MSVC)
 endif()
 
 # Optional owner coupling package resolves its own control and USD closure.
-find_package(mmdPhysicsAdapter 0.2 CONFIG REQUIRED)
+find_package(mmdPhysicsAdapter 0.3 CONFIG REQUIRED)
 if(NOT mmdPhysicsAdapter_JOINT_SPRINGS_VERSION EQUAL 1)
     message(FATAL_ERROR "Installed owner must supply joint-springs API version 1")
 endif()

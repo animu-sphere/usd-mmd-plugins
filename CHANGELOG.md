@@ -16,8 +16,11 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
-Candidate scope and outstanding release verification are recorded in
-[the v0.3.0 draft](docs/releases/v0.3.0.md); no release date is asserted here.
+## [0.3.0] - 2026-10-31
+
+MMD integration checkpoint; stage-contract version remains **2**. See the
+[release record](docs/releases/v0.3.0.md) for scope and verification.
+CMake consumers must request 0.3 and rebuild (`SameMinorVersion`).
 
 ### Added
 
@@ -39,8 +42,8 @@ Candidate scope and outstanding release verification are recorded in
 
 - The release workflow publishes each platform's bundle/tool packages to GHCR
   and emits archive/OCI digest pins. v0.2.0's packages were already backfilled
-  from its unchanged published assets; candidate artifacts still require a
-  verified dry run and tag release ([release procedure](docs/releases/README.md)).
+  from its unchanged published assets; v0.3.0 artifacts pass the
+  dry-run and tag-release gates before publication ([release procedure](docs/releases/README.md)).
 - Documentation separates active gates, contingent backlog, support claims
   and dated evidence; completed integration narratives leave the roadmap.
 
