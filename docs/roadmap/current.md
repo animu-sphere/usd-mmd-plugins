@@ -21,9 +21,12 @@ Continue representative scene and application/renderer acceptance from the
 [native viewport admission checkpoint](../reports/2026-10-31-phase8-native-viewport-admission.md).
 The scoped private pair renders directly through owner source-damping and
 inert-joint policies, without anonymous damping/joint overrides or filtered
-motion; the user confirmed this scoped visible result. Extend that bounded
-evidence to the licensed fixed L3 scene set, private Hydra/direct parity and
-broader lifecycle. The full combined interactive gate remains open.
+motion; the user confirmed this scoped visible result. Generated live material
+binding, canonical USD publication and sampled-tint rendering have a separate
+[verified checkpoint](../reports/2026-10-31-phase8-live-material-integration.md).
+Extend that bounded evidence to the licensed fixed L3 scene set, private
+Hydra/direct parity and broader lifecycle. The full combined interactive gate
+remains open.
 
 States: `planned`, `in_progress`, `blocked`. A gate leaves this table when
 its outcome is verified; record measurements in a dated report.
@@ -62,9 +65,9 @@ now consumes runtime-owned MMD/Jolt snapshots, including original PMX/VMD,
 resident joint/morph/UV binding and Play/Pause/Reset/Stop. This provides an
 interactive preview before the full final acceptance gate below. Continue
 separate CPU runtime/conversion and GPU measurements: the private model is
-below real time. Material/additional-UV integration, private Hydra/direct
-parity, broader lifecycle, representative L3 and final visual acceptance
-remain open; this scoped preview does not close P1-C/P1-2/P1-3.
+below real time. Representative material validation, additional-UV integration,
+private Hydra/direct parity, broader lifecycle, representative L3 and final
+visual acceptance remain open; this scoped preview does not close P1-C/P1-2/P1-3.
 
 1. **UV rendering (runtime consumer + renderer):** extend generated composed
    deformation/physics/UV checks to private PMX/VMD direct-snapshot bindings
@@ -95,20 +98,23 @@ remain open; this scoped preview does not close P1-C/P1-2/P1-3.
    Follow [MOTION §11.3](../design/MOTION_CONTRACT.md#113-morphs) for immutable
    base-plus-delta application and admission of other reached leaf types.
 2. **Material output (runtime consumer + hydra-toon):** extend the generated
-   [typed snapshot publication](../reports/2026-10-27-phase8-material-snapshots.md)
-   to automatic material binding, live USD appearance and renderer bindings,
-   including sampled texture/sphere/toon contributions. Follow
-   [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs) and the
-   [owner material report](../reports/2026-10-25-phase8-material-morph-evaluation.md).
-   Validate final values and bindings before publication; include reset to
-   immutable bases in composed checks. These two transport slices feed P1-3.
+   [live material checkpoint](../reports/2026-10-31-phase8-live-material-integration.md)
+   to representative PMX/VMD assertions and composed Hydra/direct agreement.
+   Direct-PMX automatic binding, canonical USD input publication, independent
+   sampled texture/sphere/toon coefficients, resident matching and GPU
+   realization already have generated checks, including immutable-base reset.
+   Canonical USD values and sampled-tint realization have distinct coverage;
+   the GPU reference is not a Hydra/direct comparison. Follow
+   [MATERIAL §11](../design/MATERIAL_POLICY.md#11-material-morphs). Broader
+   material discovery and representative appearance remain P1-3 work.
 3. **Application lifecycle (avatar-runtime + stage-runner):** complete automatic
    participant configuration, application/stage events and selective unload
    policy for cross-avatar constraints. Continue from the
    [stage/world binding report](../reports/2026-10-21-phase8-stage-world-binding.md)
    under P1-C.
-4. **Resident rendering (runtime consumer + hydra-toon):** bind resident avatar
-   resources and verify rendered/Hydra agreement under P1-C and P1-3. The
+4. **Resident rendering (runtime consumer + hydra-toon):** extend scoped resident
+   avatar bindings to broader application lifecycle and verify rendered/Hydra
+   agreement under P1-C and P1-3. The
    [Toon consumer report](../reports/2026-10-21-phase8-toon-consumer.md) is the
    snapshot-transport starting point; renderer responsibilities remain in
    [MATERIAL §12](../design/MATERIAL_POLICY.md#12-rendering-and-integration-belong-elsewhere).
