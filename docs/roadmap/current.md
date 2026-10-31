@@ -99,7 +99,10 @@ visual acceptance remain open; this scoped preview does not close P1-C/P1-2/P1-3
    base-plus-delta application and admission of other reached leaf types.
 2. **Material output (runtime consumer + hydra-toon):** extend the generated
    [live material checkpoint](../reports/2026-10-31-phase8-live-material-integration.md)
-   to representative PMX/VMD assertions and composed Hydra/direct agreement.
+   to representative PMX/VMD assertions and combined/private Hydra/direct agreement.
+   Generated canonical material path values and material-only 1x/4x pixels now
+   have a [comparison checkpoint](../reports/2026-10-31-phase8-canonical-material-parity.md);
+   its sampled tint realization is OFF and geometry is held at the baseline.
    Direct-PMX automatic binding, canonical USD input publication, independent
    sampled texture/sphere/toon coefficients, resident matching and GPU
    realization already have generated checks, including immutable-base reset.
