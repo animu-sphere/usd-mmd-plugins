@@ -192,8 +192,11 @@ placement reject explicitly, including body and skeleton rest transforms.
 For `dynamic`, feedback changes local translation and rotation. For
 `dynamicWithBone`, feedback changes local rotation and retains pre-physics local
 translation. Parent feedback is resolved before child conversion, including
-through non-driven intermediate joints. Multiple feedback bodies for one joint
-reject as ambiguous across both simulated modes. `-1` emits
+through non-driven intermediate joints. When several feedback bodies name one
+joint, across both simulated modes, the latest in the given order, which is source
+order on an imported stage, drives it and `MMD_PHYSICS_BONE_MULTIPLY_DRIVEN` reports
+the change. The others keep simulating and only stop writing to the bone. This is
+this owner's deterministic rule, and it does not claim native MMD equivalence. `-1` emits
 `MMD_PHYSICS_BONE_UNASSOCIATED` and produces no coupling.
 Malformed, out-of-range, varying, time-sampled, blocked or missing declarations
 reject. Mode must agree with standard enabled-body/kinematic flags.
@@ -490,7 +493,10 @@ one enabled MMD rigid body each, with uniform unsampled mode tokens and
 constant standard enablement/kinematic values consistent with §5. Unknown,
 blocked, sampled, missing or inconsistent declarations refuse with
 `MMD_PHYSICS_BINDING_INVALID` and the joint/endpoint path. World endpoints
-and non-MMD bodies are outside this scoped API.
+and non-MMD bodies are outside this scoped API. An import cannot produce them: a PMX
+joint names two bodies, and one whose body is missing is dropped
+([STAGE §13.2](STAGE_CONTRACT.md#132-joints)). A joint from a body to itself is
+authored disabled there, so it reaches no solver and needs no admission.
 
 Two `followBone` endpoints return `Inert`: neither endpoint receives solver
 feedback, so the runtime preserves the source joint but allocates no solver

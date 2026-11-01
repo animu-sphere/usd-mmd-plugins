@@ -12,7 +12,7 @@ schema: openstrata.library/v1alpha1
 library:
   id: mmdControl
   # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-  version: 0.3.1
+  version: 0.3.2
 requires:
   libraries:
     - id: mmdMotionBinding

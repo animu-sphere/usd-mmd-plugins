@@ -661,6 +661,10 @@ limit; equal limits lock it in both. Spring constants have no `UsdPhysics`
 counterpart: `PhysicsDriveAPI` stiffness is in different units and the
 conversion is a runtime's.
 
+A joint from a body to itself constrains nothing, and `UsdPhysics` has no enabled
+form of it. It is authored with `physics:jointEnabled = false`, every other property
+as above, and the import raises `MMD_PHYSICS_JOINT_SELF`, once, with the count.
+
 A PMX 2.1 `pointToPoint`, `coneTwist`, `slider` or `hinge` joint has no
 documented mapping of its limits onto a `UsdPhysics` joint, so it is a
 typeless prim carrying only the properties below, and the import raises

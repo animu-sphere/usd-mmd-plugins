@@ -42,6 +42,7 @@ filename is proven to resolve (docs/design/STAGE_CONTRACT.md §14).
 from __future__ import annotations
 
 import argparse
+import copy
 import heapq
 import json
 import math
@@ -1483,6 +1484,14 @@ def _fixtures() -> dict[str, tuple[bytes, dict, dict | None]]:
         ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
         ((0.0, 0.0, -3.0), (0.0, 0.0, 3.0)),
         ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))]
+    self_joint = copy.deepcopy(pendulum)
+    self_joint["joints"].append(joint("self", 0, (1, 1), (0.0, 20.0, 0.0), (0.0, 0.0, 0.0),
+        ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
+        ((0.0, 0.0, -3.0), (0.0, 0.0, 3.0)),
+        ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0))))
+    entries["recoverable/self-joint.pmx"] = opens(
+        self_joint, "a joint from a body to itself, authored disabled",
+        importer=["MMD_PHYSICS_JOINT_SELF"])
     entries["live-physics-pendulum.pmx"] = opens(
         pendulum, "visible skinned pendulum for live runtime/UsdSkel physics publication")
     morph_pendulum = {**pendulum, "morphs": [

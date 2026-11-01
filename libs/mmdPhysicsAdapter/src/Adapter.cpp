@@ -195,7 +195,7 @@ Adapter::Bind(const pxr::UsdSkelSkeleton& skeleton, std::span<const pxr::UsdPrim
         world.push_back(m);
     }
     std::set<SdfPath> paths;
-    std::set<int> driven;
+    std::map<int, std::size_t> driven;
     DiagnosticList diagnostics;
     for (const auto& prim : bodies) {
         if (!prim || prim.GetStage() != stage || !paths.insert(prim.GetPath()).second)
@@ -239,9 +239,21 @@ Adapter::Bind(const pxr::UsdSkelSkeleton& skeleton, std::span<const pxr::UsdPrim
                             path + ": -1 association cannot drive or receive a bone pose",
                             location);
         } else {
-            if (body.feedback && !driven.insert(body.joint).second)
-                return Fail<Adapter>(codes::PhysicsBindingInvalid,
-                                     path + ": multiple simulated bodies drive one joint");
+            // The body latest in the given order drives the bone. The others
+            // keep simulating and only stop writing to it.
+            if (body.feedback) {
+                const auto [found, first] = driven.try_emplace(body.joint, result._bodies.size());
+                if (!first) {
+                    Location location;
+                    location.table = "rigidBodies";
+                    diagnostics.Add(codes::PhysicsBoneMultiplyDriven,
+                                    result._bodies[found->second].path.GetString() + ": " + path +
+                                        " drives the same bone, and takes over its feedback",
+                                    location);
+                    result._bodies[found->second].feedback = false;
+                    found->second = result._bodies.size();
+                }
+            }
             body.offset = Metres(frame, unit) * world[body.joint].GetInverse();
             if (!Rigid(body.offset))
                 return Fail<Adapter>(codes::PhysicsTransformUnsupported,

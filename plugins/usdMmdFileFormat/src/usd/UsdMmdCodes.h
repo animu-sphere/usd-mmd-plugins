@@ -27,5 +27,6 @@ inline constexpr mmd::Code PhysicsSoftBodyUnsupported{"MMD_PHYSICS_SOFT_BODY_UNS
 // Physics -- docs/design/STAGE_CONTRACT.md §13.2.
 inline constexpr mmd::Code PhysicsJointUnmapped{"MMD_PHYSICS_JOINT_UNMAPPED",
                                                 mmd::Severity::Warning};
+inline constexpr mmd::Code PhysicsJointSelf{"MMD_PHYSICS_JOINT_SELF", mmd::Severity::Warning};
 
 } // namespace usdmmd::codes
