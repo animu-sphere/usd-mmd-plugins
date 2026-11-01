@@ -16,7 +16,8 @@ checked twice before anything is copied:
 For each member it stages the archive and its manifest as
 `<name>-<version>-<target>.manifest.json`; then the product archive and its
 manifest the same way. Libraries are not members: they ship inside the bundle
-and tools that link them (PACKAGE_CONTRACT.md).
+and tools that link them (PACKAGE_CONTRACT.md), and package_libraries.py publishes
+the ones a C++ consumer pins.
 
 With `--oci-out`, each member's whole dist directory (archive, manifest.json
 and what sits beside them) is also copied to `<oci-out>/packages/<name>/`,

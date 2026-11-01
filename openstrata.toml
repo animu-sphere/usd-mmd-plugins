@@ -1,7 +1,7 @@
 [project]
 name = "usd-mmd-plugins"
 # Mirrors the repository-root VERSION file (WORKSPACE.md §4).
-version = "0.3.0"
+version = "0.3.1"
 
 [requires]
 platform = "cy2026"
@@ -28,7 +28,9 @@ members = [
   "tools/mmdExport",
 ]
 # The aggregate product: every bundle and tool that ships. A library ships as
-# a dependency of the bundle that links it, never as a member of its own.
+# a dependency of the bundle that links it, never as a member of its own. The
+# libraries a C++ consumer pins are published beside it by
+# scripts/package_libraries.py, outside the product.
 release_members = [
   "usdMmdFileFormat",
   "mmdSchema",

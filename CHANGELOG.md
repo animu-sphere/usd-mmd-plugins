@@ -16,6 +16,18 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-01
+
+Publishes the libraries a C++ consumer builds against. No source of a library, bundle
+or tool changes, and the stage contract stays at 2.
+
+### Added
+
+- `mmdPhysicsAdapter`, `mmdControl`, `mmdMotionBinding`, `mmdModel`, `mmdPmx` and
+  `motionVmd` as release assets and GHCR packages on every target, in the pin table
+  under `libraries`. `usd-avatar-runtime` needs them for its MMD session package.
+  `scripts/package_libraries.py` builds, tests and packages them in the release lane.
+
 ## [0.3.0] - 2026-10-31
 
 MMD integration checkpoint; stage-contract version remains **2**. See the

@@ -16,6 +16,11 @@ bundle since Phase 8 (2026-09-25), and `mmd_export` since Phase 10
 dependency edges are [WORKSPACE.md](WORKSPACE.md)'s; this page does not
 restate them.
 
+Since v0.3.1, `mmdPmx`, `motionVmd`, `mmdModel`, `mmdMotionBinding`, `mmdControl` and
+`mmdPhysicsAdapter` are also published on their own, for a consumer to pin by digest.
+A published library names its siblings by version range, so a consumer pins the whole
+closure. The others still build from the source archive.
+
 ## `mmdPmx`
 
 | | |

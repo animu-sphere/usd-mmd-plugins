@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Write the pin table for the packages a release pushes to GHCR.
 
-The release workflow's `publish` job pushes every bundle and tool package, on
-every target, to one GHCR repository, tagged `<name>-<version>-<target>` (the
+The release workflow's `publish` job pushes every bundle, tool and library package,
+on every target, to one GHCR repository, tagged `<name>-<version>-<target>` (the
 shape usd-motion-plugins publishes). A consumer needs two digests per package
 and target: the archive digest, which a descriptor or Formation names as the
 `artifact`, and the OCI manifest digest to pull it from, which changes on
@@ -11,13 +11,14 @@ every republish. This writes both, from the rows the job actually pushed, as
 `package-pins.json` and a Markdown section for the release notes.
 
 Rows are tab-separated: `kind name version target archive_digest [oci_digest]`,
-`kind` being `bundle` or `tool`. A dry run passes rows without an OCI digest
+`kind` being `bundle`, `tool` or `library`. A dry run passes rows without an OCI digest
 and no `--published`; the table then names no source and says so, instead of
 inventing a locator that does not exist.
 
 The table is checked against the tree, not against a number written down: one
-bundle per plugins/*/openstrata.plugin.yaml and one tool per
-tools/*/openstrata.tool.yaml, each on exactly `--targets` targets. A target
+bundle per plugins/*/openstrata.plugin.yaml, one tool per
+tools/*/openstrata.tool.yaml and the libraries package_libraries.py names, each on
+exactly `--targets` targets. A target
 whose packages never arrived fails here rather than ship a table that is right
 about everything it names and missing a platform.
 
@@ -33,9 +34,12 @@ import json
 import pathlib
 import sys
 
+from package_libraries import LIBRARIES
+
 REPO = pathlib.Path(__file__).resolve().parents[1]
 KINDS = {"bundle": "plugins/*/openstrata.plugin.yaml",
          "tool": "tools/*/openstrata.tool.yaml"}
+SECTIONS = {"bundle": "bundles", "tool": "tools", "library": "libraries"}
 
 
 def descriptors(pattern: str) -> int:
@@ -44,7 +48,7 @@ def descriptors(pattern: str) -> int:
 
 def read_rows(path: pathlib.Path, version: str, repository: str,
               published: bool) -> dict[str, dict[str, dict[str, dict]]]:
-    pins: dict[str, dict[str, dict[str, dict]]] = {kind: {} for kind in KINDS}
+    pins: dict[str, dict[str, dict[str, dict]]] = {kind: {} for kind in SECTIONS}
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
             continue
@@ -78,6 +82,10 @@ def check(pins: dict, want_targets: int) -> None:
         if len(pins[kind]) != want:
             raise SystemExit(f"the pin table has {len(pins[kind])} {kind}(s) "
                              f"{sorted(pins[kind])}, the tree declares {want}")
+    if set(pins["library"]) != set(LIBRARIES):
+        raise SystemExit(f"the pin table has libraries {sorted(pins['library'])}, "
+                         f"package_libraries.py names {sorted(LIBRARIES)}")
+    for kind in SECTIONS:
         for name, targets in sorted(pins[kind].items()):
             if len(targets) != want_targets:
                 raise SystemExit(f"{name} has {len(targets)} target(s) {sorted(targets)}, "
@@ -90,10 +98,9 @@ def render_markdown(pins: dict, version: str, published: bool) -> str:
     if not published:
         md += ["> Dry run: nothing was pushed, so no source is named. "
                "The digests are this build's.", ""]
-    md += ["Every bundle and tool, on every target. Pull by the OCI digest and "
-           "name the archive digest as the `artifact`.", ""]
-    for kind in KINDS:
-        section = "bundles" if kind == "bundle" else "tools"
+    md += ["Every bundle, tool and consumer library, on every target. Pull by the OCI "
+           "digest and name the archive digest as the `artifact`.", ""]
+    for kind, section in SECTIONS.items():
         for name in sorted(pins[kind]):
             md += [f"<details><summary><code>{name}</code> ({kind})</summary>", "",
                    "```yaml", "requires:", f"  {section}:",
@@ -125,12 +132,13 @@ def main(argv: list[str]) -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     document = {"version": args.version, "published": args.published,
                 "repository": args.repository,
-                "bundles": pins["bundle"], "tools": pins["tool"]}
+                "bundles": pins["bundle"], "tools": pins["tool"],
+                "libraries": pins["library"]}
     (args.out / "package-pins.json").write_text(
         json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (args.out / "package-pins.md").write_text(
         render_markdown(pins, args.version, args.published), encoding="utf-8")
-    print(", ".join(f"{len(pins[kind])} {kind}(s)" for kind in KINDS)
+    print(", ".join(f"{len(pins[kind])} {kind}(s)" for kind in SECTIONS)
           + f" on {args.targets} target(s) in the pin table")
     return 0
 
