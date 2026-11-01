@@ -8,6 +8,7 @@ inline constexpr Code PhysicsBindingInvalid{"MMD_PHYSICS_BINDING_INVALID", Sever
 inline constexpr Code PhysicsTransformUnsupported{"MMD_PHYSICS_TRANSFORM_UNSUPPORTED",
                                                   Severity::Fatal};
 inline constexpr Code PhysicsBoneUnassociated{"MMD_PHYSICS_BONE_UNASSOCIATED", Severity::Info};
+inline constexpr Code PhysicsBoneMultiplyDriven{"MMD_PHYSICS_BONE_MULTIPLY_DRIVEN", Severity::Info};
 inline constexpr Code PhysicsPoseInvalid{"MMD_PHYSICS_POSE_INVALID", Severity::Fatal};
 inline constexpr Code PhysicsSnapshotInvalid{"MMD_PHYSICS_SNAPSHOT_INVALID", Severity::Fatal};
 } // namespace mmd::codes

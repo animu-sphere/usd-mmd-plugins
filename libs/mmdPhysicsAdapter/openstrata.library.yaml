@@ -1,7 +1,7 @@
 schema: openstrata.library/v1alpha1
 library:
   id: mmdPhysicsAdapter
-  version: 0.3.1
+  version: 0.3.2
 requires:
   libraries:
     - id: mmdControl

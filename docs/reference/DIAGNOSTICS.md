@@ -209,6 +209,7 @@ raises; every other code is reserved.
 | `MMD_MATERIAL_UNSUPPORTED_TOON_SLOT` *emitted* | warning | `mmdModel` | [PMX §8](../design/PMX_CONTRACT.md#8-materials) |
 | `MMD_PHYSICS_SOFT_BODY_UNSUPPORTED` *emitted* | warning | `usdMmdFileFormat` | [PMX §12](../design/PMX_CONTRACT.md#12-soft-bodies-21) |
 | `MMD_PHYSICS_JOINT_UNMAPPED` *emitted* | warning | `usdMmdFileFormat` | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
+| `MMD_PHYSICS_JOINT_SELF` *emitted* | warning | `usdMmdFileFormat` | [STAGE §13.2](../design/STAGE_CONTRACT.md#132-joints) |
 | `MMD_PHYSICS_UNKNOWN_SHAPE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 | `MMD_PHYSICS_UNKNOWN_MODE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
 | `MMD_PHYSICS_UNKNOWN_JOINT_TYPE` *emitted* | warning | `mmdModel` | [PMX §13](../design/PMX_CONTRACT.md#13-rigid-bodies-and-joints) |
@@ -218,6 +219,7 @@ raises; every other code is reserved.
 | `MMD_PHYSICS_DAMPING_UNSUPPORTED` *emitted* | fatal | `mmdPhysicsAdapter` (`ReadBodyProperties`) | [PHYSICS §7.2](../design/PHYSICS_INTEGRATION.md#72-body-damping) |
 | `MMD_PHYSICS_TRANSFORM_UNSUPPORTED` *emitted* | fatal | `mmdPhysicsAdapter` (`Bind`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
 | `MMD_PHYSICS_BONE_UNASSOCIATED` *emitted* | info | `mmdPhysicsAdapter` (`Bind`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
+| `MMD_PHYSICS_BONE_MULTIPLY_DRIVEN` *emitted* | info | `mmdPhysicsAdapter` (`Bind`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
 | `MMD_PHYSICS_POSE_INVALID` *emitted* | fatal | `mmdPhysicsAdapter` (`pose conversion`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
 | `MMD_PHYSICS_SNAPSHOT_INVALID` *emitted* | fatal | `mmdPhysicsAdapter` (`ApplyPhysicsToPose`) | [PHYSICS §5.4](../design/PHYSICS_INTEGRATION.md#54-coupling-lifecycle) |
 

@@ -8,6 +8,7 @@
 #include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdGeom/xformCache.h>
 #include <pxr/usd/usdPhysics/rigidBodyAPI.h>
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -149,12 +150,30 @@ TestFailures()
     assert(unbound && unbound.diagnostics().size() == 2);
     assert(unbound.diagnostics()[0].code == codes::PhysicsBoneUnassociated.id);
     bone.Set(2);
-    f.bodies[3].GetAttribute(TfToken("mmd:physics:bone")).Set(2);
-    expect(f.Bind(), codes::PhysicsBindingInvalid);
-    f.bodies[3].GetAttribute(TfToken("mmd:physics:bone")).Set(1);
-    // Modes 1 and 2 are both writers; neither may silently override the other.
+    // Modes 1 and 2 are both writers: the later body drives, and says so.
     f.bodies[2].GetAttribute(TfToken("mmd:physics:bone")).Set(1);
-    expect(f.Bind(), codes::PhysicsBindingInvalid);
+    {
+        auto shared = f.Bind();
+        assert(shared);
+        const auto& reported = shared.diagnostics();
+        assert(std::any_of(reported.begin(), reported.end(), [](const auto& d) {
+            return d.code == codes::PhysicsBoneMultiplyDriven.id &&
+                   d.severity == Severity::Info;
+        }));
+        // bodies[3] follows bodies[2] in the given order; the first's row is
+        // accepted but unused, and a snapshot without it is just as complete.
+        const std::vector<BodyTransform> complete{
+            {f.bodies[0].GetPath(), {{0, 0, 0}, Rotation(180)}},
+            {f.bodies[3].GetPath(), {{0, 0, 0}, Rotation(135)}}};
+        std::vector<BodyTransform> withFirst = complete;
+        withFirst.push_back({f.bodies[2].GetPath(), {{0, 0, 0}, Rotation(10)}});
+        const auto driven = shared.value().ApplyPhysicsToPose(complete, f.pose);
+        const auto same = shared.value().ApplyPhysicsToPose(withFirst, f.pose);
+        assert(driven && same && driven.value().size() == 2 && same.value().size() == 2);
+        assert(driven.value()[0].joint == 1);
+        EqualRotation(driven.value()[0].local.rotation, Rotation(45));
+        assert(driven.value()[0].local == same.value()[0].local);
+    }
     f.bodies[2].GetAttribute(TfToken("mmd:physics:bone")).Set(-1);
     auto scale = UsdGeomXformable(f.stage->GetPrimAtPath(SdfPath("/Asset"))).AddScaleOp();
     for (const auto value : {GfVec3f(2), GfVec3f(1, 2, 1), GfVec3f(-1, 1, 1), GfVec3f(0)}) {

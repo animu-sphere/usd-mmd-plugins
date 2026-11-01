@@ -16,6 +16,15 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
+## [0.3.2] - Unreleased
+
+### Changed
+
+- `usdMmdFileFormat`: a joint from a rigid body to itself is authored disabled, with
+  `MMD_PHYSICS_JOINT_SELF`. Real models contain them, and `UsdPhysics` has no enabled form.
+- `mmdPhysicsAdapter`: when several simulated bodies name one bone, the latest in source
+  order drives it, with `MMD_PHYSICS_BONE_MULTIPLY_DRIVEN`, instead of a binding refusal.
+
 ## [0.3.1] - 2026-11-01
 
 Publishes the libraries a C++ consumer builds against. No source of a library, bundle

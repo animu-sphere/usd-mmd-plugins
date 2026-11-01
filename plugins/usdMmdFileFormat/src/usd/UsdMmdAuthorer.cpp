@@ -1274,6 +1274,11 @@ private:
             };
             joint.CreateBody0Rel().SetTargets({bodyPath(j.rigidBodyA)});
             joint.CreateBody1Rel().SetTargets({bodyPath(j.rigidBodyB)});
+            // A joint from a body to itself constrains nothing, and UsdPhysics
+            // has no such enabled joint. Every source value stays on the prim.
+            if (j.rigidBodyA == j.rigidBodyB) {
+                joint.CreateJointEnabledAttr(VtValue(false));
+            }
             joint.CreateLocalPos0Attr(VtValue(vec(j.localPositionA)));
             joint.CreateLocalRot0Attr(VtValue(ToQuatf(j.localOrientationA)));
             joint.CreateLocalPos1Attr(VtValue(vec(j.localPositionB)));
@@ -1402,6 +1407,21 @@ private:
                                : std::to_string(unmapped) + " joints are") +
                     " of a PMX 2.1 type UsdPhysics has no counterpart for, and preserved on a "
                     "typeless prim without a PhysicsJoint",
+                std::move(where)));
+        }
+        // The condition is the one _Joint disabled by.
+        std::size_t selfJoints = 0;
+        for (const mmd::PhysicsJoint& j : _doc.physics.joints) {
+            selfJoints += IsSixDof(j.type) && j.rigidBodyA == j.rigidBodyB ? 1 : 0;
+        }
+        if (selfJoints > 0) {
+            mmd::Location where;
+            where.table = "joints";
+            _diagnostics.push_back(mmd::MakeDiagnostic(
+                codes::PhysicsJointSelf,
+                (selfJoints == 1 ? std::string("1 joint connects")
+                                 : std::to_string(selfJoints) + " joints connect") +
+                    " a rigid body to itself, and is authored disabled",
                 std::move(where)));
         }
         if (const std::size_t n = _doc.metadata.softBodyCount; n > 0) {
