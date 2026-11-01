@@ -5,12 +5,12 @@
 # workspace on the same three cells and digest-pinned runtimes as the pull
 # request lanes, proves the packaged artifacts, and assembles a DRAFT GitHub
 # release: per target the usdMmdFileFormat, mmdSchema and mmdImaging bundles, the
-# mmd_inspect, vmd_inspect and mmd_export tools and the aggregate product,
-# each with its manifest; a source archive; SHA256SUMS; and notes rendered from the changelog through
+# mmd_inspect, vmd_inspect and mmd_export tools, the aggregate product and the
+# libraries a C++ consumer pins, each with its manifest; a source archive; SHA256SUMS; and notes rendered from the changelog through
 # docs/contributing/RELEASE_NOTES_TEMPLATE.md. Publishing the draft is a
 # human decision (docs/releases/README.md). Before the draft, the `publish`
-# job pushes the bundle and tool packages to GHCR and writes their pin table,
-# which the draft carries.
+# job pushes the bundle, tool and library packages to GHCR and writes their pin
+# table, which the draft carries.
 #
 # `workflow_dispatch` is the dry run: the same lanes, everything uploaded as
 # workflow artifacts, no registry write and no release object created.
@@ -277,6 +277,9 @@ jobs:
       - name: Stage the release artifacts
         shell: bash
         run: python scripts/stage_release.py --package-json .ost-ci/package.json --out release-stage --oci-out oci-stage
+      - name: Build, test, package and stage the libraries consumers pin
+        shell: bash
+        run: python scripts/package_libraries.py --target cy2026 --profile usd --out release-stage --oci-out oci-stage
       - name: Upload the staged artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -292,7 +295,7 @@ jobs:
           path: oci-stage/
           if-no-files-found: error
 
-  # Pushes every bundle and tool package, on every target, to ONE GHCR
+  # Pushes every bundle, tool and library package, on every target, to ONE GHCR
   # repository, tagged `<name>-<version>-<target>` -- the shape
   # usd-motion-plugins publishes. The product stays a release asset: nothing
   # pins it from a registry. The output is a pin table built from what was

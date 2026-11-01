@@ -11,6 +11,7 @@ shipped Phase scope; the roadmap does not maintain a parallel release table.
 | --- | --- | --- |
 | v0.1.0 | [v0.1.0.md](v0.1.0.md) | The first release: PMX import as the canonical stage, with morphs, rig and physics preserved, and VMD motion read and bound — Phases 0–7 |
 | v0.2.0 | [v0.2.0.md](v0.2.0.md) | `MmdMaterialAPI` and its Hydra view (stage-contract 2), MMD motion evaluated and handed to the shared motion core, and USDZ export — this repository's part of Phases 8, 9 and 10 |
+| v0.3.1 | [v0.3.1.md](v0.3.1.md) | Pinnable libraries for C++ consumers |
 | v0.3.0 | [v0.3.0.md](v0.3.0.md) | Owner control/coupling and bounded runtime/renderer integration evidence; three-platform installed-user and USDZ portability verification |
 
 ## How a release is cut
@@ -37,11 +38,12 @@ the root tree and then the bundles, runs each bundle's verification pyramid
 against the build tree and against its package, packages the bundles, the
 tools and the aggregate product twice and requires the same digests, installs
 the product into a fresh prefix and uses it from there alone
-(`scripts/product_smoke.py`), and checks the release set against the tree's
-descriptors (`scripts/stage_release.py`). Its runtime and `ost` pins mirror
+(`scripts/product_smoke.py`), checks the release set against the tree's
+descriptors (`scripts/stage_release.py`), and builds, tests and packages the
+libraries a C++ consumer pins (`scripts/package_libraries.py`). Its runtime and `ost` pins mirror
 [openstrata.ci.yaml](../../openstrata.ci.yaml) and are re-pinned with it.
 
-Every bundle and tool package, on every target, is pushed to the one public
+Every bundle, tool and consumer library package, on every target, is pushed to the one public
 GHCR repository `ghcr.io/animu-sphere/usd-mmd-plugins`, tagged
 `<name>-<version>-<target>`, as usd-motion-plugins publishes its own. The
 release carries `package-pins.json`, and its notes the same table: per

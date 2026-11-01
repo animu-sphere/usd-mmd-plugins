@@ -29,6 +29,7 @@ or `cy2026-linux-x86_64-py313-usd`.
 | `usd-mmd-plugins-{version}-<target>-plugin-product.tar.zst` | the product: the bundles and tools, with their manifests and checksums — the one to install |
 | `usdMmdFileFormat-{version}-<target>.tar.zst` · `mmdSchema-{version}-<target>.tar.zst` · `mmdImaging-{version}-<target>.tar.zst` | each bundle alone; `usdMmdFileFormat` needs `mmdSchema` |
 | `mmd_inspect-{version}-<target>.tar.zst` · `vmd_inspect-{version}-<target>.tar.zst` · `mmd_export-{version}-<target>.tar.zst` | each tool alone |
+| `mmdPmx-{version}-<target>.tar.zst` · `motionVmd` · `mmdModel` · `mmdMotionBinding` · `mmdControl` · `mmdPhysicsAdapter` | the libraries a C++ consumer pins; pin the whole closure |
 | `<name>-{version}-<target>.manifest.json` | the OpenStrata manifest of each archive above |
 | `usd-mmd-plugins-{version}-src.tar.gz` | the source at this tag |
 | `SHA256SUMS` | the SHA-256 of every file above |
