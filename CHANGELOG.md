@@ -16,7 +16,7 @@ Stage-contract version: **2**, authored since the Phase 8 importer migration
 
 ## [Unreleased]
 
-## [0.3.2] - Unreleased
+## [0.3.2] - 2026-11-01
 
 ### Changed
 
