@@ -26,7 +26,6 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
-import platform
 import shutil
 import subprocess
 
@@ -34,10 +33,10 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 # Dependencies first. make_package_pins.py holds the table to this list.
 LIBRARIES = ("mmdPmx", "motionVmd", "mmdModel", "mmdMotionBinding", "mmdControl",
              "mmdPhysicsAdapter")
-# Reaches OpenUSD, whose MaterialX dependency needs X11 on Linux. The pinned `ost`
-# cannot declare host packages for a generated consumer (0.23.18 can), so this
-# consumer is verified on Windows, and by usd-avatar-runtime's session everywhere.
-NEEDS_HOST_PACKAGES = {"mmdPhysicsAdapter"}
+# Reaches OpenUSD. The pinned `ost` rejects the Python path OpenUSD's targets expose in
+# a generated consumer (fixed in 0.23.16), and cannot declare the X11 packages Linux
+# needs (0.23.18), so usd-avatar-runtime's session lanes build against this one instead.
+NO_GENERATED_CONSUMER = {"mmdPhysicsAdapter"}
 
 
 def ost(*arguments: str) -> None:
@@ -66,7 +65,7 @@ def main() -> int:
         library = f"libs/{name}"
         ost("library", "build", library, *cell)
         ost("library", "test", library, *cell)
-        if name not in NEEDS_HOST_PACKAGES or platform.system() == "Windows":
+        if name not in NO_GENERATED_CONSUMER:
             ost("library", "verify-consumer", library, *cell)
 
     args.out.mkdir(parents=True, exist_ok=True)
